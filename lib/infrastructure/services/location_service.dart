@@ -57,7 +57,6 @@ class LocationService {
     _isForegroundTracking = false;
   }
 
-  // BACKGROUND TRACKING - Your GeolocatorLocationService already handles notifications!
   Future<bool> _startBackgroundTracking() async {
     if (_isBackgroundTracking) return true;
 
@@ -94,12 +93,10 @@ class LocationService {
   Future<void> _stopBackgroundTracking() async {
     if (!_isBackgroundTracking) return;
 
-    // Stop the location tracking - this will also dismiss Android notification
     _location.stopTracking();
     _isBackgroundTracking = false;
   }
 
-  // SMART TRACKING - Automatically switch between foreground/background
   Future<void> startSmartTracking() async {
     _userGpsTracking = await appRepo.getSetting(kGpsRealTimeTracking);
     if (_userGpsTracking != "Yes") {
@@ -134,7 +131,6 @@ class LocationService {
   }
 
   Future<bool> _checkBackgroundPermissions() async {
-    // Check location permission
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();

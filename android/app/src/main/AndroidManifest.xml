@@ -48,11 +48,6 @@
             </intent-filter>
         </activity>
         
-        <!-- <service
-            android:name="id.flutter.flutter_background_service.BackgroundService"
-            android:foregroundServiceType="location"
-        /> -->
-        
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="AIzaSyC3pUau1zh5lLPMEKG8-WanuIKMb8895sg" />
