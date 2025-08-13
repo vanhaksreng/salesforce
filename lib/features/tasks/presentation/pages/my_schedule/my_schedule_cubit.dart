@@ -15,14 +15,34 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
-class MyScheduleCubit extends Cubit<MyScheduleState> with PermissionMixin, MessageMixin, AppMixin {
+class MyScheduleCubit extends Cubit<MyScheduleState>
+    with PermissionMixin, MessageMixin, AppMixin {
   MyScheduleCubit() : super(const MyScheduleState(isLoading: false));
 
   final _repos = getIt<TaskRepository>();
 
+  Future<void> loadAppSetting() async {
+    try {
+      await _repos.downloadAppSetting().then((respose) {
+        respose.fold((l) => throw GeneralException(l.message), (r) async {
+          emit(state.copyWith(isLoading: false));
+        });
+      });
+    } on GeneralException {
+      // showWarningMessage(e.message);
+    } on Exception {
+      showErrorMessage();
+    } finally {
+      emit(state.copyWith(isLoading: false));
+    }
+  }
+
   Future<void> getUserSetup() async {
     final userSetupRes = await _repos.getUserSetup();
-    userSetupRes.fold((l) => throw GeneralException(l.message), (user) => emit(state.copyWith(userSetup: user)));
+    userSetupRes.fold(
+      (l) => throw GeneralException(l.message),
+      (user) => emit(state.copyWith(userSetup: user)),
+    );
   }
 
   Future<void> pendingScheduleValidate() async {
@@ -38,14 +58,22 @@ class MyScheduleCubit extends Cubit<MyScheduleState> with PermissionMixin, Messa
       },
     );
 
-    bool hasPending = response.fold((failure) => false, (schedules) => schedules.isNotEmpty);
+    bool hasPending = response.fold(
+      (failure) => false,
+      (schedules) => schedules.isNotEmpty,
+    );
 
     if (hasPending) {
       throw GeneralException(greeting("you_has_any_pending_schedule"));
     }
   }
 
-  Future<void> getSchedules(DateTime date, {String text = "", bool isLoading = true, bool requestApi = true}) async {
+  Future<void> getSchedules(
+    DateTime date, {
+    String text = "",
+    bool isLoading = true,
+    bool requestApi = true,
+  }) async {
     try {
       emit(state.copyWith(isLoading: isLoading));
 
@@ -64,7 +92,9 @@ class MyScheduleCubit extends Cubit<MyScheduleState> with PermissionMixin, Messa
             isLoading: false,
             schedules: schedules,
             totalVisit: schedules.length,
-            countCheckOut: schedules.where((e) => e.status == kStatusCheckOut).length,
+            countCheckOut: schedules
+                .where((e) => e.status == kStatusCheckOut)
+                .length,
           ),
         );
       });
@@ -111,114 +141,175 @@ class MyScheduleCubit extends Cubit<MyScheduleState> with PermissionMixin, Messa
         });
   }
 
-  Future<void> getCountItemPrizeRedemptionEntries(SalespersonSchedule schedule) async {
-    await _repos.getItemPrizeRedemptionEntries(param: {'schedule_id': schedule.id, 'status': kStatusOpen}).then((
-      response,
-    ) {
-      response.fold((l) => throw GeneralException(l.message), (entries) {
-        emit(state.copyWith(countItemPrizeRedeption: entries.length));
-      });
-    });
+  Future<void> getCountItemPrizeRedemptionEntries(
+    SalespersonSchedule schedule,
+  ) async {
+    await _repos
+        .getItemPrizeRedemptionEntries(
+          param: {'schedule_id': schedule.id, 'status': kStatusOpen},
+        )
+        .then((response) {
+          response.fold((l) => throw GeneralException(l.message), (entries) {
+            emit(state.copyWith(countItemPrizeRedeption: entries.length));
+          });
+        });
   }
 
-  Future<void> getCountPosmAndMerchandising(SalespersonSchedule schedule) async {
-    await _repos.getSalesPersonScheduleMerchandises(param: {'visit_no': state.schedule?.id}).then((resonse) {
-      resonse.fold((l) => throw GeneralJournalBatch(l.message), (r) {
-        final posm = List<SalesPersonScheduleMerchandise>.from(r.where((e) => e.merchandiseOption == kPOSM));
-        final merchandize = List<SalesPersonScheduleMerchandise>.from(
-          r.where((e) => e.merchandiseOption == kMerchandize),
-        );
+  Future<void> getCountPosmAndMerchandising(
+    SalespersonSchedule schedule,
+  ) async {
+    await _repos
+        .getSalesPersonScheduleMerchandises(
+          param: {'visit_no': state.schedule?.id},
+        )
+        .then((resonse) {
+          resonse.fold((l) => throw GeneralJournalBatch(l.message), (r) {
+            final posm = List<SalesPersonScheduleMerchandise>.from(
+              r.where((e) => e.merchandiseOption == kPOSM),
+            );
+            final merchandize = List<SalesPersonScheduleMerchandise>.from(
+              r.where((e) => e.merchandiseOption == kMerchandize),
+            );
 
-        emit(
-          state.copyWith(
-            countPosm: posm.where((e) => e.status == kStatusOpen).length,
-            countMerchandising: merchandize.where((e) => e.status == kStatusOpen).length,
-            checkPosmRecords: posm,
-            checkMerchandiseRecords: merchandize,
-            isLoading: false,
-          ),
-        );
-      });
-    });
+            emit(
+              state.copyWith(
+                countPosm: posm.where((e) => e.status == kStatusOpen).length,
+                countMerchandising: merchandize
+                    .where((e) => e.status == kStatusOpen)
+                    .length,
+                checkPosmRecords: posm,
+                checkMerchandiseRecords: merchandize,
+                isLoading: false,
+              ),
+            );
+          });
+        });
   }
 
   Future<void> getCountCompetitorPromotion(SalespersonSchedule schedule) async {
-    await _repos.getCompetitorItemLedgetEntry(param: {'status': kStatusOpen}).then((resonse) {
-      resonse.fold((l) => throw GeneralJournalBatch(l.message), (r) {
-        emit(state.copyWith(countCompetitorPromotion: r.length, isLoading: false));
-      });
-    });
+    await _repos
+        .getCompetitorItemLedgetEntry(param: {'status': kStatusOpen})
+        .then((resonse) {
+          resonse.fold((l) => throw GeneralJournalBatch(l.message), (r) {
+            emit(
+              state.copyWith(
+                countCompetitorPromotion: r.length,
+                isLoading: false,
+              ),
+            );
+          });
+        });
   }
 
   Future<void> getCountCollection(SalespersonSchedule schedule) async {
-    await _repos.getCashReceiptJournal(param: {'status': kStatusOpen}).then((resonse) {
+    await _repos.getCashReceiptJournal(param: {'status': kStatusOpen}).then((
+      resonse,
+    ) {
       resonse.fold((l) => throw GeneralJournalBatch(l.message), (r) {
-        emit(state.copyWith(countCollection: r == null ? 0 : 1, isLoading: false));
+        emit(
+          state.copyWith(countCollection: r == null ? 0 : 1, isLoading: false),
+        );
       });
     });
   }
 
   Future<void> getCountCheckStock(SalespersonSchedule schedule) async {
-    await _repos.getCustomerItemLegerEntries(param: {'schedule_id': state.schedule?.id}).then((resonse) {
-      resonse.fold((l) => throw GeneralJournalBatch(l.message), (r) {
-        emit(
-          state.copyWith(
-            isLoading: false,
-            countCheckStock: r.where(((e) => e.status == kStatusOpen)).length,
-            checkItemStockRecords: r,
-          ),
-        );
-      });
-    });
+    await _repos
+        .getCustomerItemLegerEntries(param: {'schedule_id': state.schedule?.id})
+        .then((resonse) {
+          resonse.fold((l) => throw GeneralJournalBatch(l.message), (r) {
+            emit(
+              state.copyWith(
+                isLoading: false,
+                countCheckStock: r
+                    .where(((e) => e.status == kStatusOpen))
+                    .length,
+                checkItemStockRecords: r,
+              ),
+            );
+          });
+        });
 
-    await _repos.getCompetitorItemLedgetEntry(param: {'schedule_id': state.schedule?.id}).then((resonse) {
-      resonse.fold((l) => throw GeneralJournalBatch(l.message), (r) {
-        emit(
-          state.copyWith(
-            isLoading: false,
-            countCheckStock: r.where((e) => e.status == kStatusOpen).length + state.countCheckStock,
-            checkCompetitorItemStockRecords: r,
-          ),
-        );
-      });
-    });
+    await _repos
+        .getCompetitorItemLedgetEntry(
+          param: {'schedule_id': state.schedule?.id},
+        )
+        .then((resonse) {
+          resonse.fold((l) => throw GeneralJournalBatch(l.message), (r) {
+            emit(
+              state.copyWith(
+                isLoading: false,
+                countCheckStock:
+                    r.where((e) => e.status == kStatusOpen).length +
+                    state.countCheckStock,
+                checkCompetitorItemStockRecords: r,
+              ),
+            );
+          });
+        });
   }
 
   Future<void> getCountSales(SalespersonSchedule schedule) async {
-    await _repos.getPosSaleHeaders(params: {'source_no': state.schedule?.id, 'source_type': kSourceTypeVisit}).then((
-      resonse,
-    ) {
-      resonse.fold((l) => throw GeneralJournalBatch(l.message), (headers) {
-        emit(
-          state.copyWith(
-            isLoading: false,
-            countSaleOrder: headers.where((e) => e.documentType == kSaleOrder).length,
-            countSaleInvoice: headers.where((e) => e.documentType == kSaleInvoice).length,
-            countSaleCreditMemo: headers.where((e) => e.documentType == kSaleCreditMemo).length,
-          ),
-        );
-      });
-    });
+    await _repos
+        .getPosSaleHeaders(
+          params: {
+            'source_no': state.schedule?.id,
+            'source_type': kSourceTypeVisit,
+          },
+        )
+        .then((resonse) {
+          resonse.fold((l) => throw GeneralJournalBatch(l.message), (headers) {
+            emit(
+              state.copyWith(
+                isLoading: false,
+                countSaleOrder: headers
+                    .where((e) => e.documentType == kSaleOrder)
+                    .length,
+                countSaleInvoice: headers
+                    .where((e) => e.documentType == kSaleInvoice)
+                    .length,
+                countSaleCreditMemo: headers
+                    .where((e) => e.documentType == kSaleCreditMemo)
+                    .length,
+              ),
+            );
+          });
+        });
   }
 
   Future<void> getSaleLine(DateTime date, {bool requestApi = false}) async {
     try {
-      final response = await _repos.getSaleLines(params: {'document_date': DateTime.now().toDateString()});
+      final response = await _repos.getSaleLines(
+        params: {'document_date': DateTime.now().toDateString()},
+      );
 
       response.fold((failure) => throw Exception(failure.message), (lines) {
         double totalSaleInv = lines
             .where((e) {
               return [kSaleInvoice, kSaleOrder].contains(e.documentType);
             })
-            .fold(0.0, (sum, saleLine) => sum + Helpers.toDouble(saleLine.amountIncludingVatLcy));
+            .fold(
+              0.0,
+              (sum, saleLine) =>
+                  sum + Helpers.toDouble(saleLine.amountIncludingVatLcy),
+            );
 
         double totalSaleCr = lines
             .where((e) {
               return e.documentType == kSaleCreditMemo;
             })
-            .fold(0.0, (sum, saleLine) => sum + Helpers.toDouble(saleLine.amountIncludingVatLcy));
+            .fold(
+              0.0,
+              (sum, saleLine) =>
+                  sum + Helpers.toDouble(saleLine.amountIncludingVatLcy),
+            );
 
-        emit(state.copyWith(saleLines: lines, totalSales: totalSaleInv - totalSaleCr));
+        emit(
+          state.copyWith(
+            saleLines: lines,
+            totalSales: totalSaleInv - totalSaleCr,
+          ),
+        );
       });
     } catch (error) {
       emit(state.copyWith(isLoading: false));
