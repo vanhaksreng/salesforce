@@ -60,7 +60,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
 
       cameraController = CameraController(
         camera,
-        ResolutionPreset.medium,
+        ResolutionPreset.high,
         enableAudio: false,
         imageFormatGroup: Platform.isAndroid
             ? ImageFormatGroup.nv21
@@ -68,7 +68,6 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
       );
       await cameraController!.initialize();
 
-      // Add delay before starting image stream on iOS
       if (Platform.isIOS) {
         await Future.delayed(const Duration(milliseconds: 500));
       }
@@ -149,16 +148,20 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
         // Fixed iOS implementation
         return _createInputImageForIOS(image, rotation);
       } else {
-        // Android implementation
-        final bytes = convertYUV420ToNV21(image);
-        final metadata = InputImageMetadata(
-          size: Size(image.width.toDouble(), image.height.toDouble()),
-          rotation: rotation,
-          format: InputImageFormat.nv21,
-          bytesPerRow: image.planes[0].bytesPerRow,
-        );
+        Uint8List bytes;
+        InputImageFormat format;
+        bytes = convertYUV420ToNV21(image);
+        format = InputImageFormat.nv21;
 
-        return InputImage.fromBytes(bytes: bytes, metadata: metadata);
+        return InputImage.fromBytes(
+          bytes: bytes,
+          metadata: InputImageMetadata(
+            size: Size(image.width.toDouble(), image.height.toDouble()),
+            rotation: rotation,
+            format: format,
+            bytesPerRow: image.planes[0].bytesPerRow,
+          ),
+        );
       }
     } catch (e) {
       Logger.log(e.toString());
@@ -194,14 +197,6 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
   Uint8List convertYUV420ToNV21(CameraImage image) {
     final int width = image.width;
     final int height = image.height;
-
-    // This is primarily for Android
-    if (image.planes.length < 3) {
-      throw Exception(
-        'Invalid YUV image format: expected 3 planes, got ${image.planes.length}',
-      );
-    }
-
     final int uvRowStride = image.planes[1].bytesPerRow;
     final int uvPixelStride = image.planes[1].bytesPerPixel!;
 
@@ -214,7 +209,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
     final yPlane = image.planes[0].bytes;
     nv21.setRange(0, ySize, yPlane);
 
-    // Copy UV planes interleaved as VU for Android
+    // Copy UV planes interleaved as VU
     int uvIndex = ySize;
     final uPlane = image.planes[1].bytes;
     final vPlane = image.planes[2].bytes;
