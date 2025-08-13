@@ -42,10 +42,7 @@ Future<void> _initializeApp() async {
 
 Future<void> _configureSystemUI() async {
   if (Platform.isIOS) {
-    await SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.manual,
-      overlays: SystemUiOverlay.values,
-    );
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
   }
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -94,9 +91,30 @@ class TradeB2b extends StatefulWidget {
   State<TradeB2b> createState() => _TradeB2bState();
 }
 
-class _TradeB2bState extends State<TradeB2b> {
+class _TradeB2bState extends State<TradeB2b> with WidgetsBindingObserver {
   final language = "en";
   final String languageCode = "EN";
+  final LocationService locationService = LocationService();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    // Start smart tracking when app launches
+    locationService.startSmartTracking();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    locationService.handleAppLifecycle(state);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
