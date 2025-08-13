@@ -2,7 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
+import 'package:salesforce/core/utils/date_extensions.dart';
+import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
 import 'package:salesforce/infrastructure/gps/gps_service_impl.dart';
 import 'package:salesforce/injection_container.dart';
@@ -15,8 +18,19 @@ class LocationService {
 
   bool _isForegroundTracking = false;
   bool _isBackgroundTracking = false;
+  String _userGpsTracking = "No";
 
-  void startForegroundTracking() {
+  static const Map<String, String> _daySettingsKeys = {
+    "Monday": kGpsRealTimeTrackingMonday,
+    "Tuesday": kGpsRealTimeTrackingTuesDay,
+    "Wednesday": kGpsRealTimeTrackingWednesday,
+    "Thursday": kGpsRealTimeTrackingThursday,
+    "Friday": kGpsRealTimeTrackingFriday,
+    "Saturday": kGpsRealTimeTrackingSaturDay,
+    "Sunday": kGpsRealTimeTrackingSunday,
+  };
+
+  void _startForegroundTracking() {
     if (_isForegroundTracking) return;
 
     final GpsServiceImpl gpsService = GpsServiceImpl(appRepo);
@@ -36,7 +50,7 @@ class LocationService {
     _isForegroundTracking = true;
   }
 
-  void stopForegroundTracking() {
+  void _stopForegroundTracking() {
     if (!_isForegroundTracking) return;
 
     _location.stopTracking();
@@ -44,7 +58,7 @@ class LocationService {
   }
 
   // BACKGROUND TRACKING - Your GeolocatorLocationService already handles notifications!
-  Future<bool> startBackgroundTracking() async {
+  Future<bool> _startBackgroundTracking() async {
     if (_isBackgroundTracking) return true;
 
     // Check and request permissions
@@ -77,7 +91,7 @@ class LocationService {
     return true;
   }
 
-  Future<void> stopBackgroundTracking() async {
+  Future<void> _stopBackgroundTracking() async {
     if (!_isBackgroundTracking) return;
 
     // Stop the location tracking - this will also dismiss Android notification
@@ -87,14 +101,36 @@ class LocationService {
 
   // SMART TRACKING - Automatically switch between foreground/background
   Future<void> startSmartTracking() async {
-    // Start both foreground and background tracking
-    startForegroundTracking();
-    await startBackgroundTracking();
+    _userGpsTracking = await appRepo.getSetting(kGpsRealTimeTracking);
+    if (_userGpsTracking != "Yes") {
+      Logger.log('GPS tracking disabled globally, skipping initialization');
+      stopSmartTracking();
+      return;
+    }
+
+    final dayName = DateTime.now().dayName();
+    final daySettingKey = _daySettingsKeys[dayName];
+
+    if (daySettingKey != null) {
+      final daySpecificSetting = await appRepo.getSetting(daySettingKey);
+      if (daySpecificSetting.isNotEmpty) {
+        _userGpsTracking = daySpecificSetting;
+      }
+    }
+
+    if (_userGpsTracking != "Yes") {
+      Logger.log('GPS tracking disabled for $dayName, skipping initialization');
+      stopSmartTracking();
+      return;
+    }
+
+    _startForegroundTracking();
+    await _startBackgroundTracking();
   }
 
   Future<void> stopSmartTracking() async {
-    stopForegroundTracking();
-    await stopBackgroundTracking();
+    _stopForegroundTracking();
+    await _stopBackgroundTracking();
   }
 
   Future<bool> _checkBackgroundPermissions() async {
@@ -136,7 +172,7 @@ class LocationService {
       case AppLifecycleState.resumed:
         // App came to foreground - start high-accuracy tracking
         if (_isBackgroundTracking) {
-          startForegroundTracking();
+          _startForegroundTracking();
         }
         break;
       case AppLifecycleState.paused:
@@ -145,7 +181,7 @@ class LocationService {
         break;
       case AppLifecycleState.detached:
         // App is closing - keep only background tracking if it was active
-        stopForegroundTracking();
+        _stopForegroundTracking();
         break;
       default:
         break;

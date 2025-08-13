@@ -25,6 +25,7 @@ class FirstDownloadScreen extends StatefulWidget {
 
 class _FirstDownloadScreenState extends State<FirstDownloadScreen> {
   final _cubit = FirstDownloadCubit();
+  final LocationService locationService = LocationService();
 
   @override
   void initState() {
@@ -59,10 +60,7 @@ class _FirstDownloadScreenState extends State<FirstDownloadScreen> {
   void _navigateToHome() async {
     bool granted = await requestLocationPermissions();
     if (granted) {
-      LocationService().startForegroundTracking();
-    } else {
-      // Handle permission denied scenario
-      Logger.log('Location permission denied');
+      await locationService.startSmartTracking();
     }
 
     if (!mounted) return;

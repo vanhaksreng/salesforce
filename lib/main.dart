@@ -24,10 +24,6 @@ void main() async {
 
     await di.getItInit();
 
-    await initializeBackgroundService();
-
-    // await LocationService.initialize();
-
     OneSignalNotificationService.initialize();
 
     runApp(const TradeB2b());
@@ -56,33 +52,33 @@ Future<void> _configureSystemUI() async {
   );
 }
 
-Future<void> initializeBackgroundService() async {
-  try {
-    final auth = di.getAuth();
-    if (auth != null) {
-      bool granted = await requestLocationPermissions();
+// Future<void> initializeBackgroundService() async {
+//   try {
+//     final auth = di.getAuth();
+//     if (auth != null) {
+//       bool granted = await requestLocationPermissions();
 
-      if (!granted) {
-        Logger.log('Location permission denied');
-        return;
-      }
+//       if (!granted) {
+//         Logger.log('Location permission denied');
+//         return;
+//       }
 
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        await Geolocator.openLocationSettings();
-        serviceEnabled = await Geolocator.isLocationServiceEnabled();
-        if (!serviceEnabled) {
-          Logger.log('Location services are still disabled');
-          return;
-        }
-      }
+//       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+//       if (!serviceEnabled) {
+//         await Geolocator.openLocationSettings();
+//         serviceEnabled = await Geolocator.isLocationServiceEnabled();
+//         if (!serviceEnabled) {
+//           Logger.log('Location services are still disabled');
+//           return;
+//         }
+//       }
 
-      LocationService().startForegroundTracking();
-    }
-  } catch (e) {
-    Logger.log('Failed to initialize background service: $e');
-  }
-}
+//       LocationService().startForegroundTracking();
+//     }
+//   } catch (e) {
+//     Logger.log('Failed to initialize background service: $e');
+//   }
+// }
 
 class TradeB2b extends StatefulWidget {
   const TradeB2b({super.key});
@@ -101,8 +97,10 @@ class _TradeB2bState extends State<TradeB2b> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Start smart tracking when app launches
-    locationService.startSmartTracking();
+    final auth = di.getAuth();
+    if (auth != null) {
+      locationService.startSmartTracking();
+    }
   }
 
   @override

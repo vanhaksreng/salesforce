@@ -10,7 +10,7 @@ import 'package:salesforce/infrastructure/services/permission_handler.dart';
 import 'package:salesforce/injection_container.dart';
 
 class LoggedinHistoryScreen extends StatefulWidget {
-  const LoggedinHistoryScreen({Key? key}) : super(key: key);
+  const LoggedinHistoryScreen({super.key});
 
   static const String routeName = "authLoggedInHistory";
 
@@ -40,7 +40,7 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
 
     bool granted = await requestLocationPermissions();
     if (granted) {
-      LocationService().startForegroundTracking();
+      LocationService().startSmartTracking();
     } else {
       // Handle permission denied scenario
       Logger.log('Location permission denied');
