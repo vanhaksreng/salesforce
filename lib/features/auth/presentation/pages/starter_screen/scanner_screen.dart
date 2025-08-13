@@ -49,32 +49,40 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
   }
 
   Future<void> _initCamera() async {
-    _cameras = await availableCameras();
+    try {
+      _cameras = await availableCameras();
 
-    if (_cameras.isEmpty) {
-      debugPrint("No cameras found");
-      return;
+      if (_cameras.isEmpty) {
+        return;
+      }
+
+      final camera = _cameras.first;
+
+      cameraController = CameraController(
+        camera,
+        ResolutionPreset.medium,
+        enableAudio: false,
+        imageFormatGroup: Platform.isAndroid
+            ? ImageFormatGroup.nv21
+            : ImageFormatGroup.yuv420,
+      );
+      await cameraController!.initialize();
+
+      // Add delay before starting image stream on iOS
+      if (Platform.isIOS) {
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
+      await cameraController!.startImageStream(_processCameraImage);
+
+      if (mounted) setState(() {});
+    } catch (e) {
+      Logger.log(e.toString());
     }
-
-    final camera = _cameras.first;
-
-    cameraController = CameraController(
-      camera,
-      ResolutionPreset.high,
-      enableAudio: false,
-      imageFormatGroup: Platform.isAndroid ? ImageFormatGroup.nv21 : ImageFormatGroup.bgra8888,
-    );
-
-    await cameraController!.initialize();
-
-    // Start image stream after initialized
-    cameraController!.startImageStream(_processCameraImage);
-
-    if (mounted) setState(() {});
   }
 
   Future<void> _processCameraImage(CameraImage image) async {
-    if (_isProcessing) return;
+    if (_isProcessing || !mounted) return;
     _isProcessing = true;
 
     try {
@@ -86,7 +94,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
 
       final barcodes = await barcodeScanner.processImage(inputImage);
 
-      if (barcodes.isNotEmpty) {
+      if (barcodes.isNotEmpty && mounted) {
         final code = barcodes.first.rawValue ?? '';
 
         if (isURL(code) && !isDetected) {
@@ -94,6 +102,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
             isDetected = true; // Trigger highlight animation
           });
 
+          // Stop image stream immediately
           await cameraController?.stopImageStream();
 
           // Wait for animation to play
@@ -119,46 +128,80 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
 
     InputImageRotation rotation;
     if (Platform.isIOS) {
-      rotation = InputImageRotationValue.fromRawValue(sensorOrientation) ?? InputImageRotation.rotation0deg;
+      rotation =
+          InputImageRotationValue.fromRawValue(sensorOrientation) ??
+          InputImageRotation.rotation0deg;
     } else {
       int adjustedRotation;
       if (camera.lensDirection == CameraLensDirection.front) {
         adjustedRotation = (sensorOrientation + rotationCompensation) % 360;
       } else {
-        adjustedRotation = (sensorOrientation - rotationCompensation + 360) % 360;
+        adjustedRotation =
+            (sensorOrientation - rotationCompensation + 360) % 360;
       }
-      rotation = InputImageRotationValue.fromRawValue(adjustedRotation) ?? InputImageRotation.rotation0deg;
+      rotation =
+          InputImageRotationValue.fromRawValue(adjustedRotation) ??
+          InputImageRotation.rotation0deg;
     }
 
-    // Convert yuv_420_888 to nv21 bytes for Android
-    Uint8List bytes;
-    InputImageFormat format;
+    try {
+      if (Platform.isIOS) {
+        // Fixed iOS implementation
+        return _createInputImageForIOS(image, rotation);
+      } else {
+        // Android implementation
+        final bytes = convertYUV420ToNV21(image);
+        final metadata = InputImageMetadata(
+          size: Size(image.width.toDouble(), image.height.toDouble()),
+          rotation: rotation,
+          format: InputImageFormat.nv21,
+          bytesPerRow: image.planes[0].bytesPerRow,
+        );
 
-    if (Platform.isAndroid && image.format.raw == 35) {
-      bytes = convertYUV420ToNV21(image);
-      format = InputImageFormat.nv21;
-    } else if (Platform.isIOS && image.format.raw == 111) {
-      // 111 = ImageFormat.BGRA8888
-      bytes = image.planes[0].bytes;
-      format = InputImageFormat.bgra8888;
-    } else {
+        return InputImage.fromBytes(bytes: bytes, metadata: metadata);
+      }
+    } catch (e) {
+      Logger.log(e.toString());
       return null;
     }
+  }
 
-    return InputImage.fromBytes(
-      bytes: bytes,
-      metadata: InputImageMetadata(
+  InputImage? _createInputImageForIOS(
+    CameraImage image,
+    InputImageRotation rotation,
+  ) {
+    try {
+      if (image.planes.isEmpty) {
+        return null;
+      }
+
+      final plane = image.planes.first;
+
+      // Create metadata with correct format
+      final metadata = InputImageMetadata(
         size: Size(image.width.toDouble(), image.height.toDouble()),
         rotation: rotation,
-        format: format,
-        bytesPerRow: image.planes[0].bytesPerRow,
-      ),
-    );
+        format: InputImageFormat.yuv420,
+        bytesPerRow: plane.bytesPerRow,
+      );
+
+      return InputImage.fromBytes(bytes: plane.bytes, metadata: metadata);
+    } catch (e) {
+      return null;
+    }
   }
 
   Uint8List convertYUV420ToNV21(CameraImage image) {
     final int width = image.width;
     final int height = image.height;
+
+    // This is primarily for Android
+    if (image.planes.length < 3) {
+      throw Exception(
+        'Invalid YUV image format: expected 3 planes, got ${image.planes.length}',
+      );
+    }
+
     final int uvRowStride = image.planes[1].bytesPerRow;
     final int uvPixelStride = image.planes[1].bytesPerPixel!;
 
@@ -171,7 +214,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
     final yPlane = image.planes[0].bytes;
     nv21.setRange(0, ySize, yPlane);
 
-    // Copy UV planes interleaved as VU
+    // Copy UV planes interleaved as VU for Android
     int uvIndex = ySize;
     final uPlane = image.planes[1].bytes;
     final vPlane = image.planes[2].bytes;
@@ -190,7 +233,8 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
 
   bool isURL(String result) {
     final uri = Uri.tryParse(result);
-    return uri != null && (uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https'));
+    return uri != null &&
+        (uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https'));
   }
 
   Future<String?> processImage(String imagePath) async {
@@ -225,7 +269,10 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
     });
 
     try {
-      final XFile? pickedFile = await imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 100);
+      final XFile? pickedFile = await imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 100,
+      );
 
       if (pickedFile != null) {
         final result = await processImage(pickedFile.path);
@@ -248,6 +295,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
 
   @override
   void dispose() {
+    _isProcessing = true; // Prevent further processing
     barcodeScanner.close();
     if (cameraController?.value.isStreamingImages ?? false) {
       cameraController?.stopImageStream();
@@ -270,7 +318,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
               textColor: white,
               icon: Icon(Icons.upload, size: scaleFontSize(26)),
               title: greeting("Upload Organization QR Code"),
-              onPressed: () => uploadFromGallery(),
+              onPressed: isUploading ? null : () => uploadFromGallery(),
             ),
           ),
         ),
@@ -296,10 +344,19 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
                 height: scaleFontSize(250),
                 decoration: BoxDecoration(
                   color: Colors.transparent,
-                  border: Border.all(color: isDetected ? success : white, width: isDetected ? 4 : 2),
+                  border: Border.all(
+                    color: isDetected ? success : white,
+                    width: isDetected ? 4 : 2,
+                  ),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: isDetected
-                      ? [BoxShadow(color: success.withAlpha((0.6 * 255).toInt()), blurRadius: 20, spreadRadius: 4)]
+                      ? [
+                          BoxShadow(
+                            color: success.withAlpha((0.6 * 255).toInt()),
+                            blurRadius: 20,
+                            spreadRadius: 4,
+                          ),
+                        ]
                       : [],
                 ),
               ),
@@ -307,7 +364,11 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
                 scale: isDetected ? 1.3 : 0.0,
                 duration: const Duration(milliseconds: 500),
                 curve: Curves.easeInCirc,
-                child: Icon(Icons.qr_code_2, size: scaleFontSize(200), color: white),
+                child: Icon(
+                  Icons.qr_code_2,
+                  size: scaleFontSize(200),
+                  color: white,
+                ),
               ),
             ],
           ),
