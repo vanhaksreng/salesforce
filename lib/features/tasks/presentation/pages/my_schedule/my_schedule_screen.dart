@@ -515,15 +515,14 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
                 ),
               ],
             ),
+
             Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _headerCustomerVisit(state),
-                if (records.isEmpty) ...[
-                  const EmptyScreen(),
-                ] else ...[
-                  _listCustomerVisit(records, state),
-                ],
+
+                _listCustomerVisit(records, state),
               ],
             ),
           ],
@@ -532,10 +531,16 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     );
   }
 
-  ListView _listCustomerVisit(
+  Widget _listCustomerVisit(
     List<SalespersonSchedule> records,
     MyScheduleState state,
   ) {
+    if (records.isEmpty) {
+      return SizedBox(
+        height: MediaQuery.of(context).size.height / 2.5,
+        child: EmptyScreen(),
+      );
+    }
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
