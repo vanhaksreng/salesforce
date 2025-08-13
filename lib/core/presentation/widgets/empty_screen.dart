@@ -11,15 +11,16 @@ class EmptyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Column(
-        spacing: 8.scale,
+        spacing: 16.scale,
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Image.asset("assets/images/empty_v2.png", width: 250.scale),
           TextWidget(
             text: greeting("Ooop!"),
-            color: primary,
-            fontSize: 18,
+            wordSpacing: 1,
+            color: mainColor50,
+            fontSize: 30,
             fontWeight: FontWeight.w600,
           ),
           TextWidget(
@@ -27,8 +28,8 @@ class EmptyScreen extends StatelessWidget {
             text: greeting(
               'Nothing to see here yet.\nTry adding some items or check back later!',
             ),
-            color: primary.withValues(alpha: 0.8),
-            fontWeight: FontWeight.w400,
+            color: mainColor50.withValues(alpha: 0.7),
+            fontWeight: FontWeight.w500,
           ),
         ],
       ),

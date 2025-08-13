@@ -450,80 +450,84 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
   Widget buildBody(MyScheduleState state) {
     final List<SalespersonSchedule> records = state.schedules;
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(scaleFontSize(appSpace)),
-      child: Column(
-        spacing: scaleFontSize(appSpace),
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextWidget(
-            text: greeting("Today's Performance"),
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-          Column(
-            spacing: scaleFontSize(appSpace),
-            children: [
-              Row(
-                spacing: scaleFontSize(appSpace),
-                children: [
-                  _buildInfo(
-                    label: Helpers.formatNumberLink(
-                      state.totalVisit,
-                      option: FormatType.quantity,
+    return RefreshIndicator(
+      color: mainColor50,
+      onRefresh: () async => _cubit.loadAppSetting(),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(scaleFontSize(appSpace)),
+        child: Column(
+          spacing: scaleFontSize(appSpace),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextWidget(
+              text: greeting("Today's Performance"),
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+            Column(
+              spacing: scaleFontSize(appSpace),
+              children: [
+                Row(
+                  spacing: scaleFontSize(appSpace),
+                  children: [
+                    _buildInfo(
+                      label: Helpers.formatNumberLink(
+                        state.totalVisit,
+                        option: FormatType.quantity,
+                      ),
+                      value: greeting("Visit"),
+                      labelColor: success,
+                      bgLabelColor: success,
                     ),
-                    value: greeting("Visit"),
-                    labelColor: success,
-                    bgLabelColor: success,
-                  ),
-                  _buildInfo(
-                    label: Helpers.formatNumberLink(
-                      state.totalSales,
-                      option: FormatType.amount,
+                    _buildInfo(
+                      label: Helpers.formatNumberLink(
+                        state.totalSales,
+                        option: FormatType.amount,
+                      ),
+                      value: greeting("Sales Amt"),
+                      labelColor: mainColor,
+                      bgLabelColor: mainColor,
                     ),
-                    value: greeting("Sales Amt"),
-                    labelColor: mainColor,
-                    bgLabelColor: mainColor,
-                  ),
-                ],
-              ),
-              Row(
-                spacing: scaleFontSize(appSpace),
-                children: [
-                  _buildInfo(
-                    label: Helpers.formatNumberLink(
-                      (state.totalVisit - state.countCheckOut),
-                      option: FormatType.quantity,
+                  ],
+                ),
+                Row(
+                  spacing: scaleFontSize(appSpace),
+                  children: [
+                    _buildInfo(
+                      label: Helpers.formatNumberLink(
+                        (state.totalVisit - state.countCheckOut),
+                        option: FormatType.quantity,
+                      ),
+                      value: greeting("Pending"),
+                      labelColor: warning,
+                      bgLabelColor: warning,
                     ),
-                    value: greeting("Pending"),
-                    labelColor: warning,
-                    bgLabelColor: warning,
-                  ),
-                  _buildInfo(
-                    label: Helpers.formatNumberLink(
-                      calculateTarget(state.countCheckOut, state.totalVisit),
-                      option: FormatType.percentage,
+                    _buildInfo(
+                      label: Helpers.formatNumberLink(
+                        calculateTarget(state.countCheckOut, state.totalVisit),
+                        option: FormatType.percentage,
+                      ),
+                      value: greeting("Target"),
+                      labelColor: success,
+                      bgLabelColor: success,
                     ),
-                    value: greeting("Target"),
-                    labelColor: success,
-                    bgLabelColor: success,
-                  ),
-                ],
-              ),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _headerCustomerVisit(state),
-              if (records.isEmpty) ...[
-                const EmptyScreen(),
-              ] else ...[
-                _listCustomerVisit(records, state),
+                  ],
+                ),
               ],
-            ],
-          ),
-        ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _headerCustomerVisit(state),
+                if (records.isEmpty) ...[
+                  const EmptyScreen(),
+                ] else ...[
+                  _listCustomerVisit(records, state),
+                ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
