@@ -31,26 +31,29 @@ class GeolocatorLocationService implements ILocationService {
 
   @override
   Future<Position> getCurrentLocation() async {
-    // First, check if services are enabled
-    bool serviceEnabled = await isLocationServiceEnabled();
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      throw GeneralException("Location services are disabled");
+      await Geolocator.openLocationSettings();
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw GeneralException("Location services are disabled");
+      }
     }
 
-    // Then, check and request permissions
-    LocationPermissionStatus permissionStatus = await checkPermission();
-    if (permissionStatus == LocationPermissionStatus.denied) {
-      permissionStatus = await requestPermission();
-      if (permissionStatus == LocationPermissionStatus.denied) {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
         throw GeneralException('Location permissions are denied.');
       }
     }
 
-    if (permissionStatus == LocationPermissionStatus.deniedForever) {
-      throw GeneralException('Location permissions are permanently denied. Please enable them in app settings.');
+    if (permission == LocationPermission.deniedForever) {
+      throw GeneralException(
+        'Location permissions are permanently denied. Please enable them in app settings.',
+      );
     }
 
-    // If all checks pass, get the position
     return await Geolocator.getCurrentPosition();
   }
 
@@ -69,7 +72,9 @@ class GeolocatorLocationService implements ILocationService {
     int distanceFilter = 5, // Default distance filter in meters
   }) {
     final settings = _getLocationSettings(distanceFilter: distanceFilter);
-    _subscription = Geolocator.getPositionStream(locationSettings: settings).listen(onLocationUpdate);
+    _subscription = Geolocator.getPositionStream(
+      locationSettings: settings,
+    ).listen(onLocationUpdate);
 
     return _subscription!;
   }
@@ -79,7 +84,9 @@ class GeolocatorLocationService implements ILocationService {
   }
 
   /// Helper to map Geolocator's [LocationPermission] to our custom [LocationPermissionStatus].
-  LocationPermissionStatus _mapGeolocatorPermission(LocationPermission permission) {
+  LocationPermissionStatus _mapGeolocatorPermission(
+    LocationPermission permission,
+  ) {
     switch (permission) {
       case LocationPermission.denied:
         return LocationPermissionStatus.denied;
@@ -109,7 +116,8 @@ class GeolocatorLocationService implements ILocationService {
       foregroundNotificationConfig: ForegroundNotificationConfig(
         notificationTitle: 'Location Tracking',
         notificationIcon: const AndroidResource(name: "@mipmap/ic_launcher"),
-        notificationText: 'App is tracking location in background $distanceFilter',
+        notificationText:
+            'App is tracking location in background $distanceFilter',
         enableWakeLock: true,
       ),
     );

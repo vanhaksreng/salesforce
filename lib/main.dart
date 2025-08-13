@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:salesforce/data/services/onesignal_notification.dart';
 import 'package:salesforce/app/app_router.dart';
 import 'package:salesforce/core/utils/logger.dart';
@@ -41,7 +42,10 @@ Future<void> _initializeApp() async {
 
 Future<void> _configureSystemUI() async {
   if (Platform.isIOS) {
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
   }
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -55,18 +59,28 @@ Future<void> _configureSystemUI() async {
   );
 }
 
-/// Initialize the background service
 Future<void> initializeBackgroundService() async {
   try {
     final auth = di.getAuth();
     if (auth != null) {
       bool granted = await requestLocationPermissions();
-      if (granted) {
-        LocationService().startForegroundTracking();
-      } else {
-        // Handle permission denied scenario
+
+      if (!granted) {
         Logger.log('Location permission denied');
+        return;
       }
+
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        await Geolocator.openLocationSettings();
+        serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          Logger.log('Location services are still disabled');
+          return;
+        }
+      }
+
+      LocationService().startForegroundTracking();
     }
   } catch (e) {
     Logger.log('Failed to initialize background service: $e');

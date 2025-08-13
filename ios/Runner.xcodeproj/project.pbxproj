@@ -18,6 +18,9 @@
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		E7CD1612B30B786E02FCF32A /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B68010DFAF6CE9E967E3890F /* Pods_RunnerTests.framework */; };
 		EF59EBC48AB7F4259569339D /* Pods_OneSignalNotificationServiceExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34D00E700E6D4F99D4C26533 /* Pods_OneSignalNotificationServiceExtension.framework */; };
+		FA4D5A5C2E4C7B4600945787 /* FileHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA4D5A592E4C7B4600945787 /* FileHelper.swift */; };
+		FA4D5A5D2E4C7B4600945787 /* PDFCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA4D5A5A2E4C7B4600945787 /* PDFCreator.swift */; };
+		FA4D5A5F2E4C7B5200945787 /* FlutterHtmlToPdfPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA4D5A5E2E4C7B5200945787 /* FlutterHtmlToPdfPlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -91,6 +94,9 @@
 		C4063384204A635754E05375 /* Pods-OneSignalNotificationServiceExtension.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OneSignalNotificationServiceExtension.debug.xcconfig"; path = "Target Support Files/Pods-OneSignalNotificationServiceExtension/Pods-OneSignalNotificationServiceExtension.debug.xcconfig"; sourceTree = "<group>"; };
 		E011B75A3D4FF82242D43EA1 /* Pods-OneSignalNotificationServiceExtension.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OneSignalNotificationServiceExtension.profile.xcconfig"; path = "Target Support Files/Pods-OneSignalNotificationServiceExtension/Pods-OneSignalNotificationServiceExtension.profile.xcconfig"; sourceTree = "<group>"; };
 		EF50FE869E4AC6EDD0F63FB0 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
+		FA4D5A592E4C7B4600945787 /* FileHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileHelper.swift; sourceTree = "<group>"; };
+		FA4D5A5A2E4C7B4600945787 /* PDFCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFCreator.swift; sourceTree = "<group>"; };
+		FA4D5A5E2E4C7B5200945787 /* FlutterHtmlToPdfPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlutterHtmlToPdfPlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -187,6 +193,8 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				FA4D5A5E2E4C7B5200945787 /* FlutterHtmlToPdfPlugin.swift */,
+				FA4D5A5B2E4C7B4600945787 /* Classes */,
 				639A845B2E4C447300B01D6C /* Runner.entitlements */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
@@ -224,6 +232,15 @@
 				B9ADF5C8BCCD05C8CBC3D9AB /* Pods-RunnerTests.profile.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		FA4D5A5B2E4C7B4600945787 /* Classes */ = {
+			isa = PBXGroup;
+			children = (
+				FA4D5A592E4C7B4600945787 /* FileHelper.swift */,
+				FA4D5A5A2E4C7B4600945787 /* PDFCreator.swift */,
+			);
+			path = Classes;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -528,6 +545,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FA4D5A5C2E4C7B4600945787 /* FileHelper.swift in Sources */,
+				FA4D5A5F2E4C7B5200945787 /* FlutterHtmlToPdfPlugin.swift in Sources */,
+				FA4D5A5D2E4C7B4600945787 /* PDFCreator.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
