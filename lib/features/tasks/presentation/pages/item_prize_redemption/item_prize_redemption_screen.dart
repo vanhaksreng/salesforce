@@ -28,7 +28,7 @@ import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class ItemPrizeRedemptionScreen extends StatefulWidget {
-  const ItemPrizeRedemptionScreen({Key? key, required this.arg}) : super(key: key);
+  const ItemPrizeRedemptionScreen({super.key, required this.arg});
   static const String routeName = "itemPrizeRedemption";
 
   final DefaultProcessArgs arg;

@@ -17,7 +17,7 @@ import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class RedemptionsScreen extends StatefulWidget {
-  const RedemptionsScreen({Key? key}) : super(key: key);
+  const RedemptionsScreen({super.key});
   static const String routeName = "RedemptionScreen";
 
   @override

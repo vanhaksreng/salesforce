@@ -26,7 +26,7 @@ import 'package:salesforce/theme/app_colors.dart';
 class SaleOrderHistoryScreen extends StatefulWidget {
   static const String routeName = "SaleOrderItemScreen";
 
-  const SaleOrderHistoryScreen({Key? key}) : super(key: key);
+  const SaleOrderHistoryScreen({super.key});
 
   @override
   State<SaleOrderHistoryScreen> createState() => _SaleOrderScreenState();

@@ -24,7 +24,7 @@ import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class SaleFormScreen extends StatefulWidget {
-  const SaleFormScreen({Key? key, required this.args}) : super(key: key);
+  const SaleFormScreen({super.key, required this.args});
 
   static const String routeName = "saleFormScreen";
 

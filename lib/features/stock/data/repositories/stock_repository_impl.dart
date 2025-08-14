@@ -22,13 +22,12 @@ class StockRepositoryImpl extends BaseAppRepositoryImpl implements StockReposito
   final NetworkInfo _networkInfo;
 
   StockRepositoryImpl({
-    required ApiStockDataSource remote,
-    required RealmStockDataSource local,
-    required NetworkInfo networkInfo,
+    required ApiStockDataSource super.remote,
+    required RealmStockDataSource super.local,
+    required super.networkInfo,
   }) : _remote = remote,
        _local = local,
-       _networkInfo = networkInfo,
-       super(local: local, remote: remote, networkInfo: networkInfo);
+       _networkInfo = networkInfo;
 
   @override
   Future<Either<Failure, List<ItemGroup>>> getItemsGroup({Map<String, dynamic>? param, int page = 1}) async {

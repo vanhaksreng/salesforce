@@ -30,7 +30,7 @@ import 'package:salesforce/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TasksMainScreen extends StatefulWidget {
-  const TasksMainScreen({Key? key}) : super(key: key);
+  const TasksMainScreen({super.key});
   static const String routeName = "taskScreen";
   static const String name = "Tasks";
 

@@ -1,36 +1,45 @@
 import CoreLocation
 import Flutter
+import UIKit
 
 class LocationManager: NSObject, CLLocationManagerDelegate, FlutterStreamHandler {
     private var locationManager: CLLocationManager?
     private var eventSink: FlutterEventSink?
+    private var shouldRequestAlwaysOnBackground = false
 
     override init() {
         super.init()
+        setupLocationManager()
+    }
+    
+    private func setupLocationManager() {
         locationManager = CLLocationManager()
         locationManager?.delegate = self
         locationManager?.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager?.distanceFilter = 10.0 // Update every 10 meters
-        locationManager?.allowsBackgroundLocationUpdates = true
+        locationManager?.distanceFilter = 10.0
         locationManager?.pausesLocationUpdatesAutomatically = false
     }
 
     func startLocationUpdates() {
+        guard let manager = locationManager else { return }
+        
         if canTrackLocation() {
-            locationManager?.startUpdatingLocation()
-            locationManager?.startMonitoringSignificantLocationChanges()
+            // Enable background location if we have "Always" permission
+            if CLLocationManager.authorizationStatus() == .authorizedAlways {
+                manager.allowsBackgroundLocationUpdates = true
+            }
+            
+            manager.startUpdatingLocation()
+            manager.startMonitoringSignificantLocationChanges()
         } else {
-            eventSink?(FlutterError(
-                code: "PERMISSION_DENIED",
-                message: "Location permissions or services unavailable",
-                details: nil
-            ))
+            requestPermissions()
         }
     }
 
     func stopLocationUpdates() {
         locationManager?.stopUpdatingLocation()
         locationManager?.stopMonitoringSignificantLocationChanges()
+        locationManager?.allowsBackgroundLocationUpdates = false
     }
 
     func canTrackLocation() -> Bool {
@@ -40,46 +49,146 @@ class LocationManager: NSObject, CLLocationManagerDelegate, FlutterStreamHandler
     }
 
     func requestPermissions() {
-        if CLLocationManager.authorizationStatus() == .notDetermined {
-            locationManager?.requestAlwaysAuthorization()
+        guard let manager = locationManager else { return }
+        
+        let status = CLLocationManager.authorizationStatus()
+        
+        switch status {
+        case .notDetermined:
+            manager.requestWhenInUseAuthorization()
+        case .denied, .restricted:
+            eventSink?(FlutterError(
+                code: "PERMISSION_DENIED",
+                message: "Location access denied. Please enable in Settings.",
+                details: nil
+            ))
+        case .authorizedWhenInUse:
+            showAlwaysPermissionAlert()
+        case .authorizedAlways:
+            startLocationUpdates()
+        @unknown default:
+            break
+        }
+    }
+    
+    func requestAlwaysPermission() {
+        let status = CLLocationManager.authorizationStatus()
+        
+        if status == .authorizedWhenInUse {
+            showAlwaysPermissionAlert()
+        } else if status == .notDetermined {
+            shouldRequestAlwaysOnBackground = true
+            locationManager?.requestWhenInUseAuthorization()
+        }
+    }
+    
+    private func showAlwaysPermissionAlert() {
+        DispatchQueue.main.async {
+            let alert = UIAlertController(
+                title: "Background Location Required",
+                message: "This app needs your location to track check-ins, check-outs and optimize sales routes, even when in the background.",
+                preferredStyle: .alert
+            )
+            
+            alert.addAction(UIAlertAction(title: "Settings", style: .default) { _ in
+                if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(settingsUrl)
+                }
+            })
+            
+            alert.addAction(UIAlertAction(title: "Not Now", style: .cancel))
+            
+            if let viewController = UIApplication.shared.windows.first?.rootViewController {
+                viewController.present(alert, animated: true)
+            }
+        }
+    }
+    
+    // Handle app lifecycle events
+    func handleAppBackground() {
+        let status = CLLocationManager.authorizationStatus()
+        
+        if status == .authorizedWhenInUse {
+            requestAlwaysPermission()
+        }
+    }
+    
+    func handleAppTermination() {
+        
+        let status = CLLocationManager.authorizationStatus()
+        if status != .authorizedAlways {
+            UserDefaults.standard.set(true, forKey: "shouldRequestAlwaysPermission")
         }
     }
 
+    // MARK: - CLLocationManagerDelegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last, let eventSink = eventSink else { return }
+        
         let locationData: [String: Any] = [
             "latitude": location.coordinate.latitude,
             "longitude": location.coordinate.longitude,
             "timestamp": Int64(location.timestamp.timeIntervalSince1970 * 1000),
             "accuracy": location.horizontalAccuracy
         ]
+        
         eventSink(locationData)
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        if !canTrackLocation() {
+        let status = manager.authorizationStatus
+        
+        switch status {
+        case .authorizedWhenInUse:
+            if shouldRequestAlwaysOnBackground {
+                shouldRequestAlwaysOnBackground = false
+                // Automatically request Always permission
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    self.showAlwaysPermissionAlert()
+                }
+            }
+            startLocationUpdates()
+            
+        case .authorizedAlways:
+            startLocationUpdates()
+            
+        case .denied, .restricted:
             eventSink?(FlutterError(
                 code: "PERMISSION_DENIED",
-                message: "Location permissions or services unavailable",
+                message: "Location permissions denied",
                 details: nil
             ))
-        } else if eventSink != nil {
-            startLocationUpdates()
+            
+        case .notDetermined:
+            // Wait for user decision
+            break
+            
+        @unknown default:
+            break
         }
     }
 
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        eventSink?(FlutterError(
+            code: "LOCATION_ERROR",
+            message: error.localizedDescription,
+            details: nil
+        ))
+    }
+
+    // MARK: - FlutterStreamHandler
+
     func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
         self.eventSink = events
-        requestPermissions()
-        if canTrackLocation() {
-            startLocationUpdates()
+        
+        // Check if we should request always permission from previous app termination
+        if UserDefaults.standard.bool(forKey: "shouldRequestAlwaysPermission") {
+            UserDefaults.standard.removeObject(forKey: "shouldRequestAlwaysPermission")
+            requestAlwaysPermission()
         } else {
-            events(FlutterError(
-                code: "PERMISSION_DENIED",
-                message: "Location permissions or services unavailable",
-                details: nil
-            ))
+            requestPermissions()
         }
+        
         return nil
     }
 

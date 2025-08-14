@@ -36,7 +36,7 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class SaleCheckoutScreen extends StatefulWidget {
-  const SaleCheckoutScreen({Key? key, required this.arg}) : super(key: key);
+  const SaleCheckoutScreen({super.key, required this.arg});
 
   static const String routeName = "checkoutScreen";
 

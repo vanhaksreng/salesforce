@@ -15,7 +15,7 @@ import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class ScheduleHistoryScreen extends StatefulWidget {
-  const ScheduleHistoryScreen({Key? key}) : super(key: key);
+  const ScheduleHistoryScreen({super.key});
 
   static const String routeName = "scheduleHistory";
 

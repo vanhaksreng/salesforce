@@ -26,8 +26,7 @@ import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class DetailCollectionsScreen extends StatefulWidget {
-  const DetailCollectionsScreen({Key? key, required this.customerLedgerEntry, required this.schedule})
-    : super(key: key);
+  const DetailCollectionsScreen({super.key, required this.customerLedgerEntry, required this.schedule});
   static const String routeName = "detailCollection";
 
   final CustomerLedgerEntry customerLedgerEntry;

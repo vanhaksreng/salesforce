@@ -39,7 +39,7 @@ class LocationStreamHandler(private val context: Context) : EventChannel.StreamH
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000)
             .setMinUpdateIntervalMillis(5000)
-            .setMinUpdateDistanceMeters(5f)
+            .setMinUpdateDistanceMeters(10f)
             .build()
 
         locationCallback = object : LocationCallback() {

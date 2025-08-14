@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/core/constants/app_config.dart';
 import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
@@ -24,6 +24,8 @@ import 'package:salesforce/features/more/presentation/pages/components/customer_
 import 'package:salesforce/features/more/presentation/pages/customer_detail/customer_detail_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/customers/customers_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/customers/customers_state.dart';
+import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
+import 'package:salesforce/infrastructure/external_services/location/i_location_service.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
 import 'package:salesforce/core/presentation/widgets/search_widget.dart';
@@ -31,7 +33,7 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class CustomersScreen extends StatefulWidget {
-  const CustomersScreen({Key? key}) : super(key: key);
+  const CustomersScreen({super.key});
   static const routeName = "CustomersScreen";
 
   @override
@@ -40,6 +42,8 @@ class CustomersScreen extends StatefulWidget {
 
 class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
   final _cubit = CustomersCubit();
+  final ILocationService _location = GeolocatorLocationService();
+
   final _codeController = TextEditingController();
   bool isValidation = false;
   String text = '';
@@ -136,11 +140,12 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
         continue;
       }
 
-      const Distance distance = Distance();
-
-      final LatLng customerLatLng = LatLng(existingCustomer.latitude ?? 0, existingCustomer.longitude ?? 0);
-
-      final double distInMeters = distance(customerLatLng, latLng);
+      final double distInMeters = _location.getDistanceBetween(
+        existingCustomer.latitude ?? 0,
+        existingCustomer.longitude ?? 0,
+        latLng.latitude,
+        latLng.longitude,
+      );
       final double distInKm = distInMeters / 1000;
 
       if (distInKm < maxDistanceKm) {

@@ -21,7 +21,7 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class CustomerBalanceReportScreen extends StatefulWidget {
-  const CustomerBalanceReportScreen({Key? key}) : super(key: key);
+  const CustomerBalanceReportScreen({super.key});
 
   static const String routeName = "customerBalanceReportScreen";
 

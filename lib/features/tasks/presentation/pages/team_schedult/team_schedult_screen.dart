@@ -4,7 +4,7 @@ import 'package:salesforce/features/tasks/presentation/pages/team_schedult/team_
 import 'package:salesforce/features/tasks/presentation/pages/team_schedult/team_schedult_state.dart';
 
 class TeamSchedultScreen extends StatefulWidget {
-  const TeamSchedultScreen({Key? key}) : super(key: key);
+  const TeamSchedultScreen({super.key});
 
   @override
   State<TeamSchedultScreen> createState() => _TeamSchedultScreenState();

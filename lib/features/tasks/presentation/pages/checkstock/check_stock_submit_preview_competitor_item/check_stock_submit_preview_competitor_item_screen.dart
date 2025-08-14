@@ -24,7 +24,7 @@ import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class CheckStockSubmitPreviewCompetitorItemScreen extends StatefulWidget {
-  const CheckStockSubmitPreviewCompetitorItemScreen({Key? key, required this.schedule}) : super(key: key);
+  const CheckStockSubmitPreviewCompetitorItemScreen({super.key, required this.schedule});
 
   static const String routeName = "checkItemPreviewCompetitorScreen";
   final SalespersonSchedule schedule;

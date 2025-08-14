@@ -24,7 +24,7 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class CustomerformScreen extends StatefulWidget {
-  const CustomerformScreen({Key? key, required this.customer, required this.onCustomerChanged}) : super(key: key);
+  const CustomerformScreen({super.key, required this.customer, required this.onCustomerChanged});
 
   final Customer customer;
 

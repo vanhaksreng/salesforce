@@ -21,7 +21,7 @@ import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class PosmMerchandingPreviewScreen extends StatefulWidget {
-  const PosmMerchandingPreviewScreen({Key? key, required this.arg}) : super(key: key);
+  const PosmMerchandingPreviewScreen({super.key, required this.arg});
   static const String routeName = "posmMerchandingPreviewScreen";
   final ItemPosmAndMerchandiseArg arg;
 

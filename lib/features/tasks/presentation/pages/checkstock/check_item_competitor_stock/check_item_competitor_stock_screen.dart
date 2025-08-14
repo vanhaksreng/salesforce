@@ -24,7 +24,7 @@ import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class CheckItemCompetitorStockScreen extends StatefulWidget {
-  const CheckItemCompetitorStockScreen({Key? key, required this.schedule}) : super(key: key);
+  const CheckItemCompetitorStockScreen({super.key, required this.schedule});
 
   final SalespersonSchedule schedule;
 

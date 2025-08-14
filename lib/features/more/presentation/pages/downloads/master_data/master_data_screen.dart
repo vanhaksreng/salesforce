@@ -12,8 +12,7 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class MasterDataScreen extends StatefulWidget {
-  const MasterDataScreen({Key? key, required this.onChanged, this.isSelectAll = false, this.refresh = false})
-    : super(key: key);
+  const MasterDataScreen({super.key, required this.onChanged, this.isSelectAll = false, this.refresh = false});
 
   final void Function(AppSyncLog table, bool isSelected)? onChanged;
   final bool isSelectAll;

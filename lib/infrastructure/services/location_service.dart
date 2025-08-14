@@ -2,27 +2,25 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
+import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/logger.dart';
-import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
 import 'package:salesforce/infrastructure/gps/gps_service_impl.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-class LocationService {
+class LocationService with AppMixin {
   static const MethodChannel _channel = MethodChannel('com.clearviewerp.salesforce/location');
   static const EventChannel _eventChannel = EventChannel('com.clearviewerp.salesforce/location_stream');
 
-  final _location = GeolocatorLocationService();
   final appRepo = getIt<BaseAppRepository>();
 
-  String _locationStatus = 'No location data';
   StreamSubscription<dynamic>? _locationSubscription;
 
-  bool _isForegroundTracking = false;
   bool _isBackgroundTracking = false;
   String _userGpsTracking = "No";
 
@@ -40,22 +38,31 @@ class LocationService {
   };
 
   Future<bool> _startBackgroundTracking() async {
-    Logger.log('GPS _startBackgroundTracking Called');
     if (_isBackgroundTracking) return true;
 
-    // Check and request permissions
+    final auth = getAuth();
+    if (auth == null) {
+      Logger.log("No Auth");
+      return false;
+    }
+
     if (!await _checkBackgroundPermissions()) {
       return false;
     }
 
-    // Your GeolocatorLocationService already handles foreground notifications on Android
-    // So we can directly start continuous tracking with background-optimized distance filter
+    final lastGps = await getLastGpsRequest();
+    if (lastGps != null) {
+      _lastLatitude = lastGps.latitude;
+      _lastLongitude = lastGps.longitude;
+    }
+
     final gpsService = GpsServiceImpl(appRepo);
-    final auth = getAuth();
 
     final result = await _channel.invokeMethod('startTracking');
-
-    Logger.log('Background tracking started: $result');
+    if (!result) {
+      Logger.log('Background tracking started: $result');
+      return false;
+    }
 
     _locationSubscription = _eventChannel.receiveBroadcastStream().listen(
       (dynamic locationData) {
@@ -67,18 +74,17 @@ class LocationService {
             locationData['longitude'],
           );
 
-          Logger.log('Ignoring small distance change: $distance meters');
-
-          // if (distance < 10) {
-          //   Logger.log('Ignoring small distance change: $distance meters');
-          //   return;
-          // }
+          if (distance < 10) {
+            Logger.log('Ignoring small distance change: $distance meters');
+            return;
+          }
         }
 
         _lastLatitude = locationData['latitude'];
         _lastLongitude = locationData['longitude'];
 
-        Logger.log("Location update received: $locationData");
+        gpsService.execute(auth: auth, latlng: LatLng(locationData['latitude'], locationData['longitude']));
+        gpsService.syncToBackend(auth: auth);
       },
       onError: (dynamic error) {
         Logger.log(error.toString());
@@ -95,7 +101,6 @@ class LocationService {
   Future<void> _stopBackgroundTracking() async {
     if (!_isBackgroundTracking) return;
 
-    _location.stopTracking();
     _locationSubscription?.cancel();
     _isBackgroundTracking = false;
   }
@@ -126,17 +131,6 @@ class LocationService {
       return;
     }
 
-    // _setupNativeCallbacks();
-
-    // if (await GeolocatorPlatform.instance.isLocationServiceEnabled()) {
-    //   permission = await Geolocator.requestBackgroundPermission();
-    //   if (permission != LocationPermission.always) {
-    //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Background location permission required')));
-    //     return;
-    //   }
-    // }
-
-    // _startForegroundTracking();
     await _startBackgroundTracking();
   }
 
@@ -166,29 +160,7 @@ class LocationService {
     return permission == LocationPermission.always || permission == LocationPermission.whileInUse;
   }
 
-  // Check if background tracking is currently active
   bool isBackgroundTrackingActive() {
     return _isBackgroundTracking;
-  }
-
-  // Get current tracking status
-  Map<String, bool> getTrackingStatus() {
-    return {'foreground': _isForegroundTracking, 'background': _isBackgroundTracking};
-  }
-
-  Future<void> _handleLocationUpdate(Map<String, dynamic> data) async {
-    final latitude = data['latitude'] as double;
-    final longitude = data['longitude'] as double;
-    final accuracy = data['accuracy'] as double;
-
-    Logger.log('Native location update: $latitude, $longitude, accuracy: $accuracy');
-
-    // final gpsService = GpsServiceImpl(appRepo);
-    // final auth = getAuth();
-
-    // if (auth != null) {
-    //   gpsService.execute(auth: auth, latlng: LatLng(latitude, longitude));
-    //   gpsService.syncToBackend(auth: auth);
-    // }
   }
 }

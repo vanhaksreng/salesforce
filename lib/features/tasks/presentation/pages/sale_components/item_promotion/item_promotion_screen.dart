@@ -20,12 +20,12 @@ import 'package:salesforce/theme/app_colors.dart';
 
 class ItemPromotionScreen extends StatefulWidget {
   const ItemPromotionScreen({
-    Key? key,
+    super.key,
     required this.schedule,
     required this.documentType,
     required this.onRefresh,
     this.isRefreshing = false,
-  }) : super(key: key);
+  });
 
   final SalespersonSchedule schedule;
   final String documentType;

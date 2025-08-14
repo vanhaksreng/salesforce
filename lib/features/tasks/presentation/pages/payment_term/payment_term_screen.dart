@@ -12,7 +12,7 @@ import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
 class PaymentTermScreen extends StatefulWidget {
-  const PaymentTermScreen({Key? key}) : super(key: key);
+  const PaymentTermScreen({super.key});
 
   static const String routeName = "paymentTermTaskScreen";
 

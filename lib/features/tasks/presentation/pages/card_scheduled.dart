@@ -27,7 +27,7 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
   final String? distance;
 
   const ScheduleCard({
-    Key? key,
+    super.key,
     required this.schedule,
     this.onCheckIn,
     this.onCheckOut,
@@ -36,7 +36,7 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
     this.onProcess,
     this.totalSale = 0,
     this.distance = "0",
-  }) : super(key: key);
+  });
 
   String getScheduleTitle(String status) {
     if (status == kStatusCheckIn) {

@@ -529,6 +529,7 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   @override
   Future<GpsRouteTracking?> getLastGpsRequest() async {
     return await _storage.getFirst<GpsRouteTracking>(
+      args: {'created_date': DateTime.now().toDateString()},
       sortBy: [
         {"field": "created_time", "order": "DESC"},
       ],

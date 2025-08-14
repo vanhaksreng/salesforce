@@ -3,14 +3,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:salesforce/data/services/onesignal_notification.dart';
 import 'package:salesforce/app/app_router.dart';
-import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/infrastructure/services/location_service.dart';
-import 'package:salesforce/infrastructure/services/permission_handler.dart';
 import 'package:salesforce/localization/locals_delegate.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_themes.dart';
@@ -51,34 +48,6 @@ Future<void> _configureSystemUI() async {
     ),
   );
 }
-
-// Future<void> initializeBackgroundService() async {
-//   try {
-//     final auth = di.getAuth();
-//     if (auth != null) {
-//       bool granted = await requestLocationPermissions();
-
-//       if (!granted) {
-//         Logger.log('Location permission denied');
-//         return;
-//       }
-
-//       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-//       if (!serviceEnabled) {
-//         await Geolocator.openLocationSettings();
-//         serviceEnabled = await Geolocator.isLocationServiceEnabled();
-//         if (!serviceEnabled) {
-//           Logger.log('Location services are still disabled');
-//           return;
-//         }
-//       }
-
-//       LocationService().startForegroundTracking();
-//     }
-//   } catch (e) {
-//     Logger.log('Failed to initialize background service: $e');
-//   }
-// }
 
 class TradeB2b extends StatefulWidget {
   const TradeB2b({super.key});

@@ -10,14 +10,14 @@ class DatePcikerWidget extends StatelessWidget {
   final bool isShowPickerDate;
 
   const DatePcikerWidget({
-    Key? key,
+    super.key,
     required this.onDateSelected,
     required this.child,
     this.initialDate,
     this.firstDate,
     this.lastDate,
     this.isShowPickerDate = true,
-  }) : super(key: key);
+  });
 
   Future<void> _showDatePicker(BuildContext context) async {
     final picked = await showDatePicker(

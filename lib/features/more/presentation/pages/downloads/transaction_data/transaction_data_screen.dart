@@ -15,7 +15,7 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class TransactionDataScreen extends StatefulWidget {
-  const TransactionDataScreen({Key? key}) : super(key: key);
+  const TransactionDataScreen({super.key});
 
   @override
   State<TransactionDataScreen> createState() => _TransactionDataScreenState();

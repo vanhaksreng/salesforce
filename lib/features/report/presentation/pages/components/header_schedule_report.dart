@@ -28,7 +28,7 @@ class HeaderScheduleReport extends StatelessWidget {
         children: [
           Icon(Icons.calendar_month, size: 20.scale, color: white),
           TextWidget(
-            text: " $formDate to ${toDate}",
+            text: " $formDate to $toDate",
             color: white,
             // fontWeight: FontWeight.bold,
             fontSize: 16,

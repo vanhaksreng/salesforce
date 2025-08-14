@@ -17,7 +17,7 @@ import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
 class CustomerAddressScreen extends StatefulWidget {
-  const CustomerAddressScreen({Key? key, required this.customer}) : super(key: key);
+  const CustomerAddressScreen({super.key, required this.customer});
 
   final Customer? customer;
   static const routeName = "customerAddressScreen";

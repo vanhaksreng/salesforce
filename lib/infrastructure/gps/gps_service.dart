@@ -1,4 +1,4 @@
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/features/auth/domain/entities/user.dart';
 
 abstract class IGpsService {

@@ -17,7 +17,7 @@ import 'package:salesforce/features/more/profile_design.dart';
 import 'package:salesforce/localization/trans.dart';
 
 class MoreMainPage extends StatefulWidget {
-  const MoreMainPage({Key? key}) : super(key: key);
+  const MoreMainPage({super.key});
 
   @override
   State<MoreMainPage> createState() => _MoreMainPageState();

@@ -31,8 +31,12 @@ import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class AddCartPreviewScreen extends StatefulWidget {
-  const AddCartPreviewScreen({Key? key, required this.scheduleId, required this.documentType, required this.customerNo})
-    : super(key: key);
+  const AddCartPreviewScreen({
+    super.key,
+    required this.scheduleId,
+    required this.documentType,
+    required this.customerNo,
+  });
 
   final String scheduleId;
   final String documentType;

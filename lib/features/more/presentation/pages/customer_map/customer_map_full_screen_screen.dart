@@ -8,7 +8,7 @@ import 'package:salesforce/features/more/presentation/pages/customer_map/custome
 import 'package:salesforce/localization/trans.dart';
 
 class CustomerMapFullScreenScreen extends StatefulWidget {
-  const CustomerMapFullScreenScreen({Key? key, required this.latLng}) : super(key: key);
+  const CustomerMapFullScreenScreen({super.key, required this.latLng});
 
   static const String routeName = "cusScreenFullMap";
   final LatLng latLng;

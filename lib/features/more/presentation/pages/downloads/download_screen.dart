@@ -20,7 +20,7 @@ class DownloadScreen extends StatefulWidget {
   static const String routeName = "Download";
   final Args arg;
 
-  const DownloadScreen({required this.arg, Key? key}) : super(key: key);
+  const DownloadScreen({required this.arg, super.key});
 
   @override
   State<DownloadScreen> createState() => _DownloadScreenState();

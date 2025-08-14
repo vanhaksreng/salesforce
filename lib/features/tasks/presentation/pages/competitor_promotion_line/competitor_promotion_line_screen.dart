@@ -15,7 +15,7 @@ import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class CompetitorPromotionLineScreen extends StatefulWidget {
-  const CompetitorPromotionLineScreen({Key? key, required this.header}) : super(key: key);
+  const CompetitorPromotionLineScreen({super.key, required this.header});
   final CompetitorPromtionHeader header;
   static const String routeName = "CompetitorPromotionLine";
 

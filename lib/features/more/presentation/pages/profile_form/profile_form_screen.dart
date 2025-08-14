@@ -28,7 +28,7 @@ import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class ProfileFormScreen extends StatefulWidget {
-  const ProfileFormScreen({Key? key}) : super(key: key);
+  const ProfileFormScreen({super.key});
   static const String routeName = "profileFormScreen";
 
   @override

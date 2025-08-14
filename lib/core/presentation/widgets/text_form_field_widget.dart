@@ -131,7 +131,7 @@ class TextFormFieldWidget extends TextFormField {
 
     return InputDecoration(
       alignLabelWithHint: true,
-      maintainHintHeight: true,
+      maintainHintSize: true,
       constraints: BoxConstraints(minWidth: scaleFontSize(45), minHeight: scaleFontSize(45)),
       contentPadding: isDefaultTextForm ? defaultPadding : contentPadding,
       border: isDefaultTextForm ? defaultBorder : border,

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
@@ -20,6 +19,8 @@ import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
 import 'package:salesforce/features/tasks/presentation/pages/checkin_out/checkin_cubit.dart';
 import 'package:salesforce/features/tasks/presentation/pages/checkin_out/checkin_state.dart';
+import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
+import 'package:salesforce/infrastructure/external_services/location/i_location_service.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
@@ -34,7 +35,7 @@ import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class CheckinScreen extends StatefulWidget {
-  const CheckinScreen({Key? key, required this.schedule}) : super(key: key);
+  const CheckinScreen({super.key, required this.schedule});
 
   static const String routeName = "checkInScreen";
   final SalespersonSchedule schedule;
@@ -48,6 +49,7 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
   final TextEditingController commentController = TextEditingController();
   XFile? imgPath;
   ValueNotifier<bool> isSelectShopClose = ValueNotifier(false);
+  final ILocationService _location = GeolocatorLocationService();
 
   @override
   void initState() {
@@ -85,12 +87,11 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
 
       final areaByMeters = Helpers.toDouble(await _cubit.getSetting(kCheckedInAreaKey));
       if (areaByMeters > 0) {
-        const Distance distance = Distance();
-        final LatLng customerLatLng = LatLng(widget.schedule.latitude ?? 0, widget.schedule.longitude ?? 0);
-
-        final double distInMeters = distance(
-          customerLatLng,
-          LatLng(_cubit.state.latLng?.latitude ?? 0, _cubit.state.latLng?.longitude ?? 0),
+        final double distInMeters = _location.getDistanceBetween(
+          widget.schedule.latitude ?? 0,
+          widget.schedule.longitude ?? 0,
+          _cubit.state.latLng?.latitude ?? 0,
+          _cubit.state.latLng?.longitude ?? 0,
         );
 
         if (areaByMeters < distInMeters) {
@@ -144,12 +145,11 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
 
       final areaByMeters = Helpers.toDouble(await _cubit.getSetting(kCheckedOutAreaKey));
       if (areaByMeters > 0) {
-        const Distance distance = Distance();
-        final LatLng customerLatLng = LatLng(widget.schedule.latitude ?? 0, widget.schedule.longitude ?? 0);
-
-        final double distInMeters = distance(
-          customerLatLng,
-          LatLng(_cubit.state.latLng?.latitude ?? 0, _cubit.state.latLng?.longitude ?? 0),
+        final double distInMeters = _location.getDistanceBetween(
+          widget.schedule.latitude ?? 0,
+          widget.schedule.longitude ?? 0,
+          _cubit.state.latLng?.latitude ?? 0,
+          _cubit.state.latLng?.longitude ?? 0,
         );
 
         if (areaByMeters < distInMeters) {

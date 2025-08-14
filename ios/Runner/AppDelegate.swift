@@ -24,13 +24,11 @@ import GoogleMaps
     }
   
     private func setupLocationFeatures() {
-        // Only proceed if we can get the FlutterViewController
+    
         guard let controller = window?.rootViewController as? FlutterViewController else {
-            print("⚠️ FlutterViewController not available for location setup")
             return
         }
         
-        // Initialize LocationManager
         locationManager = LocationManager()
         
         // Set up MethodChannel for location commands
@@ -42,8 +40,6 @@ import GoogleMaps
         // Set up EventChannel for location updates
         let eventChannel = FlutterEventChannel(name: self.eventChannel, binaryMessenger: controller.binaryMessenger)
         eventChannel.setStreamHandler(locationManager)
-        
-        print("✅ Location features initialized")
     }
     
     private func handleLocationMethodCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -56,17 +52,27 @@ import GoogleMaps
         case "startTracking":
             if locationManager.canTrackLocation() {
                 locationManager.startLocationUpdates()
-                result("Tracking started")
+                result(true)
             } else {
                 locationManager.requestPermissions()
                 result(FlutterError(code: "PERMISSION_DENIED", message: "Location permissions required", details: nil))
             }
         case "stopTracking":
             locationManager.stopLocationUpdates()
-            result("Tracking stopped")
+            result(true)
         default:
             result(FlutterMethodNotImplemented)
         }
     }
-  
+    
+    // Handle app state changes
+    override func applicationWillTerminate(_ application: UIApplication) {
+        locationManager?.handleAppTermination()
+        super.applicationWillTerminate(application)
+    }
+    
+    override func applicationDidEnterBackground(_ application: UIApplication) {
+        locationManager?.handleAppBackground()
+        super.applicationDidEnterBackground(application)
+    }
 }

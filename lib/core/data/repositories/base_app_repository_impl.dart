@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:dartz/dartz.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/core/constants/app_config.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/data/datasources/api/base_api_data_source.dart';

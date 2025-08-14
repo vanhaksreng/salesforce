@@ -10,7 +10,7 @@ import 'package:salesforce/features/more/presentation/pages/customer_map/custome
 
 class CustomerMapScreen extends StatefulWidget {
   const CustomerMapScreen({
-    Key? key,
+    super.key,
     this.onCameraIdle,
     this.onMapCreated,
     required this.latLng,
@@ -18,7 +18,8 @@ class CustomerMapScreen extends StatefulWidget {
     this.isShowPin = false,
     this.radius = 8,
     this.isGPS = false,
-  }) : super(key: key);
+  });
+
   final ValueChanged<LatLng>? onCameraIdle;
   final Function(GoogleMapController)? onMapCreated;
   final LatLng latLng;

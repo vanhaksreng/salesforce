@@ -11,7 +11,7 @@ import 'package:salesforce/features/tasks/presentation/pages/distributor/distrib
 import 'package:salesforce/realm/scheme/schemas.dart';
 
 class DistributorScreen extends StatefulWidget {
-  const DistributorScreen({Key? key}) : super(key: key);
+  const DistributorScreen({super.key});
 
   static const String routeName = "distributorTaskScreen";
 

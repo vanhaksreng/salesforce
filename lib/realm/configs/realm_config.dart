@@ -26,9 +26,9 @@ class RealmConfig {
     final documents = await getApplicationDocumentsDirectory();
     String realmPath = path.join(documents.path, 'ClearViewSalesforce.realm');
 
-    // if (kDebugMode && Platform.isIOS && kDbPath.isNotEmpty) {
-    //   // realmPath = kDbPath;
-    // }
+    if (kDebugMode && Platform.isIOS && kDbPath.isNotEmpty) {
+      realmPath = kDbPath;
+    }
 
     // if (Platform.isAndroid) {
     //   final external = await getExternalStorageDirectory();

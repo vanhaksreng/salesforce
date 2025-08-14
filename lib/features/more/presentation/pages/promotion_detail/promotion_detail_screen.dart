@@ -17,7 +17,7 @@ import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class PromotionDetailScreen extends StatefulWidget {
-  const PromotionDetailScreen({Key? key, required this.arg}) : super(key: key);
+  const PromotionDetailScreen({super.key, required this.arg});
   static const String routeName = "promotionDetailMoreScreen";
 
   final ItemPromotionHeader arg;

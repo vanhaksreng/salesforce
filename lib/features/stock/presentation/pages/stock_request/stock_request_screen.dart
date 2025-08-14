@@ -22,7 +22,7 @@ import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class StockRequestScreen extends StatefulWidget {
-  const StockRequestScreen({Key? key, required this.stockReqArg}) : super(key: key);
+  const StockRequestScreen({super.key, required this.stockReqArg});
   final StockRequestArg stockReqArg;
   static const String routeName = "stockRequestPreviewScreen";
 

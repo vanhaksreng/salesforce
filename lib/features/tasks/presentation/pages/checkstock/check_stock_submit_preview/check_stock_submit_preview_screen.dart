@@ -26,7 +26,7 @@ import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class CheckStockSubmitPreviewScreen extends StatefulWidget {
-  const CheckStockSubmitPreviewScreen({Key? key, required this.arg}) : super(key: key);
+  const CheckStockSubmitPreviewScreen({super.key, required this.arg});
 
   static const String routeName = "checkItemPreviewScreen";
   final CheckStockArgs arg;

@@ -6,7 +6,7 @@ import 'package:salesforce/features/more/presentation/pages/invoice_printer/invo
 import 'package:salesforce/features/more/presentation/pages/invoice_printer/invoice_printer_state.dart';
 
 class InvoicePrinterScreen extends StatefulWidget {
-  const InvoicePrinterScreen({Key? key}) : super(key: key);
+  const InvoicePrinterScreen({super.key});
   static const String routeName = "print_invoice";
 
   @override

@@ -43,7 +43,7 @@ Color getPromotionStatusColor(String? type) {
 }
 
 class ItemPromotionFormScreen extends StatefulWidget {
-  const ItemPromotionFormScreen({Key? key, required this.arg}) : super(key: key);
+  const ItemPromotionFormScreen({super.key, required this.arg});
 
   static const String routeName = "/itemPromotionFromScreen";
 
@@ -206,7 +206,7 @@ class _ItemPromotionFormScreenState extends State<ItemPromotionFormScreen> with 
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -296,7 +296,7 @@ class _ItemPromotionFormScreenState extends State<ItemPromotionFormScreen> with 
                                       ],
                                     ),
                                   );
-                                }).toList(),
+                                }),
                               ],
                             ),
                           ),
@@ -306,7 +306,7 @@ class _ItemPromotionFormScreenState extends State<ItemPromotionFormScreen> with 
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

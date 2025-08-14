@@ -14,7 +14,7 @@ import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class NotificationScreen extends StatefulWidget {
-  const NotificationScreen({Key? key}) : super(key: key);
+  const NotificationScreen({super.key});
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();

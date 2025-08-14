@@ -37,13 +37,12 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   final NetworkInfo _networkInfo;
 
   MoreRepositoryImpl({
-    required ApiMoreDataSource remote,
-    required RealmMoreDataSource local,
-    required NetworkInfo networkInfo,
+    required ApiMoreDataSource super.remote,
+    required RealmMoreDataSource super.local,
+    required super.networkInfo,
   }) : _remote = remote,
        _local = local,
-       _networkInfo = networkInfo,
-       super(local: local, remote: remote, networkInfo: networkInfo);
+       _networkInfo = networkInfo;
 
   @override
   Future<Either<Failure, RecordSaleHeader>> getSaleHeaders({

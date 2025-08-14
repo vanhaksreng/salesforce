@@ -36,13 +36,12 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   final NetworkInfo _networkInfo;
 
   const TaskRepositoryImpl({
-    required ApiTaskDataSource remote,
-    required RealmTaskDataSource local,
-    required NetworkInfo networkInfo,
+    required ApiTaskDataSource super.remote,
+    required RealmTaskDataSource super.local,
+    required super.networkInfo,
   }) : _remote = remote,
        _local = local,
-       _networkInfo = networkInfo,
-       super(remote: remote, local: local, networkInfo: networkInfo);
+       _networkInfo = networkInfo;
 
   @override
   Future<Either<Failure, CustomerItemLedgerEntry>> updateItemCheckStock(CheckItemStockArg data) async {

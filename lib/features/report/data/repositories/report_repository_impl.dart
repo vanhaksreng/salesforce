@@ -20,93 +20,12 @@ class ReportRepositoryImpl extends BaseAppRepositoryImpl implements ReportReposi
   final NetworkInfo _networkInfo;
 
   ReportRepositoryImpl({
-    required ApiReportDataSource remote,
-    required RealmReportDataSource local,
-    required NetworkInfo networkInfo,
+    required ApiReportDataSource super.remote,
+    required RealmReportDataSource super.local,
+    required super.networkInfo,
   }) : _remote = remote,
        _local = local,
-       _networkInfo = networkInfo,
-       super(local: local, remote: remote, networkInfo: networkInfo);
-  // @override
-  // Future<Either<Failure, List<PosSalesHeader>>> getSaleHeaders({
-  //   Map<String, dynamic>? param,
-  //   int page = 1,
-  //   bool fetchingApi = true,
-  // }) async {
-  //   try {
-  //     final localSale = await _local.getSaleHeaders(
-  //       data: param,
-  //     );
-
-  //     if (fetchingApi && await _networkInfo.isConnected) {
-  //       param?['page'] = page;
-  //       final cloudSales = await _remote.getSaleHeaders(data: param);
-
-  //       if (localSale.length == cloudSales.length) {
-  //         return Right(localSale);
-  //       }
-
-  //       final localIds = localSale.map((e) => e.id).toSet();
-
-  //       final newSales = cloudSales.where((s) {
-  //         return !localIds.contains(s.id);
-  //       }).toList();
-
-  //       _local.storeSaleHeaders(newSales);
-
-  //       return Right(cloudSales);
-  //     }
-
-  //     return Right(localSale);
-  //   } on GeneralException {
-  //     return const Left(CacheFailure(errorInternetMessage));
-  //   }
-  // }
-
-  // @override
-  // Future<Either<Failure, List<PosSalesLine>>> getSaleLines({
-  //   Map<String, dynamic>? param,
-  //   int page = 1,
-  //   bool fetchingApi = true,
-  // }) async {
-  //   try {
-  //     final localeSaleLines = await _local.getSaleLines(data: param);
-
-  //     if (fetchingApi && await _networkInfo.isConnected) {
-  //       param?['page'] = page;
-  //       final saleLineCloud = await _remote.getSaleLines(data: param);
-
-  //       final localIds = localeSaleLines.map((e) => e.id).toSet();
-
-  //       final newSaleLines = saleLineCloud.where((s) {
-  //         return !localIds.contains(s.id);
-  //       }).toList();
-
-  //       _local.storeLines(newSaleLines);
-  //       return Right(saleLineCloud);
-  //     }
-
-  //     return const Right([]);
-  //   } on GeneralException {
-  //     return const Left(CacheFailure(errorInternetMessage));
-  //   }
-  // }
-
-  // @override
-  // Future<Either<Failure, SaleDetail>> getSaleDetails({
-  //   Map<String, dynamic>? param,
-  // }) async {
-  //   try {
-  //     if (await _networkInfo.isConnected) {
-  //       final sales = await _remote.getSaleDetails(data: param);
-  //       return Right(sales);
-  //     }
-
-  //     return const Left(CacheFailure(errorInternetMessage));
-  //   } on GeneralException {
-  //     return const Left(CacheFailure(errorInternetMessage));
-  //   }
-  // }
+       _networkInfo = networkInfo;
 
   @override
   Future<Either<Failure, List<Salesperson>>> getSalespersons({Map<String, dynamic>? param}) async {

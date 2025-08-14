@@ -7,7 +7,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as https;
 import 'package:http/io_client.dart';
 import 'package:image/image.dart' as img;
-import 'package:latlong2/latlong.dart' as latlong;
 import 'package:path_provider/path_provider.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
@@ -16,6 +15,7 @@ import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/fllutter_html_to_pdf.dart';
 import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/core/utils/size_config.dart';
+import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
@@ -397,27 +397,15 @@ class Helpers {
     }
 
     return "${Helpers.formatNumberLink(distInMeters, option: FormatType.quantity)}m";
-
-    // const earthRadius = 6371000; // radius in meters
-
-    // final dLat = _toRadians(lat2 - lat1);
-    // final dLon = _toRadians(lon2 - lon1);
-
-    // final a =
-    //     sin(dLat / 2) * sin(dLat / 2) + cos(_toRadians(lat1)) * cos(_toRadians(lat2)) * sin(dLon / 2) * sin(dLon / 2);
-
-    // final c = 2 * atan2(sqrt(a), sqrt(1 - a));
-
-    // final distanceInMeters = earthRadius * c;
-
-    // return distanceInMeters / 1000; // convert to kilometers
   }
 
-  static double calculateDistanceInMeters(double lat1, double lon1, double lat2, double lon2) {
-    const latlong.Distance distance = latlong.Distance();
-    final double distInMeters = distance(latlong.LatLng(lat1, lon1), latlong.LatLng(lat2, lon2));
-
-    return distInMeters;
+  static double calculateDistanceInMeters(
+    double startLatitude,
+    double startLongitude,
+    double endLatitude,
+    double endLongitude,
+  ) {
+    return GeolocatorLocationService().getDistanceBetween(startLatitude, startLongitude, endLatitude, endLongitude);
   }
 
   // ======================== Image Download and Resize ========================

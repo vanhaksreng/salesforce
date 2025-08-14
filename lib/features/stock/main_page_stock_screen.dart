@@ -22,7 +22,7 @@ import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class MainPageStockScreen extends StatefulWidget {
-  const MainPageStockScreen({Key? key}) : super(key: key);
+  const MainPageStockScreen({super.key});
 
   @override
   State<MainPageStockScreen> createState() => _MainPageStockScreenState();

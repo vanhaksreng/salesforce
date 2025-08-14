@@ -30,12 +30,12 @@ class MainActivity : FlutterActivity(){
                     } else {
                         startService(intent) // For API < 26
                     }
-                    result.success("Tracking started")
+                    result.success(true)
                 }
                 "stopTracking" -> {
                     val intent = Intent(this, LocationService::class.java)
                     stopService(intent)
-                    result.success("Tracking stopped")
+                    result.success(true)
                 }
                 else -> result.notImplemented()
             }

@@ -22,13 +22,12 @@ class AuthRepositoryImpl extends BaseAppRepositoryImpl implements AuthRepository
   final NetworkInfo _networkInfo;
 
   const AuthRepositoryImpl({
-    required ApiAuthDataSource remote,
-    required RealmAuthDataSource local,
-    required NetworkInfo networkInfo,
+    required ApiAuthDataSource super.remote,
+    required RealmAuthDataSource super.local,
+    required super.networkInfo,
   }) : _remote = remote,
        _local = local,
-       _networkInfo = networkInfo,
-       super(local: local, remote: remote, networkInfo: networkInfo);
+       _networkInfo = networkInfo;
 
   @override
   Future<Either<Failure, List<AppServer>>> getServerLists() async {

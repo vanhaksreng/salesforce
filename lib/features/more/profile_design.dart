@@ -13,8 +13,8 @@ class TransitionAppBar extends StatelessWidget {
     this.subtitle = "",
     this.onTap,
     this.extent = 120,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   final Widget avatar;
   final double extent;

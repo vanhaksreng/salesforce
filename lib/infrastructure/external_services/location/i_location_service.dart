@@ -4,8 +4,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:salesforce/infrastructure/external_services/location/location_permission_status.dart';
 
 abstract class ILocationService {
-  /// Checks if location services are enabled on the device.
   Future<bool> isLocationServiceEnabled();
+  double getDistanceBetween(double startLatitude, double startLongitude, double endLatitude, double endLongitude);
 
   /// Checks the current location permission status.
   Future<LocationPermissionStatus> checkPermission();
@@ -29,6 +29,6 @@ abstract class ILocationService {
 
   StreamSubscription<Position> startContinuousLocationTracking({
     required void Function(Position) onLocationUpdate,
-    int distanceFilter = 100,
+    int distanceFilter = 10,
   });
 }

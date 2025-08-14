@@ -8,7 +8,7 @@ import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
 
 class SaleOrderHistoryDetailScreen extends StatefulWidget {
-  const SaleOrderHistoryDetailScreen({Key? key, required this.documentNo, required this.typeDoc}) : super(key: key);
+  const SaleOrderHistoryDetailScreen({super.key, required this.documentNo, required this.typeDoc});
   final String documentNo;
   final String typeDoc;
   static const String routeName = "SaleOrderDetailHistoryScreen";

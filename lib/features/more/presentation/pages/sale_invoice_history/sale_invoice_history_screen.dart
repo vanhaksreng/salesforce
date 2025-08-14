@@ -24,7 +24,7 @@ import 'package:salesforce/core/presentation/widgets/search_widget.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class SaleInvoiceHistoryScreen extends StatefulWidget {
-  const SaleInvoiceHistoryScreen({Key? key}) : super(key: key);
+  const SaleInvoiceHistoryScreen({super.key});
   static const routeName = "SaleInvoiceHistoryScreen";
 
   @override

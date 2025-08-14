@@ -18,7 +18,7 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class CustomerAddressScreen extends StatefulWidget {
-  const CustomerAddressScreen({Key? key, required this.customerNo}) : super(key: key);
+  const CustomerAddressScreen({super.key, required this.customerNo});
 
   static const String routeName = "customerAddressTaskScreen";
 

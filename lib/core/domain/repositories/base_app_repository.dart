@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/core/errors/failures.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';

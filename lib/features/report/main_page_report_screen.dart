@@ -14,7 +14,7 @@ import 'package:salesforce/theme/app_colors.dart';
 abstract class ReportArgs {}
 
 class MainPageReportScreen extends StatefulWidget {
-  const MainPageReportScreen({Key? key}) : super(key: key);
+  const MainPageReportScreen({super.key});
 
   @override
   State<MainPageReportScreen> createState() => _MainPageReportScreenState();

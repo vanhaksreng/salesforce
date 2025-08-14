@@ -49,9 +49,7 @@ class GeolocatorLocationService implements ILocationService {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      throw GeneralException(
-        'Location permissions are permanently denied. Please enable them in app settings.',
-      );
+      throw GeneralException('Location permissions are permanently denied. Please enable them in app settings.');
     }
 
     return await Geolocator.getCurrentPosition();
@@ -72,9 +70,7 @@ class GeolocatorLocationService implements ILocationService {
     int distanceFilter = 5, // Default distance filter in meters
   }) {
     final settings = _getLocationSettings(distanceFilter: distanceFilter);
-    _subscription = Geolocator.getPositionStream(
-      locationSettings: settings,
-    ).listen(onLocationUpdate);
+    _subscription = Geolocator.getPositionStream(locationSettings: settings).listen(onLocationUpdate);
 
     return _subscription!;
   }
@@ -84,9 +80,7 @@ class GeolocatorLocationService implements ILocationService {
   }
 
   /// Helper to map Geolocator's [LocationPermission] to our custom [LocationPermissionStatus].
-  LocationPermissionStatus _mapGeolocatorPermission(
-    LocationPermission permission,
-  ) {
+  LocationPermissionStatus _mapGeolocatorPermission(LocationPermission permission) {
     switch (permission) {
       case LocationPermission.denied:
         return LocationPermissionStatus.denied;
@@ -116,10 +110,14 @@ class GeolocatorLocationService implements ILocationService {
       foregroundNotificationConfig: ForegroundNotificationConfig(
         notificationTitle: 'Location Tracking',
         notificationIcon: const AndroidResource(name: "@mipmap/ic_launcher"),
-        notificationText:
-            'App is tracking location in background $distanceFilter',
+        notificationText: 'App is tracking location in background $distanceFilter',
         enableWakeLock: true,
       ),
     );
+  }
+
+  @override
+  double getDistanceBetween(double startLatitude, double startLongitude, double endLatitude, double endLongitude) {
+    return Geolocator.distanceBetween(startLatitude, startLongitude, endLatitude, endLongitude);
   }
 }

@@ -6,7 +6,7 @@ import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/splash/splash_cubit.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   static const String routeName = "splashScreen";
 

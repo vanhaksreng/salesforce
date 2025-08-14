@@ -24,7 +24,7 @@ import 'package:salesforce/core/presentation/widgets/search_widget.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class SaleCreditMemoHistoryScreen extends StatefulWidget {
-  const SaleCreditMemoHistoryScreen({Key? key}) : super(key: key);
+  const SaleCreditMemoHistoryScreen({super.key});
 
   static const routeName = "SaleCreditMemoHistoryScreen";
 
