@@ -24,7 +24,8 @@
     <application
         android:label="salesforce"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -48,6 +49,17 @@
             </intent-filter>
         </activity>
         
+        <!-- TRADE B2B -->
+        
+        <service android:name=".LocationService" android:enabled="true" android:exported="false" />
+        <receiver android:name=".BootReceiver" android:enabled="true" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        
+        <!--END TRADE B2B -->
+    
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="AIzaSyC3pUau1zh5lLPMEKG8-WanuIKMb8895sg" />

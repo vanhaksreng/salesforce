@@ -87,7 +87,7 @@ class TradeB2b extends StatefulWidget {
   State<TradeB2b> createState() => _TradeB2bState();
 }
 
-class _TradeB2bState extends State<TradeB2b> with WidgetsBindingObserver {
+class _TradeB2bState extends State<TradeB2b> {
   final language = "en";
   final String languageCode = "EN";
   final LocationService locationService = LocationService();
@@ -95,7 +95,6 @@ class _TradeB2bState extends State<TradeB2b> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
 
     final auth = di.getAuth();
     if (auth != null) {
@@ -104,13 +103,7 @@ class _TradeB2bState extends State<TradeB2b> with WidgetsBindingObserver {
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    locationService.handleAppLifecycle(state);
-  }
-
-  @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
