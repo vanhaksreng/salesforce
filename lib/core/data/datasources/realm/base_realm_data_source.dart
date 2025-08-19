@@ -21,7 +21,6 @@ abstract class BaseRealmDataSource {
   Future<CompanyInformation?> getCompanyInfo();
 
   Future<void> storeDistributionSetup(DistributionSetUp record);
-  // Future<DistributionSetUp?> getDistributionSetup();
 
   Future<void> storeOrg(Organization record);
   Future<Organization?> getOrg();
@@ -50,7 +49,10 @@ abstract class BaseRealmDataSource {
 
   Future<void> storeInitAppData(Map<String, dynamic> args);
 
-  Future<List<Customer>> getCustomers({int page = 1, Map<String, dynamic>? params});
+  Future<List<Customer>> getCustomers({
+    int page = 1,
+    Map<String, dynamic>? params,
+  });
 
   Future<Customer?> getCustomer({Map<String, dynamic>? params});
 
@@ -58,11 +60,15 @@ abstract class BaseRealmDataSource {
 
   Future<VatPostingSetup?> getVatSetup({Map<String, dynamic>? param});
 
-  Future<ItemSalesLinePrices?> getItemSaleLinePrice({Map<String, dynamic>? param});
+  Future<ItemSalesLinePrices?> getItemSaleLinePrice({
+    Map<String, dynamic>? param,
+  });
 
   Future<CustomerAddress?> getCustomerAddress({Map<String, dynamic>? args});
 
-  Future<List<CustomerAddress>> getCustomerAddresses({Map<String, dynamic>? args});
+  Future<List<CustomerAddress>> getCustomerAddresses({
+    Map<String, dynamic>? args,
+  });
 
   Future<ItemUnitOfMeasure?> getItemUom({Map<String, dynamic>? params});
   Future<List<ItemUnitOfMeasure>> getItemUoms({Map<String, dynamic>? params});
@@ -71,11 +77,17 @@ abstract class BaseRealmDataSource {
 
   Future<Salesperson?> getSalesperson({Map<String, dynamic>? args});
 
-  Future<List<CustomerLedgerEntry>> getCustomerLedgerEntry(Map<String, dynamic>? param);
+  Future<List<CustomerLedgerEntry>> getCustomerLedgerEntry(
+    Map<String, dynamic>? param,
+  );
 
-  Future<List<ItemPromotionHeader>> getItemPromotionHeaders({Map<String, dynamic>? args});
+  Future<List<ItemPromotionHeader>> getItemPromotionHeaders({
+    Map<String, dynamic>? args,
+  });
 
-  Future<List<ItemPromotionLine>> getItemPromotionLines({Map<String, dynamic>? args});
+  Future<List<ItemPromotionLine>> getItemPromotionLines({
+    Map<String, dynamic>? args,
+  });
 
   Future<ItemPromotionScheme?> getPromotionScheme({Map<String, dynamic>? args});
 
@@ -95,7 +107,9 @@ abstract class BaseRealmDataSource {
     required List<CashReceiptJournals> remoteJournals,
   });
 
-  Future<List<SalespersonSchedule>> updateSalepersonScheduleLastSyncDate(List<SalespersonSchedule> schedules);
+  Future<List<SalespersonSchedule>> updateSalepersonScheduleLastSyncDate(
+    List<SalespersonSchedule> schedules,
+  );
   Future<List<ItemPrizeRedemptionLineEntry>> updateRedemptionsStatus(
     List<ItemPrizeRedemptionLineEntry> records, {
     required List<ItemPrizeRedemptionLineEntry> remoteRecords,
@@ -118,10 +132,13 @@ abstract class BaseRealmDataSource {
 
   Future<void> storeLocationOffline(GpsRouteTracking cusOffline);
 
-  Future<List<GpsRouteTracking>> getGPSTracking({required Map<String, dynamic> param});
+  Future<List<GpsRouteTracking>> getGPSTracking({
+    required Map<String, dynamic> param,
+  });
 
   Future<void> updateTrackingByCreatedDate(List<GpsRouteTracking> records);
   Future<bool> clearAllData(List<AppSyncLog> tables);
 
   Future<GpsRouteTracking?> getLastGpsRequest();
+  Future<bool> storeGps(List<GpsRouteTracking> records);
 }

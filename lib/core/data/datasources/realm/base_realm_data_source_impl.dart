@@ -91,7 +91,12 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
 
   @override
   Future<void> storeCompanyInfo(CompanyInformation record) async {
-    await _storage.addOrUpdate(record);
+    final existingCompany = await _storage.getAll<CompanyInformation>();
+    await _storage.writeTransaction((realm) {
+      realm.deleteMany(existingCompany);
+
+      realm.add(record);
+    });
   }
 
   @override
@@ -134,7 +139,10 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
-  Future<List<Item>> getItems({int page = 1, Map<String, dynamic>? param}) async {
+  Future<List<Item>> getItems({
+    int page = 1,
+    Map<String, dynamic>? param,
+  }) async {
     return await _storage.getWithPagination<Item>(page: page, args: param);
   }
 
@@ -163,7 +171,9 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
     String tableName, {
     bool reset = false,
   }) async {
-    final syncLog = await _storage.getFirst<AppSyncLog>(args: {"tableName": tableName});
+    final syncLog = await _storage.getFirst<AppSyncLog>(
+      args: {"tableName": tableName},
+    );
 
     final handler = TableHandlerFactory.getHandler(tableName);
     if (handler == null) {
@@ -198,10 +208,17 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
             );
           }
 
-          final entries = realm.query<ItemLedgerEntry>('item_no = \$0 AND quantity < 0', [itemCollection.no]);
-          final endingQty = entries.fold<double>(0, (sum, entry) => sum + (entry.quantity));
+          final entries = realm.query<ItemLedgerEntry>(
+            'item_no = \$0 AND quantity < 0',
+            [itemCollection.no],
+          );
+          final endingQty = entries.fold<double>(
+            0,
+            (sum, entry) => sum + (entry.quantity),
+          );
 
-          item.inventory = Helpers.toDouble(itemCollection.inventory) + endingQty;
+          item.inventory =
+              Helpers.toDouble(itemCollection.inventory) + endingQty;
         }
 
         try {
@@ -250,7 +267,9 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
-  Future<List<PromotionType>> getPromotionType({Map<String, dynamic>? param}) async {
+  Future<List<PromotionType>> getPromotionType({
+    Map<String, dynamic>? param,
+  }) async {
     return await _storage.getAll<PromotionType>(args: param);
   }
 
@@ -266,7 +285,9 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
     required List<SalesLine> remoteLines,
   }) async {
     final headerNo = saleHeaders.map((h) => '"${h.no}"').toList();
-    final localLines = await _storage.getAll<SalesLine>(args: {'document_no': 'IN {${headerNo.join(",")}}'});
+    final localLines = await _storage.getAll<SalesLine>(
+      args: {'document_no': 'IN {${headerNo.join(",")}}'},
+    );
 
     return _storage.writeTransaction((realm) {
       realm.deleteMany(localLines);
@@ -304,7 +325,9 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
-  Future<List<SalespersonSchedule>> updateSalepersonScheduleLastSyncDate(List<SalespersonSchedule> schedules) async {
+  Future<List<SalespersonSchedule>> updateSalepersonScheduleLastSyncDate(
+    List<SalespersonSchedule> schedules,
+  ) async {
     final now = DateTime.now().toDateTimeString();
     return await _storage.writeTransaction((realm) {
       for (var schedule in schedules) {
@@ -368,7 +391,10 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
-  Future<List<Customer>> getCustomers({int page = 1, Map<String, dynamic>? params}) async {
+  Future<List<Customer>> getCustomers({
+    int page = 1,
+    Map<String, dynamic>? params,
+  }) async {
     return await _storage.getWithPagination<Customer>(page: page, args: params);
   }
 
@@ -378,7 +404,9 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
-  Future<ItemSalesLinePrices?> getItemSaleLinePrice({Map<String, dynamic>? param}) async {
+  Future<ItemSalesLinePrices?> getItemSaleLinePrice({
+    Map<String, dynamic>? param,
+  }) async {
     return await _storage.getFirst<ItemSalesLinePrices>(
       args: param,
       sortBy: [
@@ -394,27 +422,37 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
-  Future<List<ItemUnitOfMeasure>> getItemUoms({Map<String, dynamic>? params}) async {
+  Future<List<ItemUnitOfMeasure>> getItemUoms({
+    Map<String, dynamic>? params,
+  }) async {
     return _storage.getAll<ItemUnitOfMeasure>(args: params);
   }
 
   @override
-  Future<List<CustomerLedgerEntry>> getCustomerLedgerEntry(Map<String, dynamic>? param) async {
+  Future<List<CustomerLedgerEntry>> getCustomerLedgerEntry(
+    Map<String, dynamic>? param,
+  ) async {
     return await _storage.getAll<CustomerLedgerEntry>(args: param);
   }
 
   @override
-  Future<CustomerAddress?> getCustomerAddress({Map<String, dynamic>? args}) async {
+  Future<CustomerAddress?> getCustomerAddress({
+    Map<String, dynamic>? args,
+  }) async {
     return await _storage.getFirst<CustomerAddress>(args: args);
   }
 
   @override
-  Future<List<CustomerAddress>> getCustomerAddresses({Map<String, dynamic>? args}) async {
+  Future<List<CustomerAddress>> getCustomerAddresses({
+    Map<String, dynamic>? args,
+  }) async {
     return await _storage.getAll<CustomerAddress>(args: args);
   }
 
   @override
-  Future<List<Salesperson>> getSalespersons({Map<String, dynamic>? args}) async {
+  Future<List<Salesperson>> getSalespersons({
+    Map<String, dynamic>? args,
+  }) async {
     return await _storage.getAll<Salesperson>(args: args);
   }
 
@@ -444,17 +482,23 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
-  Future<List<ItemPromotionHeader>> getItemPromotionHeaders({Map<String, dynamic>? args}) async {
+  Future<List<ItemPromotionHeader>> getItemPromotionHeaders({
+    Map<String, dynamic>? args,
+  }) async {
     return await _storage.getAll<ItemPromotionHeader>(args: args);
   }
 
   @override
-  Future<List<ItemPromotionLine>> getItemPromotionLines({Map<String, dynamic>? args}) async {
+  Future<List<ItemPromotionLine>> getItemPromotionLines({
+    Map<String, dynamic>? args,
+  }) async {
     return await _storage.getAll<ItemPromotionLine>(args: args);
   }
 
   @override
-  Future<ItemPromotionScheme?> getPromotionScheme({Map<String, dynamic>? args}) async {
+  Future<ItemPromotionScheme?> getPromotionScheme({
+    Map<String, dynamic>? args,
+  }) async {
     return await _storage.getFirst<ItemPromotionScheme>(args: args);
   }
 
@@ -481,17 +525,31 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
-  Future<List<GpsRouteTracking>> getGPSTracking({required Map<String, dynamic> param}) async {
+  Future<List<GpsRouteTracking>> getGPSTracking({
+    required Map<String, dynamic> param,
+  }) async {
     return await _storage.getAll<GpsRouteTracking>(args: param);
   }
 
   @override
-  Future<void> updateTrackingByCreatedDate(List<GpsRouteTracking> records) async {
+  Future<void> updateTrackingByCreatedDate(
+    List<GpsRouteTracking> records,
+  ) async {
+    final today = DateTime.now().toDateString();
+
     await _storage.writeTransaction((realm) {
       for (var record in records) {
         record.isSync = kStatusYes;
         realm.add(record, update: true);
       }
+    });
+
+    final existed = await _storage.getAll<GpsRouteTracking>(
+      args: {'is_sync': kStatusYes, 'created_date': '<> $today'},
+    );
+
+    await _storage.writeTransaction((realm) {
+      realm.deleteMany(existed);
     });
   }
 
@@ -534,5 +592,14 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
         {"field": "created_time", "order": "DESC"},
       ],
     );
+  }
+
+  @override
+  Future<bool> storeGps(List<GpsRouteTracking> records) async {
+    return _storage.writeTransaction((realm) {
+      realm.addAll(records);
+
+      return true;
+    });
   }
 }

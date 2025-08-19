@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
-import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/auth/presentation/pages/loggedin_history/loggedin_history_cubit.dart';
+import 'package:salesforce/features/auth/presentation/pages/loggedin_history/loggedin_history_state.dart';
 import 'package:salesforce/features/auth/presentation/pages/login/login_screen.dart';
 import 'package:salesforce/features/main_tap_screen.dart';
-import 'package:salesforce/infrastructure/services/location_service.dart';
-import 'package:salesforce/infrastructure/services/permission_handler.dart';
 import 'package:salesforce/injection_container.dart';
 
 class LoggedinHistoryScreen extends StatefulWidget {
@@ -24,6 +24,7 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
   @override
   void initState() {
     super.initState();
+    _cubit.getCompanyInfo();
   }
 
   @override
@@ -36,14 +37,6 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
 
     if (!result) {
       return;
-    }
-
-    bool granted = await requestLocationPermissions();
-    if (granted) {
-      LocationService().startSmartTracking();
-    } else {
-      // Handle permission denied scenario
-      Logger.log('Location permission denied');
     }
 
     if (!mounted) {
@@ -87,7 +80,6 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Profile picture
         Hero(
           tag: 'user_avatar',
           child: Container(
@@ -109,13 +101,35 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
                 ),
               ],
             ),
-            child: Container(
-              margin: const EdgeInsets.all(3),
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(colors: [Color(0xFFFF6B6B), Color(0xFFEE5A24)]),
-              ),
-              child: const Icon(Icons.person_outline, size: 60, color: Colors.white),
+            child: BlocBuilder<LoggedinHistoryCubit, LoggedinHistoryState>(
+              bloc: _cubit,
+              builder: (context, state) {
+                if (state.company == null) {
+                  return Container(
+                    margin: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(colors: [Color(0xFFFF6B6B), Color(0xFFEE5A24)]),
+                    ),
+                    child: const Icon(Icons.person_outline, size: 60, color: Colors.white),
+                  );
+                }
+
+                return Container(
+                  margin: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(colors: [Color(0xFFFF6B6B), Color(0xFFEE5A24)]),
+                  ),
+                  child: ImageNetWorkWidget(
+                    round: 100,
+                    imageUrl: state.company?.logo128 ?? '',
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                  ),
+                );
+              },
             ),
           ),
         ),

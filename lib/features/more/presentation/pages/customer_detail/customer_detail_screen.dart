@@ -24,13 +24,17 @@ class CustomerDetailScreen extends StatefulWidget {
   State<CustomerDetailScreen> createState() => _CustomerDetailScreenState();
 }
 
-class _CustomerDetailScreenState extends State<CustomerDetailScreen> with SingleTickerProviderStateMixin, MessageMixin {
+class _CustomerDetailScreenState extends State<CustomerDetailScreen>
+    with SingleTickerProviderStateMixin, MessageMixin {
   Customer? customer;
   late final TabController _tabController;
   final _cubit = CustomerDetailCubit();
   late ActionState _action = ActionState.init;
 
-  final List<Tab> tabBarName = [Tab(text: greeting("cutomer_info")), Tab(text: greeting("cutomer_address"))];
+  final List<Tab> tabBarName = [
+    Tab(text: greeting("cutomer_info")),
+    Tab(text: greeting("cutomer_address")),
+  ];
 
   @override
   void initState() {
@@ -72,7 +76,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> with Single
         bottom: BlocBuilder<CustomerDetailCubit, CustomerDetailState>(
           bloc: _cubit,
           builder: (context, state) {
-            return TabBarWidget(tabs: tabBarName, controller: _tabController, onTap: _onSwitchScreen);
+            return TabBarWidget(
+              tabs: tabBarName,
+              controller: _tabController,
+              onTap: _onSwitchScreen,
+            );
           },
         ),
       ),
@@ -80,7 +88,10 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> with Single
         controller: _tabController,
         physics: const NeverScrollableScrollPhysics(),
         children: [
-          CustomerformScreen(customer: widget.customer, onCustomerChanged: updateCustomer),
+          CustomerformScreen(
+            customer: widget.customer,
+            onCustomerChanged: updateCustomer,
+          ),
           CustomerAddressScreen(customer: customer),
         ],
       ),

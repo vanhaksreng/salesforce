@@ -9,8 +9,6 @@ import 'package:salesforce/features/auth/presentation/pages/first_download/first
 import 'package:salesforce/features/main_tap_screen.dart';
 import 'package:salesforce/core/presentation/widgets/build_logo_header_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
-import 'package:salesforce/infrastructure/services/location_service.dart';
-import 'package:salesforce/infrastructure/services/permission_handler.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
@@ -25,7 +23,6 @@ class FirstDownloadScreen extends StatefulWidget {
 
 class _FirstDownloadScreenState extends State<FirstDownloadScreen> {
   final _cubit = FirstDownloadCubit();
-  final LocationService locationService = LocationService();
 
   @override
   void initState() {
@@ -57,15 +54,12 @@ class _FirstDownloadScreenState extends State<FirstDownloadScreen> {
     }
   }
 
-  void _navigateToHome() async {
-    bool granted = await requestLocationPermissions();
-    if (granted) {
-      await locationService.startSmartTracking();
-    }
-
-    if (!mounted) return;
-
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => MainTapScreen()), (route) => false);
+  void _navigateToHome() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => MainTapScreen()),
+      (route) => false,
+    );
   }
 
   @override

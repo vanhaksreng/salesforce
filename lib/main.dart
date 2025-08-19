@@ -7,7 +7,6 @@ import 'package:salesforce/data/services/onesignal_notification.dart';
 import 'package:salesforce/app/app_router.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/core/constants/constants.dart';
-import 'package:salesforce/infrastructure/services/location_service.dart';
 import 'package:salesforce/localization/locals_delegate.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_themes.dart';
@@ -21,9 +20,9 @@ void main() async {
 
     await di.getItInit();
 
-    OneSignalNotificationService.initialize();
-
     runApp(const TradeB2b());
+
+    OneSignalNotificationService.initialize();
   } catch (e) {
     debugPrint('Initialization error: $e');
   }
@@ -35,7 +34,10 @@ Future<void> _initializeApp() async {
 
 Future<void> _configureSystemUI() async {
   if (Platform.isIOS) {
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
   }
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -59,22 +61,6 @@ class TradeB2b extends StatefulWidget {
 class _TradeB2bState extends State<TradeB2b> {
   final language = "en";
   final String languageCode = "EN";
-  final LocationService locationService = LocationService();
-
-  @override
-  void initState() {
-    super.initState();
-
-    final auth = di.getAuth();
-    if (auth != null) {
-      locationService.startSmartTracking();
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {

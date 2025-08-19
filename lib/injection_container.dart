@@ -76,14 +76,15 @@ Future<void> _initializeApp() async {
     Logger.log('Warning: appSetup not found');
     return;
   }
-  // await _cubit.downLoadAppSetting();
 
   getIt.registerSingleton<ApplicationSetup>(appSetup);
 }
 
 Future<void> _initializeNetworking() async {
   getIt.registerLazySingleton(() => Connectivity());
-  getIt.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(connectivity: getIt<Connectivity>()));
+  getIt.registerLazySingleton<NetworkInfo>(
+    () => NetworkInfoImpl(connectivity: getIt<Connectivity>()),
+  );
   getIt.registerLazySingleton(() => http.Client());
 }
 
@@ -96,9 +97,13 @@ Future<void> _initializeDataSources() async {
     getIt.unregister<BaseRealmDataSource>();
   }
 
-  getIt.registerLazySingleton<BaseApiDataSource>(() => BaseApiDataSourceImpl(network: getIt<NetworkInfo>()));
+  getIt.registerLazySingleton<BaseApiDataSource>(
+    () => BaseApiDataSourceImpl(network: getIt<NetworkInfo>()),
+  );
 
-  getIt.registerLazySingleton<BaseRealmDataSource>(() => BaseRealmDataSourceImpl(ils: getIt<ILocalStorage>()));
+  getIt.registerLazySingleton<BaseRealmDataSource>(
+    () => BaseRealmDataSourceImpl(ils: getIt<ILocalStorage>()),
+  );
 }
 
 Future<void> _initializeRepositories() async {
@@ -126,6 +131,9 @@ Future<void> setAuthInjection(LoginSession? auth) async {
     getIt.unregister<User>();
   }
 
+  final storage = getIt<ILocalStorage>();
+  final userSetup = await storage.getFirst<UserSetup>();
+
   final user = User(
     id: auth.id,
     email: auth.email ?? "",
@@ -134,6 +142,7 @@ Future<void> setAuthInjection(LoginSession? auth) async {
     imgPath: auth.avatar128 ?? "", //TODO image link
     token: auth.accessToken ?? "",
     expired: auth.isLogin == "Yes" ? "No" : "Yes",
+    salepersonCode: userSetup?.salespersonCode ?? "",
   );
 
   getIt.registerSingleton<User>(user);

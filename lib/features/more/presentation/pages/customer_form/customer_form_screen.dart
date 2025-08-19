@@ -24,7 +24,11 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class CustomerformScreen extends StatefulWidget {
-  const CustomerformScreen({super.key, required this.customer, required this.onCustomerChanged});
+  const CustomerformScreen({
+    super.key,
+    required this.customer,
+    required this.onCustomerChanged,
+  });
 
   final Customer customer;
 
@@ -36,7 +40,8 @@ class CustomerformScreen extends StatefulWidget {
   CustomerInfoScreenState createState() => CustomerInfoScreenState();
 }
 
-class CustomerInfoScreenState extends State<CustomerformScreen> with MessageMixin, AutomaticKeepAliveClientMixin {
+class CustomerInfoScreenState extends State<CustomerformScreen>
+    with MessageMixin, AutomaticKeepAliveClientMixin {
   final _cubit = CustomerFormCubit();
   final ILocationService _location = GeolocatorLocationService();
 
@@ -82,6 +87,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen> with MessageMixi
     }
 
     if (!_formKey.currentState!.validate()) {
+      showWarningMessage("Please fill all required fields");
       return;
     }
 
@@ -118,6 +124,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen> with MessageMixi
 
       widget.onCustomerChanged.call(_cubit.state.customer!);
     } catch (e) {
+      showWarningMessage(e.toString());
       l.hide();
     }
   }
@@ -128,7 +135,8 @@ class CustomerInfoScreenState extends State<CustomerformScreen> with MessageMixi
 
       _longTextEditController.text = Helpers.toStrings(latLng.longitude);
 
-      if (widget.customer.latitude != latLng.latitude || widget.customer.longitude == latLng.longitude) {
+      if (widget.customer.latitude != latLng.latitude ||
+          widget.customer.longitude == latLng.longitude) {
         await _cubit.getAddressFrmLatLng(latLng);
         if (_cubit.state.fullAddress.isNotEmpty) {
           _addressTextEditController.text = _cubit.state.fullAddress;
@@ -140,11 +148,15 @@ class CustomerInfoScreenState extends State<CustomerformScreen> with MessageMixi
   Future<void> getCurrentAddress() async {
     final locationData = await _location.getCurrentLocation();
 
-    _onUpdateMapController(LatLng(locationData.latitude, locationData.longitude));
+    _onUpdateMapController(
+      LatLng(locationData.latitude, locationData.longitude),
+    );
   }
 
   Future<void> _onUpdateMapController(LatLng data) async {
-    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(LatLng(data.latitude, data.longitude), 14));
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(LatLng(data.latitude, data.longitude), 14),
+    );
     await _onCameraIdle(LatLng(data.latitude, data.longitude));
   }
 
@@ -162,7 +174,10 @@ class CustomerInfoScreenState extends State<CustomerformScreen> with MessageMixi
     Navigator.pushNamed(
       context,
       CustomerMapFullScreenScreen.routeName,
-      arguments: LatLng(Helpers.toDouble(_latTextEditController.text), Helpers.toDouble(_longTextEditController.text)),
+      arguments: LatLng(
+        Helpers.toDouble(_latTextEditController.text),
+        Helpers.toDouble(_longTextEditController.text),
+      ),
     ).then((value) async {
       if (value == null) return;
       final data = value as LatLng;
@@ -205,7 +220,10 @@ class CustomerInfoScreenState extends State<CustomerformScreen> with MessageMixi
 
   Widget buildBody(CustomerFormState state) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: scaleFontSize(appSpace), vertical: scaleFontSize(8)),
+      padding: EdgeInsets.symmetric(
+        horizontal: scaleFontSize(appSpace),
+        vertical: scaleFontSize(8),
+      ),
       child: SingleChildScrollView(
         padding: EdgeInsets.symmetric(vertical: 8.scale),
         child: Column(
@@ -219,7 +237,10 @@ class CustomerInfoScreenState extends State<CustomerformScreen> with MessageMixi
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: scaleFontSize(appSpace),
                   children: [
-                    const BuildHeader(icon: Icons.person, label: "customer_info"),
+                    const BuildHeader(
+                      icon: Icons.person,
+                      label: "customer_info",
+                    ),
                     TextFormFieldWidget(
                       label: greeting("Customer No"),
                       readOnly: true,
@@ -315,7 +336,10 @@ class CustomerInfoScreenState extends State<CustomerformScreen> with MessageMixi
                         onMapCreated: (GoogleMapController controller) {
                           _mapController = controller;
                         },
-                        latLng: LatLng(widget.customer.latitude ?? 0.0, widget.customer.longitude ?? 0.0),
+                        latLng: LatLng(
+                          widget.customer.latitude ?? 0.0,
+                          widget.customer.longitude ?? 0.0,
+                        ),
                         scrollGesturesEnabled: true,
                         onCameraIdle: (latLng) => _getLatLng(latLng),
                       ),

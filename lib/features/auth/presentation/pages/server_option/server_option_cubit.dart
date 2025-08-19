@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
@@ -10,6 +11,7 @@ class ServerOptionCubit extends Cubit<ServerOptionState> with MessageMixin, AppM
   ServerOptionCubit() : super(const ServerOptionState(isLoading: true));
 
   final _appRepos = getIt<AuthRepository>();
+  final _baseRepo = getIt<BaseAppRepository>();
 
   Future<void> getServerLists() async {
     try {
@@ -33,7 +35,9 @@ class ServerOptionCubit extends Cubit<ServerOptionState> with MessageMixin, AppM
     if (index == -1) return;
 
     state.servers[index];
+  }
 
-    // emit(state.copyWith(selectedIndex: index));
+  Future<void> updateAppServer(String orgId) async {
+    _baseRepo.getRemoteCompanyInfo(params: {'org_id': orgId});
   }
 }

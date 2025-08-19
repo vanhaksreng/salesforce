@@ -18,4 +18,6 @@ abstract class BaseApiDataSource {
   Future<void> updateProfileUer({required Map<String, dynamic> data, required XFile? imagePath});
 
   Future<Map<String, dynamic>> heartbeatStatus({required Map<String, dynamic> data});
+
+  Future<Map<String, dynamic>> getCompanyInfo({required Map<String, dynamic> data});
 }

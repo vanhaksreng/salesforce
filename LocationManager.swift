@@ -25,7 +25,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate, FlutterStreamHandler
         
         if canTrackLocation() {
             // Enable background location if we have "Always" permission
-            if CLLocationManager.authorizationStatus() == .authorizedAlways {
+            if manager.authorizationStatus == .authorizedAlways {
                 manager.allowsBackgroundLocationUpdates = true
             }
             
@@ -43,6 +43,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate, FlutterStreamHandler
     }
 
     func canTrackLocation() -> Bool {
+        
         let status = CLLocationManager.authorizationStatus()
         let locationServicesEnabled = CLLocationManager.locationServicesEnabled()
         return locationServicesEnabled && (status == .authorizedAlways || status == .authorizedWhenInUse)
@@ -51,8 +52,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate, FlutterStreamHandler
     func requestPermissions() {
         guard let manager = locationManager else { return }
         
-        let status = CLLocationManager.authorizationStatus()
-        
+        let status = manager.authorizationStatus
         switch status {
         case .notDetermined:
             manager.requestWhenInUseAuthorization()
@@ -63,7 +63,8 @@ class LocationManager: NSObject, CLLocationManagerDelegate, FlutterStreamHandler
                 details: nil
             ))
         case .authorizedWhenInUse:
-            showAlwaysPermissionAlert()
+            // showAlwaysPermissionAlert()
+            startLocationUpdates()
         case .authorizedAlways:
             startLocationUpdates()
         @unknown default:
@@ -72,50 +73,57 @@ class LocationManager: NSObject, CLLocationManagerDelegate, FlutterStreamHandler
     }
     
     func requestAlwaysPermission() {
-        let status = CLLocationManager.authorizationStatus()
-        
+        guard let manager = locationManager else { return }
+
+        let status = manager.authorizationStatus
         if status == .authorizedWhenInUse {
-            showAlwaysPermissionAlert()
+            // showAlwaysPermissionAlert()
         } else if status == .notDetermined {
             shouldRequestAlwaysOnBackground = true
             locationManager?.requestWhenInUseAuthorization()
         }
     }
     
-    private func showAlwaysPermissionAlert() {
-        DispatchQueue.main.async {
-            let alert = UIAlertController(
-                title: "Background Location Required",
-                message: "This app needs your location to track check-ins, check-outs and optimize sales routes, even when in the background.",
-                preferredStyle: .alert
-            )
+    // private func showAlwaysPermissionAlert() {
+    //     DispatchQueue.main.async {
+    //         let alert = UIAlertController(
+    //             title: "Background Location Required",
+    //             message: "This app needs your location to track check-ins, check-outs and optimize sales routes, even when in the background.",
+    //             preferredStyle: .alert
+    //         )
             
-            alert.addAction(UIAlertAction(title: "Settings", style: .default) { _ in
-                if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(settingsUrl)
-                }
-            })
+    //         alert.addAction(UIAlertAction(title: "Settings", style: .default) { _ in
+    //             if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+    //                 UIApplication.shared.open(settingsUrl)
+    //             }
+    //         })
             
-            alert.addAction(UIAlertAction(title: "Not Now", style: .cancel))
+    //         alert.addAction(UIAlertAction(title: "Not Now", style: .cancel))
             
-            if let viewController = UIApplication.shared.windows.first?.rootViewController {
-                viewController.present(alert, animated: true)
-            }
-        }
-    }
+    //         if let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+    //            let viewController = windowScene.windows.first?.rootViewController {
+    //             // Prevent presenting when another modal is on top
+    //             if viewController.presentedViewController == nil {
+    //                 viewController.present(alert, animated: true)
+    //             } else {
+    //                 print("A view controller is already presented; skipping permission alert")
+    //             }
+    //         }
+    //     }
+    // }
     
     // Handle app lifecycle events
     func handleAppBackground() {
-        let status = CLLocationManager.authorizationStatus()
-        
-        if status == .authorizedWhenInUse {
-            requestAlwaysPermission()
-        }
+        stopLocationUpdates()
+        eventSink = nil
+        locationManager?.delegate = nil
+        locationManager = nil
+        UserDefaults.standard.set(true, forKey: "shouldRequestAlwaysPermission")
     }
     
     func handleAppTermination() {
-        
-        let status = CLLocationManager.authorizationStatus()
+        guard let manager = locationManager else { return }
+        let status = manager.authorizationStatus
         if status != .authorizedAlways {
             UserDefaults.standard.set(true, forKey: "shouldRequestAlwaysPermission")
         }
@@ -144,7 +152,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate, FlutterStreamHandler
                 shouldRequestAlwaysOnBackground = false
                 // Automatically request Always permission
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    self.showAlwaysPermissionAlert()
+                    // self.showAlwaysPermissionAlert()
                 }
             }
             startLocationUpdates()

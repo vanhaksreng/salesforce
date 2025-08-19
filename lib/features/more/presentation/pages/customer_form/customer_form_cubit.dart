@@ -8,7 +8,8 @@ import 'package:salesforce/features/more/presentation/pages/customer_form/custom
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
-class CustomerFormCubit extends Cubit<CustomerFormState> with MessageMixin, AppMixin {
+class CustomerFormCubit extends Cubit<CustomerFormState>
+    with MessageMixin, AppMixin {
   CustomerFormCubit() : super(const CustomerFormState(isLoading: true));
   final _repos = getIt<MoreRepository>();
 
@@ -26,10 +27,14 @@ class CustomerFormCubit extends Cubit<CustomerFormState> with MessageMixin, AppM
 
   Future<void> getAddressFrmLatLng(LatLng latlng) async {
     try {
-      final result = await _repos.getAddressFrmLatLng(latlng.latitude, latlng.longitude);
+      final result = await _repos.getAddressFrmLatLng(
+        latlng.latitude,
+        latlng.longitude,
+      );
       result.fold(
         (l) => throw GeneralException(l.message),
-        (address) => emit(state.copyWith(isLoading: false, fullAddress: address)),
+        (address) =>
+            emit(state.copyWith(isLoading: false, fullAddress: address)),
       );
     } on GeneralException catch (e) {
       showWarningMessage(e.message);

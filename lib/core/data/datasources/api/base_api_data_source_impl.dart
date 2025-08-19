@@ -41,7 +41,10 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
   @override
   Future<List<SalespersonSchedule>> createSchedules(Map data) async {
     try {
-      final response = await apiClient.post('v2/add-schedule', body: await getParams(params: data));
+      final response = await apiClient.post(
+        'v2/add-schedule',
+        body: await getParams(params: data),
+      );
 
       final List<SalespersonSchedule> records = [];
       for (var item in response["records"]) {
@@ -57,7 +60,10 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
   @override
   Future<List<SalespersonSchedule>> getSchedules(String date) async {
     try {
-      final response = await apiClient.post('v2/get-schedule', body: await getParams(params: {"visit_date": date}));
+      final response = await apiClient.post(
+        'v2/get-schedule',
+        body: await getParams(params: {"visit_date": date}),
+      );
 
       final List<SalespersonSchedule> records = [];
       for (var item in response["records"]) {
@@ -73,7 +79,10 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
   @override
   Future<bool> isValidApiSession() async {
     try {
-      await apiClient.postCheckSession('v2/check-api-session', body: await getParams());
+      await apiClient.postCheckSession(
+        'v2/check-api-session',
+        body: await getParams(),
+      );
 
       return true;
     } catch (e) {
@@ -84,25 +93,37 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
   @override
   Future<void> checkApiSession() async {
     try {
-      await apiClient.postCheckSession('v2/check-api-session', body: await getParams());
+      await apiClient.postCheckSession(
+        'v2/check-api-session',
+        body: await getParams(),
+      );
     } catch (e) {
       rethrow;
     }
   }
 
   @override
-  Future<void> updateSchedule(SalespersonSchedule schedule, {String type = kStatusCheckIn}) async {
+  Future<void> updateSchedule(
+    SalespersonSchedule schedule, {
+    String type = kStatusCheckIn,
+  }) async {
     try {
       if (type == kStatusCheckIn) {
         await apiClient.postUploadFiles(
           'v2/update-schedule',
-          body: await getParams(params: {'schedule': jsonEncode(schedule.toJson()), 'type': type}),
-          files: schedule.checkInImage != null ? [XFile(schedule.checkInImage!)] : [],
+          body: await getParams(
+            params: {'schedule': jsonEncode(schedule.toJson()), 'type': type},
+          ),
+          files: schedule.checkInImage != null
+              ? [XFile(schedule.checkInImage!)]
+              : [],
         );
       } else {
         await apiClient.post(
           'v2/update-schedule',
-          body: await getParams(params: {'schedule': jsonEncode(schedule.toJson()), 'type': type}),
+          body: await getParams(
+            params: {'schedule': jsonEncode(schedule.toJson()), 'type': type},
+          ),
         );
       }
     } catch (e) {
@@ -113,7 +134,10 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
   @override
   Future<Map<String, dynamic>> downloadAppSetting() async {
     try {
-      final response = await apiClient.post('v2/download-app-setting', body: await getParams());
+      final response = await apiClient.post(
+        'v2/download-app-setting',
+        body: await getParams(),
+      );
 
       return response;
     } catch (e) {
@@ -121,18 +145,28 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
     }
   }
 
-  Future<Map<String, dynamic>> submitStockRequest(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> submitStockRequest(
+    Map<String, dynamic> data,
+  ) async {
     try {
-      return await apiClient.post('v2/submit-stock-request', body: await getParams(params: data));
+      return await apiClient.post(
+        'v2/submit-stock-request',
+        body: await getParams(params: data),
+      );
     } catch (e) {
       rethrow;
     }
   }
 
   @override
-  Future<Map<String, dynamic>> downloadTranData({Map<String, dynamic>? data}) async {
+  Future<Map<String, dynamic>> downloadTranData({
+    Map<String, dynamic>? data,
+  }) async {
     try {
-      return await apiClient.post('v2/download-transaction-data', body: await getParams(params: data));
+      return await apiClient.post(
+        'v2/download-transaction-data',
+        body: await getParams(params: data),
+      );
     } catch (e) {
       rethrow;
     }
@@ -141,28 +175,9 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
   @override
   Future<void> gpsTrackingEntry({required Map<String, dynamic> data}) async {
     try {
-      await apiClient.post('v2/tracking-gps-entry', body: await getParams(params: data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<Map<String, dynamic>> processUpload({Map<String, dynamic>? data}) async {
-    try {
-      return await apiClient.post('v2/upload-data', body: await getParams(params: data));
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<Map<String, dynamic>> updateProfileUer({required Map<String, dynamic> data, required XFile? imagePath}) async {
-    try {
-      return await apiClient.postUploadFiles(
-        'v2/update-profile-user',
+      await apiClient.post(
+        'v2/tracking-gps-entry',
         body: await getParams(params: data),
-        files: (imagePath != null && imagePath.path.isNotEmpty) ? [imagePath] : [],
       );
     } catch (e) {
       rethrow;
@@ -170,9 +185,60 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
   }
 
   @override
-  Future<Map<String, dynamic>> heartbeatStatus({required Map<String, dynamic> data}) async {
+  Future<Map<String, dynamic>> processUpload({
+    Map<String, dynamic>? data,
+  }) async {
     try {
-      return await apiClient.post('v2/heartbeat', body: await getParams(params: data));
+      return await apiClient.post(
+        'v2/upload-data',
+        body: await getParams(params: data),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateProfileUer({
+    required Map<String, dynamic> data,
+    required XFile? imagePath,
+  }) async {
+    try {
+      return await apiClient.postUploadFiles(
+        'v2/update-profile-user',
+        body: await getParams(params: data),
+        files: (imagePath != null && imagePath.path.isNotEmpty)
+            ? [imagePath]
+            : [],
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> heartbeatStatus({
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      return await apiClient.post(
+        'v2/heartbeat',
+        body: await getParams(params: data),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getCompanyInfo({
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      return await apiClient.post(
+        'get-org-info',
+        body: await getParams(params: data),
+      );
     } catch (e) {
       rethrow;
     }

@@ -6,6 +6,7 @@ class User {
   final String imgPath;
   final String token;
   final String expired;
+  final String salepersonCode;
 
   User({
     required this.id,
@@ -15,5 +16,6 @@ class User {
     required this.imgPath,
     required this.token,
     required this.expired,
+    required this.salepersonCode,
   });
 }

@@ -1,166 +1,237 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/services.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:salesforce/core/constants/app_setting.dart';
-import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
-import 'package:salesforce/core/mixins/app_mixin.dart';
-import 'package:salesforce/core/utils/date_extensions.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:salesforce/core/utils/logger.dart';
-import 'package:salesforce/infrastructure/gps/gps_service_impl.dart';
-import 'package:salesforce/injection_container.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 
-class LocationService with AppMixin {
-  static const MethodChannel _channel = MethodChannel('com.clearviewerp.salesforce/location');
-  static const EventChannel _eventChannel = EventChannel('com.clearviewerp.salesforce/location_stream');
+enum LocationTrackingMode { foreground, background, significant, periodic }
 
-  final appRepo = getIt<BaseAppRepository>();
+class LocationService {
+  static const String _channelName =
+      'com.clearviewerp.salesforce/background_service';
+  static final LocationService instance = LocationService._internal();
+  final MethodChannel _channel = const MethodChannel(_channelName);
 
-  StreamSubscription<dynamic>? _locationSubscription;
+  // Stream controllers
+  final StreamController<Map<String, dynamic>> _locationController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<Map<String, dynamic>> _eventController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
-  bool _isBackgroundTracking = false;
-  String _userGpsTracking = "No";
+  // Public streams (matching your existing API)
+  Stream<Map<String, dynamic>> get onLocation => _locationController.stream;
+  Stream<Map<String, dynamic>> get onEvent => _eventController.stream;
 
-  double? _lastLatitude;
-  double? _lastLongitude;
+  bool _isListening = false;
+  bool _appActive = true;
+  final bool _isAppActive = true;
+  LocationTrackingMode _currentMode = LocationTrackingMode.foreground;
+  final bool _isTracking = false;
 
-  static const Map<String, String> _daySettingsKeys = {
-    "Monday": kGpsRealTimeTrackingMonday,
-    "Tuesday": kGpsRealTimeTrackingTuesDay,
-    "Wednesday": kGpsRealTimeTrackingWednesday,
-    "Thursday": kGpsRealTimeTrackingThursday,
-    "Friday": kGpsRealTimeTrackingFriday,
-    "Saturday": kGpsRealTimeTrackingSaturDay,
-    "Sunday": kGpsRealTimeTrackingSunday,
-  };
+  LocationService._internal() {
+    _setupMethodHandler();
+  }
 
-  Future<bool> _startBackgroundTracking() async {
-    if (_isBackgroundTracking) return true;
+  void setAppActive(bool active) {
+    final wasActive = _isAppActive;
+    _appActive = active;
 
-    final auth = getAuth();
-    if (auth == null) {
-      Logger.log("No Auth");
-      return false;
+    if (_isTracking && wasActive != active) {
+      _handleAppStateChange(active);
     }
+  }
 
-    if (!await _checkBackgroundPermissions()) {
-      return false;
-    }
-
-    final lastGps = await getLastGpsRequest();
-    if (lastGps != null) {
-      _lastLatitude = lastGps.latitude;
-      _lastLongitude = lastGps.longitude;
-    }
-
-    final gpsService = GpsServiceImpl(appRepo);
-
-    final result = await _channel.invokeMethod('startTracking');
-    if (!result) {
-      Logger.log('Background tracking started: $result');
-      return false;
-    }
-
-    _locationSubscription = _eventChannel.receiveBroadcastStream().listen(
-      (dynamic locationData) {
-        if (_lastLatitude != null && _lastLatitude != null) {
-          final distance = Geolocator.distanceBetween(
-            _lastLatitude!,
-            _lastLongitude!,
-            locationData['latitude'],
-            locationData['longitude'],
-          );
-
-          if (distance < 10) {
-            Logger.log('Ignoring small distance change: $distance meters');
-            return;
-          }
+  Future<void> _handleAppStateChange(bool isAppActive) async {
+    try {
+      if (isAppActive) {
+        final permissions = await checkPermissions();
+        if (permissions['canTrackForeground'] == true) {
+          await _switchToMode(LocationTrackingMode.foreground, 10.0);
         }
-
-        _lastLatitude = locationData['latitude'];
-        _lastLongitude = locationData['longitude'];
-
-        gpsService.execute(auth: auth, latlng: LatLng(locationData['latitude'], locationData['longitude']));
-        gpsService.syncToBackend(auth: auth);
-      },
-      onError: (dynamic error) {
-        Logger.log(error.toString());
-      },
-      onDone: () {
-        Logger.log("Location stream closed");
-      },
-    );
-
-    _isBackgroundTracking = true;
-    return true;
-  }
-
-  Future<void> _stopBackgroundTracking() async {
-    if (!_isBackgroundTracking) return;
-
-    _locationSubscription?.cancel();
-    _isBackgroundTracking = false;
-  }
-
-  Future<void> startSmartTracking() async {
-    Logger.log('GPS startSmartTracking Called');
-
-    _userGpsTracking = await appRepo.getSetting(kGpsRealTimeTracking);
-    if (_userGpsTracking != "Yes") {
-      Logger.log('GPS tracking disabled globally, skipping initialization');
-      stopSmartTracking();
-      return;
-    }
-
-    final dayName = DateTime.now().dayName();
-    final daySettingKey = _daySettingsKeys[dayName];
-
-    if (daySettingKey != null) {
-      final daySpecificSetting = await appRepo.getSetting(daySettingKey);
-      if (daySpecificSetting.isNotEmpty) {
-        _userGpsTracking = daySpecificSetting;
+      } else {
+        final permissions = await checkPermissions();
+        if (permissions['background'] == true) {
+          LocationTrackingMode bgMode = _getBestBackgroundMode();
+          double distanceFilter = getDistanceFilterForMode(bgMode);
+          await _switchToMode(bgMode, distanceFilter);
+        }
       }
+    } catch (e) {
+      _eventController.add({
+        'type': 'error',
+        'message': 'Failed to switch tracking mode: $e',
+      });
     }
-
-    if (_userGpsTracking != "Yes") {
-      Logger.log('GPS tracking disabled for $dayName, skipping initialization');
-      stopSmartTracking();
-      return;
-    }
-
-    await _startBackgroundTracking();
   }
 
-  Future<void> stopSmartTracking() async {
-    await _stopBackgroundTracking();
+  double getDistanceFilterForMode(LocationTrackingMode mode) {
+    switch (mode) {
+      case LocationTrackingMode.foreground:
+        return 10.0;
+      case LocationTrackingMode.background:
+        return 50.0;
+      case LocationTrackingMode.periodic:
+        return 100.0;
+      case LocationTrackingMode.significant:
+        return 200.0;
+    }
   }
 
-  Future<bool> _checkBackgroundPermissions() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
+  Future<void> _switchToMode(
+    LocationTrackingMode mode,
+    double distanceFilter,
+  ) async {
+    _currentMode = mode;
 
-    if (permission == LocationPermission.deniedForever) {
+    final success = await _channel.invokeMethod('startService', {
+      'mode': mode.name,
+      'filter': distanceFilter,
+    });
+
+    if (success) {
+      _eventController.add({
+        'type': 'modeSwitch',
+        'message': 'Switched to ${mode.name} mode (${distanceFilter}m filter)',
+      });
+    }
+  }
+
+  LocationTrackingMode _getBestBackgroundMode() {
+    // You can make this configurable or add user preferences
+    // Periodic is a good balance of accuracy and battery life
+    return LocationTrackingMode.periodic;
+  }
+
+  void _setupMethodHandler() {
+    if (_isListening) return;
+    _channel.setMethodCallHandler((call) async {
+      final args = (call.arguments as Map?)?.cast<String, dynamic>() ?? {};
+
+      switch (call.method) {
+        case 'locationUpdate':
+          if (_appActive) {
+            _locationController.add(args);
+          } else {
+            await _saveLocationWhenBackgrounded(args);
+          }
+
+          break;
+        case 'permissionStatus':
+          _locationController.add(args);
+          break;
+        case 'permissionChanged':
+          _eventController.add({'type': 'permissionChanged', ...args});
+          break;
+        case 'trackingStarted':
+          _eventController.add({'type': 'started', ...args});
+          break;
+        case 'trackingStopped':
+          _eventController.add({'type': 'stopped'});
+          break;
+        case 'error':
+          _eventController.add({
+            'type': 'error',
+            'message': args['message'] ?? 'Unknown',
+          });
+          break;
+        case 'log':
+          _eventController.add({
+            'type': 'log',
+            'message': args['message'] ?? 'Warning',
+          });
+          break;
+        case 'terminationLocation':
+          _eventController.add({'type': 'terminationLocation', ...args});
+          break;
+        case 'syncLocations':
+          final locations = call.arguments as List<dynamic>;
+          _eventController.add({'type': 'syncLocations', 'data': locations});
+          break;
+        default:
+          Logger.log("Unhandled method: ${call.method}");
+      }
+
+      return null;
+    });
+
+    _isListening = true;
+  }
+
+  Future<bool> startTracking({
+    required LocationTrackingMode mode,
+    double distanceFilter = 0.0,
+    double scheduledInterval = 300.0,
+  }) async {
+    try {
+      final res = await _channel.invokeMethod('startService', {
+        'mode': mode.name,
+        'filter': distanceFilter,
+        'scheduledInterval': scheduledInterval,
+      });
+      return res == true;
+    } on PlatformException catch (e) {
+      _eventController.add({'type': 'error', 'message': e.message ?? e.code});
       return false;
     }
-
-    // For Android 10+, need background location permission
-    if (Platform.isAndroid) {
-      var backgroundStatus = await Permission.locationAlways.status;
-      if (!backgroundStatus.isGranted) {
-        backgroundStatus = await Permission.locationAlways.request();
-        return backgroundStatus.isGranted;
-      }
-    }
-
-    return permission == LocationPermission.always || permission == LocationPermission.whileInUse;
   }
 
-  bool isBackgroundTrackingActive() {
-    return _isBackgroundTracking;
+  Future<bool> stopTracking() async {
+    try {
+      final res = await _channel.invokeMethod('stopService');
+      return res == true;
+    } on PlatformException catch (e) {
+      _eventController.add({'type': 'error', 'message': e.message ?? e.code});
+      return false;
+    }
+  }
+
+  Future<bool> requestPermissions(LocationTrackingMode mode) async {
+    try {
+      final res = await _channel.invokeMethod('requestPermissions', {
+        'mode': mode.name,
+      });
+      return res == true;
+    } on PlatformException catch (e) {
+      _eventController.add({'type': 'error', 'message': e.message ?? e.code});
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> checkPermissions() async {
+    try {
+      final res = await _channel.invokeMethod('checkPermissions');
+      return (res as Map).cast<String, dynamic>();
+    } on PlatformException catch (e) {
+      _eventController.add({'type': 'error', 'message': e.message ?? e.code});
+      return {'canTrackForeground': false, 'background': false};
+    }
+  }
+
+  Future<void> _saveLocationWhenBackgrounded(Map<String, dynamic> loc) async {
+    Logger.log(
+      "GPS bufferFile  processed: ${loc['latitude']}, ${loc['longitude']}",
+    );
+    try {
+      final f = await bufferFile();
+      final json = jsonEncode(loc);
+      await f.writeAsString('$json\n', mode: FileMode.append, flush: true);
+    } catch (e) {
+      Logger.log('Failed to buffer location: $e');
+    }
+  }
+
+  Future<File> bufferFile() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return File('${dir.path}/location_buffer.jsonl');
+  }
+
+  bool get isTracking => _isTracking;
+  bool get isAppActive => _isAppActive;
+  LocationTrackingMode get currentMode => _currentMode;
+
+  void dispose() {
+    _locationController.close();
+    _eventController.close();
   }
 }

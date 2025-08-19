@@ -32,15 +32,14 @@
 	<string>Camera access is required to allow salespeople to capture and upload customer store pictures during check-in.</string>
 	<key>NSDocumentsDirectoryUsageDescription</key>
 	<string>Access to your device's storage is required to save and manage application data and files.</string>
-	
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>This app requires access to the local network for debugging purposes</string>	
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>We need your location to track check-ins and show your position on the map while using the app.</string>
+	<string>This app requires access to the local network for debugging purposes</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app needs your location to track check-ins, check-outs and optimize sales routes, even when in the background.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>This app needs your location to track check-ins, check-outs and optimize sales routes, even when in the background.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to track check-ins and show your position on the map while using the app.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>We need access to your microphone for video recording.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -51,6 +50,8 @@
 	<array>
 		<string>location</string>
 		<string>remote-notification</string>
+		<string>fetch</string>
+		<string>processing</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -68,6 +69,10 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.clearviewerp.salesforce.location</string>
 	</array>
 </dict>
 </plist>

@@ -27,18 +27,8 @@ class RealmConfig {
     String realmPath = path.join(documents.path, 'ClearViewSalesforce.realm');
 
     if (kDebugMode && Platform.isIOS && kDbPath.isNotEmpty) {
-      realmPath = kDbPath;
+      realmPath = kDbPath; //TODO
     }
-
-    // if (Platform.isAndroid) {
-    //   final external = await getExternalStorageDirectory();
-
-    //   final copiedPath = path.join(external!.path, 'ClearViewSalesforce.realm');
-    //   final copiedFile = File(copiedPath);
-    //   if (copiedFile.existsSync()) {
-    //     copiedFile.deleteSync();
-    //   }
-    // }
 
     var config = Configuration.local(
       [

@@ -38,7 +38,8 @@ class TasksMainScreen extends StatefulWidget {
   State<TasksMainScreen> createState() => _TaskScreenState();
 }
 
-class _TaskScreenState extends State<TasksMainScreen> with SingleTickerProviderStateMixin {
+class _TaskScreenState extends State<TasksMainScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   late DateTime scheduleDate;
@@ -66,13 +67,6 @@ class _TaskScreenState extends State<TasksMainScreen> with SingleTickerProviderS
 
       _showOldScheduleDialogs();
     }
-
-    // final locationService = GeolocatorLocationService();
-    // locationService.checkPermission().then((status) {
-    //   if (status == LocationPermissionStatus.denied || status == LocationPermissionStatus.deniedForever) {
-    //     throw GeneralException('Location permissions are denied. Please enable them in app settings. $status');
-    //   }
-    // });
   }
 
   @override
@@ -134,18 +128,30 @@ class _TaskScreenState extends State<TasksMainScreen> with SingleTickerProviderS
   }
 
   late final List<ScheduleOptionData> options = [
-    ScheduleOptionData(label: "Refresh Schedules (Today)", icon: Icons.refresh, onTap: _refreshSchedules),
+    ScheduleOptionData(
+      label: "Refresh Schedules (Today)",
+      icon: Icons.refresh,
+      onTap: _refreshSchedules,
+    ),
     ScheduleOptionData(
       label: "My Schedule History",
       icon: Icons.checklist,
       onTap: _navigateToScheduleHistory,
-      trailing: Icon(Icons.arrow_forward_ios, size: scaleFontSize(14), color: grey),
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: scaleFontSize(14),
+        color: grey,
+      ),
     ),
     ScheduleOptionData(
       label: "Add New Schedule",
       icon: Icons.add,
       onTap: _navigateToAddSchedule,
-      trailing: Icon(Icons.arrow_forward_ios, size: scaleFontSize(14), color: grey),
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: scaleFontSize(14),
+        color: grey,
+      ),
     ),
   ];
 
@@ -197,7 +203,8 @@ class _TaskScreenState extends State<TasksMainScreen> with SingleTickerProviderS
             titleColor: white,
             fontSizeTitle: 22,
             heightBottom: 30,
-            title: "${greeting("Today")}, ${DateTime.now().toDateNameSortString()}",
+            title:
+                "${greeting("Today")}, ${DateTime.now().toDateNameSortString()}",
             subtitle: TextWidget(
               text: welcomeMessage(_auth?.userName ?? ""),
               fontSize: 16,
@@ -232,7 +239,10 @@ class _TaskScreenState extends State<TasksMainScreen> with SingleTickerProviderS
             physics: const NeverScrollableScrollPhysics(),
             controller: _tabController,
             children: [
-              MyScheduleScreen(refresh: state.refreshChild, searchText: state.text),
+              MyScheduleScreen(
+                refresh: state.refreshChild,
+                searchText: state.text,
+              ),
               const TeamSchedultScreen(),
             ],
           ),
@@ -248,7 +258,11 @@ class _TaskScreenState extends State<TasksMainScreen> with SingleTickerProviderS
       height: 45.scale,
       child: FloatingActionButton(
         backgroundColor: mainColor,
-        onPressed: () => Navigator.pushNamed(context, CustomerScheduleMapScreen.routeName, arguments: true),
+        onPressed: () => Navigator.pushNamed(
+          context,
+          CustomerScheduleMapScreen.routeName,
+          arguments: true,
+        ),
         child: const Icon(Icons.group_rounded),
       ),
     );
@@ -256,7 +270,10 @@ class _TaskScreenState extends State<TasksMainScreen> with SingleTickerProviderS
 
   _onOption() {
     if (_cubit.state.activeTap != 0) {
-      Helpers.showMessage(msg: "This feature isn't available yet", status: MessageStatus.warning);
+      Helpers.showMessage(
+        msg: "This feature isn't available yet",
+        status: MessageStatus.warning,
+      );
       return;
     }
 
@@ -266,7 +283,11 @@ class _TaskScreenState extends State<TasksMainScreen> with SingleTickerProviderS
       enableDrag: true,
       showDragHandle: false,
       isDismissible: true,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(scaleFontSize(16)))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(scaleFontSize(16)),
+        ),
+      ),
       constraints: BoxConstraints(
         maxWidth: MediaQuery.of(context).size.width,
         minWidth: MediaQuery.of(context).size.width,
@@ -274,7 +295,9 @@ class _TaskScreenState extends State<TasksMainScreen> with SingleTickerProviderS
       builder: (BuildContext context) {
         return SafeArea(
           child: SingleChildScrollView(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
             child: Column(
               children: [
                 HeaderBottomSheet(
@@ -289,7 +312,12 @@ class _TaskScreenState extends State<TasksMainScreen> with SingleTickerProviderS
                   children: options.asMap().entries.map((entry) {
                     final option = entry.value;
                     return Padding(
-                      padding: EdgeInsets.fromLTRB(8.scale, 8.scale, 8.scale, 4.scale),
+                      padding: EdgeInsets.fromLTRB(
+                        8.scale,
+                        8.scale,
+                        8.scale,
+                        4.scale,
+                      ),
                       child: BuildOptions(
                         key: ValueKey(entry.key),
                         onTap: option.onTap,

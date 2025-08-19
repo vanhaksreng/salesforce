@@ -7,11 +7,13 @@ import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/data/datasources/api/base_api_data_source.dart';
 import 'package:salesforce/core/data/datasources/handlers/table_handler_factory.dart';
 import 'package:salesforce/core/data/datasources/realm/base_realm_data_source.dart';
+import 'package:salesforce/core/data/models/extension/company_info_extension.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/errors/failures.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/infrastructure/network/network_info.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
@@ -40,7 +42,9 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   @override
-  Future<Either<Failure, List<AppSyncLog>>> getAppSyncLogs({Map<String, dynamic>? arg}) async {
+  Future<Either<Failure, List<AppSyncLog>>> getAppSyncLogs({
+    Map<String, dynamic>? arg,
+  }) async {
     try {
       final download = await _local.getAppSyncLogs(arg: arg);
       return Right(download);
@@ -77,10 +81,15 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
           final handler = TableHandlerFactory.getHandler(tableName);
 
           if (handler == null) {
-            return throw GeneralException("No handler found for table: $tableName");
+            return throw GeneralException(
+              "No handler found for table: $tableName",
+            );
           }
 
-          Map<String, dynamic>? p = {"table": tableName, "last_synched_datetime": table.lastSynchedDatetime};
+          Map<String, dynamic>? p = {
+            "table": tableName,
+            "last_synched_datetime": table.lastSynchedDatetime,
+          };
 
           if (param != null) {
             p = {...p, ...param};
@@ -95,7 +104,13 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
           }).toList();
 
           final reset = datas["reset"] ?? false;
-          await _local.storeData(records, handler.extractKey, date, tableName, reset: reset);
+          await _local.storeData(
+            records,
+            handler.extractKey,
+            date,
+            tableName,
+            reset: reset,
+          );
         } catch (e) {
           errorText = "$displayName Error: ${e.toString()}";
           countErrors++;
@@ -107,7 +122,8 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
 
         String textMsg = "${displayName.toLowerCase()}...";
         if (countErrors > 0) {
-          textMsg = "${displayName.toLowerCase()}...(Failed : $countErrors / $countTables)";
+          textMsg =
+              "${displayName.toLowerCase()}...(Failed : $countErrors / $countTables)";
         }
 
         double percent = (excuted / countTables) * 100;
@@ -168,7 +184,10 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   @override
-  Future<Either<Failure, List<Customer>>> getCustomers({int page = 1, Map<String, dynamic>? params}) async {
+  Future<Either<Failure, List<Customer>>> getCustomers({
+    int page = 1,
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final customer = await _local.getCustomers(page: page, params: params);
       return Right(customer);
@@ -178,7 +197,10 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   @override
-  Future<Either<Failure, List<Item>>> getItems({Map<String, dynamic>? param, int page = 1}) async {
+  Future<Either<Failure, List<Item>>> getItems({
+    Map<String, dynamic>? param,
+    int page = 1,
+  }) async {
     try {
       final items = await _local.getItems(page: page, param: param);
       return Right(items);
@@ -198,7 +220,10 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   @override
-  Future<Either<Failure, ItemUnitOfMeasure?>> getItemUom({Map<String, dynamic>? params, int page = 1}) async {
+  Future<Either<Failure, ItemUnitOfMeasure?>> getItemUom({
+    Map<String, dynamic>? params,
+    int page = 1,
+  }) async {
     try {
       final itemUom = await _local.getItemUom(params: params);
       return Right(itemUom);
@@ -208,7 +233,9 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   @override
-  Future<Either<Failure, List<ItemUnitOfMeasure>>> getItemUoms({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, List<ItemUnitOfMeasure>>> getItemUoms({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final itemUoms = await _local.getItemUoms(params: params);
       return Right(itemUoms);
@@ -218,7 +245,9 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   @override
-  Future<Either<Failure, UserSetup?>> getUserSetup({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, UserSetup?>> getUserSetup({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final userSetup = await _local.getUserSetup(param: params);
       return Right(userSetup);
@@ -233,9 +262,13 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   @override
-  Future<Either<Failure, List<ItemPromotionHeader>>> getItemPromotionHeaders({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, List<ItemPromotionHeader>>> getItemPromotionHeaders({
+    Map<String, dynamic>? params,
+  }) async {
     try {
-      final promotionHeader = await _local.getItemPromotionHeaders(args: params);
+      final promotionHeader = await _local.getItemPromotionHeaders(
+        args: params,
+      );
       return Right(promotionHeader);
     } catch (e) {
       rethrow;
@@ -243,7 +276,9 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   @override
-  Future<Either<Failure, List<ItemPromotionLine>>> getItemPromotionLines({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, List<ItemPromotionLine>>> getItemPromotionLines({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final promotionLines = await _local.getItemPromotionLines(args: params);
       return Right(promotionLines);
@@ -253,7 +288,9 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   @override
-  Future<Either<Failure, ItemPromotionScheme?>> getPromotionScheme({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, ItemPromotionScheme?>> getPromotionScheme({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final scheme = await _local.getPromotionScheme(args: params);
       return Right(scheme);
@@ -285,12 +322,24 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   @override
+  Future<Either<Failure, bool>> storeGps(List<GpsRouteTracking> records) async {
+    try {
+      await _local.storeGps(records);
+      return const Right(true);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<Either<Failure, bool>> syncOfflineLocationToBackend() async {
     if (!await _networkInfo.isConnected) {
       return const Right(true);
     }
 
-    final routeTrackings = await _local.getGPSTracking(param: {"is_sync": "No"});
+    final routeTrackings = await _local.getGPSTracking(
+      param: {"is_sync": "No"},
+    );
 
     if (routeTrackings.isEmpty) {
       return const Right(true);
@@ -318,7 +367,9 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   @override
-  Future<Either<Failure, Salesperson?>> getSaleperson({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, Salesperson?>> getSaleperson({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final saleperson = await _local.getSalesperson(args: params);
       return Right(saleperson);
@@ -328,7 +379,9 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   @override
-  Future<Either<Failure, List<Salesperson>>> getSalepersons({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, List<Salesperson>>> getSalepersons({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final saleperson = await _local.getSalespersons(args: params);
       return Right(saleperson);
@@ -392,6 +445,35 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
       final response = await _local.getLastGpsRequest();
       return Right(response);
     } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, CompanyInformation?>> getCompanyInfo() async {
+    try {
+      final response = await _local.getCompanyInfo();
+      return Right(response);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, CompanyInformation?>> getRemoteCompanyInfo({
+    required Map<String, dynamic> params,
+  }) async {
+    try {
+      final response = await _remote.getCompanyInfo(data: params);
+
+      final companyInfo = CompanyInformationExtension.fromMap(
+        response["records"],
+      );
+      await _local.storeCompanyInfo(companyInfo);
+
+      return Right(companyInfo);
+    } catch (e) {
+      Logger.log("getRemoteCompanyInfo $e");
       return Left(CacheFailure(e.toString()));
     }
   }
