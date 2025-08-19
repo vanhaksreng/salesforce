@@ -34,7 +34,11 @@ import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class MyScheduleScreen extends StatefulWidget {
-  const MyScheduleScreen({super.key, this.refresh = false, required this.searchText});
+  const MyScheduleScreen({
+    super.key,
+    this.refresh = false,
+    required this.searchText,
+  });
 
   final String searchText;
   final bool refresh;
@@ -43,7 +47,8 @@ class MyScheduleScreen extends StatefulWidget {
   State<MyScheduleScreen> createState() => MyScheduleScreenState();
 }
 
-class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, AutomaticKeepAliveClientMixin {
+class MyScheduleScreenState extends State<MyScheduleScreen>
+    with MessageMixin, AutomaticKeepAliveClientMixin {
   final _cubit = MyScheduleCubit();
   final ILocationService _location = GeolocatorLocationService();
 
@@ -52,7 +57,13 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
   ActionState action = ActionState.init;
   String? checkInWithLocation;
   LatLng? latLng;
-  final List<String> _listStatus = ["All", kStatusScheduled, kStatusCheckIn, kStatusCheckOut];
+
+  final List<String> _listStatus = [
+    "All",
+    kStatusScheduled,
+    kStatusCheckIn,
+    kStatusCheckOut,
+  ];
 
   @override
   void initState() {
@@ -61,7 +72,6 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
     _cubit.getUserSetup();
     checkInitWithLocation();
     refreshSchedule();
-    // getCurrentLocation();
   }
 
   @override
@@ -88,7 +98,10 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
 
   _navigateToProcessScreen(SalespersonSchedule schedule, String customerNo) {
     if (schedule.status != kStatusCheckIn) {
-      Helpers.showMessage(msg: greeting("please_check_in_before_process"), status: MessageStatus.warning);
+      Helpers.showMessage(
+        msg: greeting("please_check_in_before_process"),
+        status: MessageStatus.warning,
+      );
     }
 
     Navigator.pushNamed(
@@ -162,11 +175,15 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
         }
       }
 
-      final areaByMeters = Helpers.toDouble(await _cubit.getSetting(kCheckedInAreaKey));
+      final areaByMeters = Helpers.toDouble(
+        await _cubit.getSetting(kCheckedInAreaKey),
+      );
       if (areaByMeters > 0) {
         final currentLocation = await getCurrentLocation();
         if (currentLocation.latitude == 0 && currentLocation.longitude == 0) {
-          throw GeneralException(greeting("Your current location is not available."));
+          throw GeneralException(
+            greeting("Your current location is not available."),
+          );
         }
 
         final double distInMeters = _location.getDistanceBetween(
@@ -180,7 +197,12 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
           throw GeneralException(
             greeting(
               "must_within_store_checkin",
-              params: {'value': Helpers.formatNumber(areaByMeters, option: FormatType.quantity)},
+              params: {
+                'value': Helpers.formatNumber(
+                  areaByMeters,
+                  option: FormatType.quantity,
+                ),
+              },
             ),
           );
         }
@@ -204,11 +226,15 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
     l.show();
 
     try {
-      final areaByMeters = Helpers.toDouble(await _cubit.getSetting(kCheckedOutAreaKey));
+      final areaByMeters = Helpers.toDouble(
+        await _cubit.getSetting(kCheckedOutAreaKey),
+      );
       if (areaByMeters > 0) {
         final currentLocation = await getCurrentLocation();
         if (currentLocation.latitude == 0 && currentLocation.longitude == 0) {
-          throw GeneralException(greeting("Your current location is not available."));
+          throw GeneralException(
+            greeting("Your current location is not available."),
+          );
         }
 
         final double distInMeters = _location.getDistanceBetween(
@@ -222,7 +248,12 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
           throw GeneralException(
             greeting(
               "must_within_store_checkout",
-              params: {'value': Helpers.formatNumber(areaByMeters, option: FormatType.quantity)},
+              params: {
+                'value': Helpers.formatNumber(
+                  areaByMeters,
+                  option: FormatType.quantity,
+                ),
+              },
             ),
           );
         }
@@ -255,7 +286,9 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
       }
 
       if (_cubit.state.countItemPrizeRedeption > 0) {
-        throw GeneralException("You missing to complete item prize redemption.");
+        throw GeneralException(
+          "You missing to complete item prize redemption.",
+        );
       }
 
       if (!await _cubit.hasPermission(kPSkipCheckStock)) {
@@ -266,7 +299,9 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
 
       if (!await _cubit.hasPermission(kPSkipCheckCompetitorStock)) {
         if (_cubit.state.checkCompetitorItemStockRecords.isEmpty) {
-          throw GeneralException("You missing to check competitor's item stock");
+          throw GeneralException(
+            "You missing to check competitor's item stock",
+          );
         }
       }
 
@@ -298,7 +333,11 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
       return;
     }
 
-    Navigator.pushNamed(context, CheckinScreen.routeName, arguments: schedule).then((value) {
+    Navigator.pushNamed(
+      context,
+      CheckinScreen.routeName,
+      arguments: schedule,
+    ).then((value) {
       if (value == null) {
         return;
       }
@@ -321,15 +360,25 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
   double culculateTotalSaleByCustomer(String customerNo) {
     double totalSaleInv = _cubit.state.saleLines
         .where((e) {
-          return e.customerNo == customerNo && [kSaleInvoice, kSaleOrder].contains(e.documentType);
+          return e.customerNo == customerNo &&
+              [kSaleInvoice, kSaleOrder].contains(e.documentType);
         })
-        .fold(0.0, (sum, saleLine) => sum + Helpers.toDouble(saleLine.amountIncludingVatLcy ?? ""));
+        .fold(
+          0.0,
+          (sum, saleLine) =>
+              sum + Helpers.toDouble(saleLine.amountIncludingVatLcy ?? ""),
+        );
 
     double totalSaleCr = _cubit.state.saleLines
         .where((e) {
-          return e.customerNo == customerNo && e.documentType == kSaleCreditMemo;
+          return e.customerNo == customerNo &&
+              e.documentType == kSaleCreditMemo;
         })
-        .fold(0.0, (sum, saleLine) => sum + Helpers.toDouble(saleLine.amountIncludingVatLcy ?? ""));
+        .fold(
+          0.0,
+          (sum, saleLine) =>
+              sum + Helpers.toDouble(saleLine.amountIncludingVatLcy ?? ""),
+        );
 
     return totalSaleInv - totalSaleCr;
   }
@@ -338,7 +387,10 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
     _cubit.sortCustomerViaLatlng(currentLocation: await getCurrentLocation());
   }
 
-  Future<void> _onApplyFilter({required bool sortByDistance, required String selectedStatus}) async {
+  Future<void> _onApplyFilter({
+    required bool sortByDistance,
+    required String selectedStatus,
+  }) async {
     Navigator.of(context).pop();
     final l = LoadingOverlay.of(context);
     try {
@@ -362,7 +414,11 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           HeaderBottomSheet(
-            childWidget: TextWidget(text: greeting("Filter"), color: white, fontWeight: FontWeight.bold),
+            childWidget: TextWidget(
+              text: greeting("Filter"),
+              color: white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           _buildFilter(),
         ],
@@ -398,7 +454,11 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
           spacing: scaleFontSize(appSpace),
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextWidget(text: greeting("Today's Performance"), fontWeight: FontWeight.bold, fontSize: 16),
+            TextWidget(
+              text: greeting("Today's Performance"),
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
             Column(
               spacing: scaleFontSize(appSpace),
               children: [
@@ -406,13 +466,19 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
                   spacing: scaleFontSize(appSpace),
                   children: [
                     _buildInfo(
-                      label: Helpers.formatNumberLink(state.totalVisit, option: FormatType.quantity),
+                      label: Helpers.formatNumberLink(
+                        state.totalVisit,
+                        option: FormatType.quantity,
+                      ),
                       value: greeting("Visit"),
                       labelColor: success,
                       bgLabelColor: success,
                     ),
                     _buildInfo(
-                      label: Helpers.formatNumberLink(state.totalSales, option: FormatType.amount),
+                      label: Helpers.formatNumberLink(
+                        state.totalSales,
+                        option: FormatType.amount,
+                      ),
                       value: greeting("Sales Amt"),
                       labelColor: mainColor,
                       bgLabelColor: mainColor,
@@ -448,7 +514,10 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [_headerCustomerVisit(state), _listCustomerVisit(records, state)],
+              children: [
+                _headerCustomerVisit(state),
+                _listCustomerVisit(records, state),
+              ],
             ),
           ],
         ),
@@ -456,9 +525,15 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
     );
   }
 
-  Widget _listCustomerVisit(List<SalespersonSchedule> records, MyScheduleState state) {
+  Widget _listCustomerVisit(
+    List<SalespersonSchedule> records,
+    MyScheduleState state,
+  ) {
     if (records.isEmpty) {
-      return SizedBox(height: MediaQuery.of(context).size.height / 2.5, child: EmptyScreen());
+      return SizedBox(
+        height: MediaQuery.of(context).size.height / 2.5,
+        child: EmptyScreen(),
+      );
     }
     return ListView.builder(
       shrinkWrap: true,
@@ -474,7 +549,9 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
           record.longitude ?? 0,
         );
 
-        double totalSalesBySchedule = culculateTotalSaleByCustomer(record.customerNo ?? "");
+        double totalSalesBySchedule = culculateTotalSaleByCustomer(
+          record.customerNo ?? "",
+        );
         return Padding(
           padding: EdgeInsets.symmetric(vertical: scaleFontSize(4)),
           child: ScheduleCard(
@@ -483,7 +560,8 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
             key: ValueKey(record.id),
             onCheckIn: (schedule) => _checkInHandler(schedule),
             onCheckOut: (schedule) => checkOutHandler(schedule),
-            onProcess: (schedule) => _navigateToProcessScreen(schedule, record.customerNo ?? ""),
+            onProcess: (schedule) =>
+                _navigateToProcessScreen(schedule, record.customerNo ?? ""),
             isLoading: state.isLoadingId == record.id,
             schedule: record,
           ),
@@ -497,7 +575,10 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        TextWidget(text: greeting("Customer Visits"), fontWeight: FontWeight.bold),
+        TextWidget(
+          text: greeting("Customer Visits"),
+          fontWeight: FontWeight.bold,
+        ),
         Badge(
           isLabelVisible: isResetActive,
           child: BtnTextWidget(
@@ -524,14 +605,22 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
     return BlocBuilder<MyScheduleCubit, MyScheduleState>(
       bloc: _cubit,
       builder: (context, state) {
-        final isResetActive = state.isSortDistance || state.selectedStatus != "All";
+        final isResetActive =
+            state.isSortDistance || state.selectedStatus != "All";
         return Padding(
-          padding: EdgeInsets.symmetric(vertical: scaleFontSize(appSpace), horizontal: scaleFontSize(8)),
+          padding: EdgeInsets.symmetric(
+            vertical: scaleFontSize(appSpace),
+            horizontal: scaleFontSize(8),
+          ),
           child: Column(
             spacing: scaleFontSize(appSpace),
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextWidget(text: greeting("Sort by Nearly"), fontWeight: FontWeight.bold, color: textColor),
+              TextWidget(
+                text: greeting("Sort by Nearly"),
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
               InkWell(
                 onTap: () => _cubit.changeSortBy(!state.isSortDistance),
                 child: Column(
@@ -543,7 +632,9 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
                       spacing: 8.scale,
                       children: [
                         Icon(
-                          state.isSortDistance ? Icons.check_box : Icons.check_box_outline_blank,
+                          state.isSortDistance
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
                           color: state.isSortDistance ? primary : textColor50,
                         ),
                         Expanded(
@@ -551,9 +642,14 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
                             spacing: 8.scale,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              TextWidget(text: greeting("Sort by Distance"), fontWeight: FontWeight.w400),
                               TextWidget(
-                                text: greeting("Sort by distance will sort customer by your current location."),
+                                text: greeting("Sort by Distance"),
+                                fontWeight: FontWeight.w400,
+                              ),
+                              TextWidget(
+                                text: greeting(
+                                  "Sort by distance will sort customer by your current location.",
+                                ),
                                 color: textColor50,
                                 fontSize: 12,
                                 maxLines: 2,
@@ -566,7 +662,11 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
                   ],
                 ),
               ),
-              TextWidget(text: greeting("Status"), fontWeight: FontWeight.bold, color: textColor),
+              TextWidget(
+                text: greeting("Status"),
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
               Wrap(
                 alignment: WrapAlignment.start,
                 runAlignment: WrapAlignment.start,
@@ -582,15 +682,20 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
                     borderColor: grey20,
                     bgColor: isHasSelected ? mainColor : grey20,
                     onPressed: () => _cubit.changeStatus(status),
-                    child: TextWidget(text: status, color: isHasSelected ? white : textColor),
+                    child: TextWidget(
+                      text: status,
+                      color: isHasSelected ? white : textColor,
+                    ),
                   );
                 }).toList(),
               ),
               const Hr(width: double.infinity),
               BtnWidget(
                 gradient: linearGradient,
-                onPressed: () =>
-                    _onApplyFilter(selectedStatus: state.selectedStatus, sortByDistance: state.isSortDistance),
+                onPressed: () => _onApplyFilter(
+                  selectedStatus: state.selectedStatus,
+                  sortByDistance: state.isSortDistance,
+                ),
                 title: greeting("Apply Filter"),
               ),
               BtnWidget(
@@ -622,8 +727,17 @@ class MyScheduleScreenState extends State<MyScheduleScreen> with MessageMixin, A
         child: Column(
           spacing: scaleFontSize(8),
           children: [
-            TextWidget(text: label, fontSize: 20, color: labelColor, fontWeight: FontWeight.bold),
-            TextWidget(text: value, color: textColor50, fontWeight: FontWeight.w600),
+            TextWidget(
+              text: label,
+              fontSize: 20,
+              color: labelColor,
+              fontWeight: FontWeight.bold,
+            ),
+            TextWidget(
+              text: value,
+              color: textColor50,
+              fontWeight: FontWeight.w600,
+            ),
           ],
         ),
       ),

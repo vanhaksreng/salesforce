@@ -51,3 +51,8 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/icons/process_icon/
+    
+  fonts:
+    - family: Siemreap
+      fonts:
+        - asset: assets/fonts/Siemreap-Regular.ttf

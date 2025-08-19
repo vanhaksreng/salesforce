@@ -8,6 +8,7 @@ import 'package:salesforce/app/custom_bottom_navigation_bar.dart';
 import 'package:salesforce/app/navigation_item.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
+import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/features/more/more_main_page.dart';
 import 'package:salesforce/features/more/more_main_page_cubit.dart';
@@ -16,6 +17,9 @@ import 'package:salesforce/features/report/main_page_report_screen.dart';
 import 'package:salesforce/features/stock/main_page_stock_screen.dart';
 import 'package:salesforce/features/tasks/tasks_main_cubit.dart';
 import 'package:salesforce/features/tasks/tasks_main_screen.dart';
+import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
+import 'package:salesforce/infrastructure/external_services/location/i_location_service.dart';
+import 'package:salesforce/infrastructure/external_services/location/location_permission_status.dart';
 import 'package:salesforce/infrastructure/gps/gps_service.dart';
 import 'package:salesforce/infrastructure/gps/gps_service_impl.dart';
 import 'package:salesforce/infrastructure/heartbeat/heartbeat_service.dart';
@@ -23,6 +27,7 @@ import 'package:salesforce/infrastructure/heartbeat/heartbeat_service_impl.dart'
 import 'package:salesforce/infrastructure/services/location_service.dart';
 import 'package:salesforce/injection_container.dart' as di;
 import 'package:salesforce/realm/scheme/general_schemas.dart';
+import 'package:permission_handler/permission_handler.dart' as perm;
 
 class MainTapScreen extends StatefulWidget {
   const MainTapScreen({super.key});
@@ -46,6 +51,8 @@ class _MainTapScreenState extends State<MainTapScreen>
   Timer? syncTimer;
   Timer? heartbeatTimer;
 
+  final ILocationService geolocation = GeolocatorLocationService();
+
   @override
   void initState() {
     super.initState();
@@ -58,10 +65,6 @@ class _MainTapScreenState extends State<MainTapScreen>
     heartbeatService = HeartbeatServiceImpl(appRepo);
 
     _initBGTasks();
-
-    importBufferedToRealm();
-
-    _startTimers();
   }
 
   @override
@@ -235,6 +238,31 @@ class _MainTapScreenState extends State<MainTapScreen>
 
   // MARK: - Enhanced Background Task Initialization
   Future<void> _initBGTasks() async {
+    final locationStatus = await geolocation.checkPermission();
+    if (!mounted) return;
+
+    if (locationStatus == LocationPermissionStatus.denied ||
+        locationStatus == LocationPermissionStatus.deniedForever) {
+      Helpers.showDialogAction(
+        context,
+        labelAction: "Location Access Required",
+        subtitle:
+            "As required by your company, the app needs access to your current location. This is essential for tracking your check-in and check-out activities at customer sites.",
+        confirmText: "Go to Settings",
+        confirm: () async {
+          await perm.openAppSettings();
+          if (!mounted) return;
+          Navigator.pop(context);
+        },
+        cancelText: "Not Now",
+      );
+      return;
+    }
+
+    importBufferedToRealm();
+
+    _startTimers();
+
     // Enhanced location listener with better error handling
     svc.onLocation.listen((loc) async {
       try {
