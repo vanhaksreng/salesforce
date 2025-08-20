@@ -15,18 +15,19 @@ import BackgroundTasks
     private let locationManager = CLLocationManager()
     private static var channel: FlutterMethodChannel?
     private static var isTracking = false
+    private static var isFlutterEngineActive = false
 
     // Tracking config
     private var trackingMode: TrackingMode = .foreground
-    private var distanceFilter: Double = 10.0 // Reasonable default for battery life
-    private let accuracyThreshold: CLLocationDistance = 100.0 // More lenient for background
+    private var distanceFilter: Double = 10.0
+    private let accuracyThreshold: CLLocationDistance = 100.0
     private var lastLocationTime: TimeInterval = 0
-    private let minUpdateInterval: TimeInterval = 30.0 // Longer interval for background
+    private let minUpdateInterval: TimeInterval = 30.0
     private let maxLocationAge: TimeInterval = 60.0
 
     // Background task management
     private var backgroundTaskId: UIBackgroundTaskIdentifier = .invalid
-    private let backgroundTaskTimeout: TimeInterval = 25.0 // Well under 30 seconds
+    private let backgroundTaskTimeout: TimeInterval = 25.0
     private var persistentTimer: Timer?
     
     // Background App Refresh registration
@@ -35,23 +36,28 @@ import BackgroundTasks
     // App restart detection
     private var appKilledFlag: Bool = false
     
-    // Periodic mode - region monitoring for scheduled-like behavior
+    // Periodic mode - region monitoring
     private var currentRegion: CLCircularRegion?
-    private let periodicRadius: CLLocationDistance = 100.0 // 200m radius
+    private let periodicRadius: CLLocationDistance = 100.0
     private var regionIdentifierCounter = 0
+    
+    // Local Storage - Similar to Android SharedPreferences
+    private let localStorageManager = LocalStorageManager()
 
     // MARK: - Plugin registration
     public static func register(with registrar: FlutterPluginRegistrar) {
         channel = FlutterMethodChannel(name: "com.clearviewerp.salesforce/background_service", binaryMessenger: registrar.messenger())
         let instance = MyLocationManager()
         registrar.addMethodCallDelegate(instance, channel: channel!)
+        
+        // Flutter engine is active when plugin is registered
+        isFlutterEngineActive = true
     }
 
     override init() {
         super.init()
         setupLocationManager()
         setupNotifications()
-        
         setupBackgroundAppRefresh()
         detectAppRestart()
     }
@@ -90,9 +96,61 @@ import BackgroundTasks
             name: UIApplication.willEnterForegroundNotification,
             object: nil
         )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(flutterEngineDestroyed),
+            name: NSNotification.Name("FlutterEngineDestroyed"),
+            object: nil
+        )
     }
     
-    // MARK: - Background App Refresh Setup (Critical for persistence)
+    @objc private func flutterEngineDestroyed() {
+        MyLocationManager.isFlutterEngineActive = false
+        MyLocationManager.channel = nil
+        print("Flutter engine destroyed, channel cleared")
+    }
+    
+    // MARK: - Safe Flutter Communication
+    private func safeInvokeMethod(_ method: String, arguments: Any?) {
+        guard MyLocationManager.isFlutterEngineActive, let channel = MyLocationManager.channel else {
+            print("Flutter engine not active, skipping method: \(method)")
+            return
+        }
+        
+        DispatchQueue.main.async {
+            channel.invokeMethod(method, arguments: arguments) { result in
+                if let error = result as? FlutterError {
+                    print("Flutter method \(method) failed: \(error.code) - \(error.message ?? "Unknown error")")
+                    MyLocationManager.isFlutterEngineActive = false
+                }
+            }
+        }
+    }
+    
+    // MARK: - Location Storage and Sync
+    private func processLocationUpdate(_ location: CLLocation) {
+        let locationData = locationDict(from: location)
+    
+        if MyLocationManager.isFlutterEngineActive {
+            safeInvokeMethod("locationUpdate", arguments: locationData)
+        } else {
+            localStorageManager.saveLocation(locationData)
+        }
+    }
+    
+    private func syncPendingLocations() {
+        guard MyLocationManager.isFlutterEngineActive else { return }
+        
+        let pendingLocations = localStorageManager.getPendingLocations()
+        if !pendingLocations.isEmpty {
+            safeInvokeMethod("syncLocations", arguments: ["data": pendingLocations])
+            localStorageManager.clearPendingLocations()
+            print("Synced \(pendingLocations.count) pending locations to Flutter")
+        }
+    }
+    
+    // MARK: - Background App Refresh Setup
     private func setupBackgroundAppRefresh() {
         if #available(iOS 13.0, *) {
             BGTaskScheduler.shared.register(forTaskWithIdentifier: backgroundTaskIdentifier, using: nil) { task in
@@ -103,19 +161,15 @@ import BackgroundTasks
     
     @available(iOS 13.0, *)
     private func handleBackgroundLocationTask(task: BGAppRefreshTask) {
-        // Schedule next background refresh
         scheduleBackgroundLocationTask()
         
-        // Perform location update
         task.expirationHandler = {
             task.setTaskCompleted(success: false)
         }
         
-        // Get location update and process
         beginBackgroundTask()
         locationManager.requestLocation()
         
-        // Give some time for location to be received
         DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
             self.endBackgroundTaskIfNeeded()
             task.setTaskCompleted(success: true)
@@ -125,12 +179,12 @@ import BackgroundTasks
     @available(iOS 13.0, *)
     private func scheduleBackgroundLocationTask() {
         let request = BGAppRefreshTaskRequest(identifier: backgroundTaskIdentifier)
-        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60) // 15 minutes
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
         
         do {
             try BGTaskScheduler.shared.submit(request)
         } catch {
-            print("Could not schedule app refresh: \\(error)")
+            print("Could not schedule app refresh: \(error)")
         }
     }
     
@@ -140,7 +194,6 @@ import BackgroundTasks
         let wasTrackingKey = "was_tracking_before_kill"
         
         if userDefaults.bool(forKey: wasTrackingKey) {
-            // App was killed while tracking - restart automatically
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 self.restartTrackingAfterKill()
             }
@@ -148,11 +201,6 @@ import BackgroundTasks
     }
     
     private func restartTrackingAfterKill() {
-        MyLocationManager.channel?.invokeMethod("appRestartedAfterKill", arguments: [
-            "message": "Location tracking resumed after app restart"
-        ])
-        
-        // Restart with persistent mode
         startTracking(mode: .alwaysOn)
     }
     
@@ -193,12 +241,10 @@ import BackgroundTasks
         
         beginBackgroundTask()
         
-        // Force location update
         if locationManager.authorizationStatus == .authorizedAlways {
             locationManager.requestLocation()
         }
         
-        // Schedule background app refresh if available
         if #available(iOS 13.0, *) {
             scheduleBackgroundLocationTask()
         }
@@ -206,13 +252,16 @@ import BackgroundTasks
 
     // MARK: - Flutter Method Handler
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        // Flutter engine is active if we receive method calls
+        MyLocationManager.isFlutterEngineActive = true
+        
         switch call.method {
         case "startService":
             if let args = call.arguments as? [String: Any],
                let modeStr = args["mode"] as? String,
                let mode = TrackingMode(rawValue: modeStr) {
                 if let filter = args["filter"] as? Double {
-                    distanceFilter = max(filter, 10.0) // Minimum 10m for battery life
+                    distanceFilter = max(filter, 10.0)
                 }
                 startTracking(mode: mode)
                 result(true)
@@ -241,10 +290,14 @@ import BackgroundTasks
 
         case "checkPermissions":
             result(getPermissionStatus())
+            
+        case "syncPendingLocations":
+            syncPendingLocations()
+            result(true)
 
         case "updateDistanceFilter":
             if let args = call.arguments as? [String: Any], let filter = args["filter"] as? Double {
-                updateDistanceFilter(max(filter, 10.0)) // Enforce minimum
+                updateDistanceFilter(max(filter, 10.0))
                 result(true)
             } else {
                 result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing filter", details: nil))
@@ -260,21 +313,21 @@ import BackgroundTasks
         trackingMode = mode
         let status = locationManager.authorizationStatus
         
-        print("Starting persistent tracking mode: \\(mode.rawValue)")
+        print("Starting persistent tracking mode: \(mode.rawValue)")
         setTrackingFlag(true)
         
         // Validate permissions
         switch mode {
         case .background, .significant, .periodic, .alwaysOn:
             guard status == .authorizedAlways else {
-                MyLocationManager.channel?.invokeMethod("error", arguments: [
+                safeInvokeMethod("error", arguments: [
                     "message": "\(mode.rawValue) tracking requires 'Always' location permission"
                 ])
                 return
             }
         case .foreground:
             guard status == .authorizedAlways || status == .authorizedWhenInUse else {
-                MyLocationManager.channel?.invokeMethod("error", arguments: [
+                safeInvokeMethod("error", arguments: [
                     "message": "Location permission required"
                 ])
                 return
@@ -291,23 +344,20 @@ import BackgroundTasks
 
         case .background:
             locationManager.allowsBackgroundLocationUpdates = true
-            locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters // Battery friendly
-            locationManager.distanceFilter = max(distanceFilter, 50.0) // Minimum 50m for background
+            locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+            locationManager.distanceFilter = max(distanceFilter, 50.0)
             locationManager.startUpdatingLocation()
 
         case .significant:
-            // Most battery efficient and reliable for background
             locationManager.allowsBackgroundLocationUpdates = false
             locationManager.startMonitoringSignificantLocationChanges()
             
         case .periodic:
-            // Hybrid approach: significant changes + region monitoring for more frequent updates
             locationManager.allowsBackgroundLocationUpdates = false
             locationManager.startMonitoringSignificantLocationChanges()
             setupPeriodicRegionMonitoring()
             
         case .alwaysOn:
-            // MOST PERSISTENT MODE - Combines everything
             locationManager.allowsBackgroundLocationUpdates = true
             locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
             locationManager.distanceFilter = 50.0
@@ -316,14 +366,13 @@ import BackgroundTasks
             setupPeriodicRegionMonitoring()
             startPersistentTimer()
             
-            // Schedule background app refresh
             if #available(iOS 13.0, *) {
                 scheduleBackgroundLocationTask()
             }
         }
 
         MyLocationManager.isTracking = true
-        MyLocationManager.channel?.invokeMethod("trackingStarted", arguments: [
+        safeInvokeMethod("trackingStarted", arguments: [
             "mode": mode.rawValue,
             "filter": distanceFilter
         ])
@@ -340,11 +389,10 @@ import BackgroundTasks
         locationManager.stopMonitoringSignificantLocationChanges()
         locationManager.allowsBackgroundLocationUpdates = false
         
-        // Stop region monitoring
         stopPeriodicRegionMonitoring()
         endBackgroundTaskIfNeeded()
         
-        MyLocationManager.channel?.invokeMethod("trackingStopped", arguments: nil)
+        safeInvokeMethod("trackingStopped", arguments: nil)
     }
 
     // MARK: - Permissions
@@ -356,7 +404,6 @@ import BackgroundTasks
             locationManager.requestWhenInUseAuthorization()
         }
 
-        // Wait for user response
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             let status = self.getPermissionStatus()
             let granted = mode == .foreground ?
@@ -380,23 +427,20 @@ import BackgroundTasks
         if MyLocationManager.isTracking && (trackingMode == .foreground || trackingMode == .background) {
             locationManager.distanceFilter = filter
         }
-        MyLocationManager.channel?.invokeMethod("distanceFilterUpdated", arguments: ["filter": filter])
+        safeInvokeMethod("distanceFilterUpdated", arguments: ["filter": filter])
     }
 
     private func isLocationAcceptable(_ location: CLLocation) -> Bool {
         let now = Date().timeIntervalSince1970
 
-        // Check age
         if abs(now - location.timestamp.timeIntervalSince1970) > maxLocationAge {
             return false
         }
 
-        // Check accuracy
         if location.horizontalAccuracy < 0 || location.horizontalAccuracy > accuracyThreshold {
             return false
         }
 
-        // Throttle updates (more lenient for background modes)
         let interval = (trackingMode == .foreground) ? 5.0 : minUpdateInterval
         if now - lastLocationTime < interval {
             return false
@@ -420,13 +464,12 @@ import BackgroundTasks
         ]
     }
 
-    // MARK: - Periodic Region Monitoring (Scheduled-like behavior)
+    // MARK: - Periodic Region Monitoring
     private func setupPeriodicRegionMonitoring() {
         locationManager.requestLocation()
     }
     
     private func createRegionAroundLocation(_ location: CLLocation) {
-        // Stop monitoring previous region
         stopPeriodicRegionMonitoring()
         
         regionIdentifierCounter += 1
@@ -437,12 +480,12 @@ import BackgroundTasks
             identifier: regionIdentifier
         )
         region.notifyOnEntry = false
-        region.notifyOnExit = true // Trigger when user leaves the area
+        region.notifyOnExit = true
         
         locationManager.startMonitoring(for: region)
         currentRegion = region
         
-        MyLocationManager.channel?.invokeMethod("log", arguments: [
+        safeInvokeMethod("log", arguments: [
             "message": "Created periodic region at \(location.coordinate.latitude), \(location.coordinate.longitude)"
         ])
     }
@@ -453,7 +496,6 @@ import BackgroundTasks
             currentRegion = nil
         }
         
-        // Stop monitoring all regions if needed
         for region in locationManager.monitoredRegions {
             if region.identifier.hasPrefix("periodic_region") {
                 locationManager.stopMonitoring(for: region)
@@ -467,61 +509,61 @@ import BackgroundTasks
 
         switch trackingMode {
         case .foreground:
-            // Stop foreground tracking in background
             locationManager.stopUpdatingLocation()
-            MyLocationManager.channel?.invokeMethod("log", arguments: [
+            safeInvokeMethod("log", arguments: [
                 "message": "Foreground tracking paused in background"
             ])
 
         case .background, .alwaysOn:
-            // Continue background tracking if permitted
-            // if locationManager.authorizationStatus == .authorizedAlways {
-            //     beginBackgroundTask()
-            //     MyLocationManager.channel?.invokeMethod("log", arguments: [
-            //         "message": "Background tracking active"
-            //     ])
-            // }
             beginBackgroundTask()
             startPersistentTimer()
-            MyLocationManager.channel?.invokeMethod("log", arguments: [
+            safeInvokeMethod("log", arguments: [
                 "message": "Persistent background tracking active"
             ])
 
         case .significant:
-            // Significant location changes work automatically in background
-            MyLocationManager.channel?.invokeMethod("log", arguments: [
+            safeInvokeMethod("log", arguments: [
                 "message": "Significant location monitoring active in background"
             ])
             
         case .periodic:
             startPersistentTimer()
-            MyLocationManager.channel?.invokeMethod("log", arguments: [
+            safeInvokeMethod("log", arguments: [
                 "message": "Periodic location monitoring active in background"
             ])
         }
     }
 
     @objc private func appWillEnterForeground() {
-        endBackgroundTaskIfNeeded() // Clean up background task
+        // Flutter engine becomes active again
+        MyLocationManager.isFlutterEngineActive = true
+        
+        endBackgroundTaskIfNeeded()
+        
+        // Sync any pending locations stored while Flutter was inactive
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            self.syncPendingLocations()
+        }
         
         if MyLocationManager.isTracking && trackingMode == .foreground {
-            // Restart foreground tracking
             locationManager.startUpdatingLocation()
-            MyLocationManager.channel?.invokeMethod("log", arguments: [
+            safeInvokeMethod("log", arguments: [
                 "message": "Foreground tracking resumed"
             ])
         }
         
-        // Check if we're continuing from a kill
         detectAppRestart()
     }
 
     @objc private func appWillTerminate() {
+        // Flutter engine will be destroyed
+        MyLocationManager.isFlutterEngineActive = false
+        
         if MyLocationManager.isTracking, let last = locationManager.location {
-            MyLocationManager.channel?.invokeMethod("terminationLocation", arguments: locationDict(from: last))
+            let locationData = locationDict(from: last)
+            localStorageManager.saveLocation(locationData, isTerminationLocation: true)
         }
         
-        // Ensure we're in most persistent mode possible
         if MyLocationManager.isTracking && locationManager.authorizationStatus == .authorizedAlways {
             locationManager.startMonitoringSignificantLocationChanges()
             if let location = locationManager.location {
@@ -540,16 +582,13 @@ extension MyLocationManager: CLLocationManagerDelegate {
         guard MyLocationManager.isTracking else { return }
 
         if isLocationAcceptable(location) {
-            let locationData = locationDict(from: location)
-            MyLocationManager.channel?.invokeMethod("locationUpdate", arguments: locationData)
+            processLocationUpdate(location)
             
-            // For periodic mode, create a new region around this location
             if trackingMode == .periodic {
                 createRegionAroundLocation(location)
                 regionIdentifierCounter += 1
             }
             
-            // For background modes, end background task after sending location
             if trackingMode == .background && backgroundTaskId != .invalid {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                     self.endBackgroundTaskIfNeeded()
@@ -557,34 +596,30 @@ extension MyLocationManager: CLLocationManagerDelegate {
             }
         }
         
-        // For periodic mode during setup, create initial region
         if trackingMode == .periodic && currentRegion == nil {
             createRegionAroundLocation(location)
         }
     }
 
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        MyLocationManager.channel?.invokeMethod("error", arguments: [
+        safeInvokeMethod("error", arguments: [
             "message": "Location error: \(error.localizedDescription)"
         ])
         
-        // End background task on error
         endBackgroundTaskIfNeeded()
     }
 
     public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
         
-        MyLocationManager.channel?.invokeMethod("permissionChanged", arguments: [
+        safeInvokeMethod("permissionChanged", arguments: [
             "status": authorizationStatusString(status)
         ])
         
-        // Handle permission changes during tracking
         if MyLocationManager.isTracking {
             switch status {
             case .authorizedAlways:
                 if trackingMode == .background || trackingMode == .significant || trackingMode == .periodic {
-                    // Can continue background tracking
                     if trackingMode == .background {
                         manager.startUpdatingLocation()
                     }
@@ -592,7 +627,7 @@ extension MyLocationManager: CLLocationManagerDelegate {
                 
             case .authorizedWhenInUse:
                 if trackingMode == .background || trackingMode == .significant || trackingMode == .periodic {
-                    MyLocationManager.channel?.invokeMethod("error", arguments: [
+                    safeInvokeMethod("error", arguments: [
                         "message": "Permission downgraded - background tracking disabled"
                     ])
                     
@@ -602,7 +637,7 @@ extension MyLocationManager: CLLocationManagerDelegate {
     
             case .denied, .restricted:
                 stopTracking()
-                MyLocationManager.channel?.invokeMethod("error", arguments: [
+                safeInvokeMethod("error", arguments: [
                     "message": "Location permission denied - tracking stopped"
                 ])
                 
@@ -630,18 +665,69 @@ extension MyLocationManager {
         guard MyLocationManager.isTracking, trackingMode == .periodic else { return }
         guard region.identifier.hasPrefix("periodic_region") else { return }
         
-        // User left the region, get new location and create new region
         beginBackgroundTask()
         manager.requestLocation()
         
-        MyLocationManager.channel?.invokeMethod("log", arguments: [
+        safeInvokeMethod("log", arguments: [
             "message": "Exited periodic region - requesting new location"
         ])
     }
     
     public func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {
-        MyLocationManager.channel?.invokeMethod("error", arguments: [
+        safeInvokeMethod("error", arguments: [
             "message": "Region monitoring failed: \(error.localizedDescription)"
         ])
+    }
+}
+
+// MARK: - Local Storage Manager
+class LocalStorageManager {
+    private let userDefaults = UserDefaults.standard
+    private let pendingLocationsKey = "pending_locations"
+    private let maxStoredLocations = 1000 // Prevent unlimited growth
+    
+    func saveLocation(_ locationData: [String: Any], isTerminationLocation: Bool = false) {
+        var pendingLocations = getPendingLocations()
+        
+        // Add termination flag if needed
+        var locationWithMetadata = locationData
+        if isTerminationLocation {
+            locationWithMetadata["isTerminationLocation"] = true
+        }
+        
+        pendingLocations.append(locationWithMetadata)
+        
+        // Limit storage to prevent memory issues
+        if pendingLocations.count > maxStoredLocations {
+            pendingLocations = Array(pendingLocations.suffix(maxStoredLocations))
+        }
+        
+        if let data = try? JSONSerialization.data(withJSONObject: pendingLocations),
+           let jsonString = String(data: data, encoding: .utf8) {
+            userDefaults.set(jsonString, forKey: pendingLocationsKey)
+            userDefaults.synchronize()
+            print("Saved location to local storage. Total: \(pendingLocations.count)")
+        } else {
+            print("Failed to save location to local storage")
+        }
+    }
+    
+    func getPendingLocations() -> [[String: Any]] {
+        guard let jsonString = userDefaults.string(forKey: pendingLocationsKey),
+              let data = jsonString.data(using: .utf8),
+              let locations = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+            return []
+        }
+        return locations
+    }
+    
+    func clearPendingLocations() {
+        userDefaults.removeObject(forKey: pendingLocationsKey)
+        userDefaults.synchronize()
+        print("Cleared all pending locations from local storage")
+    }
+    
+    func getPendingLocationCount() -> Int {
+        return getPendingLocations().count
     }
 }

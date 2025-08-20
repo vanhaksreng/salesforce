@@ -145,8 +145,7 @@ class LocationService {
           _eventController.add({'type': 'terminationLocation', ...args});
           break;
         case 'syncLocations':
-          final locations = call.arguments as List<dynamic>;
-          _eventController.add({'type': 'syncLocations', 'data': locations});
+          _eventController.add({'type': 'syncLocations', ...args});
           break;
         default:
           Logger.log("Unhandled method: ${call.method}");
@@ -206,6 +205,10 @@ class LocationService {
       _eventController.add({'type': 'error', 'message': e.message ?? e.code});
       return {'canTrackForeground': false, 'background': false};
     }
+  }
+
+  Future<void> syncPendingLocations() async {
+    await _channel.invokeMethod('syncPendingLocations');
   }
 
   Future<void> _saveLocationWhenBackgrounded(Map<String, dynamic> loc) async {

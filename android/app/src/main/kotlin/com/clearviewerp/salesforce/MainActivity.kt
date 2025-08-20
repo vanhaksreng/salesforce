@@ -29,11 +29,23 @@ class MainActivity : FlutterActivity(){
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        LocationService.setMethodChannel(MethodChannel(flutterEngine.dartExecutor.binaryMessenger, locationMethodChannel))
+        // Set up the method channel for location service
+        val methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, locationMethodChannel)
+        LocationService.setMethodChannel(methodChannel)
         LocationService.syncLocations(this)
 
         setupHtmlToPdfChannel(flutterEngine)
         setupLocationService(flutterEngine)
+    }
+
+    override fun onDestroy() {
+        LocationService.onFlutterEngineDestroyed()
+        super.onDestroy()
+    }
+
+    override fun detachFromFlutterEngine() {
+        LocationService.onFlutterEngineDestroyed()
+        super.detachFromFlutterEngine()
     }
     
     private fun setupLocationService(flutterEngine: FlutterEngine) {
@@ -85,6 +97,10 @@ class MainActivity : FlutterActivity(){
                         LocationService.schedulePeriodicUpdate(this, interval)
                         result.success(true)
                     }
+                    "syncPendingLocations" -> {
+                        LocationService.syncLocations(this)
+                        result.success(true)
+                    }
                     else -> result.notImplemented()
                 }
             } catch (e: Exception) {
@@ -102,7 +118,7 @@ class MainActivity : FlutterActivity(){
             if (hasPermission) {
                 permissionResultCallback?.invoke(true)
                 try {
-                    LocationService.getChannel()?.invokeMethod(
+                    safeInvokeFlutterMethod(
                         "permissionChanged",
                         mapOf("status" to PermissionUtils.getPermissionStatus(this))
                     )
@@ -116,7 +132,7 @@ class MainActivity : FlutterActivity(){
             requestLocationPermissions(mode)
 
         } catch (e: Exception) {
-            LocationService.getChannel()?.invokeMethod(
+            safeInvokeFlutterMethod(
                 "error",
                 mapOf("message" to "Failed to request permissions: ${e.message}")
             )
@@ -150,7 +166,7 @@ class MainActivity : FlutterActivity(){
                     else PermissionUtils.canTrackAlways(this)
                 )
                 try {
-                    LocationService.getChannel()?.invokeMethod(
+                    safeInvokeFlutterMethod(
                         "permissionChanged",
                         mapOf("status" to PermissionUtils.getPermissionStatus(this))
                     )
@@ -161,7 +177,7 @@ class MainActivity : FlutterActivity(){
         } catch (e: Exception) {
 
             try {
-                LocationService.getChannel()?.invokeMethod(
+                safeInvokeFlutterMethod(
                     "error",
                     mapOf("message" to "Failed to request permissions: ${e.message}")
                 )
@@ -180,12 +196,19 @@ class MainActivity : FlutterActivity(){
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == locationPermissionRequestCode) {
             val granted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
-            LocationService.getChannel()?.invokeMethod(
+            safeInvokeFlutterMethod(
                 "permissionChanged",
                 mapOf("status" to PermissionUtils.getPermissionStatus(this))
             )
             permissionResultCallback?.invoke(granted)
             permissionResultCallback = null
+        }
+    }
+    private fun safeInvokeFlutterMethod(method: String, arguments: Any?) {
+        try {
+            LocationService.getChannel()?.invokeMethod(method, arguments)
+        } catch (e: Exception) {
+            android.util.Log.w("MainActivity", "Failed to invoke Flutter method $method: ${e.message}")
         }
     }
 

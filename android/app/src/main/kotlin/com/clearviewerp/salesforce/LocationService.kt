@@ -30,13 +30,37 @@ class LocationService : Service() {
         private const val KEY_LOCATIONS = "pending_locations"
         private var channel: MethodChannel? = null
         private var isTracking = false
+        private var isFlutterEngineActive = false
 
         fun setMethodChannel(methodChannel: MethodChannel) {
             channel = methodChannel
+            isFlutterEngineActive = true
+            Log.d("LocationService", "Flutter engine attached, channel set")
         }
 
         fun getChannel(): MethodChannel? {
-            return channel
+            return if (isFlutterEngineActive) channel else null
+        }
+
+        fun onFlutterEngineDestroyed() {
+            isFlutterEngineActive = false
+            channel = null
+            Log.d("LocationService", "Flutter engine destroyed, channel cleared")
+        }
+
+        private fun safeInvokeMethod(method: String, arguments: Any?) {
+            try {
+                if (isFlutterEngineActive && channel != null) {
+                    channel?.invokeMethod(method, arguments)
+                    Log.d("LocationService", "Successfully sent $method to Flutter")
+                } else {
+                    Log.d("LocationService", "Flutter engine not active, skipping $method")
+                }
+            } catch (e: Exception) {
+                Log.w("LocationService", "Failed to invoke $method (Flutter engine likely detached): ${e.message}")
+                isFlutterEngineActive = false
+                channel = null
+            }
         }
 
         fun saveLocationToPrefs(context: Context, locationData: Map<String, Any>) {
@@ -55,6 +79,8 @@ class LocationService : Service() {
         }
 
         fun syncLocations(context: Context) {
+            Log.d("LocationService", "syncLocations Called")
+
             try {
                 val prefs = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                 val locations = prefs.getString(KEY_LOCATIONS, "[]")
@@ -63,11 +89,18 @@ class LocationService : Service() {
                 for (i in 0 until jsonArray.length()) {
                     locationList.add(jsonArray.getJSONObject(i).toMap())
                 }
+                
                 if (locationList.isNotEmpty()) {
-                    getChannel()?.invokeMethod("syncLocations", locationList)
-                    Log.d("LocationService", "Synced ${locationList.size} locations to Flutter")
+                    safeInvokeMethod("syncLocations", mapOf(
+                        "data" to locationList
+                    ))
+
+                    if (isFlutterEngineActive) {
+                        prefs.edit { putString(KEY_LOCATIONS, "[]") }
+                    }
+                } else {
+                    Log.d("LocationService", "No locations to sync")
                 }
-                prefs.edit { putString(KEY_LOCATIONS, "[]") }
             } catch (e: Exception) {
                 Log.e("LocationService", "Failed to sync locations: ${e.message}")
             }
@@ -88,17 +121,9 @@ class LocationService : Service() {
                     ExistingPeriodicWorkPolicy.KEEP,
                     workRequest
                 )
-                try {
-                    channel?.invokeMethod("log", mapOf("message" to "Scheduled periodic location update"))
-                } catch (e: Exception) {
-                    Log.w("LocationService", "Failed to send log (Flutter engine likely detached): ${e.message}")
-                }
+                safeInvokeMethod("log", mapOf("message" to "Scheduled periodic location update"))
             } catch (e: Exception) {
-                try {
-                    channel?.invokeMethod("error", mapOf("message" to "Failed to schedule periodic update: ${e.message}"))
-                } catch (e: Exception) {
-                    Log.w("LocationService", "Failed to send error (Flutter engine likely detached): ${e.message}")
-                }
+                safeInvokeMethod("error", mapOf("message" to "Failed to schedule periodic update: ${e.message}"))
             }
         }
     }
@@ -118,11 +143,7 @@ class LocationService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!PermissionUtils.canTrackLocation(this)) {
-            try {
-                channel?.invokeMethod("error", mapOf("message" to "Location permissions not granted"))
-            } catch (e: Exception) {
-                Log.w("LocationService", "Failed to send error (Flutter engine likely detached): ${e.message}")
-            }
+            safeInvokeMethod("error", mapOf("message" to "Location permissions not granted"))
             stopSelf()
             return START_NOT_STICKY
         }
@@ -144,14 +165,9 @@ class LocationService : Service() {
 
         startLocationUpdates()
         isTracking = true
-        try {
-            channel?.let {
-                Log.d("LocationService", "Sending trackingStarted to Flutter")
-                it.invokeMethod("trackingStarted", mapOf("mode" to trackingMode, "filter" to distanceFilter))
-            } ?: Log.w("LocationService", "MethodChannel is null, skipping trackingStarted")
-        } catch (e: Exception) {
-            Log.w("LocationService", "Failed to send trackingStarted (Flutter engine likely detached): ${e.message}")
-        }
+
+        safeInvokeMethod("trackingStarted", mapOf("mode" to trackingMode, "filter" to distanceFilter))
+        Log.d("LocationService", "Location service started in $trackingMode mode")
 
         return START_STICKY
     }
@@ -159,14 +175,10 @@ class LocationService : Service() {
     override fun onDestroy() {
         stopLocationUpdates()
         isTracking = false
-        try {
-            channel?.let {
-                Log.d("LocationService", "Sending trackingStopped to Flutter")
-                it.invokeMethod("trackingStopped", emptyMap<String, Any>())
-            } ?: Log.w("LocationService", "MethodChannel is null, skipping trackingStopped")
-        } catch (e: Exception) {
-            Log.w("LocationService", "Failed to send trackingStopped (Flutter engine likely detached): ${e.message}")
-        }
+
+        safeInvokeMethod("trackingStopped", emptyMap<String, Any>())
+        Log.d("LocationService", "Location service stopped")
+
         super.onDestroy()
     }
 
@@ -211,55 +223,46 @@ class LocationService : Service() {
                             )
 
                             Handler(Looper.getMainLooper()).post {
-                                try {
-                                    channel?.let {
-                                        Log.d("LocationService", "Sending locationUpdate to Flutter: $locationData")
-                                        it.invokeMethod("locationUpdate", locationData)
-                                    } ?: run {
-                                        Log.w("LocationService", "MethodChannel is null, saving location locally")
+                                if (isFlutterEngineActive && channel != null) {
+                                    try {
+                                        safeInvokeMethod("locationUpdate", locationData)
+                                    } catch (e: Exception) {
+                                        Log.w("LocationService", "Failed to send to Flutter, saving locally: ${e.message}")
+                                        isFlutterEngineActive = false
                                         saveLocationToPrefs(this@LocationService, locationData)
                                     }
-                                } catch (e: Exception) {
-                                    Log.w("LocationService", "Failed to send locationUpdate (Flutter engine likely detached): ${e.message}")
+                                } else {
+                                    Log.d("LocationService", "Flutter engine not active, saving location locally")
                                     saveLocationToPrefs(this@LocationService, locationData)
                                 }
                             }
                         } ?: run {
-                            Log.w("LocationService", "Location is null in onLocationResult")
-                            try {
-                                channel?.invokeMethod("error", mapOf("message" to "Location is null"))
-                            } catch (e: Exception) {
-                                Log.w("LocationService", "Failed to send error (Flutter engine likely detached): ${e.message}")
-                            }
+                            safeInvokeMethod("error", mapOf("message" to "Location is null"))
                         }
                     } catch (e: Exception) {
-                        channel?.invokeMethod("error", mapOf("message" to "Failed to process location update: ${e.message}"))
+                        safeInvokeMethod("error", mapOf("message" to "Failed to process location update: ${e.message}"))
                     }
                 }
             }
 
             fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback!!, Looper.getMainLooper())
+            Log.d("LocationService", "Location updates started successfully")
         } catch (e: SecurityException) {
             Log.e("LocationService", "Permission error: ${e.message}")
-            try {
-                channel?.invokeMethod("error", mapOf("message" to "Permission error: ${e.message}"))
-            } catch (e: Exception) {
-                Log.w("LocationService", "Failed to send error (Flutter engine likely detached): ${e.message}")
-            }
+            safeInvokeMethod("error", mapOf("message" to "Permission error: ${e.message}"))
             stopSelf()
         } catch (e: Exception) {
             Log.e("LocationService", "Failed to start location updates: ${e.message}")
-            try {
-                channel?.invokeMethod("error", mapOf("message" to "Failed to start location updates: ${e.message}"))
-            } catch (e: Exception) {
-                Log.w("LocationService", "Failed to send error (Flutter engine likely detached): ${e.message}")
-            }
+            safeInvokeMethod("error", mapOf("message" to "Failed to start location updates: ${e.message}"))
             stopSelf()
         }
     }
 
     private fun stopLocationUpdates() {
-        locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
+        locationCallback?.let {
+            fusedLocationClient.removeLocationUpdates(it)
+            Log.d("LocationService", "Location updates stopped")
+        }
         locationCallback = null
     }
 
@@ -276,6 +279,10 @@ class LocationService : Service() {
             manager.createNotificationChannel(channel)
         }
     }
+
+    // Add a method to safely invoke methods with fallback
+    private fun safeInvokeMethod(method: String, arguments: Any?) =
+        Companion.safeInvokeMethod(method, arguments)
 }
 
 fun JSONObject.toMap(): Map<String, Any> {
