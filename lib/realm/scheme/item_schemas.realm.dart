@@ -67,11 +67,17 @@ class Item extends _Item with RealmEntity, RealmObjectBase, RealmObject {
     RealmObjectBase.set(this, 'description_2', description2);
     RealmObjectBase.set(this, 'stock_uom_code', stockUomCode);
     RealmObjectBase.set(
-        this, 'auto_insert_specification', autoInsertSpecification);
+      this,
+      'auto_insert_specification',
+      autoInsertSpecification,
+    );
     RealmObjectBase.set(this, 'is_service_item', isServiceItem);
     RealmObjectBase.set(this, 'inv_posting_group_code', invPostingGroupCode);
     RealmObjectBase.set(
-        this, 'item_discount_group_code', itemDiscountGroupCode);
+      this,
+      'item_discount_group_code',
+      itemDiscountGroupCode,
+    );
     RealmObjectBase.set(this, 'commission_group_code', commissionGroupCode);
     RealmObjectBase.set(this, 'item_brand_code', itemBrandCode);
     RealmObjectBase.set(this, 'item_group_code', itemGroupCode);
@@ -86,11 +92,20 @@ class Item extends _Item with RealmEntity, RealmObjectBase, RealmObject {
     RealmObjectBase.set(this, 'standard_cost', standardCost);
     RealmObjectBase.set(this, 'last_direct_cost', lastDirectCost);
     RealmObjectBase.set(
-        this, 'prevent_negative_inventory', preventNegativeInventory);
+      this,
+      'prevent_negative_inventory',
+      preventNegativeInventory,
+    );
     RealmObjectBase.set(
-        this, 'gen_prod_posting_group_code', genProdPostingGroupCode);
+      this,
+      'gen_prod_posting_group_code',
+      genProdPostingGroupCode,
+    );
     RealmObjectBase.set(
-        this, 'vat_prod_posting_group_code', vatProdPostingGroupCode);
+      this,
+      'vat_prod_posting_group_code',
+      vatProdPostingGroupCode,
+    );
     RealmObjectBase.set(this, 'replenishment_system', replenishmentSystem);
     RealmObjectBase.set(this, 'assembly_policy', assemblyPolicy);
     RealmObjectBase.set(this, 'sales_uom_code', salesUomCode);
@@ -414,54 +429,55 @@ class Item extends _Item with RealmEntity, RealmObjectBase, RealmObject {
   static Item _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'no': EJsonValue no,
-      } =>
-        Item(
-          fromEJson(no),
-          no2: fromEJson(ejson['no_2']),
-          identifierCode: fromEJson(ejson['identifier_code']),
-          description: fromEJson(ejson['description']),
-          description2: fromEJson(ejson['description_2']),
-          stockUomCode: fromEJson(ejson['stock_uom_code']),
-          autoInsertSpecification:
-              fromEJson(ejson['auto_insert_specification']),
-          isServiceItem: fromEJson(ejson['is_service_item']),
-          invPostingGroupCode: fromEJson(ejson['inv_posting_group_code']),
-          itemDiscountGroupCode: fromEJson(ejson['item_discount_group_code']),
-          commissionGroupCode: fromEJson(ejson['commission_group_code']),
-          itemBrandCode: fromEJson(ejson['item_brand_code']),
-          itemGroupCode: fromEJson(ejson['item_group_code']),
-          itemCategoryCode: fromEJson(ejson['item_category_code']),
-          itemMenuGroupCode: fromEJson(ejson['item_menu_group_code']),
-          businessUnitCode: fromEJson(ejson['business_unit_code']),
-          divisionCode: fromEJson(ejson['division_code']),
-          departmentCode: fromEJson(ejson['department_code']),
-          projectCode: fromEJson(ejson['project_code']),
-          unitPrice: fromEJson(ejson['unit_price']),
-          unitCost: fromEJson(ejson['unit_cost']),
-          standardCost: fromEJson(ejson['standard_cost']),
-          lastDirectCost: fromEJson(ejson['last_direct_cost']),
-          preventNegativeInventory: fromEJson(
-              ejson['prevent_negative_inventory'],
-              defaultValue: "Yes"),
-          genProdPostingGroupCode:
-              fromEJson(ejson['gen_prod_posting_group_code']),
-          vatProdPostingGroupCode:
-              fromEJson(ejson['vat_prod_posting_group_code']),
-          replenishmentSystem: fromEJson(ejson['replenishment_system']),
-          assemblyPolicy: fromEJson(ejson['assembly_policy'],
-              defaultValue: "Assemble-to-Stock"),
-          salesUomCode: fromEJson(ejson['sales_uom_code']),
-          itemTrackingCode: fromEJson(ejson['item_tracking_code']),
-          picture: fromEJson(ejson['picture']),
-          avatar128: fromEJson(ejson['avatar_128']),
-          inactived: fromEJson(ejson['inactived'], defaultValue: "No"),
-          inventory: fromEJson(ejson['inventory'], defaultValue: 0),
-          isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
-          createdAt: fromEJson(ejson['created_at']),
-          updatedAt: fromEJson(ejson['updated_at']),
+      {'no': EJsonValue no} => Item(
+        fromEJson(no),
+        no2: fromEJson(ejson['no_2']),
+        identifierCode: fromEJson(ejson['identifier_code']),
+        description: fromEJson(ejson['description']),
+        description2: fromEJson(ejson['description_2']),
+        stockUomCode: fromEJson(ejson['stock_uom_code']),
+        autoInsertSpecification: fromEJson(ejson['auto_insert_specification']),
+        isServiceItem: fromEJson(ejson['is_service_item']),
+        invPostingGroupCode: fromEJson(ejson['inv_posting_group_code']),
+        itemDiscountGroupCode: fromEJson(ejson['item_discount_group_code']),
+        commissionGroupCode: fromEJson(ejson['commission_group_code']),
+        itemBrandCode: fromEJson(ejson['item_brand_code']),
+        itemGroupCode: fromEJson(ejson['item_group_code']),
+        itemCategoryCode: fromEJson(ejson['item_category_code']),
+        itemMenuGroupCode: fromEJson(ejson['item_menu_group_code']),
+        businessUnitCode: fromEJson(ejson['business_unit_code']),
+        divisionCode: fromEJson(ejson['division_code']),
+        departmentCode: fromEJson(ejson['department_code']),
+        projectCode: fromEJson(ejson['project_code']),
+        unitPrice: fromEJson(ejson['unit_price']),
+        unitCost: fromEJson(ejson['unit_cost']),
+        standardCost: fromEJson(ejson['standard_cost']),
+        lastDirectCost: fromEJson(ejson['last_direct_cost']),
+        preventNegativeInventory: fromEJson(
+          ejson['prevent_negative_inventory'],
+          defaultValue: "Yes",
         ),
+        genProdPostingGroupCode: fromEJson(
+          ejson['gen_prod_posting_group_code'],
+        ),
+        vatProdPostingGroupCode: fromEJson(
+          ejson['vat_prod_posting_group_code'],
+        ),
+        replenishmentSystem: fromEJson(ejson['replenishment_system']),
+        assemblyPolicy: fromEJson(
+          ejson['assembly_policy'],
+          defaultValue: "Assemble-to-Stock",
+        ),
+        salesUomCode: fromEJson(ejson['sales_uom_code']),
+        itemTrackingCode: fromEJson(ejson['item_tracking_code']),
+        picture: fromEJson(ejson['picture']),
+        avatar128: fromEJson(ejson['avatar_128']),
+        inactived: fromEJson(ejson['inactived'], defaultValue: "No"),
+        inventory: fromEJson(ejson['inventory'], defaultValue: 0),
+        isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
+        createdAt: fromEJson(ejson['created_at']),
+        updatedAt: fromEJson(ejson['updated_at']),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -471,73 +487,195 @@ class Item extends _Item with RealmEntity, RealmObjectBase, RealmObject {
     register(_toEJson, _fromEJson);
     return const SchemaObject(ObjectType.realmObject, Item, 'ITEM', [
       SchemaProperty('no', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('no2', RealmPropertyType.string,
-          mapTo: 'no_2', optional: true),
-      SchemaProperty('identifierCode', RealmPropertyType.string,
-          mapTo: 'identifier_code', optional: true),
+      SchemaProperty(
+        'no2',
+        RealmPropertyType.string,
+        mapTo: 'no_2',
+        optional: true,
+      ),
+      SchemaProperty(
+        'identifierCode',
+        RealmPropertyType.string,
+        mapTo: 'identifier_code',
+        optional: true,
+      ),
       SchemaProperty('description', RealmPropertyType.string, optional: true),
-      SchemaProperty('description2', RealmPropertyType.string,
-          mapTo: 'description_2', optional: true),
-      SchemaProperty('stockUomCode', RealmPropertyType.string,
-          mapTo: 'stock_uom_code', optional: true),
-      SchemaProperty('autoInsertSpecification', RealmPropertyType.string,
-          mapTo: 'auto_insert_specification', optional: true),
-      SchemaProperty('isServiceItem', RealmPropertyType.string,
-          mapTo: 'is_service_item', optional: true),
-      SchemaProperty('invPostingGroupCode', RealmPropertyType.string,
-          mapTo: 'inv_posting_group_code', optional: true),
-      SchemaProperty('itemDiscountGroupCode', RealmPropertyType.string,
-          mapTo: 'item_discount_group_code', optional: true),
-      SchemaProperty('commissionGroupCode', RealmPropertyType.string,
-          mapTo: 'commission_group_code', optional: true),
-      SchemaProperty('itemBrandCode', RealmPropertyType.string,
-          mapTo: 'item_brand_code', optional: true),
-      SchemaProperty('itemGroupCode', RealmPropertyType.string,
-          mapTo: 'item_group_code', optional: true),
-      SchemaProperty('itemCategoryCode', RealmPropertyType.string,
-          mapTo: 'item_category_code', optional: true),
-      SchemaProperty('itemMenuGroupCode', RealmPropertyType.string,
-          mapTo: 'item_menu_group_code', optional: true),
-      SchemaProperty('businessUnitCode', RealmPropertyType.string,
-          mapTo: 'business_unit_code', optional: true),
-      SchemaProperty('divisionCode', RealmPropertyType.string,
-          mapTo: 'division_code', optional: true),
-      SchemaProperty('departmentCode', RealmPropertyType.string,
-          mapTo: 'department_code', optional: true),
-      SchemaProperty('projectCode', RealmPropertyType.string,
-          mapTo: 'project_code', optional: true),
-      SchemaProperty('unitPrice', RealmPropertyType.double,
-          mapTo: 'unit_price', optional: true),
-      SchemaProperty('unitCost', RealmPropertyType.double,
-          mapTo: 'unit_cost', optional: true),
-      SchemaProperty('standardCost', RealmPropertyType.double,
-          mapTo: 'standard_cost', optional: true),
-      SchemaProperty('lastDirectCost', RealmPropertyType.double,
-          mapTo: 'last_direct_cost', optional: true),
-      SchemaProperty('preventNegativeInventory', RealmPropertyType.string,
-          mapTo: 'prevent_negative_inventory'),
-      SchemaProperty('genProdPostingGroupCode', RealmPropertyType.string,
-          mapTo: 'gen_prod_posting_group_code', optional: true),
-      SchemaProperty('vatProdPostingGroupCode', RealmPropertyType.string,
-          mapTo: 'vat_prod_posting_group_code', optional: true),
-      SchemaProperty('replenishmentSystem', RealmPropertyType.string,
-          mapTo: 'replenishment_system', optional: true),
-      SchemaProperty('assemblyPolicy', RealmPropertyType.string,
-          mapTo: 'assembly_policy'),
-      SchemaProperty('salesUomCode', RealmPropertyType.string,
-          mapTo: 'sales_uom_code', optional: true),
-      SchemaProperty('itemTrackingCode', RealmPropertyType.string,
-          mapTo: 'item_tracking_code', optional: true),
+      SchemaProperty(
+        'description2',
+        RealmPropertyType.string,
+        mapTo: 'description_2',
+        optional: true,
+      ),
+      SchemaProperty(
+        'stockUomCode',
+        RealmPropertyType.string,
+        mapTo: 'stock_uom_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'autoInsertSpecification',
+        RealmPropertyType.string,
+        mapTo: 'auto_insert_specification',
+        optional: true,
+      ),
+      SchemaProperty(
+        'isServiceItem',
+        RealmPropertyType.string,
+        mapTo: 'is_service_item',
+        optional: true,
+      ),
+      SchemaProperty(
+        'invPostingGroupCode',
+        RealmPropertyType.string,
+        mapTo: 'inv_posting_group_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'itemDiscountGroupCode',
+        RealmPropertyType.string,
+        mapTo: 'item_discount_group_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'commissionGroupCode',
+        RealmPropertyType.string,
+        mapTo: 'commission_group_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'itemBrandCode',
+        RealmPropertyType.string,
+        mapTo: 'item_brand_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'itemGroupCode',
+        RealmPropertyType.string,
+        mapTo: 'item_group_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'itemCategoryCode',
+        RealmPropertyType.string,
+        mapTo: 'item_category_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'itemMenuGroupCode',
+        RealmPropertyType.string,
+        mapTo: 'item_menu_group_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'businessUnitCode',
+        RealmPropertyType.string,
+        mapTo: 'business_unit_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'divisionCode',
+        RealmPropertyType.string,
+        mapTo: 'division_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'departmentCode',
+        RealmPropertyType.string,
+        mapTo: 'department_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'projectCode',
+        RealmPropertyType.string,
+        mapTo: 'project_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'unitPrice',
+        RealmPropertyType.double,
+        mapTo: 'unit_price',
+        optional: true,
+      ),
+      SchemaProperty(
+        'unitCost',
+        RealmPropertyType.double,
+        mapTo: 'unit_cost',
+        optional: true,
+      ),
+      SchemaProperty(
+        'standardCost',
+        RealmPropertyType.double,
+        mapTo: 'standard_cost',
+        optional: true,
+      ),
+      SchemaProperty(
+        'lastDirectCost',
+        RealmPropertyType.double,
+        mapTo: 'last_direct_cost',
+        optional: true,
+      ),
+      SchemaProperty(
+        'preventNegativeInventory',
+        RealmPropertyType.string,
+        mapTo: 'prevent_negative_inventory',
+      ),
+      SchemaProperty(
+        'genProdPostingGroupCode',
+        RealmPropertyType.string,
+        mapTo: 'gen_prod_posting_group_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'vatProdPostingGroupCode',
+        RealmPropertyType.string,
+        mapTo: 'vat_prod_posting_group_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'replenishmentSystem',
+        RealmPropertyType.string,
+        mapTo: 'replenishment_system',
+        optional: true,
+      ),
+      SchemaProperty(
+        'assemblyPolicy',
+        RealmPropertyType.string,
+        mapTo: 'assembly_policy',
+      ),
+      SchemaProperty(
+        'salesUomCode',
+        RealmPropertyType.string,
+        mapTo: 'sales_uom_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'itemTrackingCode',
+        RealmPropertyType.string,
+        mapTo: 'item_tracking_code',
+        optional: true,
+      ),
       SchemaProperty('picture', RealmPropertyType.string, optional: true),
-      SchemaProperty('avatar128', RealmPropertyType.string,
-          mapTo: 'avatar_128', optional: true),
+      SchemaProperty(
+        'avatar128',
+        RealmPropertyType.string,
+        mapTo: 'avatar_128',
+        optional: true,
+      ),
       SchemaProperty('inactived', RealmPropertyType.string, optional: true),
       SchemaProperty('inventory', RealmPropertyType.double, optional: true),
       SchemaProperty('isSync', RealmPropertyType.string, mapTo: 'is_sync'),
-      SchemaProperty('createdAt', RealmPropertyType.string,
-          mapTo: 'created_at', optional: true),
-      SchemaProperty('updatedAt', RealmPropertyType.string,
-          mapTo: 'updated_at', optional: true),
+      SchemaProperty(
+        'createdAt',
+        RealmPropertyType.string,
+        mapTo: 'created_at',
+        optional: true,
+      ),
+      SchemaProperty(
+        'updatedAt',
+        RealmPropertyType.string,
+        mapTo: 'updated_at',
+        optional: true,
+      ),
     ]);
   }();
 
@@ -666,20 +804,17 @@ class ItemGroup extends _ItemGroup
   static ItemGroup _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'code': EJsonValue code,
-      } =>
-        ItemGroup(
-          fromEJson(code),
-          description: fromEJson(ejson['description']),
-          description2: fromEJson(ejson['description_2']),
-          itemBrandCode: fromEJson(ejson['item_brand_code']),
-          itemCategoryCode: fromEJson(ejson['item_category_code']),
-          picture: fromEJson(ejson['picture']),
-          inactived: fromEJson(ejson['inactived'], defaultValue: "No"),
-          createdAt: fromEJson(ejson['created_at']),
-          updatedAt: fromEJson(ejson['updated_at']),
-        ),
+      {'code': EJsonValue code} => ItemGroup(
+        fromEJson(code),
+        description: fromEJson(ejson['description']),
+        description2: fromEJson(ejson['description_2']),
+        itemBrandCode: fromEJson(ejson['item_brand_code']),
+        itemCategoryCode: fromEJson(ejson['item_category_code']),
+        picture: fromEJson(ejson['picture']),
+        inactived: fromEJson(ejson['inactived'], defaultValue: "No"),
+        createdAt: fromEJson(ejson['created_at']),
+        updatedAt: fromEJson(ejson['updated_at']),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -690,18 +825,38 @@ class ItemGroup extends _ItemGroup
     return const SchemaObject(ObjectType.realmObject, ItemGroup, 'ITEM_GROUP', [
       SchemaProperty('code', RealmPropertyType.string, primaryKey: true),
       SchemaProperty('description', RealmPropertyType.string, optional: true),
-      SchemaProperty('description2', RealmPropertyType.string,
-          mapTo: 'description_2', optional: true),
-      SchemaProperty('itemBrandCode', RealmPropertyType.string,
-          mapTo: 'item_brand_code', optional: true),
-      SchemaProperty('itemCategoryCode', RealmPropertyType.string,
-          mapTo: 'item_category_code', optional: true),
+      SchemaProperty(
+        'description2',
+        RealmPropertyType.string,
+        mapTo: 'description_2',
+        optional: true,
+      ),
+      SchemaProperty(
+        'itemBrandCode',
+        RealmPropertyType.string,
+        mapTo: 'item_brand_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'itemCategoryCode',
+        RealmPropertyType.string,
+        mapTo: 'item_category_code',
+        optional: true,
+      ),
       SchemaProperty('picture', RealmPropertyType.string, optional: true),
       SchemaProperty('inactived', RealmPropertyType.string, optional: true),
-      SchemaProperty('createdAt', RealmPropertyType.string,
-          mapTo: 'created_at', optional: true),
-      SchemaProperty('updatedAt', RealmPropertyType.string,
-          mapTo: 'updated_at', optional: true),
+      SchemaProperty(
+        'createdAt',
+        RealmPropertyType.string,
+        mapTo: 'created_at',
+        optional: true,
+      ),
+      SchemaProperty(
+        'updatedAt',
+        RealmPropertyType.string,
+        mapTo: 'updated_at',
+        optional: true,
+      ),
     ]);
   }();
 
@@ -832,9 +987,9 @@ class ItemUnitOfMeasure extends _ItemUnitOfMeasure
       RealmObjectBase.getChanges<ItemUnitOfMeasure>(this);
 
   @override
-  Stream<RealmObjectChanges<ItemUnitOfMeasure>> changesFor(
-          [List<String>? keyPaths]) =>
-      RealmObjectBase.getChangesFor<ItemUnitOfMeasure>(this, keyPaths);
+  Stream<RealmObjectChanges<ItemUnitOfMeasure>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<ItemUnitOfMeasure>(this, keyPaths);
 
   @override
   ItemUnitOfMeasure freeze() =>
@@ -861,23 +1016,20 @@ class ItemUnitOfMeasure extends _ItemUnitOfMeasure
   static ItemUnitOfMeasure _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'id': EJsonValue id,
-      } =>
-        ItemUnitOfMeasure(
-          fromEJson(id),
-          itemNo: fromEJson(ejson['item_no']),
-          unitOfMeasureCode: fromEJson(ejson['unit_of_measure_code']),
-          unitOption: fromEJson(ejson['unit_option']),
-          identifierCode: fromEJson(ejson['identifier_code']),
-          description: fromEJson(ejson['description']),
-          description2: fromEJson(ejson['description_2']),
-          qtyPerUnit: fromEJson(ejson['qty_per_unit'], defaultValue: 1.0),
-          quantityDecimal: fromEJson(ejson['quantity_decimal']),
-          price: fromEJson(ejson['price'], defaultValue: 0.0),
-          priceOption: fromEJson(ejson['price_option']),
-          inactived: fromEJson(ejson['inactived'], defaultValue: "No"),
-        ),
+      {'id': EJsonValue id} => ItemUnitOfMeasure(
+        fromEJson(id),
+        itemNo: fromEJson(ejson['item_no']),
+        unitOfMeasureCode: fromEJson(ejson['unit_of_measure_code']),
+        unitOption: fromEJson(ejson['unit_option']),
+        identifierCode: fromEJson(ejson['identifier_code']),
+        description: fromEJson(ejson['description']),
+        description2: fromEJson(ejson['description_2']),
+        qtyPerUnit: fromEJson(ejson['qty_per_unit'], defaultValue: 1.0),
+        quantityDecimal: fromEJson(ejson['quantity_decimal']),
+        price: fromEJson(ejson['price'], defaultValue: 0.0),
+        priceOption: fromEJson(ejson['price_option']),
+        inactived: fromEJson(ejson['inactived'], defaultValue: "No"),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -886,28 +1038,64 @@ class ItemUnitOfMeasure extends _ItemUnitOfMeasure
     RealmObjectBase.registerFactory(ItemUnitOfMeasure._);
     register(_toEJson, _fromEJson);
     return const SchemaObject(
-        ObjectType.realmObject, ItemUnitOfMeasure, 'ITEM_UNIT_OF_MEASURE', [
-      SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('itemNo', RealmPropertyType.string,
-          mapTo: 'item_no', optional: true),
-      SchemaProperty('unitOfMeasureCode', RealmPropertyType.string,
-          mapTo: 'unit_of_measure_code', optional: true),
-      SchemaProperty('unitOption', RealmPropertyType.string,
-          mapTo: 'unit_option', optional: true),
-      SchemaProperty('identifierCode', RealmPropertyType.string,
-          mapTo: 'identifier_code', optional: true),
-      SchemaProperty('description', RealmPropertyType.string, optional: true),
-      SchemaProperty('description2', RealmPropertyType.string,
-          mapTo: 'description_2', optional: true),
-      SchemaProperty('qtyPerUnit', RealmPropertyType.double,
-          mapTo: 'qty_per_unit', optional: true),
-      SchemaProperty('quantityDecimal', RealmPropertyType.string,
-          mapTo: 'quantity_decimal', optional: true),
-      SchemaProperty('price', RealmPropertyType.double, optional: true),
-      SchemaProperty('priceOption', RealmPropertyType.string,
-          mapTo: 'price_option', optional: true),
-      SchemaProperty('inactived', RealmPropertyType.string, optional: true),
-    ]);
+      ObjectType.realmObject,
+      ItemUnitOfMeasure,
+      'ITEM_UNIT_OF_MEASURE',
+      [
+        SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
+        SchemaProperty(
+          'itemNo',
+          RealmPropertyType.string,
+          mapTo: 'item_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'unitOfMeasureCode',
+          RealmPropertyType.string,
+          mapTo: 'unit_of_measure_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'unitOption',
+          RealmPropertyType.string,
+          mapTo: 'unit_option',
+          optional: true,
+        ),
+        SchemaProperty(
+          'identifierCode',
+          RealmPropertyType.string,
+          mapTo: 'identifier_code',
+          optional: true,
+        ),
+        SchemaProperty('description', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'description2',
+          RealmPropertyType.string,
+          mapTo: 'description_2',
+          optional: true,
+        ),
+        SchemaProperty(
+          'qtyPerUnit',
+          RealmPropertyType.double,
+          mapTo: 'qty_per_unit',
+          optional: true,
+        ),
+        SchemaProperty(
+          'quantityDecimal',
+          RealmPropertyType.string,
+          mapTo: 'quantity_decimal',
+          optional: true,
+        ),
+        SchemaProperty('price', RealmPropertyType.double, optional: true),
+        SchemaProperty(
+          'priceOption',
+          RealmPropertyType.string,
+          mapTo: 'price_option',
+          optional: true,
+        ),
+        SchemaProperty('inactived', RealmPropertyType.string, optional: true),
+      ],
+    );
   }();
 
   @override
@@ -939,7 +1127,10 @@ class ItemSalesLinePrices extends _ItemSalesLinePrices
     RealmObjectBase.set(this, 'variant_code', variantCode);
     RealmObjectBase.set(this, 'uom_code', uomCode);
     RealmObjectBase.set(
-        this, 'customer_price_level_code', customerPriceLevelCode);
+      this,
+      'customer_price_level_code',
+      customerPriceLevelCode,
+    );
     RealmObjectBase.set(this, 'currency_code', currencyCode);
     RealmObjectBase.set(this, 'minimum_quantity', minimumQuantity);
     RealmObjectBase.set(this, 'unit_price', unitPrice);
@@ -1049,9 +1240,9 @@ class ItemSalesLinePrices extends _ItemSalesLinePrices
       RealmObjectBase.getChanges<ItemSalesLinePrices>(this);
 
   @override
-  Stream<RealmObjectChanges<ItemSalesLinePrices>> changesFor(
-          [List<String>? keyPaths]) =>
-      RealmObjectBase.getChangesFor<ItemSalesLinePrices>(this, keyPaths);
+  Stream<RealmObjectChanges<ItemSalesLinePrices>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<ItemSalesLinePrices>(this, keyPaths);
 
   @override
   ItemSalesLinePrices freeze() =>
@@ -1080,25 +1271,22 @@ class ItemSalesLinePrices extends _ItemSalesLinePrices
   static ItemSalesLinePrices _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'id': EJsonValue id,
-      } =>
-        ItemSalesLinePrices(
-          fromEJson(id),
-          salesType: fromEJson(ejson['sales_type']),
-          salesCode: fromEJson(ejson['sales_code']),
-          itemNo: fromEJson(ejson['item_no']),
-          variantCode: fromEJson(ejson['variant_code']),
-          uomCode: fromEJson(ejson['uom_code']),
-          customerPriceLevelCode: fromEJson(ejson['customer_price_level_code']),
-          currencyCode: fromEJson(ejson['currency_code']),
-          minimumQuantity: fromEJson(ejson['minimum_quantity']),
-          unitPrice: fromEJson(ejson['unit_price']),
-          discountPercentage: fromEJson(ejson['discount_percentage']),
-          discountAmount: fromEJson(ejson['discount_amount']),
-          startingDate: fromEJson(ejson['starting_date']),
-          endingDate: fromEJson(ejson['ending_date']),
-        ),
+      {'id': EJsonValue id} => ItemSalesLinePrices(
+        fromEJson(id),
+        salesType: fromEJson(ejson['sales_type']),
+        salesCode: fromEJson(ejson['sales_code']),
+        itemNo: fromEJson(ejson['item_no']),
+        variantCode: fromEJson(ejson['variant_code']),
+        uomCode: fromEJson(ejson['uom_code']),
+        customerPriceLevelCode: fromEJson(ejson['customer_price_level_code']),
+        currencyCode: fromEJson(ejson['currency_code']),
+        minimumQuantity: fromEJson(ejson['minimum_quantity']),
+        unitPrice: fromEJson(ejson['unit_price']),
+        discountPercentage: fromEJson(ejson['discount_percentage']),
+        discountAmount: fromEJson(ejson['discount_amount']),
+        startingDate: fromEJson(ejson['starting_date']),
+        endingDate: fromEJson(ejson['ending_date']),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -1107,35 +1295,91 @@ class ItemSalesLinePrices extends _ItemSalesLinePrices
     RealmObjectBase.registerFactory(ItemSalesLinePrices._);
     register(_toEJson, _fromEJson);
     return const SchemaObject(
-        ObjectType.realmObject, ItemSalesLinePrices, 'ITEM_SALES_LINE_PRICES', [
-      SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('salesType', RealmPropertyType.string,
-          mapTo: 'sales_type', optional: true),
-      SchemaProperty('salesCode', RealmPropertyType.string,
-          mapTo: 'sales_code', optional: true),
-      SchemaProperty('itemNo', RealmPropertyType.string,
-          mapTo: 'item_no', optional: true),
-      SchemaProperty('variantCode', RealmPropertyType.string,
-          mapTo: 'variant_code', optional: true),
-      SchemaProperty('uomCode', RealmPropertyType.string,
-          mapTo: 'uom_code', optional: true),
-      SchemaProperty('customerPriceLevelCode', RealmPropertyType.string,
-          mapTo: 'customer_price_level_code', optional: true),
-      SchemaProperty('currencyCode', RealmPropertyType.string,
-          mapTo: 'currency_code', optional: true),
-      SchemaProperty('minimumQuantity', RealmPropertyType.double,
-          mapTo: 'minimum_quantity', optional: true),
-      SchemaProperty('unitPrice', RealmPropertyType.double,
-          mapTo: 'unit_price', optional: true),
-      SchemaProperty('discountPercentage', RealmPropertyType.double,
-          mapTo: 'discount_percentage', optional: true),
-      SchemaProperty('discountAmount', RealmPropertyType.double,
-          mapTo: 'discount_amount', optional: true),
-      SchemaProperty('startingDate', RealmPropertyType.string,
-          mapTo: 'starting_date', optional: true),
-      SchemaProperty('endingDate', RealmPropertyType.string,
-          mapTo: 'ending_date', optional: true),
-    ]);
+      ObjectType.realmObject,
+      ItemSalesLinePrices,
+      'ITEM_SALES_LINE_PRICES',
+      [
+        SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
+        SchemaProperty(
+          'salesType',
+          RealmPropertyType.string,
+          mapTo: 'sales_type',
+          optional: true,
+        ),
+        SchemaProperty(
+          'salesCode',
+          RealmPropertyType.string,
+          mapTo: 'sales_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'itemNo',
+          RealmPropertyType.string,
+          mapTo: 'item_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'variantCode',
+          RealmPropertyType.string,
+          mapTo: 'variant_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'uomCode',
+          RealmPropertyType.string,
+          mapTo: 'uom_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'customerPriceLevelCode',
+          RealmPropertyType.string,
+          mapTo: 'customer_price_level_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'currencyCode',
+          RealmPropertyType.string,
+          mapTo: 'currency_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'minimumQuantity',
+          RealmPropertyType.double,
+          mapTo: 'minimum_quantity',
+          optional: true,
+        ),
+        SchemaProperty(
+          'unitPrice',
+          RealmPropertyType.double,
+          mapTo: 'unit_price',
+          optional: true,
+        ),
+        SchemaProperty(
+          'discountPercentage',
+          RealmPropertyType.double,
+          mapTo: 'discount_percentage',
+          optional: true,
+        ),
+        SchemaProperty(
+          'discountAmount',
+          RealmPropertyType.double,
+          mapTo: 'discount_amount',
+          optional: true,
+        ),
+        SchemaProperty(
+          'startingDate',
+          RealmPropertyType.string,
+          mapTo: 'starting_date',
+          optional: true,
+        ),
+        SchemaProperty(
+          'endingDate',
+          RealmPropertyType.string,
+          mapTo: 'ending_date',
+          optional: true,
+        ),
+      ],
+    );
   }();
 
   @override
@@ -1184,7 +1428,10 @@ class ItemSalesLineDiscount extends _ItemSalesLineDiscount
     RealmObjectBase.set(this, 'minimum_quantity', minimumQuantity);
     RealmObjectBase.set(this, 'line_discount_percent', lineDiscountPercent);
     RealmObjectBase.set(
-        this, 'line_discount_percent_birthday', lineDiscountPercentBirthday);
+      this,
+      'line_discount_percent_birthday',
+      lineDiscountPercentBirthday,
+    );
     RealmObjectBase.set(this, 'disc_amount', discAmount);
     RealmObjectBase.set(this, 'starting_date', startingDate);
     RealmObjectBase.set(this, 'ending_date', endingDate);
@@ -1302,9 +1549,9 @@ class ItemSalesLineDiscount extends _ItemSalesLineDiscount
       RealmObjectBase.getChanges<ItemSalesLineDiscount>(this);
 
   @override
-  Stream<RealmObjectChanges<ItemSalesLineDiscount>> changesFor(
-          [List<String>? keyPaths]) =>
-      RealmObjectBase.getChangesFor<ItemSalesLineDiscount>(this, keyPaths);
+  Stream<RealmObjectChanges<ItemSalesLineDiscount>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<ItemSalesLineDiscount>(this, keyPaths);
 
   @override
   ItemSalesLineDiscount freeze() =>
@@ -1335,30 +1582,30 @@ class ItemSalesLineDiscount extends _ItemSalesLineDiscount
   static ItemSalesLineDiscount _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'id': EJsonValue id,
-      } =>
-        ItemSalesLineDiscount(
-          fromEJson(id),
-          type: fromEJson(ejson['type']),
-          code: fromEJson(ejson['code']),
-          saleType: fromEJson(ejson['sale_type']),
-          salesCode: fromEJson(ejson['sales_code']),
-          variantCode: fromEJson(ejson['variant_code']),
-          uomCode: fromEJson(ejson['uom_code']),
-          currencyCode: fromEJson(ejson['currency_code']),
-          offerType: fromEJson(ejson['offer_type']),
-          minimumAmount: fromEJson(ejson['minimum_amount']),
-          minimumQuantity: fromEJson(ejson['minimum_quantity']),
-          lineDiscountPercent:
-              fromEJson(ejson['line_discount_percent'], defaultValue: 0),
-          lineDiscountPercentBirthday: fromEJson(
-              ejson['line_discount_percent_birthday'],
-              defaultValue: 0),
-          discAmount: fromEJson(ejson['disc_amount'], defaultValue: 0),
-          startingDate: fromEJson(ejson['starting_date']),
-          endingDate: fromEJson(ejson['ending_date']),
+      {'id': EJsonValue id} => ItemSalesLineDiscount(
+        fromEJson(id),
+        type: fromEJson(ejson['type']),
+        code: fromEJson(ejson['code']),
+        saleType: fromEJson(ejson['sale_type']),
+        salesCode: fromEJson(ejson['sales_code']),
+        variantCode: fromEJson(ejson['variant_code']),
+        uomCode: fromEJson(ejson['uom_code']),
+        currencyCode: fromEJson(ejson['currency_code']),
+        offerType: fromEJson(ejson['offer_type']),
+        minimumAmount: fromEJson(ejson['minimum_amount']),
+        minimumQuantity: fromEJson(ejson['minimum_quantity']),
+        lineDiscountPercent: fromEJson(
+          ejson['line_discount_percent'],
+          defaultValue: 0,
         ),
+        lineDiscountPercentBirthday: fromEJson(
+          ejson['line_discount_percent_birthday'],
+          defaultValue: 0,
+        ),
+        discAmount: fromEJson(ejson['disc_amount'], defaultValue: 0),
+        startingDate: fromEJson(ejson['starting_date']),
+        endingDate: fromEJson(ejson['ending_date']),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -1366,38 +1613,94 @@ class ItemSalesLineDiscount extends _ItemSalesLineDiscount
   static final schema = () {
     RealmObjectBase.registerFactory(ItemSalesLineDiscount._);
     register(_toEJson, _fromEJson);
-    return const SchemaObject(ObjectType.realmObject, ItemSalesLineDiscount,
-        'ITEM_SALES_LINE_DISCOUNT', [
-      SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('type', RealmPropertyType.string, optional: true),
-      SchemaProperty('code', RealmPropertyType.string, optional: true),
-      SchemaProperty('saleType', RealmPropertyType.string,
-          mapTo: 'sale_type', optional: true),
-      SchemaProperty('salesCode', RealmPropertyType.string,
-          mapTo: 'sales_code', optional: true),
-      SchemaProperty('variantCode', RealmPropertyType.string,
-          mapTo: 'variant_code', optional: true),
-      SchemaProperty('uomCode', RealmPropertyType.string,
-          mapTo: 'uom_code', optional: true),
-      SchemaProperty('currencyCode', RealmPropertyType.string,
-          mapTo: 'currency_code', optional: true),
-      SchemaProperty('offerType', RealmPropertyType.string,
-          mapTo: 'offer_type', optional: true),
-      SchemaProperty('minimumAmount', RealmPropertyType.double,
-          mapTo: 'minimum_amount', optional: true),
-      SchemaProperty('minimumQuantity', RealmPropertyType.double,
-          mapTo: 'minimum_quantity', optional: true),
-      SchemaProperty('lineDiscountPercent', RealmPropertyType.double,
-          mapTo: 'line_discount_percent', optional: true),
-      SchemaProperty('lineDiscountPercentBirthday', RealmPropertyType.double,
-          mapTo: 'line_discount_percent_birthday', optional: true),
-      SchemaProperty('discAmount', RealmPropertyType.double,
-          mapTo: 'disc_amount', optional: true),
-      SchemaProperty('startingDate', RealmPropertyType.string,
-          mapTo: 'starting_date', optional: true),
-      SchemaProperty('endingDate', RealmPropertyType.string,
-          mapTo: 'ending_date', optional: true),
-    ]);
+    return const SchemaObject(
+      ObjectType.realmObject,
+      ItemSalesLineDiscount,
+      'ITEM_SALES_LINE_DISCOUNT',
+      [
+        SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
+        SchemaProperty('type', RealmPropertyType.string, optional: true),
+        SchemaProperty('code', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'saleType',
+          RealmPropertyType.string,
+          mapTo: 'sale_type',
+          optional: true,
+        ),
+        SchemaProperty(
+          'salesCode',
+          RealmPropertyType.string,
+          mapTo: 'sales_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'variantCode',
+          RealmPropertyType.string,
+          mapTo: 'variant_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'uomCode',
+          RealmPropertyType.string,
+          mapTo: 'uom_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'currencyCode',
+          RealmPropertyType.string,
+          mapTo: 'currency_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'offerType',
+          RealmPropertyType.string,
+          mapTo: 'offer_type',
+          optional: true,
+        ),
+        SchemaProperty(
+          'minimumAmount',
+          RealmPropertyType.double,
+          mapTo: 'minimum_amount',
+          optional: true,
+        ),
+        SchemaProperty(
+          'minimumQuantity',
+          RealmPropertyType.double,
+          mapTo: 'minimum_quantity',
+          optional: true,
+        ),
+        SchemaProperty(
+          'lineDiscountPercent',
+          RealmPropertyType.double,
+          mapTo: 'line_discount_percent',
+          optional: true,
+        ),
+        SchemaProperty(
+          'lineDiscountPercentBirthday',
+          RealmPropertyType.double,
+          mapTo: 'line_discount_percent_birthday',
+          optional: true,
+        ),
+        SchemaProperty(
+          'discAmount',
+          RealmPropertyType.double,
+          mapTo: 'disc_amount',
+          optional: true,
+        ),
+        SchemaProperty(
+          'startingDate',
+          RealmPropertyType.string,
+          mapTo: 'starting_date',
+          optional: true,
+        ),
+        SchemaProperty(
+          'endingDate',
+          RealmPropertyType.string,
+          mapTo: 'ending_date',
+          optional: true,
+        ),
+      ],
+    );
   }();
 
   @override
@@ -1458,9 +1761,9 @@ class ItemPromotionScheme extends _ItemPromotionScheme
       RealmObjectBase.getChanges<ItemPromotionScheme>(this);
 
   @override
-  Stream<RealmObjectChanges<ItemPromotionScheme>> changesFor(
-          [List<String>? keyPaths]) =>
-      RealmObjectBase.getChangesFor<ItemPromotionScheme>(this, keyPaths);
+  Stream<RealmObjectChanges<ItemPromotionScheme>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<ItemPromotionScheme>(this, keyPaths);
 
   @override
   ItemPromotionScheme freeze() =>
@@ -1480,16 +1783,13 @@ class ItemPromotionScheme extends _ItemPromotionScheme
   static ItemPromotionScheme _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'code': EJsonValue code,
-      } =>
-        ItemPromotionScheme(
-          fromEJson(code),
-          description: fromEJson(ejson['description']),
-          description2: fromEJson(ejson['description_2']),
-          itemsNos: fromEJson(ejson['items_nos']),
-          inactived: fromEJson(ejson['inactived']),
-        ),
+      {'code': EJsonValue code} => ItemPromotionScheme(
+        fromEJson(code),
+        description: fromEJson(ejson['description']),
+        description2: fromEJson(ejson['description_2']),
+        itemsNos: fromEJson(ejson['items_nos']),
+        inactived: fromEJson(ejson['inactived']),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -1498,15 +1798,27 @@ class ItemPromotionScheme extends _ItemPromotionScheme
     RealmObjectBase.registerFactory(ItemPromotionScheme._);
     register(_toEJson, _fromEJson);
     return const SchemaObject(
-        ObjectType.realmObject, ItemPromotionScheme, 'ITEM_PROMOTION_SCHEME', [
-      SchemaProperty('code', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('description', RealmPropertyType.string, optional: true),
-      SchemaProperty('description2', RealmPropertyType.string,
-          mapTo: 'description_2', optional: true),
-      SchemaProperty('itemsNos', RealmPropertyType.string,
-          mapTo: 'items_nos', optional: true),
-      SchemaProperty('inactived', RealmPropertyType.string, optional: true),
-    ]);
+      ObjectType.realmObject,
+      ItemPromotionScheme,
+      'ITEM_PROMOTION_SCHEME',
+      [
+        SchemaProperty('code', RealmPropertyType.string, primaryKey: true),
+        SchemaProperty('description', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'description2',
+          RealmPropertyType.string,
+          mapTo: 'description_2',
+          optional: true,
+        ),
+        SchemaProperty(
+          'itemsNos',
+          RealmPropertyType.string,
+          mapTo: 'items_nos',
+          optional: true,
+        ),
+        SchemaProperty('inactived', RealmPropertyType.string, optional: true),
+      ],
+    );
   }();
 
   @override
@@ -1558,7 +1870,10 @@ class ItemPromotionHeader extends _ItemPromotionHeader
     RealmObjectBase.set(this, 'avatar_128', avatar128);
     RealmObjectBase.set(this, 'maximum_offer_customer', maximumOfferCustomer);
     RealmObjectBase.set(
-        this, 'maximum_offer_salesperson', maximumOfferSalesperson);
+      this,
+      'maximum_offer_salesperson',
+      maximumOfferSalesperson,
+    );
     RealmObjectBase.set(this, 'is_sync', isSync);
     RealmObjectBase.set(this, 'created_at', createdAt);
     RealmObjectBase.set(this, 'updated_at', updatedAt);
@@ -1673,9 +1988,9 @@ class ItemPromotionHeader extends _ItemPromotionHeader
       RealmObjectBase.getChanges<ItemPromotionHeader>(this);
 
   @override
-  Stream<RealmObjectChanges<ItemPromotionHeader>> changesFor(
-          [List<String>? keyPaths]) =>
-      RealmObjectBase.getChangesFor<ItemPromotionHeader>(this, keyPaths);
+  Stream<RealmObjectChanges<ItemPromotionHeader>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<ItemPromotionHeader>(this, keyPaths);
 
   @override
   ItemPromotionHeader freeze() =>
@@ -1727,10 +2042,14 @@ class ItemPromotionHeader extends _ItemPromotionHeader
           picture: fromEJson(ejson['picture']),
           avatar32: fromEJson(ejson['avatar_32']),
           avatar128: fromEJson(ejson['avatar_128']),
-          maximumOfferCustomer:
-              fromEJson(ejson['maximum_offer_customer'], defaultValue: 0.0),
-          maximumOfferSalesperson:
-              fromEJson(ejson['maximum_offer_salesperson'], defaultValue: 0.0),
+          maximumOfferCustomer: fromEJson(
+            ejson['maximum_offer_customer'],
+            defaultValue: 0.0,
+          ),
+          maximumOfferSalesperson: fromEJson(
+            ejson['maximum_offer_salesperson'],
+            defaultValue: 0.0,
+          ),
           isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
         ),
       _ => raiseInvalidEJson(ejson),
@@ -1741,35 +2060,75 @@ class ItemPromotionHeader extends _ItemPromotionHeader
     RealmObjectBase.registerFactory(ItemPromotionHeader._);
     register(_toEJson, _fromEJson);
     return const SchemaObject(
-        ObjectType.realmObject, ItemPromotionHeader, 'ITEM_PROMOTION_HEADER', [
-      SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('no', RealmPropertyType.string, optional: true),
-      SchemaProperty('fromDate', RealmPropertyType.string,
-          mapTo: 'from_date', optional: true),
-      SchemaProperty('toDate', RealmPropertyType.string,
-          mapTo: 'to_date', optional: true),
-      SchemaProperty('description', RealmPropertyType.string, optional: true),
-      SchemaProperty('description2', RealmPropertyType.string,
-          mapTo: 'description_2', optional: true),
-      SchemaProperty('remark', RealmPropertyType.string, optional: true),
-      SchemaProperty('promotionType', RealmPropertyType.string,
-          mapTo: 'promotion_type', optional: true),
-      SchemaProperty('status', RealmPropertyType.string),
-      SchemaProperty('picture', RealmPropertyType.string, optional: true),
-      SchemaProperty('avatar32', RealmPropertyType.string,
-          mapTo: 'avatar_32', optional: true),
-      SchemaProperty('avatar128', RealmPropertyType.string,
-          mapTo: 'avatar_128', optional: true),
-      SchemaProperty('maximumOfferCustomer', RealmPropertyType.double,
-          mapTo: 'maximum_offer_customer'),
-      SchemaProperty('maximumOfferSalesperson', RealmPropertyType.double,
-          mapTo: 'maximum_offer_salesperson'),
-      SchemaProperty('isSync', RealmPropertyType.string, mapTo: 'is_sync'),
-      SchemaProperty('createdAt', RealmPropertyType.string,
-          mapTo: 'created_at'),
-      SchemaProperty('updatedAt', RealmPropertyType.string,
-          mapTo: 'updated_at'),
-    ]);
+      ObjectType.realmObject,
+      ItemPromotionHeader,
+      'ITEM_PROMOTION_HEADER',
+      [
+        SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
+        SchemaProperty('no', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'fromDate',
+          RealmPropertyType.string,
+          mapTo: 'from_date',
+          optional: true,
+        ),
+        SchemaProperty(
+          'toDate',
+          RealmPropertyType.string,
+          mapTo: 'to_date',
+          optional: true,
+        ),
+        SchemaProperty('description', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'description2',
+          RealmPropertyType.string,
+          mapTo: 'description_2',
+          optional: true,
+        ),
+        SchemaProperty('remark', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'promotionType',
+          RealmPropertyType.string,
+          mapTo: 'promotion_type',
+          optional: true,
+        ),
+        SchemaProperty('status', RealmPropertyType.string),
+        SchemaProperty('picture', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'avatar32',
+          RealmPropertyType.string,
+          mapTo: 'avatar_32',
+          optional: true,
+        ),
+        SchemaProperty(
+          'avatar128',
+          RealmPropertyType.string,
+          mapTo: 'avatar_128',
+          optional: true,
+        ),
+        SchemaProperty(
+          'maximumOfferCustomer',
+          RealmPropertyType.double,
+          mapTo: 'maximum_offer_customer',
+        ),
+        SchemaProperty(
+          'maximumOfferSalesperson',
+          RealmPropertyType.double,
+          mapTo: 'maximum_offer_salesperson',
+        ),
+        SchemaProperty('isSync', RealmPropertyType.string, mapTo: 'is_sync'),
+        SchemaProperty(
+          'createdAt',
+          RealmPropertyType.string,
+          mapTo: 'created_at',
+        ),
+        SchemaProperty(
+          'updatedAt',
+          RealmPropertyType.string,
+          mapTo: 'updated_at',
+        ),
+      ],
+    );
   }();
 
   @override
@@ -1962,9 +2321,9 @@ class ItemPromotionLine extends _ItemPromotionLine
       RealmObjectBase.getChanges<ItemPromotionLine>(this);
 
   @override
-  Stream<RealmObjectChanges<ItemPromotionLine>> changesFor(
-          [List<String>? keyPaths]) =>
-      RealmObjectBase.getChangesFor<ItemPromotionLine>(this, keyPaths);
+  Stream<RealmObjectChanges<ItemPromotionLine>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<ItemPromotionLine>(this, keyPaths);
 
   @override
   ItemPromotionLine freeze() =>
@@ -1998,35 +2357,39 @@ class ItemPromotionLine extends _ItemPromotionLine
   static ItemPromotionLine _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'id': EJsonValue id,
-      } =>
-        ItemPromotionLine(
-          fromEJson(id),
-          lineNo: fromEJson(ejson['line_no']),
-          promotionNo: fromEJson(ejson['promotion_no']),
-          type: fromEJson(ejson['type']),
-          itemNo: fromEJson(ejson['item_no']),
-          variantCode: fromEJson(ejson['variant_code']),
-          description: fromEJson(ejson['description']),
-          description2: fromEJson(ejson['description_2']),
-          promotionType: fromEJson(ejson['promotion_type']),
-          unitOfMeasureCode: fromEJson(ejson['unit_of_measure_code']),
-          qtyPerUnitOfMeasure:
-              fromEJson(ejson['qty_per_unit_of_measure'], defaultValue: 1.0),
-          quantity: fromEJson(ejson['quantity'], defaultValue: 0.0),
-          maximumOfferQuantity:
-              fromEJson(ejson['maximum_offer_quantity'], defaultValue: 0.0),
-          unitPrice: fromEJson(ejson['unit_price'], defaultValue: 0.0),
-          discountPercentage:
-              fromEJson(ejson['discount_percentage'], defaultValue: 0.0),
-          discountAmount:
-              fromEJson(ejson['discount_amount'], defaultValue: 0.0),
-          amount: fromEJson(ejson['amount'], defaultValue: 0.0),
-          sellingPriceOption: fromEJson(ejson['selling_price_option'],
-              defaultValue: "Fixed Price"),
-          isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
+      {'id': EJsonValue id} => ItemPromotionLine(
+        fromEJson(id),
+        lineNo: fromEJson(ejson['line_no']),
+        promotionNo: fromEJson(ejson['promotion_no']),
+        type: fromEJson(ejson['type']),
+        itemNo: fromEJson(ejson['item_no']),
+        variantCode: fromEJson(ejson['variant_code']),
+        description: fromEJson(ejson['description']),
+        description2: fromEJson(ejson['description_2']),
+        promotionType: fromEJson(ejson['promotion_type']),
+        unitOfMeasureCode: fromEJson(ejson['unit_of_measure_code']),
+        qtyPerUnitOfMeasure: fromEJson(
+          ejson['qty_per_unit_of_measure'],
+          defaultValue: 1.0,
         ),
+        quantity: fromEJson(ejson['quantity'], defaultValue: 0.0),
+        maximumOfferQuantity: fromEJson(
+          ejson['maximum_offer_quantity'],
+          defaultValue: 0.0,
+        ),
+        unitPrice: fromEJson(ejson['unit_price'], defaultValue: 0.0),
+        discountPercentage: fromEJson(
+          ejson['discount_percentage'],
+          defaultValue: 0.0,
+        ),
+        discountAmount: fromEJson(ejson['discount_amount'], defaultValue: 0.0),
+        amount: fromEJson(ejson['amount'], defaultValue: 0.0),
+        sellingPriceOption: fromEJson(
+          ejson['selling_price_option'],
+          defaultValue: "Fixed Price",
+        ),
+        isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -2035,40 +2398,95 @@ class ItemPromotionLine extends _ItemPromotionLine
     RealmObjectBase.registerFactory(ItemPromotionLine._);
     register(_toEJson, _fromEJson);
     return const SchemaObject(
-        ObjectType.realmObject, ItemPromotionLine, 'ITEM_PROMOTION_LINE', [
-      SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('lineNo', RealmPropertyType.int,
-          mapTo: 'line_no', optional: true),
-      SchemaProperty('promotionNo', RealmPropertyType.string,
-          mapTo: 'promotion_no', optional: true),
-      SchemaProperty('type', RealmPropertyType.string, optional: true),
-      SchemaProperty('itemNo', RealmPropertyType.string,
-          mapTo: 'item_no', optional: true),
-      SchemaProperty('variantCode', RealmPropertyType.string,
-          mapTo: 'variant_code', optional: true),
-      SchemaProperty('description', RealmPropertyType.string, optional: true),
-      SchemaProperty('description2', RealmPropertyType.string,
-          mapTo: 'description_2', optional: true),
-      SchemaProperty('promotionType', RealmPropertyType.string,
-          mapTo: 'promotion_type', optional: true),
-      SchemaProperty('unitOfMeasureCode', RealmPropertyType.string,
-          mapTo: 'unit_of_measure_code', optional: true),
-      SchemaProperty('qtyPerUnitOfMeasure', RealmPropertyType.double,
-          mapTo: 'qty_per_unit_of_measure', optional: true),
-      SchemaProperty('quantity', RealmPropertyType.double, optional: true),
-      SchemaProperty('maximumOfferQuantity', RealmPropertyType.double,
-          mapTo: 'maximum_offer_quantity', optional: true),
-      SchemaProperty('unitPrice', RealmPropertyType.double,
-          mapTo: 'unit_price', optional: true),
-      SchemaProperty('discountPercentage', RealmPropertyType.double,
-          mapTo: 'discount_percentage', optional: true),
-      SchemaProperty('discountAmount', RealmPropertyType.double,
-          mapTo: 'discount_amount', optional: true),
-      SchemaProperty('amount', RealmPropertyType.double, optional: true),
-      SchemaProperty('sellingPriceOption', RealmPropertyType.string,
-          mapTo: 'selling_price_option'),
-      SchemaProperty('isSync', RealmPropertyType.string, mapTo: 'is_sync'),
-    ]);
+      ObjectType.realmObject,
+      ItemPromotionLine,
+      'ITEM_PROMOTION_LINE',
+      [
+        SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
+        SchemaProperty(
+          'lineNo',
+          RealmPropertyType.int,
+          mapTo: 'line_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'promotionNo',
+          RealmPropertyType.string,
+          mapTo: 'promotion_no',
+          optional: true,
+        ),
+        SchemaProperty('type', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'itemNo',
+          RealmPropertyType.string,
+          mapTo: 'item_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'variantCode',
+          RealmPropertyType.string,
+          mapTo: 'variant_code',
+          optional: true,
+        ),
+        SchemaProperty('description', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'description2',
+          RealmPropertyType.string,
+          mapTo: 'description_2',
+          optional: true,
+        ),
+        SchemaProperty(
+          'promotionType',
+          RealmPropertyType.string,
+          mapTo: 'promotion_type',
+          optional: true,
+        ),
+        SchemaProperty(
+          'unitOfMeasureCode',
+          RealmPropertyType.string,
+          mapTo: 'unit_of_measure_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'qtyPerUnitOfMeasure',
+          RealmPropertyType.double,
+          mapTo: 'qty_per_unit_of_measure',
+          optional: true,
+        ),
+        SchemaProperty('quantity', RealmPropertyType.double, optional: true),
+        SchemaProperty(
+          'maximumOfferQuantity',
+          RealmPropertyType.double,
+          mapTo: 'maximum_offer_quantity',
+          optional: true,
+        ),
+        SchemaProperty(
+          'unitPrice',
+          RealmPropertyType.double,
+          mapTo: 'unit_price',
+          optional: true,
+        ),
+        SchemaProperty(
+          'discountPercentage',
+          RealmPropertyType.double,
+          mapTo: 'discount_percentage',
+          optional: true,
+        ),
+        SchemaProperty(
+          'discountAmount',
+          RealmPropertyType.double,
+          mapTo: 'discount_amount',
+          optional: true,
+        ),
+        SchemaProperty('amount', RealmPropertyType.double, optional: true),
+        SchemaProperty(
+          'sellingPriceOption',
+          RealmPropertyType.string,
+          mapTo: 'selling_price_option',
+        ),
+        SchemaProperty('isSync', RealmPropertyType.string, mapTo: 'is_sync'),
+      ],
+    );
   }();
 
   @override
@@ -2169,9 +2587,9 @@ class ItemJournalBatch extends _ItemJournalBatch
       RealmObjectBase.getChanges<ItemJournalBatch>(this);
 
   @override
-  Stream<RealmObjectChanges<ItemJournalBatch>> changesFor(
-          [List<String>? keyPaths]) =>
-      RealmObjectBase.getChangesFor<ItemJournalBatch>(this, keyPaths);
+  Stream<RealmObjectChanges<ItemJournalBatch>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<ItemJournalBatch>(this, keyPaths);
 
   @override
   ItemJournalBatch freeze() =>
@@ -2195,20 +2613,17 @@ class ItemJournalBatch extends _ItemJournalBatch
   static ItemJournalBatch _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'id': EJsonValue id,
-      } =>
-        ItemJournalBatch(
-          fromEJson(id),
-          code: fromEJson(ejson['code']),
-          type: fromEJson(ejson['type']),
-          description: fromEJson(ejson['description']),
-          description2: fromEJson(ejson['description_2']),
-          noSeriesCode: fromEJson(ejson['no_series_code']),
-          reasonCode: fromEJson(ejson['reason_code']),
-          balAccountType: fromEJson(ejson['bal_account_type']),
-          inactived: fromEJson(ejson['inactived'], defaultValue: "No"),
-        ),
+      {'id': EJsonValue id} => ItemJournalBatch(
+        fromEJson(id),
+        code: fromEJson(ejson['code']),
+        type: fromEJson(ejson['type']),
+        description: fromEJson(ejson['description']),
+        description2: fromEJson(ejson['description_2']),
+        noSeriesCode: fromEJson(ejson['no_series_code']),
+        reasonCode: fromEJson(ejson['reason_code']),
+        balAccountType: fromEJson(ejson['bal_account_type']),
+        inactived: fromEJson(ejson['inactived'], defaultValue: "No"),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -2217,21 +2632,41 @@ class ItemJournalBatch extends _ItemJournalBatch
     RealmObjectBase.registerFactory(ItemJournalBatch._);
     register(_toEJson, _fromEJson);
     return const SchemaObject(
-        ObjectType.realmObject, ItemJournalBatch, 'ITEM_JOURNAL_BATCH', [
-      SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('code', RealmPropertyType.string, optional: true),
-      SchemaProperty('type', RealmPropertyType.string, optional: true),
-      SchemaProperty('description', RealmPropertyType.string, optional: true),
-      SchemaProperty('description2', RealmPropertyType.string,
-          mapTo: 'description_2', optional: true),
-      SchemaProperty('noSeriesCode', RealmPropertyType.string,
-          mapTo: 'no_series_code', optional: true),
-      SchemaProperty('reasonCode', RealmPropertyType.string,
-          mapTo: 'reason_code', optional: true),
-      SchemaProperty('balAccountType', RealmPropertyType.string,
-          mapTo: 'bal_account_type', optional: true),
-      SchemaProperty('inactived', RealmPropertyType.string, optional: true),
-    ]);
+      ObjectType.realmObject,
+      ItemJournalBatch,
+      'ITEM_JOURNAL_BATCH',
+      [
+        SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
+        SchemaProperty('code', RealmPropertyType.string, optional: true),
+        SchemaProperty('type', RealmPropertyType.string, optional: true),
+        SchemaProperty('description', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'description2',
+          RealmPropertyType.string,
+          mapTo: 'description_2',
+          optional: true,
+        ),
+        SchemaProperty(
+          'noSeriesCode',
+          RealmPropertyType.string,
+          mapTo: 'no_series_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'reasonCode',
+          RealmPropertyType.string,
+          mapTo: 'reason_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'balAccountType',
+          RealmPropertyType.string,
+          mapTo: 'bal_account_type',
+          optional: true,
+        ),
+        SchemaProperty('inactived', RealmPropertyType.string, optional: true),
+      ],
+    );
   }();
 
   @override
@@ -2419,9 +2854,9 @@ class CompetitorItem extends _CompetitorItem
       RealmObjectBase.getChanges<CompetitorItem>(this);
 
   @override
-  Stream<RealmObjectChanges<CompetitorItem>> changesFor(
-          [List<String>? keyPaths]) =>
-      RealmObjectBase.getChangesFor<CompetitorItem>(this, keyPaths);
+  Stream<RealmObjectChanges<CompetitorItem>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<CompetitorItem>(this, keyPaths);
 
   @override
   CompetitorItem freeze() => RealmObjectBase.freezeObject<CompetitorItem>(this);
@@ -2454,30 +2889,27 @@ class CompetitorItem extends _CompetitorItem
   static CompetitorItem _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'no': EJsonValue no,
-      } =>
-        CompetitorItem(
-          fromEJson(no),
-          no2: fromEJson(ejson['no2']),
-          identifierCode: fromEJson(ejson['identifier_code']),
-          description: fromEJson(ejson['description']),
-          description2: fromEJson(ejson['description_2']),
-          itemBrandCode: fromEJson(ejson['item_brand_code']),
-          itemGroupCode: fromEJson(ejson['item_group_code']),
-          itemCategoryCode: fromEJson(ejson['item_category_code']),
-          businessUnitCode: fromEJson(ejson['business_unit_code']),
-          unitPrice: fromEJson(ejson['unit_price']),
-          vendorNo: fromEJson(ejson['vendor_no']),
-          competitorNo: fromEJson(ejson['competitor_no']),
-          salesUomCode: fromEJson(ejson['sales_uom_code']),
-          purchaseUomCode: fromEJson(ejson['purchase_uom_code']),
-          picture: fromEJson(ejson['picture']),
-          avatar32: fromEJson(ejson['avatar_32']),
-          avatar128: fromEJson(ejson['avatar_128']),
-          inactived: fromEJson(ejson['inactived'], defaultValue: "No"),
-          remark: fromEJson(ejson['remark']),
-        ),
+      {'no': EJsonValue no} => CompetitorItem(
+        fromEJson(no),
+        no2: fromEJson(ejson['no2']),
+        identifierCode: fromEJson(ejson['identifier_code']),
+        description: fromEJson(ejson['description']),
+        description2: fromEJson(ejson['description_2']),
+        itemBrandCode: fromEJson(ejson['item_brand_code']),
+        itemGroupCode: fromEJson(ejson['item_group_code']),
+        itemCategoryCode: fromEJson(ejson['item_category_code']),
+        businessUnitCode: fromEJson(ejson['business_unit_code']),
+        unitPrice: fromEJson(ejson['unit_price']),
+        vendorNo: fromEJson(ejson['vendor_no']),
+        competitorNo: fromEJson(ejson['competitor_no']),
+        salesUomCode: fromEJson(ejson['sales_uom_code']),
+        purchaseUomCode: fromEJson(ejson['purchase_uom_code']),
+        picture: fromEJson(ejson['picture']),
+        avatar32: fromEJson(ejson['avatar_32']),
+        avatar128: fromEJson(ejson['avatar_128']),
+        inactived: fromEJson(ejson['inactived'], defaultValue: "No"),
+        remark: fromEJson(ejson['remark']),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -2486,40 +2918,96 @@ class CompetitorItem extends _CompetitorItem
     RealmObjectBase.registerFactory(CompetitorItem._);
     register(_toEJson, _fromEJson);
     return const SchemaObject(
-        ObjectType.realmObject, CompetitorItem, 'COMPETITOR_ITEM', [
-      SchemaProperty('no', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('no2', RealmPropertyType.string, optional: true),
-      SchemaProperty('identifierCode', RealmPropertyType.string,
-          mapTo: 'identifier_code', optional: true),
-      SchemaProperty('description', RealmPropertyType.string, optional: true),
-      SchemaProperty('description2', RealmPropertyType.string,
-          mapTo: 'description_2', optional: true),
-      SchemaProperty('itemBrandCode', RealmPropertyType.string,
-          mapTo: 'item_brand_code', optional: true),
-      SchemaProperty('itemGroupCode', RealmPropertyType.string,
-          mapTo: 'item_group_code', optional: true),
-      SchemaProperty('itemCategoryCode', RealmPropertyType.string,
-          mapTo: 'item_category_code', optional: true),
-      SchemaProperty('businessUnitCode', RealmPropertyType.string,
-          mapTo: 'business_unit_code', optional: true),
-      SchemaProperty('unitPrice', RealmPropertyType.string,
-          mapTo: 'unit_price', optional: true),
-      SchemaProperty('vendorNo', RealmPropertyType.string,
-          mapTo: 'vendor_no', optional: true),
-      SchemaProperty('competitorNo', RealmPropertyType.string,
-          mapTo: 'competitor_no', optional: true),
-      SchemaProperty('salesUomCode', RealmPropertyType.string,
-          mapTo: 'sales_uom_code', optional: true),
-      SchemaProperty('purchaseUomCode', RealmPropertyType.string,
-          mapTo: 'purchase_uom_code', optional: true),
-      SchemaProperty('picture', RealmPropertyType.string, optional: true),
-      SchemaProperty('avatar32', RealmPropertyType.string,
-          mapTo: 'avatar_32', optional: true),
-      SchemaProperty('avatar128', RealmPropertyType.string,
-          mapTo: 'avatar_128', optional: true),
-      SchemaProperty('inactived', RealmPropertyType.string, optional: true),
-      SchemaProperty('remark', RealmPropertyType.string, optional: true),
-    ]);
+      ObjectType.realmObject,
+      CompetitorItem,
+      'COMPETITOR_ITEM',
+      [
+        SchemaProperty('no', RealmPropertyType.string, primaryKey: true),
+        SchemaProperty('no2', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'identifierCode',
+          RealmPropertyType.string,
+          mapTo: 'identifier_code',
+          optional: true,
+        ),
+        SchemaProperty('description', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'description2',
+          RealmPropertyType.string,
+          mapTo: 'description_2',
+          optional: true,
+        ),
+        SchemaProperty(
+          'itemBrandCode',
+          RealmPropertyType.string,
+          mapTo: 'item_brand_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'itemGroupCode',
+          RealmPropertyType.string,
+          mapTo: 'item_group_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'itemCategoryCode',
+          RealmPropertyType.string,
+          mapTo: 'item_category_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'businessUnitCode',
+          RealmPropertyType.string,
+          mapTo: 'business_unit_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'unitPrice',
+          RealmPropertyType.string,
+          mapTo: 'unit_price',
+          optional: true,
+        ),
+        SchemaProperty(
+          'vendorNo',
+          RealmPropertyType.string,
+          mapTo: 'vendor_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'competitorNo',
+          RealmPropertyType.string,
+          mapTo: 'competitor_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'salesUomCode',
+          RealmPropertyType.string,
+          mapTo: 'sales_uom_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'purchaseUomCode',
+          RealmPropertyType.string,
+          mapTo: 'purchase_uom_code',
+          optional: true,
+        ),
+        SchemaProperty('picture', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'avatar32',
+          RealmPropertyType.string,
+          mapTo: 'avatar_32',
+          optional: true,
+        ),
+        SchemaProperty(
+          'avatar128',
+          RealmPropertyType.string,
+          mapTo: 'avatar_128',
+          optional: true,
+        ),
+        SchemaProperty('inactived', RealmPropertyType.string, optional: true),
+        SchemaProperty('remark', RealmPropertyType.string, optional: true),
+      ],
+    );
   }();
 
   @override
@@ -2571,13 +3059,19 @@ class ItemPrizeRedemptionHeader extends _ItemPrizeRedemptionHeader
     RealmObjectBase.set(this, 'description_2', description2);
     RealmObjectBase.set(this, 'remark', remark);
     RealmObjectBase.set(
-        this, 'customer_group_code_filter', customerGroupCodeFilter);
+      this,
+      'customer_group_code_filter',
+      customerGroupCodeFilter,
+    );
     RealmObjectBase.set(this, 'salesperson_code_filter', salespersonCodeFilter);
     RealmObjectBase.set(this, 'distributor_code_filter', distributorCodeFilter);
     RealmObjectBase.set(this, 'store_code_filter', storeCodeFilter);
     RealmObjectBase.set(this, 'division_code_filter', divisionCodeFilter);
     RealmObjectBase.set(
-        this, 'business_unit_code_filter', businessUnitCodeFilter);
+      this,
+      'business_unit_code_filter',
+      businessUnitCodeFilter,
+    );
     RealmObjectBase.set(this, 'department_code_filter', departmentCodeFilter);
     RealmObjectBase.set(this, 'project_code_filter', projectCodeFilter);
     RealmObjectBase.set(this, 'territory_code_filter', territoryCodeFilter);
@@ -2748,8 +3242,9 @@ class ItemPrizeRedemptionHeader extends _ItemPrizeRedemptionHeader
       RealmObjectBase.getChanges<ItemPrizeRedemptionHeader>(this);
 
   @override
-  Stream<RealmObjectChanges<ItemPrizeRedemptionHeader>> changesFor(
-          [List<String>? keyPaths]) =>
+  Stream<RealmObjectChanges<ItemPrizeRedemptionHeader>> changesFor([
+    List<String>? keyPaths,
+  ]) =>
       RealmObjectBase.getChangesFor<ItemPrizeRedemptionHeader>(this, keyPaths);
 
   @override
@@ -2790,36 +3285,32 @@ class ItemPrizeRedemptionHeader extends _ItemPrizeRedemptionHeader
   static ItemPrizeRedemptionHeader _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'id': EJsonValue id,
-      } =>
-        ItemPrizeRedemptionHeader(
-          fromEJson(id),
-          no: fromEJson(ejson['no']),
-          itemNo: fromEJson(ejson['item_no']),
-          fromDate: fromEJson(ejson['from_date']),
-          toDate: fromEJson(ejson['to_date']),
-          description: fromEJson(ejson['description']),
-          description2: fromEJson(ejson['description_2']),
-          remark: fromEJson(ejson['remark']),
-          customerGroupCodeFilter:
-              fromEJson(ejson['customer_group_code_filter']),
-          salespersonCodeFilter: fromEJson(ejson['salesperson_code_filter']),
-          distributorCodeFilter: fromEJson(ejson['distributor_code_filter']),
-          storeCodeFilter: fromEJson(ejson['store_code_filter']),
-          divisionCodeFilter: fromEJson(ejson['division_code_filter']),
-          businessUnitCodeFilter: fromEJson(ejson['business_unit_code_filter']),
-          departmentCodeFilter: fromEJson(ejson['department_code_filter']),
-          projectCodeFilter: fromEJson(ejson['project_code_filter']),
-          territoryCodeFilter: fromEJson(ejson['territory_code_filter']),
-          unitOfMeasure: fromEJson(ejson['unit_of_measure']),
-          quantity: fromEJson(ejson['quantity']),
-          status: fromEJson(ejson['status'], defaultValue: "Open"),
-          picture: fromEJson(ejson['picture']),
-          avatar32: fromEJson(ejson['avatar_32']),
-          avatar128: fromEJson(ejson['avatar_128']),
-          isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
-        ),
+      {'id': EJsonValue id} => ItemPrizeRedemptionHeader(
+        fromEJson(id),
+        no: fromEJson(ejson['no']),
+        itemNo: fromEJson(ejson['item_no']),
+        fromDate: fromEJson(ejson['from_date']),
+        toDate: fromEJson(ejson['to_date']),
+        description: fromEJson(ejson['description']),
+        description2: fromEJson(ejson['description_2']),
+        remark: fromEJson(ejson['remark']),
+        customerGroupCodeFilter: fromEJson(ejson['customer_group_code_filter']),
+        salespersonCodeFilter: fromEJson(ejson['salesperson_code_filter']),
+        distributorCodeFilter: fromEJson(ejson['distributor_code_filter']),
+        storeCodeFilter: fromEJson(ejson['store_code_filter']),
+        divisionCodeFilter: fromEJson(ejson['division_code_filter']),
+        businessUnitCodeFilter: fromEJson(ejson['business_unit_code_filter']),
+        departmentCodeFilter: fromEJson(ejson['department_code_filter']),
+        projectCodeFilter: fromEJson(ejson['project_code_filter']),
+        territoryCodeFilter: fromEJson(ejson['territory_code_filter']),
+        unitOfMeasure: fromEJson(ejson['unit_of_measure']),
+        quantity: fromEJson(ejson['quantity']),
+        status: fromEJson(ejson['status'], defaultValue: "Open"),
+        picture: fromEJson(ejson['picture']),
+        avatar32: fromEJson(ejson['avatar_32']),
+        avatar128: fromEJson(ejson['avatar_128']),
+        isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -2827,50 +3318,122 @@ class ItemPrizeRedemptionHeader extends _ItemPrizeRedemptionHeader
   static final schema = () {
     RealmObjectBase.registerFactory(ItemPrizeRedemptionHeader._);
     register(_toEJson, _fromEJson);
-    return const SchemaObject(ObjectType.realmObject, ItemPrizeRedemptionHeader,
-        'ITEM_PRIZE_REDEMPTION_HEADER', [
-      SchemaProperty('id', RealmPropertyType.int, primaryKey: true),
-      SchemaProperty('no', RealmPropertyType.string, optional: true),
-      SchemaProperty('itemNo', RealmPropertyType.string,
-          mapTo: 'item_no', optional: true),
-      SchemaProperty('fromDate', RealmPropertyType.string,
-          mapTo: 'from_date', optional: true),
-      SchemaProperty('toDate', RealmPropertyType.string,
-          mapTo: 'to_date', optional: true),
-      SchemaProperty('description', RealmPropertyType.string, optional: true),
-      SchemaProperty('description2', RealmPropertyType.string,
-          mapTo: 'description_2', optional: true),
-      SchemaProperty('remark', RealmPropertyType.string, optional: true),
-      SchemaProperty('customerGroupCodeFilter', RealmPropertyType.string,
-          mapTo: 'customer_group_code_filter', optional: true),
-      SchemaProperty('salespersonCodeFilter', RealmPropertyType.string,
-          mapTo: 'salesperson_code_filter', optional: true),
-      SchemaProperty('distributorCodeFilter', RealmPropertyType.string,
-          mapTo: 'distributor_code_filter', optional: true),
-      SchemaProperty('storeCodeFilter', RealmPropertyType.string,
-          mapTo: 'store_code_filter', optional: true),
-      SchemaProperty('divisionCodeFilter', RealmPropertyType.string,
-          mapTo: 'division_code_filter', optional: true),
-      SchemaProperty('businessUnitCodeFilter', RealmPropertyType.string,
-          mapTo: 'business_unit_code_filter', optional: true),
-      SchemaProperty('departmentCodeFilter', RealmPropertyType.string,
-          mapTo: 'department_code_filter', optional: true),
-      SchemaProperty('projectCodeFilter', RealmPropertyType.string,
-          mapTo: 'project_code_filter', optional: true),
-      SchemaProperty('territoryCodeFilter', RealmPropertyType.string,
-          mapTo: 'territory_code_filter', optional: true),
-      SchemaProperty('unitOfMeasure', RealmPropertyType.string,
-          mapTo: 'unit_of_measure', optional: true),
-      SchemaProperty('quantity', RealmPropertyType.double, optional: true),
-      SchemaProperty('status', RealmPropertyType.string, optional: true),
-      SchemaProperty('picture', RealmPropertyType.string, optional: true),
-      SchemaProperty('avatar32', RealmPropertyType.string,
-          mapTo: 'avatar_32', optional: true),
-      SchemaProperty('avatar128', RealmPropertyType.string,
-          mapTo: 'avatar_128', optional: true),
-      SchemaProperty('isSync', RealmPropertyType.string,
-          mapTo: 'is_sync', optional: true),
-    ]);
+    return const SchemaObject(
+      ObjectType.realmObject,
+      ItemPrizeRedemptionHeader,
+      'ITEM_PRIZE_REDEMPTION_HEADER',
+      [
+        SchemaProperty('id', RealmPropertyType.int, primaryKey: true),
+        SchemaProperty('no', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'itemNo',
+          RealmPropertyType.string,
+          mapTo: 'item_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'fromDate',
+          RealmPropertyType.string,
+          mapTo: 'from_date',
+          optional: true,
+        ),
+        SchemaProperty(
+          'toDate',
+          RealmPropertyType.string,
+          mapTo: 'to_date',
+          optional: true,
+        ),
+        SchemaProperty('description', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'description2',
+          RealmPropertyType.string,
+          mapTo: 'description_2',
+          optional: true,
+        ),
+        SchemaProperty('remark', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'customerGroupCodeFilter',
+          RealmPropertyType.string,
+          mapTo: 'customer_group_code_filter',
+          optional: true,
+        ),
+        SchemaProperty(
+          'salespersonCodeFilter',
+          RealmPropertyType.string,
+          mapTo: 'salesperson_code_filter',
+          optional: true,
+        ),
+        SchemaProperty(
+          'distributorCodeFilter',
+          RealmPropertyType.string,
+          mapTo: 'distributor_code_filter',
+          optional: true,
+        ),
+        SchemaProperty(
+          'storeCodeFilter',
+          RealmPropertyType.string,
+          mapTo: 'store_code_filter',
+          optional: true,
+        ),
+        SchemaProperty(
+          'divisionCodeFilter',
+          RealmPropertyType.string,
+          mapTo: 'division_code_filter',
+          optional: true,
+        ),
+        SchemaProperty(
+          'businessUnitCodeFilter',
+          RealmPropertyType.string,
+          mapTo: 'business_unit_code_filter',
+          optional: true,
+        ),
+        SchemaProperty(
+          'departmentCodeFilter',
+          RealmPropertyType.string,
+          mapTo: 'department_code_filter',
+          optional: true,
+        ),
+        SchemaProperty(
+          'projectCodeFilter',
+          RealmPropertyType.string,
+          mapTo: 'project_code_filter',
+          optional: true,
+        ),
+        SchemaProperty(
+          'territoryCodeFilter',
+          RealmPropertyType.string,
+          mapTo: 'territory_code_filter',
+          optional: true,
+        ),
+        SchemaProperty(
+          'unitOfMeasure',
+          RealmPropertyType.string,
+          mapTo: 'unit_of_measure',
+          optional: true,
+        ),
+        SchemaProperty('quantity', RealmPropertyType.double, optional: true),
+        SchemaProperty('status', RealmPropertyType.string, optional: true),
+        SchemaProperty('picture', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'avatar32',
+          RealmPropertyType.string,
+          mapTo: 'avatar_32',
+          optional: true,
+        ),
+        SchemaProperty(
+          'avatar128',
+          RealmPropertyType.string,
+          mapTo: 'avatar_128',
+          optional: true,
+        ),
+        SchemaProperty(
+          'isSync',
+          RealmPropertyType.string,
+          mapTo: 'is_sync',
+          optional: true,
+        ),
+      ],
+    );
   }();
 
   @override
@@ -3038,9 +3601,9 @@ class ItemPrizeRedemptionLine extends _ItemPrizeRedemptionLine
       RealmObjectBase.getChanges<ItemPrizeRedemptionLine>(this);
 
   @override
-  Stream<RealmObjectChanges<ItemPrizeRedemptionLine>> changesFor(
-          [List<String>? keyPaths]) =>
-      RealmObjectBase.getChangesFor<ItemPrizeRedemptionLine>(this, keyPaths);
+  Stream<RealmObjectChanges<ItemPrizeRedemptionLine>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<ItemPrizeRedemptionLine>(this, keyPaths);
 
   @override
   ItemPrizeRedemptionLine freeze() =>
@@ -3072,28 +3635,25 @@ class ItemPrizeRedemptionLine extends _ItemPrizeRedemptionLine
   static ItemPrizeRedemptionLine _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'id': EJsonValue id,
-      } =>
-        ItemPrizeRedemptionLine(
-          fromEJson(id),
-          lineNo: fromEJson(ejson['line_no']),
-          promotionNo: fromEJson(ejson['promotion_no']),
-          itemNo: fromEJson(ejson['item_no']),
-          variantCode: fromEJson(ejson['variant_code']),
-          redemptionType: fromEJson(ejson['redemption_type']),
-          description: fromEJson(ejson['description']),
-          description2: fromEJson(ejson['description_2']),
-          unitOfMeasureCode: fromEJson(ejson['unit_of_measure_code']),
-          qtyPerUnitOfMeasure: fromEJson(ejson['qty_per_unit_of_measure']),
-          quantity: fromEJson(ejson['quantity']),
-          unitPrice: fromEJson(ejson['unit_price']),
-          discountPercentage: fromEJson(ejson['discount_percentage']),
-          discountAmount: fromEJson(ejson['discount_amount']),
-          amount: fromEJson(ejson['amount']),
-          isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
-          updatedAt: fromEJson(ejson['updatedAt']),
-        ),
+      {'id': EJsonValue id} => ItemPrizeRedemptionLine(
+        fromEJson(id),
+        lineNo: fromEJson(ejson['line_no']),
+        promotionNo: fromEJson(ejson['promotion_no']),
+        itemNo: fromEJson(ejson['item_no']),
+        variantCode: fromEJson(ejson['variant_code']),
+        redemptionType: fromEJson(ejson['redemption_type']),
+        description: fromEJson(ejson['description']),
+        description2: fromEJson(ejson['description_2']),
+        unitOfMeasureCode: fromEJson(ejson['unit_of_measure_code']),
+        qtyPerUnitOfMeasure: fromEJson(ejson['qty_per_unit_of_measure']),
+        quantity: fromEJson(ejson['quantity']),
+        unitPrice: fromEJson(ejson['unit_price']),
+        discountPercentage: fromEJson(ejson['discount_percentage']),
+        discountAmount: fromEJson(ejson['discount_amount']),
+        amount: fromEJson(ejson['amount']),
+        isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
+        updatedAt: fromEJson(ejson['updatedAt']),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -3101,38 +3661,90 @@ class ItemPrizeRedemptionLine extends _ItemPrizeRedemptionLine
   static final schema = () {
     RealmObjectBase.registerFactory(ItemPrizeRedemptionLine._);
     register(_toEJson, _fromEJson);
-    return const SchemaObject(ObjectType.realmObject, ItemPrizeRedemptionLine,
-        'ITEM_PRIZE_REDEMPTION_LINE', [
-      SchemaProperty('id', RealmPropertyType.int, primaryKey: true),
-      SchemaProperty('lineNo', RealmPropertyType.int,
-          mapTo: 'line_no', optional: true),
-      SchemaProperty('promotionNo', RealmPropertyType.string,
-          mapTo: 'promotion_no', optional: true),
-      SchemaProperty('itemNo', RealmPropertyType.string,
-          mapTo: 'item_no', optional: true),
-      SchemaProperty('variantCode', RealmPropertyType.string,
-          mapTo: 'variant_code', optional: true),
-      SchemaProperty('redemptionType', RealmPropertyType.string,
-          mapTo: 'redemption_type', optional: true),
-      SchemaProperty('description', RealmPropertyType.string, optional: true),
-      SchemaProperty('description2', RealmPropertyType.string,
-          mapTo: 'description_2', optional: true),
-      SchemaProperty('unitOfMeasureCode', RealmPropertyType.string,
-          mapTo: 'unit_of_measure_code', optional: true),
-      SchemaProperty('qtyPerUnitOfMeasure', RealmPropertyType.double,
-          mapTo: 'qty_per_unit_of_measure', optional: true),
-      SchemaProperty('quantity', RealmPropertyType.double, optional: true),
-      SchemaProperty('unitPrice', RealmPropertyType.double,
-          mapTo: 'unit_price', optional: true),
-      SchemaProperty('discountPercentage', RealmPropertyType.double,
-          mapTo: 'discount_percentage', optional: true),
-      SchemaProperty('discountAmount', RealmPropertyType.double,
-          mapTo: 'discount_amount', optional: true),
-      SchemaProperty('amount', RealmPropertyType.double, optional: true),
-      SchemaProperty('isSync', RealmPropertyType.string,
-          mapTo: 'is_sync', optional: true),
-      SchemaProperty('updatedAt', RealmPropertyType.string, optional: true),
-    ]);
+    return const SchemaObject(
+      ObjectType.realmObject,
+      ItemPrizeRedemptionLine,
+      'ITEM_PRIZE_REDEMPTION_LINE',
+      [
+        SchemaProperty('id', RealmPropertyType.int, primaryKey: true),
+        SchemaProperty(
+          'lineNo',
+          RealmPropertyType.int,
+          mapTo: 'line_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'promotionNo',
+          RealmPropertyType.string,
+          mapTo: 'promotion_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'itemNo',
+          RealmPropertyType.string,
+          mapTo: 'item_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'variantCode',
+          RealmPropertyType.string,
+          mapTo: 'variant_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'redemptionType',
+          RealmPropertyType.string,
+          mapTo: 'redemption_type',
+          optional: true,
+        ),
+        SchemaProperty('description', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'description2',
+          RealmPropertyType.string,
+          mapTo: 'description_2',
+          optional: true,
+        ),
+        SchemaProperty(
+          'unitOfMeasureCode',
+          RealmPropertyType.string,
+          mapTo: 'unit_of_measure_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'qtyPerUnitOfMeasure',
+          RealmPropertyType.double,
+          mapTo: 'qty_per_unit_of_measure',
+          optional: true,
+        ),
+        SchemaProperty('quantity', RealmPropertyType.double, optional: true),
+        SchemaProperty(
+          'unitPrice',
+          RealmPropertyType.double,
+          mapTo: 'unit_price',
+          optional: true,
+        ),
+        SchemaProperty(
+          'discountPercentage',
+          RealmPropertyType.double,
+          mapTo: 'discount_percentage',
+          optional: true,
+        ),
+        SchemaProperty(
+          'discountAmount',
+          RealmPropertyType.double,
+          mapTo: 'discount_amount',
+          optional: true,
+        ),
+        SchemaProperty('amount', RealmPropertyType.double, optional: true),
+        SchemaProperty(
+          'isSync',
+          RealmPropertyType.string,
+          mapTo: 'is_sync',
+          optional: true,
+        ),
+        SchemaProperty('updatedAt', RealmPropertyType.string, optional: true),
+      ],
+    );
   }();
 
   @override

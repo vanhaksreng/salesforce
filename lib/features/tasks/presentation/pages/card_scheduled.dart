@@ -38,15 +38,19 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
     this.distance = "0",
   });
 
-  String getScheduleTitle(String status) {
+  String _getScheduleTitle(String status) {
     if (status == kStatusCheckIn) {
-      return greeting("check_out");
+      return greeting("Checked In");
     }
 
-    return greeting("check_in");
+    if (schedule.status != "Scheduled") {
+      return greeting("Checked Out");
+    }
+
+    return schedule.planned == "Yes" ? "Plan" : "Manual";
   }
 
-  void actionHandler(String status) {
+  void _actionHandler(String status) {
     if (status == kStatusCheckIn) {
       onCheckOut?.call(schedule);
     } else {
@@ -62,19 +66,6 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
     }
     return success;
   }
-
-  // Future<void> _onCall() async {
-  //   try {
-  //     final Uri launchUri = Uri(
-  //       scheme: 'tel',
-  //       path: schedule.phoneNo,
-  //     );
-
-  //     await launchUrl(launchUri);
-  //   } catch (e) {
-  //     showErrorMessage(e.toString());
-  //   }
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -103,22 +94,30 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
                         children: [
                           TextSpan(
                             text: schedule.name ?? "",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.scale),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13.scale,
+                            ),
                           ),
                           const TextSpan(text: " - "),
                           TextSpan(text: "$distance"),
                         ],
                       ),
                     ),
-                    TextWidget(text: schedule.address ?? "", color: textColor50),
+                    TextWidget(
+                      text: schedule.address ?? "",
+                      color: textColor50,
+                    ),
                   ],
                 ),
               ),
               ChipWidget(
                 radius: 6,
                 colorText: getScheduleColor(schedule.status ?? ""),
-                bgColor: getScheduleColor(schedule.status ?? "").withValues(alpha: 0.1),
-                label: schedule.status ?? "".toUpperCase(),
+                bgColor: getScheduleColor(
+                  schedule.status ?? "",
+                ).withValues(alpha: 0.1),
+                label: _getScheduleTitle(schedule.status ?? ""),
               ),
             ],
           ),
@@ -132,17 +131,30 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildInfo(
-                  label: Helpers.formatNumberLink(totalSale, option: FormatType.amount),
+                  label: Helpers.formatNumberLink(
+                    totalSale,
+                    option: FormatType.amount,
+                  ),
                   value: "Sales Amt",
                 ),
-                _buildInfo(label: lableText(schedule.startingTime ?? ""), value: "Check In"),
-                _buildInfo(label: lableText(schedule.endingTime ?? ""), value: "Check Out"),
+                _buildInfo(
+                  label: lableText(schedule.startingTime ?? ""),
+                  value: "Check In",
+                ),
+                _buildInfo(
+                  label: lableText(schedule.endingTime ?? ""),
+                  value: "Check Out",
+                ),
               ],
             ),
           ),
           if (schedule.status != kStatusCheckOut && isReadOnly == false) ...[
             const DotLine(),
-            Row(spacing: 15.scale, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [switchButton()]),
+            Row(
+              spacing: 15.scale,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [switchButton()],
+            ),
           ],
         ],
       ),
@@ -271,9 +283,17 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
 
   Widget switchICon() {
     if (schedule.status == kStatusCheckIn) {
-      return Icon(color: getScheduleColor(schedule.status ?? ""), Icons.check_circle_outline_outlined, size: 16.scale);
+      return Icon(
+        color: getScheduleColor(schedule.status ?? ""),
+        Icons.check_circle_outline_outlined,
+        size: 16.scale,
+      );
     }
-    return Icon(color: getScheduleColor(schedule.status ?? ""), Icons.calendar_today_outlined, size: 16);
+    return Icon(
+      color: getScheduleColor(schedule.status ?? ""),
+      Icons.calendar_today_outlined,
+      size: 16,
+    );
   }
 
   String lableText(String time) {
@@ -300,7 +320,7 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
               child: BtnWidget(
                 size: BtnSize.medium,
                 bgColor: warning,
-                onPressed: () => actionHandler(schedule.status ?? ""),
+                onPressed: () => _actionHandler(schedule.status ?? ""),
                 title: greeting("Check Out"),
               ),
             ),
@@ -320,7 +340,7 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
       child: BtnWidget(
         size: BtnSize.medium,
         bgColor: success,
-        onPressed: () => actionHandler(schedule.status ?? ""),
+        onPressed: () => _actionHandler(schedule.status ?? ""),
         title: greeting("Check In"),
       ),
     );
@@ -340,7 +360,13 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: scaleFontSize(10),
         children: [
-          if (iconSvg != null) SvgWidget(width: 20, height: 20, assetName: iconSvg, colorSvg: textColor50),
+          if (iconSvg != null)
+            SvgWidget(
+              width: 20,
+              height: 20,
+              assetName: iconSvg,
+              colorSvg: textColor50,
+            ),
           Expanded(
             child: TextWidget(
               text: label ?? "",

@@ -56,7 +56,6 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
   final String selectedStatus = kStatusCheckIn;
   ActionState action = ActionState.init;
   String? checkInWithLocation;
-  LatLng? latLng;
 
   final List<String> _listStatus = [
     "All",
@@ -70,6 +69,7 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     super.initState();
     scheduleDate = DateTime.now();
     _cubit.getUserSetup();
+    _cubit.getCurrentLocation();
     checkInitWithLocation();
     refreshSchedule();
   }
@@ -342,12 +342,9 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
         return;
       }
 
-      // _cubit.updatedScheduleStatus(value as SalespersonSchedule);
       refreshSchedule();
     });
   }
-
-  // Future<void> getLatlng() async => latLng = await getCurrentLocation();
 
   double calculateTarget(int checkedOut, int totalTodaySchedule) {
     if (totalTodaySchedule == 0) {
@@ -383,10 +380,6 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     return totalSaleInv - totalSaleCr;
   }
 
-  _sortCustomer() async {
-    _cubit.sortCustomerViaLatlng(currentLocation: await getCurrentLocation());
-  }
-
   Future<void> _onApplyFilter({
     required bool sortByDistance,
     required String selectedStatus,
@@ -395,10 +388,14 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     final l = LoadingOverlay.of(context);
     try {
       l.show();
-      if (sortByDistance) {
-        await _sortCustomer();
-      }
       await _cubit.getSchedules(scheduleDate);
+
+      if (sortByDistance) {
+        _cubit.sortCustomerViaLatlng(
+          currentLocation: await getCurrentLocation(),
+        );
+      }
+
       if (!mounted) return;
     } catch (e) {
       showErrorMessage();
@@ -525,6 +522,16 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     );
   }
 
+  String gpsDisplay(double distInMeters) {
+    final double distInKm = distInMeters / 1000;
+
+    if (distInKm > 1) {
+      return "${Helpers.formatNumberLink(distInKm, option: FormatType.quantity)}km";
+    }
+
+    return "${Helpers.formatNumberLink(distInMeters, option: FormatType.quantity)}m";
+  }
+
   Widget _listCustomerVisit(
     List<SalespersonSchedule> records,
     MyScheduleState state,
@@ -535,6 +542,7 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
         child: EmptyScreen(),
       );
     }
+
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -542,20 +550,15 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
       padding: EdgeInsets.zero,
       itemBuilder: (BuildContext context, int index) {
         final record = records[index];
-        final distance = Helpers.calculateDistanceDisplay(
-          latLng?.latitude ?? 0,
-          latLng?.longitude ?? 0,
-          record.latitude ?? 0,
-          record.longitude ?? 0,
-        );
 
         double totalSalesBySchedule = culculateTotalSaleByCustomer(
           record.customerNo ?? "",
         );
+
         return Padding(
           padding: EdgeInsets.symmetric(vertical: scaleFontSize(4)),
           child: ScheduleCard(
-            distance: distance,
+            distance: gpsDisplay(Helpers.toDouble(record.distance)),
             totalSale: totalSalesBySchedule,
             key: ValueKey(record.id),
             onCheckIn: (schedule) => _checkInHandler(schedule),
