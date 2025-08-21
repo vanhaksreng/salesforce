@@ -26,12 +26,12 @@ import kotlin.math.abs
 
 class LocationService : Service() {
     companion object {
-        private const val CHANNEL_NAME = "com.clearviewerp.salesforce/background_service"
         private const val PREFS_NAME = "LocationPrefs"
         private const val KEY_LOCATIONS = "pending_locations"
         private var channel: MethodChannel? = null
         private var isTracking = false
         private var isFlutterEngineActive = false
+        private val accuracyThreshold = 8.0
 
         fun setMethodChannel(methodChannel: MethodChannel) {
             channel = methodChannel
@@ -130,8 +130,8 @@ class LocationService : Service() {
     private var trackingMode: String = "foreground"
     private var distanceFilter: Float = 0f
     private var lastLocationTime: Long = 0
-    private val minUpdateInterval: Long = 2_000 //2 seconds
-    private val accuracyThreshold = 15.0 // meters
+    private var maxLocationAge: Long = 30_000L
+    private var lastValidLocation: android.location.Location? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -179,9 +179,9 @@ class LocationService : Service() {
 
     private fun startLocationUpdates() {
         try {
-            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 2000)
-                .setMinUpdateIntervalMillis(500L)
-                .setMinUpdateDistanceMeters(5f)
+            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
+                .setMinUpdateIntervalMillis(200L)
+                .setMinUpdateDistanceMeters(2f)
                 .setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
                 .setWaitForAccurateLocation(false)
                 .build()
@@ -235,35 +235,105 @@ class LocationService : Service() {
     private fun isLocationAcceptable(location: android.location.Location): Boolean {
         val currentTime = System.currentTimeMillis()
         val age = abs(currentTime - location.time)
-        val accuracy = location.accuracy;
-        val speed = location.speed;
+        val accuracy = location.accuracy.toDouble()
+        val speed = maxOf(location.speed, 0f).toDouble()    // m/s
+        val speedKMH = speed * 3.6                          // km/h
 
-        // Reject old locations (30 seconds max)
-        if (age > 30_000) return false
+        Log.d("LocationService", "Location check: age=${age}ms, accuracy=${accuracy}m, speed=${speedKMH}km/h")
 
-        // Stricter accuracy for road tracking
-        if (accuracy > accuracyThreshold) return false
-
-        // Speed-based update intervals
-        val adaptiveInterval = when {
-            speed > 25f -> 1_000L  // Highway: 1 second
-            speed > 13.9f -> 2_000L // City: 2 seconds
-            speed > 2.8f -> 3_000L  // Slow: 3 seconds
-            else -> minUpdateInterval  // Stationary: 2 seconds
-        }
-
-        // Check if enough time has passed based on speed
-        if (currentTime - lastLocationTime < adaptiveInterval) {
+        // 1. age (milliseconds)
+        if (age > maxLocationAge) {
+            Log.d("LocationService", "Rejected: Location too old (age=${age}ms > ${maxLocationAge}ms)")
             return false
         }
 
-        // Reject stationary points with poor accuracy
-        if (speed < 1f && accuracy > 10f) {
+        // 2. accuracy validity
+        if (accuracy <= 0.0) {
+            Log.d("LocationService", "Rejected: Invalid accuracy ($accuracy)")
             return false
         }
 
-        lastLocationTime = currentTime
+        // 3. speed-based required accuracy (meters)
+        val requiredAccuracy = when {
+            speedKMH > 80 -> accuracyThreshold * 1.2
+            speedKMH > 50 -> accuracyThreshold
+            speedKMH > 20 -> accuracyThreshold * 0.8
+            else -> accuracyThreshold * 0.6
+        }
+
+        if (accuracy > requiredAccuracy) {
+            Log.d("LocationService", "Rejected: Poor accuracy ($accuracy > $requiredAccuracy)")
+            return false
+        }
+
+        // 4. stationary filtering
+        if (speed < 0.5 && accuracy > accuracyThreshold) {
+            Log.d("LocationService", "Rejected: Stationary with poor accuracy (speed=${speed} m/s, accuracy=${accuracy})")
+            return false
+        }
+
+        // 5. adaptive interval (milliseconds)
+        var adaptiveInterval = getSpeedBasedInterval(speedKMH)
+
+        lastValidLocation?.let { lastLoc ->
+            if (location.hasBearing() && lastLoc.hasBearing()) {
+                val bearingChange = calculateBearingChange(lastLoc.bearing, location.bearing)
+                adaptiveInterval = when {
+                    bearingChange > 15f -> 2_000L   // 2s for sharp turn
+                    bearingChange > 8f  -> 1_000L   // 1s for moderate turn
+                    bearingChange > 3f  -> 500L     // 0.5s for gentle curve
+                    else -> adaptiveInterval
+                }
+            }
+        }
+
+        // 6. time interval check: use location.time and adaptiveInterval (both ms)
+        if (location.time - lastLocationTime < adaptiveInterval) {
+            Log.d("LocationService", "Rejected: Too frequent: ${(location.time - lastLocationTime)}ms < $adaptiveInterval ms")
+            return false
+        }
+
+        // 7. GPS jump detection (keep using location.time vs lastLoc.time)
+        lastValidLocation?.let { lastLoc ->
+            val distance = lastLoc.distanceTo(location) // meters
+            val timeDiff = (location.time - lastLoc.time) / 1000.0 // seconds
+
+            if (timeDiff > 0.5) {
+                val calculatedSpeed = distance / timeDiff // m/s
+                val speedDifference = abs(calculatedSpeed - speed)
+
+                if (speed > 1.0 && speedDifference > (speed * 0.8)) {
+                    Log.d("LocationService", "Rejected: GPS jump (calcSpeed=$calculatedSpeed m/s, reported=$speed m/s, diff=$speedDifference)")
+                    return false
+                }
+            }
+        }
+
+        // accept: update state using the location timestamp so intervals stay consistent
+        Log.w("LocationService","Accepted")
+        lastValidLocation = location
+        lastLocationTime = location.time
         return true
+    }
+
+    private fun getSpeedBasedInterval(speedKmh: Double): Long {
+        return when {
+            speedKmh > 80 -> 1_000L   // 1s (highway)
+            speedKmh > 50 -> 1_500L   // 1.5s (city fast)
+            speedKmh > 30 -> 2_000L   // 2s (city normal)
+            speedKmh > 10 -> 3_000L   // 3s (slow roads)
+            else -> 5_000L            // 5s (very slow/stationary)
+        }
+    }
+    
+    // Calculate bearing change between two points (for detecting turns)
+    private fun calculateBearingChange(oldBearing: Float, newBearing: Float): Double {
+        var diff = abs(newBearing - oldBearing).toDouble()
+        if (diff > 180.0) {
+            diff = 360.0 - diff
+        }
+
+        return diff
     }
 
     private fun stopLocationUpdates() {

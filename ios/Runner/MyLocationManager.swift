@@ -20,10 +20,11 @@ import BackgroundTasks
     // Tracking config
     private var trackingMode: TrackingMode = .foreground
     private var distanceFilter: Double = 5.0
-    private let accuracyThreshold: CLLocationDistance = 15.0
+    private let accuracyThreshold: CLLocationDistance = 8.0
     private var lastLocationTime: TimeInterval = 0
-    private let minUpdateInterval: TimeInterval = 2.0
-    private let maxLocationAge: TimeInterval = 60.0
+    // private let minUpdateInterval: TimeInterval = 1.0 // 1 second
+    private let maxLocationAge: TimeInterval = 30.0
+    private var lastValidLocation: CLLocation?
 
     // Background task management
     private var backgroundTaskId: UIBackgroundTaskIdentifier = .invalid
@@ -72,7 +73,7 @@ import BackgroundTasks
     private func setupLocationManager() {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = distanceFilter
+        locationManager.distanceFilter = 2.0 // 2 meters for curves
         locationManager.activityType = .automotiveNavigation
         locationManager.pausesLocationUpdatesAutomatically = false
     }
@@ -123,7 +124,7 @@ import BackgroundTasks
         
         DispatchQueue.main.async {
             channel.invokeMethod(method, arguments: arguments) { result in
-                if let error = result as? FlutterError {
+                if result is FlutterError {
                     MyLocationManager.isFlutterEngineActive = false
                 }
             }
@@ -445,51 +446,112 @@ import BackgroundTasks
     }
 
     private func isLocationAcceptable(_ location: CLLocation) -> Bool {
+        
         let currentTime = Date().timeIntervalSince1970
         let age = abs(currentTime - location.timestamp.timeIntervalSince1970)
         let accuracy = location.horizontalAccuracy
-        let speed = location.speed
-        myLog("Location check: age=\(age), accuracy=\(accuracy), speed=\(speed)")
+        let speed = max(location.speed, 0.0) // Ensure non-negative
+        let speedKMH = speed * 3.6
         
-        // Reject old locations
+        myLog("Location check: age=\(age), accuracy=\(accuracy), speed=\(speedKMH)km/h")
+
+        // 1. Reject old locations
         if age > maxLocationAge {
-            myLog("Rejected: Location too old")
+            myLog("Rejected: Location too old (\(age)s)")
+            return false
+        }
+        
+        // 2. Reject invalid accuracy
+        if accuracy < 0 {
+            myLog("Rejected: Invalid accuracy")
             return false
         }
 
-        // Stricter accuracy requirements
-        if accuracy < 0 || accuracy > accuracyThreshold {
-            myLog("Rejected: Poor accuracy")
+        // 3. Speed-based accuracy requirements (SAME LOGIC)
+        let requiredAccuracy: Double
+        if speedKMH > 80 {
+            requiredAccuracy = accuracyThreshold * 1.2  // 18m for highway
+        } else if speedKMH > 50 {
+            requiredAccuracy = accuracyThreshold  // 15m for city
+        } else if speedKMH > 20 {
+            requiredAccuracy = accuracyThreshold * 0.8  // 12m for slow roads
+        } else {
+            requiredAccuracy = accuracyThreshold * 0.6  // 9m for very slow/stationary
+        }
+        
+        if accuracy > requiredAccuracy {
+            myLog("Rejected: Poor accuracy (\(accuracy)m > \(requiredAccuracy)m)")
             return false
         }
         
-        // Speed-based filtering - ignore if stationary with poor accuracy
-        if location.speed < 1.0 && accuracy > accuracyThreshold {
+        // 4. Stationary filtering (SAME LOGIC)
+        if speed < 0.5 && accuracy > 8.0 {
             myLog("Rejected: Stationary with poor accuracy")
             return false
         }
         
-        // Adaptive update intervals based on speed
-        let adaptiveInterval: TimeInterval
-        if speed > 25.0 {  // Highway speeds (90+ km/h)
-            adaptiveInterval = 1.0
-        } else if speed > 13.9 {  // City speeds (50+ km/h)
-            adaptiveInterval = 2.0
-        } else if speed > 2.8 {  // Slow driving (10+ km/h)
-            adaptiveInterval = 5.0
-        } else {  // Walking/stationary
-            adaptiveInterval = minUpdateInterval
+        // 5. Bearing change detection
+        var adaptiveInterval: TimeInterval = getSpeedBasedInterval(speed: speedKMH)
+        
+        if let lastLocation = lastValidLocation,
+           location.course >= 0 && lastLocation.course >= 0 {
+            
+            let bearingChange = calculateBearingChange(from: lastLocation.course, to: location.course)
+            myLog("Bearing change: \(bearingChange)°")
+            
+            // Curve-based intervals override speed-based
+            if bearingChange > 15.0 {
+                adaptiveInterval = 0.2  // Sharp turn
+            } else if bearingChange > 8.0 {
+                adaptiveInterval = 0.5  // Moderate turn
+            } else if bearingChange > 3.0 {
+                adaptiveInterval = 1.0  // Gentle curve
+            }
         }
         
+        // 6. Time interval check (SAME LOGIC)
         if currentTime - lastLocationTime < adaptiveInterval {
-            myLog("Rejected: Too frequent update \(adaptiveInterval) vs \(currentTime - lastLocationTime)")
+            myLog("Rejected: Too frequent (\(currentTime - lastLocationTime)s < \(adaptiveInterval)s)")
             return false
         }
-
+        
+        // 7. GPS jump detection (SAME LOGIC)
+        if let lastLocation = lastValidLocation {
+            let distance = lastLocation.distance(from: location)
+            let timeDiff = location.timestamp.timeIntervalSince(lastLocation.timestamp)
+            
+            if timeDiff > 0.5 {
+                let calculatedSpeed = distance / timeDiff
+                let speedDifference = abs(calculatedSpeed - speed)
+                
+                if speed > 1.0 && speedDifference > (speed * 0.8) {
+                    myLog("Rejected: GPS jump (calc: \(calculatedSpeed)m/s vs reported: \(speed)m/s)")
+                    return false
+                }
+            }
+        }
+        
+        // Accept location
+        lastValidLocation = location
         lastLocationTime = currentTime
         
-        myLog("Accepted location")
+        myLog("✓ Accepted location")
         return true
+    }
+    
+    private func getSpeedBasedInterval(speed: Double) -> TimeInterval {
+        if speed > 80 { return 1.0 }      // Highway
+        else if speed > 50 { return 1.5 } // City fast
+        else if speed > 30 { return 2.0 } // City normal
+        else if speed > 10 { return 3.0 } // Slow roads
+        else { return 5.0 }               // Very slow/stationary
+    }
+    
+    
+    private func calculateBearingChange(from oldBearing: Double, to newBearing: Double) -> Double {
+        var diff = abs(newBearing - oldBearing)
+        if diff > 180.0 { diff = 360.0 - diff }
+        return diff
     }
 
     private func locationDict(from location: CLLocation) -> [String: Any] {
