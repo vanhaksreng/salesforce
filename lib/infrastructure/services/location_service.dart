@@ -66,16 +66,18 @@ class LocationService {
   }
 
   double getDistanceFilterForMode(LocationTrackingMode mode) {
-    switch (mode) {
-      case LocationTrackingMode.foreground:
-        return 10.0;
-      case LocationTrackingMode.background:
-        return 50.0;
-      case LocationTrackingMode.periodic:
-        return 100.0;
-      case LocationTrackingMode.significant:
-        return 200.0;
-    }
+    // switch (mode) {
+    //   case LocationTrackingMode.foreground:
+    //     return 10.0;
+    //   case LocationTrackingMode.background:
+    //     return 50.0;
+    //   case LocationTrackingMode.periodic:
+    //     return 100.0;
+    //   case LocationTrackingMode.significant:
+    //     return 200.0;
+    // }
+
+    return 10.0;
   }
 
   Future<void> _switchToMode(

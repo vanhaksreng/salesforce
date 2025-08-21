@@ -19,10 +19,10 @@ import BackgroundTasks
 
     // Tracking config
     private var trackingMode: TrackingMode = .foreground
-    private var distanceFilter: Double = 10.0
-    private let accuracyThreshold: CLLocationDistance = 100.0
+    private var distanceFilter: Double = 5.0
+    private let accuracyThreshold: CLLocationDistance = 15.0
     private var lastLocationTime: TimeInterval = 0
-    private let minUpdateInterval: TimeInterval = 30.0
+    private let minUpdateInterval: TimeInterval = 2.0
     private let maxLocationAge: TimeInterval = 60.0
 
     // Background task management
@@ -71,9 +71,9 @@ import BackgroundTasks
 
     private func setupLocationManager() {
         locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = distanceFilter
-        locationManager.activityType = .other
+        locationManager.activityType = .automotiveNavigation
         locationManager.pausesLocationUpdatesAutomatically = false
     }
 
@@ -108,20 +108,22 @@ import BackgroundTasks
     @objc private func flutterEngineDestroyed() {
         MyLocationManager.isFlutterEngineActive = false
         MyLocationManager.channel = nil
-        print("Flutter engine destroyed, channel cleared")
+    }
+    
+    private func myLog(_ text : String) {
+        print(text)
     }
     
     // MARK: - Safe Flutter Communication
     private func safeInvokeMethod(_ method: String, arguments: Any?) {
         guard MyLocationManager.isFlutterEngineActive, let channel = MyLocationManager.channel else {
-            print("Flutter engine not active, skipping method: \(method)")
+            myLog("Flutter engine not active, skipping method: \(method)")
             return
         }
         
         DispatchQueue.main.async {
             channel.invokeMethod(method, arguments: arguments) { result in
                 if let error = result as? FlutterError {
-                    print("Flutter method \(method) failed: \(error.code) - \(error.message ?? "Unknown error")")
                     MyLocationManager.isFlutterEngineActive = false
                 }
             }
@@ -146,7 +148,7 @@ import BackgroundTasks
         if !pendingLocations.isEmpty {
             safeInvokeMethod("syncLocations", arguments: ["data": pendingLocations])
             localStorageManager.clearPendingLocations()
-            print("Synced \(pendingLocations.count) pending locations to Flutter")
+            myLog("Synced \(pendingLocations.count) pending locations to Flutter")
         }
     }
     
@@ -184,7 +186,7 @@ import BackgroundTasks
         do {
             try BGTaskScheduler.shared.submit(request)
         } catch {
-            print("Could not schedule app refresh: \(error)")
+            myLog("Could not schedule app refresh: \(error)")
         }
     }
     
@@ -313,10 +315,9 @@ import BackgroundTasks
         trackingMode = mode
         let status = locationManager.authorizationStatus
         
-        print("Starting persistent tracking mode: \(mode.rawValue)")
         setTrackingFlag(true)
         
-        // Validate permissions
+        // Validate permissions first
         switch mode {
         case .background, .significant, .periodic, .alwaysOn:
             guard status == .authorizedAlways else {
@@ -337,38 +338,47 @@ import BackgroundTasks
         // Configure based on mode
         switch mode {
         case .foreground:
-            locationManager.allowsBackgroundLocationUpdates = false
+            // Make sure background updates are disabled for foreground mode
+            if locationManager.authorizationStatus == .authorizedAlways {
+                locationManager.allowsBackgroundLocationUpdates = false
+            }
             locationManager.desiredAccuracy = kCLLocationAccuracyBest
-            locationManager.distanceFilter = distanceFilter
+            locationManager.distanceFilter = 5.0
+            locationManager.activityType = .automotiveNavigation
             locationManager.startUpdatingLocation()
 
         case .background:
-            locationManager.allowsBackgroundLocationUpdates = true
-            locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-            locationManager.distanceFilter = max(distanceFilter, 50.0)
+            // Only set background updates if we have Always permission
+            if status == .authorizedAlways {
+                locationManager.allowsBackgroundLocationUpdates = true
+            }
+            locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+            locationManager.distanceFilter = 10.0
+            locationManager.activityType = .automotiveNavigation
             locationManager.startUpdatingLocation()
-
-        case .significant:
-            locationManager.allowsBackgroundLocationUpdates = false
-            locationManager.startMonitoringSignificantLocationChanges()
-            
-        case .periodic:
-            locationManager.allowsBackgroundLocationUpdates = false
-            locationManager.startMonitoringSignificantLocationChanges()
-            setupPeriodicRegionMonitoring()
             
         case .alwaysOn:
-            locationManager.allowsBackgroundLocationUpdates = true
-            locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-            locationManager.distanceFilter = 50.0
+            // Only set background updates if we have Always permission
+            if status == .authorizedAlways {
+                locationManager.allowsBackgroundLocationUpdates = true
+            }
+            locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+            locationManager.distanceFilter = 10.0
+            locationManager.activityType = .automotiveNavigation
             locationManager.startUpdatingLocation()
-            locationManager.startMonitoringSignificantLocationChanges()
-            setupPeriodicRegionMonitoring()
             startPersistentTimer()
             
             if #available(iOS 13.0, *) {
                 scheduleBackgroundLocationTask()
             }
+
+        case .significant:
+            // Significant location changes don't need allowsBackgroundLocationUpdates
+            locationManager.startMonitoringSignificantLocationChanges()
+            
+        case .periodic:
+            locationManager.startMonitoringSignificantLocationChanges()
+            setupPeriodicRegionMonitoring()
         }
 
         MyLocationManager.isTracking = true
@@ -387,7 +397,11 @@ import BackgroundTasks
         
         locationManager.stopUpdatingLocation()
         locationManager.stopMonitoringSignificantLocationChanges()
-        locationManager.allowsBackgroundLocationUpdates = false
+        
+        // Only disable background updates if we had enabled them
+        if locationManager.authorizationStatus == .authorizedAlways {
+            locationManager.allowsBackgroundLocationUpdates = false
+        }
         
         stopPeriodicRegionMonitoring()
         endBackgroundTaskIfNeeded()
@@ -431,22 +445,50 @@ import BackgroundTasks
     }
 
     private func isLocationAcceptable(_ location: CLLocation) -> Bool {
-        let now = Date().timeIntervalSince1970
-
-        if abs(now - location.timestamp.timeIntervalSince1970) > maxLocationAge {
+        let currentTime = Date().timeIntervalSince1970
+        let age = abs(currentTime - location.timestamp.timeIntervalSince1970)
+        let accuracy = location.horizontalAccuracy
+        let speed = location.speed
+        myLog("Location check: age=\(age), accuracy=\(accuracy), speed=\(speed)")
+        
+        // Reject old locations
+        if age > maxLocationAge {
+            myLog("Rejected: Location too old")
             return false
         }
 
-        if location.horizontalAccuracy < 0 || location.horizontalAccuracy > accuracyThreshold {
+        // Stricter accuracy requirements
+        if accuracy < 0 || accuracy > accuracyThreshold {
+            myLog("Rejected: Poor accuracy")
+            return false
+        }
+        
+        // Speed-based filtering - ignore if stationary with poor accuracy
+        if location.speed < 1.0 && accuracy > accuracyThreshold {
+            myLog("Rejected: Stationary with poor accuracy")
+            return false
+        }
+        
+        // Adaptive update intervals based on speed
+        let adaptiveInterval: TimeInterval
+        if speed > 25.0 {  // Highway speeds (90+ km/h)
+            adaptiveInterval = 1.0
+        } else if speed > 13.9 {  // City speeds (50+ km/h)
+            adaptiveInterval = 2.0
+        } else if speed > 2.8 {  // Slow driving (10+ km/h)
+            adaptiveInterval = 5.0
+        } else {  // Walking/stationary
+            adaptiveInterval = minUpdateInterval
+        }
+        
+        if currentTime - lastLocationTime < adaptiveInterval {
+            myLog("Rejected: Too frequent update \(adaptiveInterval) vs \(currentTime - lastLocationTime)")
             return false
         }
 
-        let interval = (trackingMode == .foreground) ? 5.0 : minUpdateInterval
-        if now - lastLocationTime < interval {
-            return false
-        }
-
-        lastLocationTime = now
+        lastLocationTime = currentTime
+        
+        myLog("Accepted location")
         return true
     }
 
@@ -580,19 +622,21 @@ extension MyLocationManager: CLLocationManagerDelegate {
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         guard MyLocationManager.isTracking else { return }
-
-        if isLocationAcceptable(location) {
-            processLocationUpdate(location)
-            
-            if trackingMode == .periodic {
-                createRegionAroundLocation(location)
-                regionIdentifierCounter += 1
-            }
-            
-            if trackingMode == .background && backgroundTaskId != .invalid {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    self.endBackgroundTaskIfNeeded()
-                }
+        
+        if !isLocationAcceptable(location) {
+            return
+        }
+        
+        processLocationUpdate(location)
+        
+        if trackingMode == .periodic {
+            createRegionAroundLocation(location)
+            regionIdentifierCounter += 1
+        }
+        
+        if trackingMode == .background && backgroundTaskId != .invalid {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                self.endBackgroundTaskIfNeeded()
             }
         }
         
@@ -706,9 +750,6 @@ class LocalStorageManager {
            let jsonString = String(data: data, encoding: .utf8) {
             userDefaults.set(jsonString, forKey: pendingLocationsKey)
             userDefaults.synchronize()
-            print("Saved location to local storage. Total: \(pendingLocations.count)")
-        } else {
-            print("Failed to save location to local storage")
         }
     }
     
@@ -724,7 +765,6 @@ class LocalStorageManager {
     func clearPendingLocations() {
         userDefaults.removeObject(forKey: pendingLocationsKey)
         userDefaults.synchronize()
-        print("Cleared all pending locations from local storage")
     }
     
     func getPendingLocationCount() -> Int {

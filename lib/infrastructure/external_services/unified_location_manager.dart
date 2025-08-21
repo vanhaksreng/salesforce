@@ -92,9 +92,7 @@ class UnifiedLocationManager {
     try {
       // Check current location permission status
       final locationStatus = await _geolocationService.checkPermission();
-
-      if (locationStatus == LocationPermissionStatus.denied ||
-          locationStatus == LocationPermissionStatus.deniedForever) {
+      if (shouldShowPermissionDialog(locationStatus)) {
         return false;
       }
 
@@ -336,17 +334,25 @@ class UnifiedLocationManager {
     }
   }
 
-  void _handlePermissionChange(Map<String, dynamic> event) {
+  void _handlePermissionChange(Map<String, dynamic> event) async {
     final status = event['status'];
-    if (status != null &&
-        ['authorizedAlways', 'authorizedWhenInUse'].contains(status)) {
+
+    if (status == null) {
+      return;
+    }
+
+    if (status == "authorizedWhenInUse") {
+      await _locationService.requestPermissions(
+        LocationTrackingMode.background,
+      );
+    }
+
+    if (['authorizedAlways', 'authorizedWhenInUse'].contains(status)) {
       _hasBackgroundPermission = status == 'authorizedAlways';
 
       if (!_locationService.isTracking) {
         startLocationTracking();
       }
-
-      Logger.log("Permission changed: $status");
     }
   }
 
@@ -422,8 +428,8 @@ class UnifiedLocationManager {
 
   // MARK: - Public API for showing permission dialog
   bool shouldShowPermissionDialog(LocationPermissionStatus status) {
-    return status == LocationPermissionStatus.denied ||
-        status == LocationPermissionStatus.deniedForever;
+    // return status == LocationPermissionStatus.denied ||
+    return status == LocationPermissionStatus.deniedForever;
   }
 
   Future<void> openAppSettings() async {

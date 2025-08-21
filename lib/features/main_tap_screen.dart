@@ -78,8 +78,8 @@ class _MainTapScreenState extends State<MainTapScreen>
         return;
       }
 
-      await _locationManager.syncPendingLocations();
       await _setupLocationTracking();
+      await _locationManager.syncPendingLocations();
     } catch (e) {
       Logger.log("Failed to initialize location services: $e");
     }
@@ -127,6 +127,7 @@ class _MainTapScreenState extends State<MainTapScreen>
     try {
       final auth = di.getAuth();
       if (auth != null) {
+        await _locationManager.syncPendingLocations();
         await _locationManager.syncAllData(auth: auth);
       }
 
@@ -187,14 +188,14 @@ class _MainTapScreenState extends State<MainTapScreen>
           );
         },
       ),
-      persistentFooterButtons: [
-        TextButton(
-          onPressed: () async {
-            await _locationManager.syncPendingLocations();
-          },
-          child: Text("Click Me"),
-        ),
-      ],
+      // persistentFooterButtons: [
+      //   TextButton(
+      //     onPressed: () async {
+      //       await _locationManager.syncPendingLocations();
+      //     },
+      //     child: Text("Click Me"),
+      //   ),
+      // ],
       bottomNavigationBar: ValueListenableBuilder<int>(
         valueListenable: _selectedIndex,
         builder: (context, index, _) {

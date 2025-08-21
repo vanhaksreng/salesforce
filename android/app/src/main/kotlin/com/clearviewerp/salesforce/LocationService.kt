@@ -22,6 +22,7 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 import androidx.work.*
 import androidx.core.content.edit
+import kotlin.math.abs
 
 class LocationService : Service() {
     companion object {
@@ -35,7 +36,6 @@ class LocationService : Service() {
         fun setMethodChannel(methodChannel: MethodChannel) {
             channel = methodChannel
             isFlutterEngineActive = true
-            Log.d("LocationService", "Flutter engine attached, channel set")
         }
 
         fun getChannel(): MethodChannel? {
@@ -52,12 +52,11 @@ class LocationService : Service() {
             try {
                 if (isFlutterEngineActive && channel != null) {
                     channel?.invokeMethod(method, arguments)
-                    Log.d("LocationService", "Successfully sent $method to Flutter")
+                    // Log.d("LocationService", "Successfully sent $method to Flutter")
                 } else {
-                    Log.d("LocationService", "Flutter engine not active, skipping $method")
+                   // Log.d("LocationService", "Flutter engine not active, skipping $method")
                 }
             } catch (e: Exception) {
-                Log.w("LocationService", "Failed to invoke $method (Flutter engine likely detached): ${e.message}")
                 isFlutterEngineActive = false
                 channel = null
             }
@@ -72,15 +71,12 @@ class LocationService : Service() {
                     jsonArray.put(JSONObject(locationData))
                     putString(KEY_LOCATIONS, jsonArray.toString())
                 }
-                Log.d("LocationService", "Saved location to SharedPreferences: $locationData")
             } catch (e: Exception) {
-                Log.e("LocationService", "Failed to save location to SharedPreferences: ${e.message}")
+                // Log.e("LocationService", "Failed to save location to SharedPreferences: ${e.message}")
             }
         }
 
         fun syncLocations(context: Context) {
-            Log.d("LocationService", "syncLocations Called")
-
             try {
                 val prefs = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                 val locations = prefs.getString(KEY_LOCATIONS, "[]")
@@ -99,16 +95,17 @@ class LocationService : Service() {
                         prefs.edit { putString(KEY_LOCATIONS, "[]") }
                     }
                 } else {
-                    Log.d("LocationService", "No locations to sync")
+                   // Log.d("LocationService", "No locations to sync")
                 }
             } catch (e: Exception) {
-                Log.e("LocationService", "Failed to sync locations: ${e.message}")
+               // Log.e("LocationService", "Failed to sync locations: ${e.message}")
             }
         }
 
         fun schedulePeriodicUpdate(context: Context, intervalSeconds: Double) {
             try {
-                val validInterval = maxOf(intervalSeconds.toLong(), 900L) // Enforce 15-minute minimum
+                val minSeconds = TimeUnit.MINUTES.toSeconds(15)
+                val validInterval = maxOf(intervalSeconds.toLong(), minSeconds) // Enforce 15-minute minimum
                 val workRequest = PeriodicWorkRequestBuilder<LocationWorker>(
                     validInterval,
                     TimeUnit.SECONDS
@@ -131,9 +128,10 @@ class LocationService : Service() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var locationCallback: LocationCallback? = null
     private var trackingMode: String = "foreground"
-    private var distanceFilter: Float = 10f
+    private var distanceFilter: Float = 0f
     private var lastLocationTime: Long = 0
-    private val minUpdateInterval: Long = 30_000
+    private val minUpdateInterval: Long = 2_000 //2 seconds
+    private val accuracyThreshold = 15.0 // meters
 
     override fun onCreate() {
         super.onCreate()
@@ -150,8 +148,8 @@ class LocationService : Service() {
 
         createNotificationChannel(this)
         val notification = NotificationCompat.Builder(this, "location_channel")
-            .setContentTitle("GPS Tracker Active")
-            .setContentText("Tracking your location in the background")
+            .setContentTitle("Location Tracker Active")
+            .setContentText("We tracking your location")
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
@@ -167,7 +165,6 @@ class LocationService : Service() {
         isTracking = true
 
         safeInvokeMethod("trackingStarted", mapOf("mode" to trackingMode, "filter" to distanceFilter))
-        Log.d("LocationService", "Location service started in $trackingMode mode")
 
         return START_STICKY
     }
@@ -177,38 +174,25 @@ class LocationService : Service() {
         isTracking = false
 
         safeInvokeMethod("trackingStopped", emptyMap<String, Any>())
-        Log.d("LocationService", "Location service stopped")
-
         super.onDestroy()
-    }
-
-    private fun isAppInForeground(context: Context): Boolean {
-        val activityManager = context.getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
-        val runningProcesses = activityManager.runningAppProcesses ?: return false
-        val packageName = context.packageName
-        return runningProcesses.any { process ->
-            process.importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND &&
-                    process.pkgList.contains(packageName)
-        }
     }
 
     private fun startLocationUpdates() {
         try {
-            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000)
-                .setMinUpdateIntervalMillis(5000)
-                .setMinUpdateDistanceMeters(10f)
+            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 2000)
+                .setMinUpdateIntervalMillis(500L)
+                .setMinUpdateDistanceMeters(5f)
+                .setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
+                .setWaitForAccurateLocation(false)
                 .build()
 
             locationCallback = object : LocationCallback() {
                 override fun onLocationResult(result: LocationResult) {
                     try {
                         result.lastLocation?.let { location ->
-                            val now = System.currentTimeMillis()
-                            if (trackingMode != "foreground" && now - lastLocationTime < minUpdateInterval) {
-                                return
-                            }
 
-                            lastLocationTime = now
+                            if (!isLocationAcceptable(location)) return
+
                             val locationData = mapOf(
                                 "latitude" to location.latitude,
                                 "longitude" to location.longitude,
@@ -224,15 +208,8 @@ class LocationService : Service() {
 
                             Handler(Looper.getMainLooper()).post {
                                 if (isFlutterEngineActive && channel != null) {
-                                    try {
-                                        safeInvokeMethod("locationUpdate", locationData)
-                                    } catch (e: Exception) {
-                                        Log.w("LocationService", "Failed to send to Flutter, saving locally: ${e.message}")
-                                        isFlutterEngineActive = false
-                                        saveLocationToPrefs(this@LocationService, locationData)
-                                    }
+                                    safeInvokeMethod("locationUpdate", locationData)
                                 } else {
-                                    Log.d("LocationService", "Flutter engine not active, saving location locally")
                                     saveLocationToPrefs(this@LocationService, locationData)
                                 }
                             }
@@ -246,22 +223,52 @@ class LocationService : Service() {
             }
 
             fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback!!, Looper.getMainLooper())
-            Log.d("LocationService", "Location updates started successfully")
         } catch (e: SecurityException) {
-            Log.e("LocationService", "Permission error: ${e.message}")
             safeInvokeMethod("error", mapOf("message" to "Permission error: ${e.message}"))
             stopSelf()
         } catch (e: Exception) {
-            Log.e("LocationService", "Failed to start location updates: ${e.message}")
             safeInvokeMethod("error", mapOf("message" to "Failed to start location updates: ${e.message}"))
             stopSelf()
         }
     }
 
+    private fun isLocationAcceptable(location: android.location.Location): Boolean {
+        val currentTime = System.currentTimeMillis()
+        val age = abs(currentTime - location.time)
+        val accuracy = location.accuracy;
+        val speed = location.speed;
+
+        // Reject old locations (30 seconds max)
+        if (age > 30_000) return false
+
+        // Stricter accuracy for road tracking
+        if (accuracy > accuracyThreshold) return false
+
+        // Speed-based update intervals
+        val adaptiveInterval = when {
+            speed > 25f -> 1_000L  // Highway: 1 second
+            speed > 13.9f -> 2_000L // City: 2 seconds
+            speed > 2.8f -> 3_000L  // Slow: 3 seconds
+            else -> minUpdateInterval  // Stationary: 2 seconds
+        }
+
+        // Check if enough time has passed based on speed
+        if (currentTime - lastLocationTime < adaptiveInterval) {
+            return false
+        }
+
+        // Reject stationary points with poor accuracy
+        if (speed < 1f && accuracy > 10f) {
+            return false
+        }
+
+        lastLocationTime = currentTime
+        return true
+    }
+
     private fun stopLocationUpdates() {
         locationCallback?.let {
             fusedLocationClient.removeLocationUpdates(it)
-            Log.d("LocationService", "Location updates stopped")
         }
         locationCallback = null
     }
@@ -298,7 +305,7 @@ fun JSONObject.toMap(): Map<String, Any> {
                 else -> value
             }
         } catch (e: Exception) {
-            Log.e("JSONObject", "Error converting key $key: ${e.message}")
+           // Log.e("JSONObject", "Error converting key $key: ${e.message}")
         }
     }
     return map
@@ -315,7 +322,7 @@ fun JSONArray.toList(): List<Any> {
                 else -> value
             })
         } catch (e: Exception) {
-            Log.e("JSONArray", "Error converting index $i: ${e.message}")
+           // Log.e("JSONArray", "Error converting index $i: ${e.message}")
         }
     }
     return list
