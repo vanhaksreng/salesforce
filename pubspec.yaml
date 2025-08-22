@@ -36,6 +36,7 @@ dependencies:
   google_mlkit_barcode_scanning: ^0.14.1
   camera: ^0.11.2
   geolocator: ^14.0.2
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

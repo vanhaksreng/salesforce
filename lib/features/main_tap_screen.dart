@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/app/custom_bottom_navigation_bar.dart';
 import 'package:salesforce/app/navigation_item.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
-import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/features/more/more_main_page.dart';
 import 'package:salesforce/features/more/more_main_page_cubit.dart';
@@ -13,10 +16,8 @@ import 'package:salesforce/features/stock/main_page_stock_screen.dart';
 import 'package:salesforce/features/tasks/tasks_main_cubit.dart';
 import 'package:salesforce/features/tasks/tasks_main_screen.dart';
 import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
-import 'package:salesforce/infrastructure/external_services/unified_location_manager.dart';
-import 'package:salesforce/infrastructure/gps/gps_service_impl.dart';
-import 'package:salesforce/infrastructure/heartbeat/heartbeat_service_impl.dart';
-import 'package:salesforce/injection_container.dart' as di;
+import 'package:salesforce/infrastructure/external_services/location/location_permission_status.dart';
+import 'package:salesforce/injection_container.dart';
 
 class MainTapScreen extends StatefulWidget {
   const MainTapScreen({super.key});
@@ -27,118 +28,107 @@ class MainTapScreen extends StatefulWidget {
   State<MainTapScreen> createState() => _MainTapScreenState();
 }
 
-class _MainTapScreenState extends State<MainTapScreen>
-    with WidgetsBindingObserver {
+class _MainTapScreenState extends State<MainTapScreen> {
   final ValueNotifier<int> _selectedIndex = ValueNotifier<int>(0);
-  final _appRepo = di.getIt<BaseAppRepository>();
-  final _locationManager = UnifiedLocationManager.instance;
+  final _appRepo = getIt<BaseAppRepository>();
   final _geolocation = GeolocatorLocationService();
+
+  Timer? _syncTimer;
+  Timer? _heartbeatTimer;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _initializeLocationServices();
+    _init();
   }
 
   @override
   void dispose() {
-    _locationManager.dispose();
-    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
+  void _stopAllTimers() {
+    _syncTimer?.cancel();
+    _syncTimer = null;
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+  }
 
-    final isActive = state == AppLifecycleState.resumed;
-    _locationManager.setAppLifecycleState(isActive);
+  void _init() async {
+    await _syncHeartbeat();
+    await _syncGpsData();
 
-    if (state == AppLifecycleState.detached) {
-      _handleAppTerminating();
+    await _startPeriodicSync();
+
+    final status = await _geolocation.requestPermission();
+    if (status != LocationPermissionStatus.denied) {
+      _startTracking();
     }
   }
 
-  Future<void> _initializeLocationServices() async {
-    try {
-      // Initialize the unified location manager
-      await _locationManager.initialize(
-        appRepo: _appRepo,
-        gpsService: GpsServiceImpl(_appRepo),
-        heartbeatService: HeartbeatServiceImpl(_appRepo),
-      );
+  Future<void> _startPeriodicSync() async {
+    _stopAllTimers();
+    final auth = getAuth();
 
-      // Check permissions and show dialog if needed
-      final locationStatus = await _geolocation.checkPermission();
-      if (!mounted) return;
-
-      if (_locationManager.shouldShowPermissionDialog(locationStatus)) {
-        _showPermissionDialog();
-        return;
+    // Sync GPS data every 60 seconds
+    _syncTimer = Timer.periodic(const Duration(seconds: 60), (_) async {
+      if (auth != null) {
+        await _syncGpsData();
       }
+    });
 
-      await _setupLocationTracking();
-      await _locationManager.syncPendingLocations();
-    } catch (e) {
-      Logger.log("Failed to initialize location services: $e");
-    }
+    // Sync heartbeat every 90 seconds
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 90), (_) async {
+      if (auth != null) {
+        await _syncHeartbeat();
+      }
+    });
   }
 
-  Future<void> _setupLocationTracking() async {
-    try {
-      final permissionsGranted = await _locationManager.requestAllPermissions();
+  void _startTracking() {
+    _geolocation.stopTracking();
 
-      if (permissionsGranted) {
-        final trackingStarted = await _locationManager.startLocationTracking();
-
-        if (trackingStarted) {
-          final auth = di.getAuth();
-          if (auth != null) {
-            await _locationManager.syncAllData(auth: auth);
-          }
+    _geolocation.startContinuousLocationTracking(
+      distanceFilter: 3,
+      onLocationUpdate: (Position position) async {
+        if (position.accuracy > 10) {
+          return;
         }
-      } else {
-        Logger.log("Location permissions not granted");
-      }
-    } catch (e) {
-      Logger.log("Failed to setup location tracking: $e");
-    }
-  }
 
-  void _showPermissionDialog() {
-    Helpers.showDialogAction(
-      context,
-      labelAction: "Location Access Required",
-      subtitle:
-          "As required by your company, the app needs access to your current location. "
-          "This is essential for tracking your check-in and check-out activities at customer sites.",
-      confirmText: "Go to Settings",
-      confirm: () async {
-        await _locationManager.openAppSettings();
-        if (!mounted) return;
-        Navigator.pop(context);
+        Logger.log(
+          "latitude:${position.latitude}, longitude:${position.longitude}, accuracy:${position.accuracy} ",
+        );
+
+        await _appRepo.storeLocationOffline(
+          LatLng(position.latitude, position.longitude),
+        );
       },
-      cancelText: "Not Now",
     );
   }
 
-  Future<void> _handleAppTerminating() async {
+  Future<void> _syncGpsData() async {
     try {
-      final auth = di.getAuth();
-      if (auth != null) {
-        await _locationManager.syncPendingLocations();
-        await _locationManager.syncAllData(auth: auth);
-      }
-
-      // Switch to background tracking if permission available
-      if (_locationManager.hasBackgroundPermission &&
-          _locationManager.isTracking) {
-        // The unified manager will handle this in setAppLifecycleState
-        Logger.log("App terminating - background tracking maintained");
-      }
+      await _appRepo.syncOfflineLocationToBackend();
+      Logger.log("GPS data synced to backend");
     } catch (e) {
-      Logger.log("Error handling app termination: $e");
+      Logger.log("Error syncing GPS data: $e");
+    }
+  }
+
+  Future<void> _syncHeartbeat() async {
+    try {
+      final auth = getAuth();
+      await _appRepo.heartbeatStatus(
+        params: {
+          'rtype': 'heartbeat',
+          'status': 'online',
+          'token': auth?.token ?? "",
+        },
+      );
+
+      Logger.log("Heartbeat synced");
+    } catch (e) {
+      Logger.log("Error syncing heartbeat: $e");
     }
   }
 
@@ -188,14 +178,6 @@ class _MainTapScreenState extends State<MainTapScreen>
           );
         },
       ),
-      // persistentFooterButtons: [
-      //   TextButton(
-      //     onPressed: () async {
-      //       await _locationManager.syncPendingLocations();
-      //     },
-      //     child: Text("Click Me"),
-      //   ),
-      // ],
       bottomNavigationBar: ValueListenableBuilder<int>(
         valueListenable: _selectedIndex,
         builder: (context, index, _) {

@@ -4,7 +4,11 @@ import 'package:salesforce/core/enums/enums.dart';
 class Logger {
   static void init(LogMode mode) {}
 
-  static void log(dynamic data, {StackTrace? stackTrace, LogMode logMode = LogMode.debug}) {
+  static void log(
+    dynamic data, {
+    StackTrace? stackTrace,
+    LogMode logMode = LogMode.debug,
+  }) {
     if (kDebugMode) {
       final timestamp = DateTime.now().toString().split('.').first;
       final logMessage = "MESSAGE = $data";
@@ -16,6 +20,7 @@ class Logger {
           {
             debugPrint('\x1B[36m$timestamp\x1B[0m');
             debugPrint('\x1B[33m ⚡ DEBUG MODE $logMessage\x1B[0m');
+
             debugPrint('\x1B[32m$stackTraceMsg\x1B[0m');
             break;
           }
@@ -44,6 +49,7 @@ class Logger {
           debugPrint('\x1B[32m$stackTraceMsg\x1B[0m');
           break;
       }
+
       debugPrint(border);
     }
   }

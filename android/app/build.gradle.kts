@@ -1,5 +1,4 @@
 import java.util.Properties
-import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
@@ -65,7 +64,5 @@ flutter {
 }
 
 dependencies {
-    implementation("com.google.android.gms:play-services-location:21.3.0")
-    implementation ("androidx.work:work-runtime-ktx:2.10.3")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }

@@ -14,8 +14,7 @@ import GoogleMaps
         GMSServices.provideAPIKey("AIzaSyC3pUau1zh5lLPMEKG8-WanuIKMb8895sg")
             
         FlutterHtmlToPdfPlugin.register(with: self.registrar(forPlugin: "flutter_html_to_pdf")!)
-        MyLocationManager.register(with: self.registrar(forPlugin : "MyLocationManager")!)
-        
+
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
 }
