@@ -5,7 +5,12 @@ import 'package:salesforce/infrastructure/external_services/location/location_pe
 
 abstract class ILocationService {
   Future<bool> isLocationServiceEnabled();
-  double getDistanceBetween(double startLatitude, double startLongitude, double endLatitude, double endLongitude);
+  double getDistanceBetween(
+    double startLatitude,
+    double startLongitude,
+    double endLatitude,
+    double endLongitude,
+  );
 
   /// Checks the current location permission status.
   Future<LocationPermissionStatus> checkPermission();
@@ -28,7 +33,7 @@ abstract class ILocationService {
   });
 
   StreamSubscription<Position> startContinuousLocationTracking({
-    required void Function(Position) onLocationUpdate,
+    required void Function(Position) onData,
     int distanceFilter = 10,
   });
 }
