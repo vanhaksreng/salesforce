@@ -249,33 +249,30 @@ class UserSetup extends _UserSetup
   static UserSetup _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'email': EJsonValue email,
-      } =>
-        UserSetup(
-          fromEJson(email),
-          roleCode: fromEJson(ejson['role_code']),
-          permissionCode: fromEJson(ejson['permission_code']),
-          locationCode: fromEJson(ejson['location_code']),
-          intransitLocationCode: fromEJson(ejson['intransit_location_code']),
-          businessUnitCode: fromEJson(ejson['business_unit_code']),
-          divisionCode: fromEJson(ejson['division_code']),
-          storeCode: fromEJson(ejson['store_code']),
-          projectCode: fromEJson(ejson['project_code']),
-          salespersonCode: fromEJson(ejson['salesperson_code']),
-          distributorCode: fromEJson(ejson['distributor_code']),
-          departmentCode: fromEJson(ejson['department_code']),
-          cashJournalBatchName: fromEJson(ejson['cash_journal_batch_name']),
-          cashBankAccountCode: fromEJson(ejson['cash_bank_account_code']),
-          payJournalBatchName: fromEJson(ejson['pay_journal_batch_name']),
-          genJournalBatchName: fromEJson(ejson['gen_journal_batch_name']),
-          itemJournalBatchName: fromEJson(ejson['item_journal_batch_name']),
-          type: fromEJson(ejson['type']),
-          fromLocationCode: fromEJson(ejson['from_location_code']),
-          customerNo: fromEJson(ejson['customer_no']),
-          vendorNo: fromEJson(ejson['vendor_no']),
-          userId: fromEJson(ejson['user_id']),
-        ),
+      {'email': EJsonValue email} => UserSetup(
+        fromEJson(email),
+        roleCode: fromEJson(ejson['role_code']),
+        permissionCode: fromEJson(ejson['permission_code']),
+        locationCode: fromEJson(ejson['location_code']),
+        intransitLocationCode: fromEJson(ejson['intransit_location_code']),
+        businessUnitCode: fromEJson(ejson['business_unit_code']),
+        divisionCode: fromEJson(ejson['division_code']),
+        storeCode: fromEJson(ejson['store_code']),
+        projectCode: fromEJson(ejson['project_code']),
+        salespersonCode: fromEJson(ejson['salesperson_code']),
+        distributorCode: fromEJson(ejson['distributor_code']),
+        departmentCode: fromEJson(ejson['department_code']),
+        cashJournalBatchName: fromEJson(ejson['cash_journal_batch_name']),
+        cashBankAccountCode: fromEJson(ejson['cash_bank_account_code']),
+        payJournalBatchName: fromEJson(ejson['pay_journal_batch_name']),
+        genJournalBatchName: fromEJson(ejson['gen_journal_batch_name']),
+        itemJournalBatchName: fromEJson(ejson['item_journal_batch_name']),
+        type: fromEJson(ejson['type']),
+        fromLocationCode: fromEJson(ejson['from_location_code']),
+        customerNo: fromEJson(ejson['customer_no']),
+        vendorNo: fromEJson(ejson['vendor_no']),
+        userId: fromEJson(ejson['user_id']),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -285,47 +282,127 @@ class UserSetup extends _UserSetup
     register(_toEJson, _fromEJson);
     return const SchemaObject(ObjectType.realmObject, UserSetup, 'USER_SETUP', [
       SchemaProperty('email', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('roleCode', RealmPropertyType.string,
-          mapTo: 'role_code', optional: true),
-      SchemaProperty('permissionCode', RealmPropertyType.string,
-          mapTo: 'permission_code', optional: true),
-      SchemaProperty('locationCode', RealmPropertyType.string,
-          mapTo: 'location_code', optional: true),
-      SchemaProperty('intransitLocationCode', RealmPropertyType.string,
-          mapTo: 'intransit_location_code', optional: true),
-      SchemaProperty('businessUnitCode', RealmPropertyType.string,
-          mapTo: 'business_unit_code', optional: true),
-      SchemaProperty('divisionCode', RealmPropertyType.string,
-          mapTo: 'division_code', optional: true),
-      SchemaProperty('storeCode', RealmPropertyType.string,
-          mapTo: 'store_code', optional: true),
-      SchemaProperty('projectCode', RealmPropertyType.string,
-          mapTo: 'project_code', optional: true),
-      SchemaProperty('salespersonCode', RealmPropertyType.string,
-          mapTo: 'salesperson_code', optional: true),
-      SchemaProperty('distributorCode', RealmPropertyType.string,
-          mapTo: 'distributor_code', optional: true),
-      SchemaProperty('departmentCode', RealmPropertyType.string,
-          mapTo: 'department_code', optional: true),
-      SchemaProperty('cashJournalBatchName', RealmPropertyType.string,
-          mapTo: 'cash_journal_batch_name', optional: true),
-      SchemaProperty('cashBankAccountCode', RealmPropertyType.string,
-          mapTo: 'cash_bank_account_code', optional: true),
-      SchemaProperty('payJournalBatchName', RealmPropertyType.string,
-          mapTo: 'pay_journal_batch_name', optional: true),
-      SchemaProperty('genJournalBatchName', RealmPropertyType.string,
-          mapTo: 'gen_journal_batch_name', optional: true),
-      SchemaProperty('itemJournalBatchName', RealmPropertyType.string,
-          mapTo: 'item_journal_batch_name', optional: true),
+      SchemaProperty(
+        'roleCode',
+        RealmPropertyType.string,
+        mapTo: 'role_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'permissionCode',
+        RealmPropertyType.string,
+        mapTo: 'permission_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'locationCode',
+        RealmPropertyType.string,
+        mapTo: 'location_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'intransitLocationCode',
+        RealmPropertyType.string,
+        mapTo: 'intransit_location_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'businessUnitCode',
+        RealmPropertyType.string,
+        mapTo: 'business_unit_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'divisionCode',
+        RealmPropertyType.string,
+        mapTo: 'division_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'storeCode',
+        RealmPropertyType.string,
+        mapTo: 'store_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'projectCode',
+        RealmPropertyType.string,
+        mapTo: 'project_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'salespersonCode',
+        RealmPropertyType.string,
+        mapTo: 'salesperson_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'distributorCode',
+        RealmPropertyType.string,
+        mapTo: 'distributor_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'departmentCode',
+        RealmPropertyType.string,
+        mapTo: 'department_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'cashJournalBatchName',
+        RealmPropertyType.string,
+        mapTo: 'cash_journal_batch_name',
+        optional: true,
+      ),
+      SchemaProperty(
+        'cashBankAccountCode',
+        RealmPropertyType.string,
+        mapTo: 'cash_bank_account_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'payJournalBatchName',
+        RealmPropertyType.string,
+        mapTo: 'pay_journal_batch_name',
+        optional: true,
+      ),
+      SchemaProperty(
+        'genJournalBatchName',
+        RealmPropertyType.string,
+        mapTo: 'gen_journal_batch_name',
+        optional: true,
+      ),
+      SchemaProperty(
+        'itemJournalBatchName',
+        RealmPropertyType.string,
+        mapTo: 'item_journal_batch_name',
+        optional: true,
+      ),
       SchemaProperty('type', RealmPropertyType.string, optional: true),
-      SchemaProperty('fromLocationCode', RealmPropertyType.string,
-          mapTo: 'from_location_code', optional: true),
-      SchemaProperty('customerNo', RealmPropertyType.string,
-          mapTo: 'customer_no', optional: true),
-      SchemaProperty('vendorNo', RealmPropertyType.string,
-          mapTo: 'vendor_no', optional: true),
-      SchemaProperty('userId', RealmPropertyType.int,
-          mapTo: 'user_id', optional: true),
+      SchemaProperty(
+        'fromLocationCode',
+        RealmPropertyType.string,
+        mapTo: 'from_location_code',
+        optional: true,
+      ),
+      SchemaProperty(
+        'customerNo',
+        RealmPropertyType.string,
+        mapTo: 'customer_no',
+        optional: true,
+      ),
+      SchemaProperty(
+        'vendorNo',
+        RealmPropertyType.string,
+        mapTo: 'vendor_no',
+        optional: true,
+      ),
+      SchemaProperty(
+        'userId',
+        RealmPropertyType.int,
+        mapTo: 'user_id',
+        optional: true,
+      ),
     ]);
   }();
 
@@ -562,33 +639,30 @@ class Profile extends _Profile with RealmEntity, RealmObjectBase, RealmObject {
   static Profile _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'email': EJsonValue email,
-      } =>
-        Profile(
-          fromEJson(email),
-          firstName: fromEJson(ejson['first_name']),
-          lastName: fromEJson(ejson['last_name']),
-          gender: fromEJson(ejson['gender']),
-          dateOfBirth: fromEJson(ejson['date_of_birth']),
-          idCardNo: fromEJson(ejson['id_card_no']),
-          phoneNo: fromEJson(ejson['phone_no']),
-          userEmail: fromEJson(ejson['user_email']),
-          organizationName: fromEJson(ejson['organization_name']),
-          businessIndustry: fromEJson(ejson['business_industry']),
-          subBusinessIndustry: fromEJson(ejson['sub_business_industry']),
-          userType: fromEJson(ejson['user_type']),
-          address: fromEJson(ejson['address']),
-          address2: fromEJson(ejson['address_2']),
-          countryCode: fromEJson(ejson['country_code']),
-          city: fromEJson(ejson['city']),
-          avatar: fromEJson(ejson['avatar']),
-          avatar32: fromEJson(ejson['avatar_32']),
-          avatar128: fromEJson(ejson['avatar_128']),
-          locale: fromEJson(ejson['locale']),
-          timeZone: fromEJson(ejson['time_zone']),
-          tablePagination: fromEJson(ejson['table_pagination']),
-        ),
+      {'email': EJsonValue email} => Profile(
+        fromEJson(email),
+        firstName: fromEJson(ejson['first_name']),
+        lastName: fromEJson(ejson['last_name']),
+        gender: fromEJson(ejson['gender']),
+        dateOfBirth: fromEJson(ejson['date_of_birth']),
+        idCardNo: fromEJson(ejson['id_card_no']),
+        phoneNo: fromEJson(ejson['phone_no']),
+        userEmail: fromEJson(ejson['user_email']),
+        organizationName: fromEJson(ejson['organization_name']),
+        businessIndustry: fromEJson(ejson['business_industry']),
+        subBusinessIndustry: fromEJson(ejson['sub_business_industry']),
+        userType: fromEJson(ejson['user_type']),
+        address: fromEJson(ejson['address']),
+        address2: fromEJson(ejson['address_2']),
+        countryCode: fromEJson(ejson['country_code']),
+        city: fromEJson(ejson['city']),
+        avatar: fromEJson(ejson['avatar']),
+        avatar32: fromEJson(ejson['avatar_32']),
+        avatar128: fromEJson(ejson['avatar_128']),
+        locale: fromEJson(ejson['locale']),
+        timeZone: fromEJson(ejson['time_zone']),
+        tablePagination: fromEJson(ejson['table_pagination']),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -598,43 +672,107 @@ class Profile extends _Profile with RealmEntity, RealmObjectBase, RealmObject {
     register(_toEJson, _fromEJson);
     return const SchemaObject(ObjectType.realmObject, Profile, 'PROFILE', [
       SchemaProperty('email', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('firstName', RealmPropertyType.string,
-          mapTo: 'first_name', optional: true),
-      SchemaProperty('lastName', RealmPropertyType.string,
-          mapTo: 'last_name', optional: true),
+      SchemaProperty(
+        'firstName',
+        RealmPropertyType.string,
+        mapTo: 'first_name',
+        optional: true,
+      ),
+      SchemaProperty(
+        'lastName',
+        RealmPropertyType.string,
+        mapTo: 'last_name',
+        optional: true,
+      ),
       SchemaProperty('gender', RealmPropertyType.string, optional: true),
-      SchemaProperty('dateOfBirth', RealmPropertyType.string,
-          mapTo: 'date_of_birth', optional: true),
-      SchemaProperty('idCardNo', RealmPropertyType.string,
-          mapTo: 'id_card_no', optional: true),
-      SchemaProperty('phoneNo', RealmPropertyType.string,
-          mapTo: 'phone_no', optional: true),
-      SchemaProperty('userEmail', RealmPropertyType.string,
-          mapTo: 'user_email', optional: true),
-      SchemaProperty('organizationName', RealmPropertyType.string,
-          mapTo: 'organization_name', optional: true),
-      SchemaProperty('businessIndustry', RealmPropertyType.string,
-          mapTo: 'business_industry', optional: true),
-      SchemaProperty('subBusinessIndustry', RealmPropertyType.string,
-          mapTo: 'sub_business_industry', optional: true),
-      SchemaProperty('userType', RealmPropertyType.string,
-          mapTo: 'user_type', optional: true),
+      SchemaProperty(
+        'dateOfBirth',
+        RealmPropertyType.string,
+        mapTo: 'date_of_birth',
+        optional: true,
+      ),
+      SchemaProperty(
+        'idCardNo',
+        RealmPropertyType.string,
+        mapTo: 'id_card_no',
+        optional: true,
+      ),
+      SchemaProperty(
+        'phoneNo',
+        RealmPropertyType.string,
+        mapTo: 'phone_no',
+        optional: true,
+      ),
+      SchemaProperty(
+        'userEmail',
+        RealmPropertyType.string,
+        mapTo: 'user_email',
+        optional: true,
+      ),
+      SchemaProperty(
+        'organizationName',
+        RealmPropertyType.string,
+        mapTo: 'organization_name',
+        optional: true,
+      ),
+      SchemaProperty(
+        'businessIndustry',
+        RealmPropertyType.string,
+        mapTo: 'business_industry',
+        optional: true,
+      ),
+      SchemaProperty(
+        'subBusinessIndustry',
+        RealmPropertyType.string,
+        mapTo: 'sub_business_industry',
+        optional: true,
+      ),
+      SchemaProperty(
+        'userType',
+        RealmPropertyType.string,
+        mapTo: 'user_type',
+        optional: true,
+      ),
       SchemaProperty('address', RealmPropertyType.string, optional: true),
-      SchemaProperty('address2', RealmPropertyType.string,
-          mapTo: 'address_2', optional: true),
-      SchemaProperty('countryCode', RealmPropertyType.string,
-          mapTo: 'country_code', optional: true),
+      SchemaProperty(
+        'address2',
+        RealmPropertyType.string,
+        mapTo: 'address_2',
+        optional: true,
+      ),
+      SchemaProperty(
+        'countryCode',
+        RealmPropertyType.string,
+        mapTo: 'country_code',
+        optional: true,
+      ),
       SchemaProperty('city', RealmPropertyType.string, optional: true),
       SchemaProperty('avatar', RealmPropertyType.string, optional: true),
-      SchemaProperty('avatar32', RealmPropertyType.string,
-          mapTo: 'avatar_32', optional: true),
-      SchemaProperty('avatar128', RealmPropertyType.string,
-          mapTo: 'avatar_128', optional: true),
+      SchemaProperty(
+        'avatar32',
+        RealmPropertyType.string,
+        mapTo: 'avatar_32',
+        optional: true,
+      ),
+      SchemaProperty(
+        'avatar128',
+        RealmPropertyType.string,
+        mapTo: 'avatar_128',
+        optional: true,
+      ),
       SchemaProperty('locale', RealmPropertyType.string, optional: true),
-      SchemaProperty('timeZone', RealmPropertyType.string,
-          mapTo: 'time_zone', optional: true),
-      SchemaProperty('tablePagination', RealmPropertyType.int,
-          mapTo: 'table_pagination', optional: true),
+      SchemaProperty(
+        'timeZone',
+        RealmPropertyType.string,
+        mapTo: 'time_zone',
+        optional: true,
+      ),
+      SchemaProperty(
+        'tablePagination',
+        RealmPropertyType.int,
+        mapTo: 'table_pagination',
+        optional: true,
+      ),
     ]);
   }();
 
@@ -716,7 +854,10 @@ class ApplicationSetup extends _ApplicationSetup
     RealmObjectBase.set(this, 'scroll_pagination', scrollPagination);
     RealmObjectBase.set(this, 'default_sales_vat_acc_no', defaultSalesVatAccNo);
     RealmObjectBase.set(
-        this, 'default_purchase_vat_acc_no', defaultPurchaseVatAccNo);
+      this,
+      'default_purchase_vat_acc_no',
+      defaultPurchaseVatAccNo,
+    );
     RealmObjectBase.set(this, 'default_ap_acc_no', defaultApAccNo);
     RealmObjectBase.set(this, 'default_ar_acc_no', defaultArAccNo);
     RealmObjectBase.set(this, 'default_bank_acc_no', defaultBankAccNo);
@@ -725,34 +866,76 @@ class ApplicationSetup extends _ApplicationSetup
     RealmObjectBase.set(this, 'default_sales_acc_no', defaultSalesAccNo);
     RealmObjectBase.set(this, 'default_purchase_acc_no', defaultPurchaseAccNo);
     RealmObjectBase.set(
-        this, 'default_inventory_acc_no', defaultInventoryAccNo);
+      this,
+      'default_inventory_acc_no',
+      defaultInventoryAccNo,
+    );
     RealmObjectBase.set(
-        this, 'default_positive_adj_account_no', defaultPositiveAdjAccountNo);
+      this,
+      'default_positive_adj_account_no',
+      defaultPositiveAdjAccountNo,
+    );
     RealmObjectBase.set(
-        this, 'default_negative_adj_account_no', defaultNegativeAdjAccountNo);
+      this,
+      'default_negative_adj_account_no',
+      defaultNegativeAdjAccountNo,
+    );
     RealmObjectBase.set(
-        this, 'default_inv_posting_group', defaultInvPostingGroup);
+      this,
+      'default_inv_posting_group',
+      defaultInvPostingGroup,
+    );
     RealmObjectBase.set(
-        this, 'default_ap_posting_group', defaultApPostingGroup);
+      this,
+      'default_ap_posting_group',
+      defaultApPostingGroup,
+    );
     RealmObjectBase.set(
-        this, 'default_ar_posting_group', defaultArPostingGroup);
+      this,
+      'default_ar_posting_group',
+      defaultArPostingGroup,
+    );
     RealmObjectBase.set(
-        this, 'default_gen_bus_posting_group', defaultGenBusPostingGroup);
+      this,
+      'default_gen_bus_posting_group',
+      defaultGenBusPostingGroup,
+    );
     RealmObjectBase.set(
-        this, 'default_gen_prod_posting_group', defaultGenProdPostingGroup);
+      this,
+      'default_gen_prod_posting_group',
+      defaultGenProdPostingGroup,
+    );
     RealmObjectBase.set(
-        this, 'default_vat_bus_posting_group', defaultVatBusPostingGroup);
+      this,
+      'default_vat_bus_posting_group',
+      defaultVatBusPostingGroup,
+    );
     RealmObjectBase.set(
-        this, 'default_vat_prod_posting_group', defaultVatProdPostingGroup);
+      this,
+      'default_vat_prod_posting_group',
+      defaultVatProdPostingGroup,
+    );
     RealmObjectBase.set(this, 'default_payment_term', defaultPaymentTerm);
     RealmObjectBase.set(
-        this, 'default_stock_unit_measure', defaultStockUnitMeasure);
+      this,
+      'default_stock_unit_measure',
+      defaultStockUnitMeasure,
+    );
     RealmObjectBase.set(
-        this, 'default_item_price_include_vat', defaultItemPriceIncludeVat);
+      this,
+      'default_item_price_include_vat',
+      defaultItemPriceIncludeVat,
+    );
     RealmObjectBase.set(
-        this, 'accept_eorder_order_status', acceptEorderOrderStatus);
+      this,
+      'accept_eorder_order_status',
+      acceptEorderOrderStatus,
+    );
     RealmObjectBase.set(
-        this, 'auto_accept_incoming_eorder', autoAcceptIncomingEorder);
+      this,
+      'auto_accept_incoming_eorder',
+      autoAcceptIncomingEorder,
+    );
     RealmObjectBase.set(this, 'ctrl_item_tracking', ctrlItemTracking);
   }
 
@@ -1066,9 +1249,9 @@ class ApplicationSetup extends _ApplicationSetup
       RealmObjectBase.getChanges<ApplicationSetup>(this);
 
   @override
-  Stream<RealmObjectChanges<ApplicationSetup>> changesFor(
-          [List<String>? keyPaths]) =>
-      RealmObjectBase.getChangesFor<ApplicationSetup>(this, keyPaths);
+  Stream<RealmObjectChanges<ApplicationSetup>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<ApplicationSetup>(this, keyPaths);
 
   @override
   ApplicationSetup freeze() =>
@@ -1125,66 +1308,74 @@ class ApplicationSetup extends _ApplicationSetup
   static ApplicationSetup _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'id': EJsonValue id,
-      } =>
-        ApplicationSetup(
-          fromEJson(id),
-          decimalPoint: fromEJson(ejson['decimal_point']),
-          separatorSymbol: fromEJson(ejson['separator_symbol']),
-          quantityDecimal: fromEJson(ejson['quantity_decimal']),
-          priceDecimal: fromEJson(ejson['price_decimal']),
-          costDecimal: fromEJson(ejson['cost_decimal']),
-          measurementDecimal: fromEJson(ejson['measurement_decimal']),
-          generalDecimal: fromEJson(ejson['general_decimal']),
-          amountDecimal: fromEJson(ejson['amount_decimal']),
-          percentageDecimal: fromEJson(ejson['percentage_decimal']),
-          itemQtyFormat: fromEJson(ejson['item_qty_format'], defaultValue: 0),
-          allowPostingFrom: fromEJson(ejson['allow_posting_from']),
-          allowPostingTo: fromEJson(ejson['allow_posting_to']),
-          localCurrencyCode:
-              fromEJson(ejson['local_currency_code'], defaultValue: "USD"),
-          decimalZero: fromEJson(ejson['decimal_zero']),
-          incomeClosingPeriod: fromEJson(ejson['income_closing_period']),
-          scrollPagination: fromEJson(ejson['scroll_pagination']),
-          defaultSalesVatAccNo: fromEJson(ejson['default_sales_vat_acc_no']),
-          defaultPurchaseVatAccNo:
-              fromEJson(ejson['default_purchase_vat_acc_no']),
-          defaultApAccNo: fromEJson(ejson['default_ap_acc_no']),
-          defaultArAccNo: fromEJson(ejson['default_ar_acc_no']),
-          defaultBankAccNo: fromEJson(ejson['default_bank_acc_no']),
-          defaultCashAccNo: fromEJson(ejson['default_cash_acc_no']),
-          defaultCostAccNo: fromEJson(ejson['default_cost_acc_no']),
-          defaultSalesAccNo: fromEJson(ejson['default_sales_acc_no']),
-          defaultPurchaseAccNo: fromEJson(ejson['default_purchase_acc_no']),
-          defaultInventoryAccNo: fromEJson(ejson['default_inventory_acc_no']),
-          defaultPositiveAdjAccountNo:
-              fromEJson(ejson['default_positive_adj_account_no']),
-          defaultNegativeAdjAccountNo:
-              fromEJson(ejson['default_negative_adj_account_no']),
-          defaultInvPostingGroup: fromEJson(ejson['default_inv_posting_group']),
-          defaultApPostingGroup: fromEJson(ejson['default_ap_posting_group']),
-          defaultArPostingGroup: fromEJson(ejson['default_ar_posting_group']),
-          defaultGenBusPostingGroup:
-              fromEJson(ejson['default_gen_bus_posting_group']),
-          defaultGenProdPostingGroup:
-              fromEJson(ejson['default_gen_prod_posting_group']),
-          defaultVatBusPostingGroup:
-              fromEJson(ejson['default_vat_bus_posting_group']),
-          defaultVatProdPostingGroup:
-              fromEJson(ejson['default_vat_prod_posting_group']),
-          defaultPaymentTerm: fromEJson(ejson['default_payment_term']),
-          defaultStockUnitMeasure:
-              fromEJson(ejson['default_stock_unit_measure']),
-          defaultItemPriceIncludeVat:
-              fromEJson(ejson['default_item_price_include_vat']),
-          acceptEorderOrderStatus:
-              fromEJson(ejson['accept_eorder_order_status']),
-          autoAcceptIncomingEorder:
-              fromEJson(ejson['auto_accept_incoming_eorder']),
-          ctrlItemTracking:
-              fromEJson(ejson['ctrl_item_tracking'], defaultValue: kStatusNo),
+      {'id': EJsonValue id} => ApplicationSetup(
+        fromEJson(id),
+        decimalPoint: fromEJson(ejson['decimal_point']),
+        separatorSymbol: fromEJson(ejson['separator_symbol']),
+        quantityDecimal: fromEJson(ejson['quantity_decimal']),
+        priceDecimal: fromEJson(ejson['price_decimal']),
+        costDecimal: fromEJson(ejson['cost_decimal']),
+        measurementDecimal: fromEJson(ejson['measurement_decimal']),
+        generalDecimal: fromEJson(ejson['general_decimal']),
+        amountDecimal: fromEJson(ejson['amount_decimal']),
+        percentageDecimal: fromEJson(ejson['percentage_decimal']),
+        itemQtyFormat: fromEJson(ejson['item_qty_format'], defaultValue: 0),
+        allowPostingFrom: fromEJson(ejson['allow_posting_from']),
+        allowPostingTo: fromEJson(ejson['allow_posting_to']),
+        localCurrencyCode: fromEJson(
+          ejson['local_currency_code'],
+          defaultValue: "USD",
         ),
+        decimalZero: fromEJson(ejson['decimal_zero']),
+        incomeClosingPeriod: fromEJson(ejson['income_closing_period']),
+        scrollPagination: fromEJson(ejson['scroll_pagination']),
+        defaultSalesVatAccNo: fromEJson(ejson['default_sales_vat_acc_no']),
+        defaultPurchaseVatAccNo: fromEJson(
+          ejson['default_purchase_vat_acc_no'],
+        ),
+        defaultApAccNo: fromEJson(ejson['default_ap_acc_no']),
+        defaultArAccNo: fromEJson(ejson['default_ar_acc_no']),
+        defaultBankAccNo: fromEJson(ejson['default_bank_acc_no']),
+        defaultCashAccNo: fromEJson(ejson['default_cash_acc_no']),
+        defaultCostAccNo: fromEJson(ejson['default_cost_acc_no']),
+        defaultSalesAccNo: fromEJson(ejson['default_sales_acc_no']),
+        defaultPurchaseAccNo: fromEJson(ejson['default_purchase_acc_no']),
+        defaultInventoryAccNo: fromEJson(ejson['default_inventory_acc_no']),
+        defaultPositiveAdjAccountNo: fromEJson(
+          ejson['default_positive_adj_account_no'],
+        ),
+        defaultNegativeAdjAccountNo: fromEJson(
+          ejson['default_negative_adj_account_no'],
+        ),
+        defaultInvPostingGroup: fromEJson(ejson['default_inv_posting_group']),
+        defaultApPostingGroup: fromEJson(ejson['default_ap_posting_group']),
+        defaultArPostingGroup: fromEJson(ejson['default_ar_posting_group']),
+        defaultGenBusPostingGroup: fromEJson(
+          ejson['default_gen_bus_posting_group'],
+        ),
+        defaultGenProdPostingGroup: fromEJson(
+          ejson['default_gen_prod_posting_group'],
+        ),
+        defaultVatBusPostingGroup: fromEJson(
+          ejson['default_vat_bus_posting_group'],
+        ),
+        defaultVatProdPostingGroup: fromEJson(
+          ejson['default_vat_prod_posting_group'],
+        ),
+        defaultPaymentTerm: fromEJson(ejson['default_payment_term']),
+        defaultStockUnitMeasure: fromEJson(ejson['default_stock_unit_measure']),
+        defaultItemPriceIncludeVat: fromEJson(
+          ejson['default_item_price_include_vat'],
+        ),
+        acceptEorderOrderStatus: fromEJson(ejson['accept_eorder_order_status']),
+        autoAcceptIncomingEorder: fromEJson(
+          ejson['auto_accept_incoming_eorder'],
+        ),
+        ctrlItemTracking: fromEJson(
+          ejson['ctrl_item_tracking'],
+          defaultValue: kStatusNo,
+        ),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -1193,91 +1384,259 @@ class ApplicationSetup extends _ApplicationSetup
     RealmObjectBase.registerFactory(ApplicationSetup._);
     register(_toEJson, _fromEJson);
     return const SchemaObject(
-        ObjectType.realmObject, ApplicationSetup, 'APPLICATION_SETUP', [
-      SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('decimalPoint', RealmPropertyType.string,
-          mapTo: 'decimal_point', optional: true),
-      SchemaProperty('separatorSymbol', RealmPropertyType.string,
-          mapTo: 'separator_symbol', optional: true),
-      SchemaProperty('quantityDecimal', RealmPropertyType.int,
-          mapTo: 'quantity_decimal', optional: true),
-      SchemaProperty('priceDecimal', RealmPropertyType.int,
-          mapTo: 'price_decimal', optional: true),
-      SchemaProperty('costDecimal', RealmPropertyType.int,
-          mapTo: 'cost_decimal', optional: true),
-      SchemaProperty('measurementDecimal', RealmPropertyType.int,
-          mapTo: 'measurement_decimal', optional: true),
-      SchemaProperty('generalDecimal', RealmPropertyType.int,
-          mapTo: 'general_decimal', optional: true),
-      SchemaProperty('amountDecimal', RealmPropertyType.int,
-          mapTo: 'amount_decimal', optional: true),
-      SchemaProperty('percentageDecimal', RealmPropertyType.int,
-          mapTo: 'percentage_decimal', optional: true),
-      SchemaProperty('itemQtyFormat', RealmPropertyType.int,
-          mapTo: 'item_qty_format', optional: true),
-      SchemaProperty('allowPostingFrom', RealmPropertyType.string,
-          mapTo: 'allow_posting_from', optional: true),
-      SchemaProperty('allowPostingTo', RealmPropertyType.string,
-          mapTo: 'allow_posting_to', optional: true),
-      SchemaProperty('localCurrencyCode', RealmPropertyType.string,
-          mapTo: 'local_currency_code', optional: true),
-      SchemaProperty('decimalZero', RealmPropertyType.string,
-          mapTo: 'decimal_zero', optional: true),
-      SchemaProperty('incomeClosingPeriod', RealmPropertyType.string,
-          mapTo: 'income_closing_period', optional: true),
-      SchemaProperty('scrollPagination', RealmPropertyType.string,
-          mapTo: 'scroll_pagination', optional: true),
-      SchemaProperty('defaultSalesVatAccNo', RealmPropertyType.string,
-          mapTo: 'default_sales_vat_acc_no', optional: true),
-      SchemaProperty('defaultPurchaseVatAccNo', RealmPropertyType.string,
-          mapTo: 'default_purchase_vat_acc_no', optional: true),
-      SchemaProperty('defaultApAccNo', RealmPropertyType.string,
-          mapTo: 'default_ap_acc_no', optional: true),
-      SchemaProperty('defaultArAccNo', RealmPropertyType.string,
-          mapTo: 'default_ar_acc_no', optional: true),
-      SchemaProperty('defaultBankAccNo', RealmPropertyType.string,
-          mapTo: 'default_bank_acc_no', optional: true),
-      SchemaProperty('defaultCashAccNo', RealmPropertyType.string,
-          mapTo: 'default_cash_acc_no', optional: true),
-      SchemaProperty('defaultCostAccNo', RealmPropertyType.string,
-          mapTo: 'default_cost_acc_no', optional: true),
-      SchemaProperty('defaultSalesAccNo', RealmPropertyType.string,
-          mapTo: 'default_sales_acc_no', optional: true),
-      SchemaProperty('defaultPurchaseAccNo', RealmPropertyType.string,
-          mapTo: 'default_purchase_acc_no', optional: true),
-      SchemaProperty('defaultInventoryAccNo', RealmPropertyType.string,
-          mapTo: 'default_inventory_acc_no', optional: true),
-      SchemaProperty('defaultPositiveAdjAccountNo', RealmPropertyType.string,
-          mapTo: 'default_positive_adj_account_no', optional: true),
-      SchemaProperty('defaultNegativeAdjAccountNo', RealmPropertyType.string,
-          mapTo: 'default_negative_adj_account_no', optional: true),
-      SchemaProperty('defaultInvPostingGroup', RealmPropertyType.string,
-          mapTo: 'default_inv_posting_group', optional: true),
-      SchemaProperty('defaultApPostingGroup', RealmPropertyType.string,
-          mapTo: 'default_ap_posting_group', optional: true),
-      SchemaProperty('defaultArPostingGroup', RealmPropertyType.string,
-          mapTo: 'default_ar_posting_group', optional: true),
-      SchemaProperty('defaultGenBusPostingGroup', RealmPropertyType.string,
-          mapTo: 'default_gen_bus_posting_group', optional: true),
-      SchemaProperty('defaultGenProdPostingGroup', RealmPropertyType.string,
-          mapTo: 'default_gen_prod_posting_group', optional: true),
-      SchemaProperty('defaultVatBusPostingGroup', RealmPropertyType.string,
-          mapTo: 'default_vat_bus_posting_group', optional: true),
-      SchemaProperty('defaultVatProdPostingGroup', RealmPropertyType.string,
-          mapTo: 'default_vat_prod_posting_group', optional: true),
-      SchemaProperty('defaultPaymentTerm', RealmPropertyType.string,
-          mapTo: 'default_payment_term', optional: true),
-      SchemaProperty('defaultStockUnitMeasure', RealmPropertyType.string,
-          mapTo: 'default_stock_unit_measure', optional: true),
-      SchemaProperty('defaultItemPriceIncludeVat', RealmPropertyType.string,
-          mapTo: 'default_item_price_include_vat', optional: true),
-      SchemaProperty('acceptEorderOrderStatus', RealmPropertyType.string,
-          mapTo: 'accept_eorder_order_status', optional: true),
-      SchemaProperty('autoAcceptIncomingEorder', RealmPropertyType.string,
-          mapTo: 'auto_accept_incoming_eorder', optional: true),
-      SchemaProperty('ctrlItemTracking', RealmPropertyType.string,
-          mapTo: 'ctrl_item_tracking', optional: true),
-    ]);
+      ObjectType.realmObject,
+      ApplicationSetup,
+      'APPLICATION_SETUP',
+      [
+        SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
+        SchemaProperty(
+          'decimalPoint',
+          RealmPropertyType.string,
+          mapTo: 'decimal_point',
+          optional: true,
+        ),
+        SchemaProperty(
+          'separatorSymbol',
+          RealmPropertyType.string,
+          mapTo: 'separator_symbol',
+          optional: true,
+        ),
+        SchemaProperty(
+          'quantityDecimal',
+          RealmPropertyType.int,
+          mapTo: 'quantity_decimal',
+          optional: true,
+        ),
+        SchemaProperty(
+          'priceDecimal',
+          RealmPropertyType.int,
+          mapTo: 'price_decimal',
+          optional: true,
+        ),
+        SchemaProperty(
+          'costDecimal',
+          RealmPropertyType.int,
+          mapTo: 'cost_decimal',
+          optional: true,
+        ),
+        SchemaProperty(
+          'measurementDecimal',
+          RealmPropertyType.int,
+          mapTo: 'measurement_decimal',
+          optional: true,
+        ),
+        SchemaProperty(
+          'generalDecimal',
+          RealmPropertyType.int,
+          mapTo: 'general_decimal',
+          optional: true,
+        ),
+        SchemaProperty(
+          'amountDecimal',
+          RealmPropertyType.int,
+          mapTo: 'amount_decimal',
+          optional: true,
+        ),
+        SchemaProperty(
+          'percentageDecimal',
+          RealmPropertyType.int,
+          mapTo: 'percentage_decimal',
+          optional: true,
+        ),
+        SchemaProperty(
+          'itemQtyFormat',
+          RealmPropertyType.int,
+          mapTo: 'item_qty_format',
+          optional: true,
+        ),
+        SchemaProperty(
+          'allowPostingFrom',
+          RealmPropertyType.string,
+          mapTo: 'allow_posting_from',
+          optional: true,
+        ),
+        SchemaProperty(
+          'allowPostingTo',
+          RealmPropertyType.string,
+          mapTo: 'allow_posting_to',
+          optional: true,
+        ),
+        SchemaProperty(
+          'localCurrencyCode',
+          RealmPropertyType.string,
+          mapTo: 'local_currency_code',
+          optional: true,
+        ),
+        SchemaProperty(
+          'decimalZero',
+          RealmPropertyType.string,
+          mapTo: 'decimal_zero',
+          optional: true,
+        ),
+        SchemaProperty(
+          'incomeClosingPeriod',
+          RealmPropertyType.string,
+          mapTo: 'income_closing_period',
+          optional: true,
+        ),
+        SchemaProperty(
+          'scrollPagination',
+          RealmPropertyType.string,
+          mapTo: 'scroll_pagination',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultSalesVatAccNo',
+          RealmPropertyType.string,
+          mapTo: 'default_sales_vat_acc_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultPurchaseVatAccNo',
+          RealmPropertyType.string,
+          mapTo: 'default_purchase_vat_acc_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultApAccNo',
+          RealmPropertyType.string,
+          mapTo: 'default_ap_acc_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultArAccNo',
+          RealmPropertyType.string,
+          mapTo: 'default_ar_acc_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultBankAccNo',
+          RealmPropertyType.string,
+          mapTo: 'default_bank_acc_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultCashAccNo',
+          RealmPropertyType.string,
+          mapTo: 'default_cash_acc_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultCostAccNo',
+          RealmPropertyType.string,
+          mapTo: 'default_cost_acc_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultSalesAccNo',
+          RealmPropertyType.string,
+          mapTo: 'default_sales_acc_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultPurchaseAccNo',
+          RealmPropertyType.string,
+          mapTo: 'default_purchase_acc_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultInventoryAccNo',
+          RealmPropertyType.string,
+          mapTo: 'default_inventory_acc_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultPositiveAdjAccountNo',
+          RealmPropertyType.string,
+          mapTo: 'default_positive_adj_account_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultNegativeAdjAccountNo',
+          RealmPropertyType.string,
+          mapTo: 'default_negative_adj_account_no',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultInvPostingGroup',
+          RealmPropertyType.string,
+          mapTo: 'default_inv_posting_group',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultApPostingGroup',
+          RealmPropertyType.string,
+          mapTo: 'default_ap_posting_group',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultArPostingGroup',
+          RealmPropertyType.string,
+          mapTo: 'default_ar_posting_group',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultGenBusPostingGroup',
+          RealmPropertyType.string,
+          mapTo: 'default_gen_bus_posting_group',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultGenProdPostingGroup',
+          RealmPropertyType.string,
+          mapTo: 'default_gen_prod_posting_group',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultVatBusPostingGroup',
+          RealmPropertyType.string,
+          mapTo: 'default_vat_bus_posting_group',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultVatProdPostingGroup',
+          RealmPropertyType.string,
+          mapTo: 'default_vat_prod_posting_group',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultPaymentTerm',
+          RealmPropertyType.string,
+          mapTo: 'default_payment_term',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultStockUnitMeasure',
+          RealmPropertyType.string,
+          mapTo: 'default_stock_unit_measure',
+          optional: true,
+        ),
+        SchemaProperty(
+          'defaultItemPriceIncludeVat',
+          RealmPropertyType.string,
+          mapTo: 'default_item_price_include_vat',
+          optional: true,
+        ),
+        SchemaProperty(
+          'acceptEorderOrderStatus',
+          RealmPropertyType.string,
+          mapTo: 'accept_eorder_order_status',
+          optional: true,
+        ),
+        SchemaProperty(
+          'autoAcceptIncomingEorder',
+          RealmPropertyType.string,
+          mapTo: 'auto_accept_incoming_eorder',
+          optional: true,
+        ),
+        SchemaProperty(
+          'ctrlItemTracking',
+          RealmPropertyType.string,
+          mapTo: 'ctrl_item_tracking',
+          optional: true,
+        ),
+      ],
+    );
   }();
 
   @override
@@ -1391,9 +1750,9 @@ class LoginSession extends _LoginSession
       RealmObjectBase.getChanges<LoginSession>(this);
 
   @override
-  Stream<RealmObjectChanges<LoginSession>> changesFor(
-          [List<String>? keyPaths]) =>
-      RealmObjectBase.getChangesFor<LoginSession>(this, keyPaths);
+  Stream<RealmObjectChanges<LoginSession>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<LoginSession>(this, keyPaths);
 
   @override
   LoginSession freeze() => RealmObjectBase.freezeObject<LoginSession>(this);
@@ -1418,22 +1777,19 @@ class LoginSession extends _LoginSession
   static LoginSession _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'id': EJsonValue id,
-      } =>
-        LoginSession(
-          fromEJson(id),
-          username: fromEJson(ejson['username']),
-          phoneNo: fromEJson(ejson['phone_no']),
-          email: fromEJson(ejson['email']),
-          accessToken: fromEJson(ejson['access_token']),
-          lastLoginDateTime: fromEJson(ejson['last_login_datetime']),
-          avatar128: fromEJson(ejson['avatar_128']),
-          locale: fromEJson(ejson['locale']),
-          timeZone: fromEJson(ejson['time_zone']),
-          accountId: fromEJson(ejson['account_id']),
-          isLogin: fromEJson(ejson['is_login'], defaultValue: "No"),
-        ),
+      {'id': EJsonValue id} => LoginSession(
+        fromEJson(id),
+        username: fromEJson(ejson['username']),
+        phoneNo: fromEJson(ejson['phone_no']),
+        email: fromEJson(ejson['email']),
+        accessToken: fromEJson(ejson['access_token']),
+        lastLoginDateTime: fromEJson(ejson['last_login_datetime']),
+        avatar128: fromEJson(ejson['avatar_128']),
+        locale: fromEJson(ejson['locale']),
+        timeZone: fromEJson(ejson['time_zone']),
+        accountId: fromEJson(ejson['account_id']),
+        isLogin: fromEJson(ejson['is_login'], defaultValue: "No"),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -1442,26 +1798,58 @@ class LoginSession extends _LoginSession
     RealmObjectBase.registerFactory(LoginSession._);
     register(_toEJson, _fromEJson);
     return const SchemaObject(
-        ObjectType.realmObject, LoginSession, 'LOGIN_SESSION', [
-      SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('username', RealmPropertyType.string, optional: true),
-      SchemaProperty('phoneNo', RealmPropertyType.string,
-          mapTo: 'phone_no', optional: true),
-      SchemaProperty('email', RealmPropertyType.string, optional: true),
-      SchemaProperty('accessToken', RealmPropertyType.string,
-          mapTo: 'access_token', optional: true),
-      SchemaProperty('lastLoginDateTime', RealmPropertyType.string,
-          mapTo: 'last_login_datetime', optional: true),
-      SchemaProperty('avatar128', RealmPropertyType.string,
-          mapTo: 'avatar_128', optional: true),
-      SchemaProperty('locale', RealmPropertyType.string, optional: true),
-      SchemaProperty('timeZone', RealmPropertyType.string,
-          mapTo: 'time_zone', optional: true),
-      SchemaProperty('accountId', RealmPropertyType.int,
-          mapTo: 'account_id', optional: true),
-      SchemaProperty('isLogin', RealmPropertyType.string,
-          mapTo: 'is_login', optional: true),
-    ]);
+      ObjectType.realmObject,
+      LoginSession,
+      'LOGIN_SESSION',
+      [
+        SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
+        SchemaProperty('username', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'phoneNo',
+          RealmPropertyType.string,
+          mapTo: 'phone_no',
+          optional: true,
+        ),
+        SchemaProperty('email', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'accessToken',
+          RealmPropertyType.string,
+          mapTo: 'access_token',
+          optional: true,
+        ),
+        SchemaProperty(
+          'lastLoginDateTime',
+          RealmPropertyType.string,
+          mapTo: 'last_login_datetime',
+          optional: true,
+        ),
+        SchemaProperty(
+          'avatar128',
+          RealmPropertyType.string,
+          mapTo: 'avatar_128',
+          optional: true,
+        ),
+        SchemaProperty('locale', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'timeZone',
+          RealmPropertyType.string,
+          mapTo: 'time_zone',
+          optional: true,
+        ),
+        SchemaProperty(
+          'accountId',
+          RealmPropertyType.int,
+          mapTo: 'account_id',
+          optional: true,
+        ),
+        SchemaProperty(
+          'isLogin',
+          RealmPropertyType.string,
+          mapTo: 'is_login',
+          optional: true,
+        ),
+      ],
+    );
   }();
 
   @override
@@ -1470,10 +1858,7 @@ class LoginSession extends _LoginSession
 
 class AppSetting extends _AppSetting
     with RealmEntity, RealmObjectBase, RealmObject {
-  AppSetting(
-    String key,
-    String value,
-  ) {
+  AppSetting(String key, String value) {
     RealmObjectBase.set(this, 'key', key);
     RealmObjectBase.set(this, 'value', value);
   }
@@ -1502,24 +1887,17 @@ class AppSetting extends _AppSetting
   AppSetting freeze() => RealmObjectBase.freezeObject<AppSetting>(this);
 
   EJsonValue toEJson() {
-    return <String, dynamic>{
-      'key': key.toEJson(),
-      'value': value.toEJson(),
-    };
+    return <String, dynamic>{'key': key.toEJson(), 'value': value.toEJson()};
   }
 
   static EJsonValue _toEJson(AppSetting value) => value.toEJson();
   static AppSetting _fromEJson(EJsonValue ejson) {
     if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
     return switch (ejson) {
-      {
-        'key': EJsonValue key,
-        'value': EJsonValue value,
-      } =>
-        AppSetting(
-          fromEJson(key),
-          fromEJson(value),
-        ),
+      {'key': EJsonValue key, 'value': EJsonValue value} => AppSetting(
+        fromEJson(key),
+        fromEJson(value),
+      ),
       _ => raiseInvalidEJson(ejson),
     };
   }
@@ -1528,10 +1906,14 @@ class AppSetting extends _AppSetting
     RealmObjectBase.registerFactory(AppSetting._);
     register(_toEJson, _fromEJson);
     return const SchemaObject(
-        ObjectType.realmObject, AppSetting, 'APP_SETTING', [
-      SchemaProperty('key', RealmPropertyType.string, primaryKey: true),
-      SchemaProperty('value', RealmPropertyType.string),
-    ]);
+      ObjectType.realmObject,
+      AppSetting,
+      'APP_SETTING',
+      [
+        SchemaProperty('key', RealmPropertyType.string, primaryKey: true),
+        SchemaProperty('value', RealmPropertyType.string),
+      ],
+    );
   }();
 
   @override
@@ -1608,9 +1990,9 @@ class GpsRouteTracking extends _GpsRouteTracking
       RealmObjectBase.getChanges<GpsRouteTracking>(this);
 
   @override
-  Stream<RealmObjectChanges<GpsRouteTracking>> changesFor(
-          [List<String>? keyPaths]) =>
-      RealmObjectBase.getChangesFor<GpsRouteTracking>(this, keyPaths);
+  Stream<RealmObjectChanges<GpsRouteTracking>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<GpsRouteTracking>(this, keyPaths);
 
   @override
   GpsRouteTracking freeze() =>
@@ -1654,17 +2036,30 @@ class GpsRouteTracking extends _GpsRouteTracking
     RealmObjectBase.registerFactory(GpsRouteTracking._);
     register(_toEJson, _fromEJson);
     return const SchemaObject(
-        ObjectType.realmObject, GpsRouteTracking, 'GPS_ROUTE_TRACKING', [
-      SchemaProperty('salepersonCode', RealmPropertyType.string,
-          mapTo: 'saleperson_code'),
-      SchemaProperty('latitude', RealmPropertyType.double),
-      SchemaProperty('longitude', RealmPropertyType.double),
-      SchemaProperty('createdDate', RealmPropertyType.string,
-          mapTo: 'created_date'),
-      SchemaProperty('createdTime', RealmPropertyType.string,
-          mapTo: 'created_time'),
-      SchemaProperty('isSync', RealmPropertyType.string, mapTo: 'is_sync'),
-    ]);
+      ObjectType.realmObject,
+      GpsRouteTracking,
+      'GPS_ROUTE_TRACKING',
+      [
+        SchemaProperty(
+          'salepersonCode',
+          RealmPropertyType.string,
+          mapTo: 'saleperson_code',
+        ),
+        SchemaProperty('latitude', RealmPropertyType.double),
+        SchemaProperty('longitude', RealmPropertyType.double),
+        SchemaProperty(
+          'createdDate',
+          RealmPropertyType.string,
+          mapTo: 'created_date',
+        ),
+        SchemaProperty(
+          'createdTime',
+          RealmPropertyType.string,
+          mapTo: 'created_time',
+        ),
+        SchemaProperty('isSync', RealmPropertyType.string, mapTo: 'is_sync'),
+      ],
+    );
   }();
 
   @override
@@ -1721,9 +2116,9 @@ class ItemLedgerEntry extends _ItemLedgerEntry
       RealmObjectBase.getChanges<ItemLedgerEntry>(this);
 
   @override
-  Stream<RealmObjectChanges<ItemLedgerEntry>> changesFor(
-          [List<String>? keyPaths]) =>
-      RealmObjectBase.getChangesFor<ItemLedgerEntry>(this, keyPaths);
+  Stream<RealmObjectChanges<ItemLedgerEntry>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<ItemLedgerEntry>(this, keyPaths);
 
   @override
   ItemLedgerEntry freeze() =>
@@ -1765,13 +2160,21 @@ class ItemLedgerEntry extends _ItemLedgerEntry
     RealmObjectBase.registerFactory(ItemLedgerEntry._);
     register(_toEJson, _fromEJson);
     return const SchemaObject(
-        ObjectType.realmObject, ItemLedgerEntry, 'ITEM_LEDGER_ENTRY', [
-      SchemaProperty('itemNo', RealmPropertyType.string, mapTo: 'item_no'),
-      SchemaProperty('lotNo', RealmPropertyType.string, mapTo: 'lot_no'),
-      SchemaProperty('serailNo', RealmPropertyType.string, mapTo: 'serail_no'),
-      SchemaProperty('quantity', RealmPropertyType.double),
-      SchemaProperty('date', RealmPropertyType.string),
-    ]);
+      ObjectType.realmObject,
+      ItemLedgerEntry,
+      'ITEM_LEDGER_ENTRY',
+      [
+        SchemaProperty('itemNo', RealmPropertyType.string, mapTo: 'item_no'),
+        SchemaProperty('lotNo', RealmPropertyType.string, mapTo: 'lot_no'),
+        SchemaProperty(
+          'serailNo',
+          RealmPropertyType.string,
+          mapTo: 'serail_no',
+        ),
+        SchemaProperty('quantity', RealmPropertyType.double),
+        SchemaProperty('date', RealmPropertyType.string),
+      ],
+    );
   }();
 
   @override

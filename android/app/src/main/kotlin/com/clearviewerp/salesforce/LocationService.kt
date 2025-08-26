@@ -259,7 +259,7 @@ class LocationService : Service() {
         try {
             val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
                 .setMinUpdateIntervalMillis(200L)
-                .setMinUpdateDistanceMeters(2f)
+                .setMinUpdateDistanceMeters(5f)
                 .setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
                 .setWaitForAccurateLocation(false)
                 .build()

@@ -50,6 +50,7 @@ class TextWidget extends StatelessWidget {
   List<TextSpan> _buildTextSpans(String text) {
     final List<TextSpan> spans = [];
     final textClr = color ?? textColor;
+
     text.splitMapJoin(
       Helpers.khmerRegex,
       onMatch: (match) {
@@ -92,6 +93,7 @@ class TextWidget extends StatelessWidget {
         return nonMatch;
       },
     );
+
     return spans;
   }
 }

@@ -51,7 +51,10 @@ class Helpers {
   );
 
   static Widget gapH(double h) {
-    return _heightCache.putIfAbsent(h, () => SizedBox(height: scaleFontSize(h)));
+    return _heightCache.putIfAbsent(
+      h,
+      () => SizedBox(height: scaleFontSize(h)),
+    );
   }
 
   static Widget gapW(double w) {
@@ -184,7 +187,9 @@ class Helpers {
   }
 
   static bool isValidUuid(String uuidString) {
-    final uuidPattern = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+    final uuidPattern = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+    );
     return uuidPattern.hasMatch(uuidString);
   }
 
@@ -219,7 +224,11 @@ class Helpers {
   static SizedBox buildDivider() {
     return SizedBox(
       width: double.infinity,
-      child: Divider(color: grey.withValues(alpha: 0.4), thickness: 1, height: 0),
+      child: Divider(
+        color: grey.withValues(alpha: 0.4),
+        thickness: 1,
+        height: 0,
+      ),
     );
   }
 
@@ -257,7 +266,10 @@ class Helpers {
       final parts = value.trim().split('.');
       if (parts.isEmpty) return value;
 
-      final intPart = parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ',');
+      final intPart = parts[0].replaceAllMapped(
+        RegExp(r'\B(?=(\d{3})+(?!\d))'),
+        (match) => ',',
+      );
 
       if (parts.length == 1) {
         return intPart;
@@ -271,7 +283,10 @@ class Helpers {
     }
   }
 
-  static String formatNumberLink(dynamic value, {FormatType option = FormatType.amount}) {
+  static String formatNumberLink(
+    dynamic value, {
+    FormatType option = FormatType.amount,
+  }) {
     final result = formatNumber(value, option: option);
 
     if (result.isEmpty || toDouble(result) == 0) {
@@ -281,12 +296,19 @@ class Helpers {
     return result;
   }
 
-  static double formatNumberDb(dynamic value, {FormatType option = FormatType.amount}) {
+  static double formatNumberDb(
+    dynamic value, {
+    FormatType option = FormatType.amount,
+  }) {
     final r = formatNumber(value, option: option, display: false);
     return toDouble(r);
   }
 
-  static String formatNumber(dynamic value, {FormatType option = FormatType.quantity, bool display = true}) {
+  static String formatNumber(
+    dynamic value, {
+    FormatType option = FormatType.quantity,
+    bool display = true,
+  }) {
     try {
       if (value == null || value.toString().isEmpty) {
         return "";
@@ -374,7 +396,10 @@ class Helpers {
     return false;
   }
 
-  static String getSaleDocumentNo({required String scheduleId, required String documentType}) {
+  static String getSaleDocumentNo({
+    required String scheduleId,
+    required String documentType,
+  }) {
     final auth = getAuth();
     return "${Helpers.getSalePrefix(documentType)}${auth?.id}$scheduleId";
   }
@@ -383,13 +408,30 @@ class Helpers {
     return "\$";
   }
 
-  static String capitalizeWords(String s) =>
-      s.split(' ').map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : '').join(' ');
+  static String capitalizeWords(String s) => s
+      .split(' ')
+      .map(
+        (word) => word.isNotEmpty
+            ? '${word[0].toUpperCase()}${word.substring(1)}'
+            : '',
+      )
+      .join(' ');
 
-  // static double _toRadians(double degree) => degree * pi / 180;
+  static String calculateDistanceDisplay(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    // print("lat1:$lat1, lon1:$lon1, lat2:$lat2, lon2:$lon2");
 
-  static String calculateDistanceDisplay(double lat1, double lon1, double lat2, double lon2) {
-    final double distInMeters = Helpers.calculateDistanceInMeters(lat1, lon1, lat2, lon2);
+    final double distInMeters = Helpers.calculateDistanceInMeters(
+      lat1,
+      lon1,
+      lat2,
+      lon2,
+    );
+
     final double distInKm = distInMeters / 1000;
 
     if (distInKm > 1) {
@@ -405,12 +447,22 @@ class Helpers {
     double endLatitude,
     double endLongitude,
   ) {
-    return GeolocatorLocationService().getDistanceBetween(startLatitude, startLongitude, endLatitude, endLongitude);
+    return GeolocatorLocationService().getDistanceBetween(
+      startLatitude,
+      startLongitude,
+      endLatitude,
+      endLongitude,
+    );
   }
 
   // ======================== Image Download and Resize ========================
-  static Future<Uint8List> downloadAndResizeImage(String imageUrl, {int width = 100}) async {
-    final ioClient = HttpClient()..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  static Future<Uint8List> downloadAndResizeImage(
+    String imageUrl, {
+    int width = 100,
+  }) async {
+    final ioClient = HttpClient()
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
     final client = IOClient(ioClient);
 
     final response = await client.get(Uri.parse(imageUrl));
@@ -422,7 +474,10 @@ class Helpers {
     return Uint8List.fromList(img.encodePng(resized));
   }
 
-  static Future<Uint8List> downloadAndResizeImageForServer(String imageUrl, {int width = 100}) async {
+  static Future<Uint8List> downloadAndResizeImageForServer(
+    String imageUrl, {
+    int width = 100,
+  }) async {
     try {
       final response = await https.get(Uri.parse(imageUrl));
       if (response.statusCode != 200) {
@@ -464,7 +519,11 @@ class Helpers {
         final int imageSize = (size ~/ 2) * 2;
         resizedBytes = await downloadAndResizeImage(imageUrl, width: imageSize);
 
-        final codec = await ui.instantiateImageCodec(resizedBytes, targetWidth: imageSize, targetHeight: imageSize);
+        final codec = await ui.instantiateImageCodec(
+          resizedBytes,
+          targetWidth: imageSize,
+          targetHeight: imageSize,
+        );
         final frame = await codec.getNextFrame();
         userImage = frame.image;
       } catch (e) {
@@ -473,24 +532,40 @@ class Helpers {
     }
 
     // Pre-calculate text dimensions for auto-width
-    final textStyle = ui.TextStyle(color: textColor, fontSize: fontSize, fontWeight: FontWeight.w400);
+    final textStyle = ui.TextStyle(
+      color: textColor,
+      fontSize: fontSize,
+      fontWeight: FontWeight.w400,
+    );
 
-    final tempParagraphStyle = ui.ParagraphStyle(textAlign: TextAlign.left, maxLines: 1, ellipsis: '...');
+    final tempParagraphStyle = ui.ParagraphStyle(
+      textAlign: TextAlign.left,
+      maxLines: 1,
+      ellipsis: '...',
+    );
 
     final tempParagraphBuilder = ui.ParagraphBuilder(tempParagraphStyle)
       ..pushStyle(textStyle)
       ..addText(title);
-    final tempParagraph = tempParagraphBuilder.build()..layout(ui.ParagraphConstraints(width: maxTextWidth));
+    final tempParagraph = tempParagraphBuilder.build()
+      ..layout(ui.ParagraphConstraints(width: maxTextWidth));
 
     // Calculate actual text width (auto-width)
-    final double actualTextWidth = math.min(tempParagraph.maxIntrinsicWidth, maxTextWidth);
+    final double actualTextWidth = math.min(
+      tempParagraph.maxIntrinsicWidth,
+      maxTextWidth,
+    );
     const double textPadding = 20.0;
     const double spacing = 10.0;
 
     // Calculate dynamic canvas dimensions based on text width
     final double markerWidth = size.toDouble();
-    final double canvasWidth = markerWidth + spacing + actualTextWidth + textPadding;
-    final double canvasHeight = math.max(size.toDouble(), tempParagraph.height + 40);
+    final double canvasWidth =
+        markerWidth + spacing + actualTextWidth + textPadding;
+    final double canvasHeight = math.max(
+      size.toDouble(),
+      tempParagraph.height + 40,
+    );
 
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
@@ -505,7 +580,12 @@ class Helpers {
 
     // Pin shape
     final Path pinPath = Path();
-    pinPath.addOval(Rect.fromCircle(center: Offset(centerX, circleCenterY), radius: circleRadius));
+    pinPath.addOval(
+      Rect.fromCircle(
+        center: Offset(centerX, circleCenterY),
+        radius: circleRadius,
+      ),
+    );
     pinPath.moveTo(centerX - circleRadius, circleCenterY);
     pinPath.lineTo(centerX, size.toDouble());
     pinPath.lineTo(centerX + circleRadius, circleCenterY);
@@ -536,7 +616,12 @@ class Helpers {
       // Draw user image
       canvas.save();
       final Path clipPath = Path()
-        ..addOval(Rect.fromCircle(center: Offset(centerX, circleCenterY), radius: imageRadius));
+        ..addOval(
+          Rect.fromCircle(
+            center: Offset(centerX, circleCenterY),
+            radius: imageRadius,
+          ),
+        );
 
       canvas.clipPath(clipPath, doAntiAlias: true);
 
@@ -559,7 +644,12 @@ class Helpers {
       canvas.drawImageRect(
         userImage,
         Rect.fromLTWH(0, 0, imageWidth, imageHeight),
-        Rect.fromLTWH(imgOffsetX, imgOffsetY, imageWidth * scale, imageHeight * scale),
+        Rect.fromLTWH(
+          imgOffsetX,
+          imgOffsetY,
+          imageWidth * scale,
+          imageHeight * scale,
+        ),
         imagePaint,
       );
 
@@ -572,7 +662,11 @@ class Helpers {
         ..style = PaintingStyle.fill
         ..isAntiAlias = true;
 
-      canvas.drawCircle(Offset(centerX, circleCenterY), imageRadius, backgroundPaint);
+      canvas.drawCircle(
+        Offset(centerX, circleCenterY),
+        imageRadius,
+        backgroundPaint,
+      );
 
       // Draw person icon when no image is available
       final Paint iconPaint = Paint()
@@ -597,8 +691,14 @@ class Helpers {
       // Create a more person-like silhouette
       bodyPath.moveTo(centerX - shoulderWidth / 2, bodyTop); // Left shoulder
       bodyPath.lineTo(centerX + shoulderWidth / 2, bodyTop); // Right shoulder
-      bodyPath.lineTo(centerX + shoulderWidth / 3, bodyTop + bodyHeight); // Right side
-      bodyPath.lineTo(centerX - shoulderWidth / 3, bodyTop + bodyHeight); // Left side
+      bodyPath.lineTo(
+        centerX + shoulderWidth / 3,
+        bodyTop + bodyHeight,
+      ); // Right side
+      bodyPath.lineTo(
+        centerX - shoulderWidth / 3,
+        bodyTop + bodyHeight,
+      ); // Left side
       bodyPath.close();
 
       canvas.drawPath(bodyPath, iconPaint);
@@ -628,14 +728,20 @@ class Helpers {
       canvasWidth.toInt(),
       canvasHeight.toInt(),
     );
-    final ByteData? byteData = await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
+    final ByteData? byteData = await markerAsImage.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     final Uint8List bytes = byteData!.buffer.asUint8List();
 
     // Calculate proportional final width based on canvas width
     final double aspectRatio = canvasWidth / canvasHeight;
     final double finalMarkerWidth = finalMarkerHeight * aspectRatio;
 
-    return BitmapDescriptor.bytes(bytes, width: finalMarkerWidth, height: finalMarkerHeight);
+    return BitmapDescriptor.bytes(
+      bytes,
+      width: finalMarkerWidth,
+      height: finalMarkerHeight,
+    );
   }
 
   // static Future<void> ensureLocationEnabled(BuildContext context) async {
@@ -684,25 +790,41 @@ class Helpers {
   //   }
   // }
 
-  static Future<File?> generateToPdfDocument({required String htmlContent, required String documentNo}) async {
+  static Future<File?> generateToPdfDocument({
+    required String htmlContent,
+    required String documentNo,
+  }) async {
     try {
-      final directory = Platform.isIOS ? await getTemporaryDirectory() : await getApplicationDocumentsDirectory();
+      final directory = Platform.isIOS
+          ? await getTemporaryDirectory()
+          : await getApplicationDocumentsDirectory();
 
       final targetDirectory = directory.path;
       final targetName = "$documentNo-${DateTime.now().toDateTimeNameString()}";
 
-      final resultFile = await FlutterHtmlToPdf.convertFromHtmlContent(htmlContent, targetDirectory, targetName);
+      final resultFile = await FlutterHtmlToPdf.convertFromHtmlContent(
+        htmlContent,
+        targetDirectory,
+        targetName,
+      );
       return resultFile;
     } catch (e) {
       return null;
     }
   }
 
-  static Future<File> createFileWithStringContent(String content, String path) async {
+  static Future<File> createFileWithStringContent(
+    String content,
+    String path,
+  ) async {
     return await File(path).writeAsString(content);
   }
 
-  static File copyAndDeleteOriginalFile(String generatedFilePath, String targetDirectory, String targetName) {
+  static File copyAndDeleteOriginalFile(
+    String generatedFilePath,
+    String targetDirectory,
+    String targetName,
+  ) {
     final fileOriginal = File(generatedFilePath);
     final fileCopy = File('$targetDirectory/$targetName.pdf');
     fileCopy.writeAsBytesSync(File.fromUri(fileOriginal.uri).readAsBytesSync());

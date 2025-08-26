@@ -93,7 +93,7 @@ class RealmConfig {
       ],
       path: realmPath,
       schemaVersion: 1,
-      shouldDeleteIfMigrationNeeded: false,
+      shouldDeleteIfMigrationNeeded: true,
       migrationCallback: _performMigration,
     );
 
