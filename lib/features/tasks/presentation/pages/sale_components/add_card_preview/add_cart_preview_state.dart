@@ -19,6 +19,7 @@ class AddCartPreviewState {
   final double totalTaxAmt;
   final Customer? customer;
   final List<CustomerLedgerEntry>? customerLedgerEntries;
+  final String creditLimitText;
 
   const AddCartPreviewState({
     this.isLoading = false,
@@ -35,6 +36,7 @@ class AddCartPreviewState {
     this.salesHeader,
     this.customer,
     this.customerLedgerEntries = const [],
+    this.creditLimitText = "",
   });
 
   AddCartPreviewState copyWith({
@@ -52,6 +54,7 @@ class AddCartPreviewState {
     List<Item>? items,
     Customer? customer,
     List<CustomerLedgerEntry>? customerLedgerEntries,
+    String? creditLimitText,
   }) {
     return AddCartPreviewState(
       isLoading: isLoading ?? this.isLoading,
@@ -67,7 +70,9 @@ class AddCartPreviewState {
       items: items ?? this.items,
       salesHeader: salesHeader ?? this.salesHeader,
       customer: customer ?? this.customer,
-      customerLedgerEntries: customerLedgerEntries ?? this.customerLedgerEntries,
+      customerLedgerEntries:
+          customerLedgerEntries ?? this.customerLedgerEntries,
+      creditLimitText: creditLimitText ?? this.creditLimitText,
     );
   }
 }

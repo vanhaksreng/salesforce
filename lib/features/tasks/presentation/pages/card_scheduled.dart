@@ -38,15 +38,19 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
     this.distance = "0",
   });
 
-  String getScheduleTitle(String status) {
+  String _getScheduleTitle(String status) {
     if (status == kStatusCheckIn) {
-      return greeting("check_out");
+      return greeting("Checked In");
     }
 
-    return greeting("check_in");
+    if (schedule.status != "Scheduled") {
+      return greeting("Checked Out");
+    }
+
+    return schedule.planned == "Yes" ? "Plan" : "Manual";
   }
 
-  void actionHandler(String status) {
+  void _actionHandler(String status) {
     if (status == kStatusCheckIn) {
       onCheckOut?.call(schedule);
     } else {
@@ -62,19 +66,6 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
     }
     return success;
   }
-
-  // Future<void> _onCall() async {
-  //   try {
-  //     final Uri launchUri = Uri(
-  //       scheme: 'tel',
-  //       path: schedule.phoneNo,
-  //     );
-
-  //     await launchUrl(launchUri);
-  //   } catch (e) {
-  //     showErrorMessage(e.toString());
-  //   }
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -103,22 +94,30 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
                         children: [
                           TextSpan(
                             text: schedule.name ?? "",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.scale),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13.scale,
+                            ),
                           ),
                           const TextSpan(text: " - "),
                           TextSpan(text: "$distance"),
                         ],
                       ),
                     ),
-                    TextWidget(text: schedule.address ?? "", color: textColor50),
+                    TextWidget(
+                      text: schedule.address ?? "",
+                      color: textColor50,
+                    ),
                   ],
                 ),
               ),
               ChipWidget(
                 radius: 6,
                 colorText: getScheduleColor(schedule.status ?? ""),
-                bgColor: getScheduleColor(schedule.status ?? "").withValues(alpha: 0.1),
-                label: schedule.status ?? "".toUpperCase(),
+                bgColor: getScheduleColor(
+                  schedule.status ?? "",
+                ).withValues(alpha: 0.1),
+                label: _getScheduleTitle(schedule.status ?? ""),
               ),
             ],
           ),
@@ -132,130 +131,33 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildInfo(
-                  label: Helpers.formatNumberLink(totalSale, option: FormatType.amount),
+                  label: Helpers.formatNumberLink(
+                    totalSale,
+                    option: FormatType.amount,
+                  ),
                   value: "Sales Amt",
                 ),
-                _buildInfo(label: lableText(schedule.startingTime ?? ""), value: "Check In"),
-                _buildInfo(label: lableText(schedule.endingTime ?? ""), value: "Check Out"),
+                _buildInfo(
+                  label: lableText(schedule.startingTime ?? ""),
+                  value: "Check In",
+                ),
+                _buildInfo(
+                  label: lableText(schedule.endingTime ?? ""),
+                  value: "Check Out",
+                ),
               ],
             ),
           ),
           if (schedule.status != kStatusCheckOut && isReadOnly == false) ...[
             const DotLine(),
-            Row(spacing: 15.scale, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [switchButton()]),
+            Row(
+              spacing: 15.scale,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [switchButton()],
+            ),
           ],
         ],
       ),
-
-      // child: Row(
-      //   crossAxisAlignment: CrossAxisAlignment.start,
-      //   children: [
-      //     Expanded(
-      //       child: Column(
-      //         crossAxisAlignment: CrossAxisAlignment.start,
-      //         spacing: 6.scale,
-      //         children: [
-      //           Column(
-      //             spacing: 8.scale,
-      //             crossAxisAlignment: CrossAxisAlignment.start,
-      //             children: [
-      //               TextWidget(
-      //                 text: schedule.name ?? " ",
-      //                 fontSize: 18,
-      //                 maxLines: 1,
-      //                 fontWeight: FontWeight.bold,
-      //               ),
-      //               BoxWidget(
-      //                 padding: const EdgeInsets.all(4),
-      //                 isBoxShadow: false,
-      //                 isBorder: false,
-      //                 rounding: 4,
-      //                 borderColor: Colors.transparent,
-      //                 color: grey.withAlpha(70),
-      //                 child: TextWidget(
-      //                   color: textColor50,
-      //                   text: schedule.customerNo ?? "",
-      //                 ),
-      //               ),
-      //             ],
-      //           ),
-      //           SizedBox(height: 4.scale),
-      //           if (schedule.address != "")
-      //             buildLocationWithPhone(
-      //               fontWeight: FontWeight.w500,
-      //               iconSvg: klocationOutlineIcon,
-      //               label: schedule.address ?? "",
-      //             ),
-      //           SizedBox(
-      //             height: 2.scale,
-      //           ),
-      //           if (schedule.phoneNo != "")
-      //             buildLocationWithPhone(
-      //                 iconSvg: kPhoneCallOutlineIcon,
-      //                 isCall: true,
-      //                 fontWeight: FontWeight.w700,
-      //                 label: schedule.phoneNo ?? "",
-      //                 onTap: () => _onCall()),
-      //           SizedBox(height: scaleFontSize(appSpace8)),
-      //           Row(
-      //             crossAxisAlignment: CrossAxisAlignment.start,
-      //             spacing: scaleFontSize(appSpace8),
-      //             children: [
-      //               ChipWidget(
-      //                 borderColor: primary.withValues(alpha: 0.2),
-      //                 bgColor: warning.withValues(alpha: 0.2),
-      //                 colorText: primary,
-      //                 child: Row(
-      //                   spacing: 6.scale,
-      //                   children: [
-      //                     const SvgWidget(
-      //                       assetName: kAccountOutlineIcon,
-      //                       colorSvg: orangeColor,
-      //                       width: 14,
-      //                       height: 14,
-      //                     ),
-      //                     TextWidget(
-      //                       fontWeight: FontWeight.w600,
-      //                       fontSize: 12,
-      //                       color: orangeColor,
-      //                       text: schedule.planned == "Yes" ? "Plan" : "Manual",
-      //                     )
-      //                   ],
-      //                 ),
-      //               ),
-      //               ChipWidget(
-      //                 borderColor: primary.withValues(alpha: 0.2),
-      //                 bgColor: getScheduleColor(schedule.status ?? "")
-      //                     .withValues(alpha: .2),
-      //                 child: Row(
-      //                   spacing: 6.scale,
-      //                   children: [
-      //                     switchICon(),
-      //                     TextWidget(
-      //                       text: lableText(),
-      //                       fontSize: 12,
-      //                       color: getScheduleColor(schedule.status ?? ""),
-      //                       fontWeight: FontWeight.w600,
-      //                     )
-      //                   ],
-      //                 ),
-      //               ),
-      //             ],
-      //           ),
-      //           if (!isReadOnly && schedule.status != kStatusCheckOut) ...[
-      //             Padding(
-      //               padding: EdgeInsets.symmetric(
-      //                 vertical: scaleFontSize(appSpace8),
-      //               ),
-      //               child: const DotLine(),
-      //             ),
-      //             switchButton(context),
-      //           ]
-      //         ],
-      //       ),
-      //     ),
-      //   ],
-      // ),
     );
   }
 
@@ -271,9 +173,17 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
 
   Widget switchICon() {
     if (schedule.status == kStatusCheckIn) {
-      return Icon(color: getScheduleColor(schedule.status ?? ""), Icons.check_circle_outline_outlined, size: 16.scale);
+      return Icon(
+        color: getScheduleColor(schedule.status ?? ""),
+        Icons.check_circle_outline_outlined,
+        size: 16.scale,
+      );
     }
-    return Icon(color: getScheduleColor(schedule.status ?? ""), Icons.calendar_today_outlined, size: 16);
+    return Icon(
+      color: getScheduleColor(schedule.status ?? ""),
+      Icons.calendar_today_outlined,
+      size: 16,
+    );
   }
 
   String lableText(String time) {
@@ -300,7 +210,7 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
               child: BtnWidget(
                 size: BtnSize.medium,
                 bgColor: warning,
-                onPressed: () => actionHandler(schedule.status ?? ""),
+                onPressed: () => _actionHandler(schedule.status ?? ""),
                 title: greeting("Check Out"),
               ),
             ),
@@ -320,7 +230,7 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
       child: BtnWidget(
         size: BtnSize.medium,
         bgColor: success,
-        onPressed: () => actionHandler(schedule.status ?? ""),
+        onPressed: () => _actionHandler(schedule.status ?? ""),
         title: greeting("Check In"),
       ),
     );
@@ -340,7 +250,13 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: scaleFontSize(10),
         children: [
-          if (iconSvg != null) SvgWidget(width: 20, height: 20, assetName: iconSvg, colorSvg: textColor50),
+          if (iconSvg != null)
+            SvgWidget(
+              width: 20,
+              height: 20,
+              assetName: iconSvg,
+              colorSvg: textColor50,
+            ),
           Expanded(
             child: TextWidget(
               text: label ?? "",

@@ -15,12 +15,7 @@ class LoginCubit extends Cubit<LoginState> with MessageMixin, AppMixin {
   final _baseAppRepository = getIt<BaseAppRepository>();
 
   Future<void> login({required LoginArg arg}) async {
-    try {
-      emit(state.copyWith(isLoading: true));
-      await _repos.login(arg: arg);
-    } catch (e) {
-      rethrow;
-    }
+    await _repos.login(arg: arg);
   }
 
   Future<void> storeAppSyncLog() async {
@@ -37,7 +32,9 @@ class LoginCubit extends Cubit<LoginState> with MessageMixin, AppMixin {
     try {
       emit(state.copyWith(isLoading: true));
       final companyInfo = await _baseAppRepository.getCompanyInfo();
-      companyInfo.fold((failure) => showErrorMessage(failure.message), (companyInfo) {
+      companyInfo.fold((failure) => showErrorMessage(failure.message), (
+        companyInfo,
+      ) {
         emit(state.copyWith(company: companyInfo, isLoading: false));
       });
     } on GeneralException catch (e) {

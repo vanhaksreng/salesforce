@@ -48,6 +48,7 @@ class _ProcessScreenState extends State<ProcessScreen> with MessageMixin {
   void initState() {
     super.initState();
     _cubit.loadInitialData(widget.args.schedule);
+    _handleDownload();
   }
 
   ProcessDtos _buildProcessModel({
@@ -76,14 +77,19 @@ class _ProcessScreenState extends State<ProcessScreen> with MessageMixin {
 
   void _handleProcessTap(ProcessDtos process) async {
     if (process.routeName?.isNotEmpty ?? false) {
-      if (process.permissionCode != null && !await _cubit.hasPermission(process.permissionCode!)) {
+      if (process.permissionCode != null &&
+          !await _cubit.hasPermission(process.permissionCode!)) {
         showWarningMessage("Access Denied");
         return;
       }
 
       if (!mounted) return;
 
-      Navigator.pushNamed(context, process.routeName!, arguments: process.args).then((value) {
+      Navigator.pushNamed(
+        context,
+        process.routeName!,
+        arguments: process.args,
+      ).then((value) {
         _cubit.loadInitialData(widget.args.schedule);
       });
     }
@@ -98,7 +104,10 @@ class _ProcessScreenState extends State<ProcessScreen> with MessageMixin {
             icon: kPngCheckStock,
             titleKey: 'check_stock',
             routeName: CheckStockScreen.routeName,
-            args: CheckStockArgs(schedule: widget.args.schedule, customerNo: widget.args.customerNo),
+            args: CheckStockArgs(
+              schedule: widget.args.schedule,
+              customerNo: widget.args.customerNo,
+            ),
             subtitleKey: 'count_remaining_quantity_of_items_at_customer_place',
             countNumber: _cubit.state.countCheckStock,
             type: "IM",
@@ -215,10 +224,41 @@ class _ProcessScreenState extends State<ProcessScreen> with MessageMixin {
     ];
   }
 
+  void _handleDownload() async {
+    try {
+      if (!await _cubit.isConnectedToNetwork()) {
+        return;
+      }
+
+      List<String> tables = [
+        "customer_ledger_entry",
+        "cash_receipt_journals",
+        "promotion_type",
+      ];
+
+      final filter = tables.map((table) => '"$table"').toList();
+
+      final appSyncLogs = await _cubit.getAppSyncLogs({
+        'tableName': 'IN {${filter.join(",")}}',
+      });
+
+      if (tables.isEmpty) {
+        return;
+      }
+
+      await _cubit.downloadDatas(appSyncLogs);
+    } on Exception {
+      //
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBarWidget(onBack: () => Navigator.of(context).pop(widget.args.schedule), title: greeting("process")),
+      appBar: AppBarWidget(
+        onBack: () => Navigator.of(context).pop(widget.args.schedule),
+        title: greeting("process"),
+      ),
       body: BlocBuilder<ProcessCubit, ProcessState>(
         bloc: _cubit,
         builder: (context, state) {
@@ -258,7 +298,10 @@ class _ProcessScreenState extends State<ProcessScreen> with MessageMixin {
     );
   }
 
-  Widget _buildListData(Map<String, dynamic> process, List<ProcessDtos> dataProcess) {
+  Widget _buildListData(
+    Map<String, dynamic> process,
+    List<ProcessDtos> dataProcess,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: appSpace, vertical: 8.scale),
       child: TitleSectionWidget(

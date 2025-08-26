@@ -31,7 +31,8 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
-class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository {
+class MoreRepositoryImpl extends BaseAppRepositoryImpl
+    implements MoreRepository {
   final ApiMoreDataSource _remote;
   final RealmMoreDataSource _local;
   final NetworkInfo _networkInfo;
@@ -55,7 +56,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
 
       if (fetchingApi && await _networkInfo.isConnected) {
         param?['page'] = page;
-        final Map<String, dynamic> cloudSales = await _remote.getSaleHeaders(data: param);
+        final Map<String, dynamic> cloudSales = await _remote.getSaleHeaders(
+          data: param,
+        );
 
         if (localSale.length == cloudSales.length) {
           return Right(RecordSaleHeader());
@@ -123,7 +126,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, SaleDetail?>> getSaleDetails({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, SaleDetail?>> getSaleDetails({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       if (await _networkInfo.isConnected) {
         final sales = await _remote.getSaleDetails(data: param);
@@ -132,7 +137,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
         param = {"no": param?.values.first};
         final header = await _local.getPosSaleHeader(param: param);
 
-        final lines = await _local.getPosSaleLines(param: {"document_no": header?.no});
+        final lines = await _local.getPosSaleLines(
+          param: {"document_no": header?.no},
+        );
 
         final saleDetail = SaleDetail(header: header!, lines: lines);
 
@@ -146,7 +153,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, List<Salesperson>>> getSalespersons({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, List<Salesperson>>> getSalespersons({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final salerPersons = await _local.getSalespersons(args: param);
       return Right(salerPersons);
@@ -158,7 +167,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, Customer?>> getCustomer({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, Customer?>> getCustomer({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final customer = await _local.getCustomer(params: params);
       return Right(customer);
@@ -170,7 +181,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, List<CustomerAddress>>> getCustomerAddresses({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, List<CustomerAddress>>> getCustomerAddresses({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final customerAddresses = await _local.getCustomerAddresses(args: params);
       return Right(customerAddresses);
@@ -182,7 +195,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, Customer>> storeNewCustomer({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, Customer>> storeNewCustomer({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final result = await _remote.createNewCustomer(data: param);
       Customer customer = CustomerExtension.fromMap(result['customer']);
@@ -205,7 +220,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   @override
   Future<Either<Failure, Customer>> updateCustomer(Customer record) async {
     try {
-      final result = await _remote.updateCustomer(data: {'data': jsonEncode(record.toJson())});
+      final result = await _remote.updateCustomer(
+        data: {'data': jsonEncode(record.toJson())},
+      );
 
       Customer customer = CustomerExtension.fromMap(result['customer']);
 
@@ -219,9 +236,13 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, CustomerAddress>> storeNewCustomerAddress(CustomerAddress address) async {
+  Future<Either<Failure, CustomerAddress>> storeNewCustomerAddress(
+    CustomerAddress address,
+  ) async {
     try {
-      final result = await _remote.createNewCustomerAddress(data: {'data': jsonEncode(address.toJson())});
+      final result = await _remote.createNewCustomerAddress(
+        data: {'data': jsonEncode(address.toJson())},
+      );
 
       final cAddress = CustomerAddressExtension.fromMap(result['address']);
 
@@ -236,9 +257,13 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, CustomerAddress>> updateCustomerAddress(CustomerAddress address) async {
+  Future<Either<Failure, CustomerAddress>> updateCustomerAddress(
+    CustomerAddress address,
+  ) async {
     try {
-      final result = await _remote.updateCustomerAddress(data: {'data': jsonEncode(address.toJson())});
+      final result = await _remote.updateCustomerAddress(
+        data: {'data': jsonEncode(address.toJson())},
+      );
 
       final cAddress = CustomerAddressExtension.fromMap(result['address']);
 
@@ -253,7 +278,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, CustomerAddress?>> getCustomerAddress({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, CustomerAddress?>> getCustomerAddress({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final customerAddress = await _local.getCustomerAddress(args: params);
       return Right(customerAddress);
@@ -265,7 +292,8 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, List<CustomerItemLedgerEntry>>> processUploadCheckStock({
+  Future<Either<Failure, List<CustomerItemLedgerEntry>>>
+  processUploadCheckStock({
     required List<CustomerItemLedgerEntry> records,
   }) async {
     try {
@@ -287,7 +315,10 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
         remoteRecords.add(CustomerItemLedgerEntryExtension.fromMap(rr));
       }
 
-      final result = await _local.updateCheckedStockStatus(records, remoteRecords: remoteRecords);
+      final result = await _local.updateCheckedStockStatus(
+        records,
+        remoteRecords: remoteRecords,
+      );
 
       return Right(result);
     } on GeneralException catch (e) {
@@ -298,7 +329,10 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, String>> getAddressFrmLatLng(double lat, double lng) async {
+  Future<Either<Failure, String>> getAddressFrmLatLng(
+    double lat,
+    double lng,
+  ) async {
     if (!await _networkInfo.isConnected) {
       return const Right("");
     }
@@ -324,7 +358,8 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
 
             if (types.contains('route')) {
               street = comp['long_name'];
-            } else if (types.contains('sublocality') || types.contains('sublocality_level_1')) {
+            } else if (types.contains('sublocality') ||
+                types.contains('sublocality_level_1')) {
               village = comp['long_name'];
             } else if (types.contains('locality')) {
               commune = comp['long_name'];
@@ -361,7 +396,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, bool>> deleteCustomerAddress(CustomerAddress address) async {
+  Future<Either<Failure, bool>> deleteCustomerAddress(
+    CustomerAddress address,
+  ) async {
     try {
       await _remote.deleteCustomerAddress(data: {'code': address.code});
 
@@ -375,7 +412,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, bool>> processUploadCollection({required List<CashReceiptJournals> records}) async {
+  Future<Either<Failure, bool>> processUploadCollection({
+    required List<CashReceiptJournals> records,
+  }) async {
     try {
       List<Map<String, dynamic>> jsonData = [];
       for (var record in records) {
@@ -386,7 +425,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
         return const Left(CacheFailure("Nothing to upload"));
       }
 
-      final result = await _remote.processUpload(data: {'table_name': 'cashjournal', 'data': jsonEncode(jsonData)});
+      final result = await _remote.processUpload(
+        data: {'table_name': 'cashjournal', 'data': jsonEncode(jsonData)},
+      );
 
       final List<CashReceiptJournals> remoteJournal = [];
       for (var rj in result['records']) {
@@ -404,7 +445,8 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, List<CompetitorItemLedgerEntry>>> processUploadCompetitorCheckStock({
+  Future<Either<Failure, List<CompetitorItemLedgerEntry>>>
+  processUploadCompetitorCheckStock({
     required List<CompetitorItemLedgerEntry> records,
   }) async {
     try {
@@ -418,7 +460,10 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
       }
 
       final resultRemote = await _remote.processUpload(
-        data: {'table_name': 'check_competitor_item_stock', 'data': jsonEncode(jsonData)},
+        data: {
+          'table_name': 'check_competitor_item_stock',
+          'data': jsonEncode(jsonData),
+        },
       );
 
       final List<CompetitorItemLedgerEntry> remoteRecords = [];
@@ -426,7 +471,10 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
         remoteRecords.add(CompetitorItemLedgerEntryExtension.fromMap(rr));
       }
 
-      final result = await _local.updateCheckedCompititorStockStatus(records, remoteRecords: remoteRecords);
+      final result = await _local.updateCheckedCompititorStockStatus(
+        records,
+        remoteRecords: remoteRecords,
+      );
 
       return Right(result);
     } on GeneralException catch (e) {
@@ -437,7 +485,8 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, List<SalesPersonScheduleMerchandise>>> processUploadMerchandiseAndPosm({
+  Future<Either<Failure, List<SalesPersonScheduleMerchandise>>>
+  processUploadMerchandiseAndPosm({
     required List<SalesPersonScheduleMerchandise> records,
   }) async {
     try {
@@ -451,7 +500,10 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
       }
 
       final resultRemote = await _remote.processUpload(
-        data: {'table_name': 'schedule_merchandise', 'data': jsonEncode(jsonData)},
+        data: {
+          'table_name': 'schedule_merchandise',
+          'data': jsonEncode(jsonData),
+        },
       );
 
       final List<SalesPersonScheduleMerchandise> remoteRecords = [];
@@ -459,7 +511,10 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
         remoteRecords.add(SalesPersonScheduleMerchandiseExtension.fromMap(rr));
       }
 
-      final result = await _local.updateScheduleMerchandiseStatus(records, remoteSchedules: remoteRecords);
+      final result = await _local.updateScheduleMerchandiseStatus(
+        records,
+        remoteSchedules: remoteRecords,
+      );
 
       return Right(result);
     } on GeneralException catch (e) {
@@ -488,7 +543,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
         return const Left(CacheFailure("Nothing to upload"));
       }
 
-      final result = await _remote.processUpload(data: {'table_name': 'sales', 'data': jsonEncode(jsonData)});
+      final result = await _remote.processUpload(
+        data: {'table_name': 'sales', 'data': jsonEncode(jsonData)},
+      );
 
       final List<SalesHeader> remoteSalesHeaders = [];
       for (var sh in result['headers']) {
@@ -500,7 +557,11 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
         remoteLines.add(SalesLineExtension.fromMap(sh));
       }
 
-      _local.updateSales(saleHeaders: salesHeaders, remoteSaleHeaders: remoteSalesHeaders, remoteLines: remoteLines);
+      _local.updateSales(
+        saleHeaders: salesHeaders,
+        remoteSaleHeaders: remoteSalesHeaders,
+        remoteLines: remoteLines,
+      );
 
       return const Right(true);
     } on GeneralException catch (e) {
@@ -511,7 +572,8 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, List<ItemPrizeRedemptionLineEntry>>> processUploadRedemptions({
+  Future<Either<Failure, List<ItemPrizeRedemptionLineEntry>>>
+  processUploadRedemptions({
     required List<ItemPrizeRedemptionLineEntry> records,
   }) async {
     try {
@@ -533,7 +595,10 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
         remoteRecords.add(ItemPrizeRedemptionLineEntryExtension.fromMap(rr));
       }
 
-      final result = await _local.updateRedemptionsStatus(records, remoteRecords: remoteRecords);
+      final result = await _local.updateRedemptionsStatus(
+        records,
+        remoteRecords: remoteRecords,
+      );
 
       return Right(result);
     } on GeneralException catch (e) {
@@ -558,7 +623,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
         return const Left(CacheFailure("Nothing to upload"));
       }
 
-      await _remote.processUpload(data: {'table_name': 'schedule', 'data': jsonEncode(jsonData)});
+      await _remote.processUpload(
+        data: {'table_name': 'schedule', 'data': jsonEncode(jsonData)},
+      );
 
       final result = await _local.updateSalepersonScheduleLastSyncDate(records);
 
@@ -571,7 +638,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, String>> resetPassword({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, String>> resetPassword({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       if (await _networkInfo.isConnected) {
         final record = await _remote.resetPassword(data: params);
@@ -588,9 +657,8 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, List<ItemPrizeRedemptionHeader>>> getItemPrizeRedemptionHeader({
-    Map<String, dynamic>? param,
-  }) async {
+  Future<Either<Failure, List<ItemPrizeRedemptionHeader>>>
+  getItemPrizeRedemptionHeader({Map<String, dynamic>? param}) async {
     try {
       final reuslt = await _local.getItemPrizeRedemptionHeader(param: param);
       return Right(reuslt);
@@ -602,9 +670,8 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, List<ItemPrizeRedemptionLine>>> getItemPrizeRedemptionLine({
-    Map<String, dynamic>? param,
-  }) async {
+  Future<Either<Failure, List<ItemPrizeRedemptionLine>>>
+  getItemPrizeRedemptionLine({Map<String, dynamic>? param}) async {
     try {
       final reuslt = await _local.getItemPrizeRedemptionLine(param: param);
       return Right(reuslt);
@@ -620,7 +687,11 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
     LoginSession? getUser = await _local.getLoginSession();
     if (await _networkInfo.isConnected) {
       await _remote.updateProfileUer(
-        data: {"first_name": user.firstName, "last_name": user.lastName, "phone_number": user.phoneNumber},
+        data: {
+          "first_name": user.firstName,
+          "last_name": user.lastName,
+          "phone_number": user.phoneNumber,
+        },
         imagePath: XFile(user.userImagePath),
       );
     }
@@ -631,14 +702,16 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl implements MoreRepository
   }
 
   @override
-  Future<Either<Failure, String>> getInvoiceHtml({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, String>> getInvoiceHtml({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final result = await _remote.getInvoiceHtml(data: param);
-      final String html = """${(result['html'] ?? "")}""";
-
       if (result.isEmpty) {
         return const Left(CacheFailure("No HTML content found"));
       }
+
+      final String html = """${(result['html'] ?? "")}""";
       return Right(html);
     } on GeneralException catch (e) {
       return Left(CacheFailure(e.message));

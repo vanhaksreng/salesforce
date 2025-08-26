@@ -1,5 +1,5 @@
-import 'package:salesforce/features/auth/domain/entities/user.dart';
+// import 'package:salesforce/features/auth/domain/entities/user.dart';
 
-abstract class IHeartbeatService {
-  Future<void> execute({required User auth});
-}
+// abstract class IHeartbeatService {
+//   Future<void> execute({required User auth});
+// }

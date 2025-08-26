@@ -1,3 +1,4 @@
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
@@ -30,6 +31,7 @@ class MyScheduleState {
   final double totalSalesBySchedule;
   final bool isSortDistance;
   final String selectedStatus;
+  final LatLng? latLng;
 
   const MyScheduleState({
     this.isLoading = false,
@@ -57,6 +59,7 @@ class MyScheduleState {
     this.totalSalesBySchedule = 0,
     this.isSortDistance = false,
     this.selectedStatus = "All",
+    this.latLng,
   });
 
   MyScheduleState copyWith({
@@ -86,6 +89,7 @@ class MyScheduleState {
     double? totalSalesBySchedule,
     bool? isSortDistance,
     String? selectedStatus,
+    LatLng? latLng,
   }) {
     return MyScheduleState(
       isLoading: isLoading ?? this.isLoading,
@@ -98,21 +102,28 @@ class MyScheduleState {
       countSaleInvoice: countSaleInvoice ?? this.countSaleInvoice,
       countSaleCreditMemo: countSaleCreditMemo ?? this.countSaleCreditMemo,
       countCollection: countCollection ?? this.countCollection,
-      countCompetitorPromotion: countCompetitorPromotion ?? this.countCompetitorPromotion,
+      countCompetitorPromotion:
+          countCompetitorPromotion ?? this.countCompetitorPromotion,
       countMerchandising: countMerchandising ?? this.countMerchandising,
       countPosm: countPosm ?? this.countPosm,
-      countItemPrizeRedeption: countItemPrizeRedeption ?? this.countItemPrizeRedeption,
+      countItemPrizeRedeption:
+          countItemPrizeRedeption ?? this.countItemPrizeRedeption,
       schedule: schedule ?? this.schedule,
-      checkItemStockRecords: checkItemStockRecords ?? this.checkItemStockRecords,
-      checkCompetitorItemStockRecords: checkCompetitorItemStockRecords ?? this.checkCompetitorItemStockRecords,
+      checkItemStockRecords:
+          checkItemStockRecords ?? this.checkItemStockRecords,
+      checkCompetitorItemStockRecords:
+          checkCompetitorItemStockRecords ??
+          this.checkCompetitorItemStockRecords,
       checkPosmRecords: checkPosmRecords ?? this.checkPosmRecords,
-      checkMerchandiseRecords: checkMerchandiseRecords ?? this.checkMerchandiseRecords,
+      checkMerchandiseRecords:
+          checkMerchandiseRecords ?? this.checkMerchandiseRecords,
       totalVisit: totalVisit ?? this.totalVisit,
       countCheckOut: countCheckOut ?? this.countCheckOut,
       totalSales: totalSales ?? this.totalSales,
       totalSalesBySchedule: totalSalesBySchedule ?? this.totalSalesBySchedule,
       isSortDistance: isSortDistance ?? this.isSortDistance,
       selectedStatus: selectedStatus ?? this.selectedStatus,
+      latLng: latLng ?? this.latLng,
     );
   }
 }

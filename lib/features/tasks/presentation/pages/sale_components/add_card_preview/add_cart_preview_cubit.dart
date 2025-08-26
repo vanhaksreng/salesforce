@@ -14,15 +14,32 @@ class AddCartPreviewCubit extends Cubit<AddCartPreviewState> with MessageMixin {
 
   final _taskRepo = getIt<TaskRepository>();
 
-  Future<void> loadInitialData({required String scheduleId, required String documentType}) async {
+  Future<void> loadInitialData({
+    required String scheduleId,
+    required String documentType,
+  }) async {
     try {
-      final saleNo = Helpers.getSaleDocumentNo(scheduleId: scheduleId, documentType: documentType);
+      final saleNo = Helpers.getSaleDocumentNo(
+        scheduleId: scheduleId,
+        documentType: documentType,
+      );
 
-      final response = await _taskRepo.getPosSaleHeader(params: {'no': saleNo, 'document_type': documentType});
+      final response = await _taskRepo.getPosSaleHeader(
+        params: {'no': saleNo, 'document_type': documentType},
+      );
 
-      PosSalesHeader header = await response.fold((l) => throw GeneralException(l.message), (r) => r);
+      PosSalesHeader header = await response.fold(
+        (l) => throw GeneralException(l.message),
+        (r) => r,
+      );
 
-      emit(state.copyWith(salesHeader: header, scheduleId: scheduleId, documentType: documentType));
+      emit(
+        state.copyWith(
+          salesHeader: header,
+          scheduleId: scheduleId,
+          documentType: documentType,
+        ),
+      );
     } catch (e) {
       Logger.log('Error loading initial data: $e');
     }
@@ -48,7 +65,10 @@ class AddCartPreviewCubit extends Cubit<AddCartPreviewState> with MessageMixin {
   Future<void> getSchedule(String scheduleId) async {
     try {
       final response = await _taskRepo.getSchedule(param: {'id': scheduleId});
-      response.fold((l) => throw GeneralException(l.message), (r) => emit(state.copyWith(schedule: r)));
+      response.fold(
+        (l) => throw GeneralException(l.message),
+        (r) => emit(state.copyWith(schedule: r)),
+      );
     } on GeneralException catch (e) {
       showWarningMessage(e.message);
     } on Exception {
@@ -60,7 +80,10 @@ class AddCartPreviewCubit extends Cubit<AddCartPreviewState> with MessageMixin {
     try {
       emit(state.copyWith(isLoading: true));
 
-      final saleNo = Helpers.getSaleDocumentNo(scheduleId: state.scheduleId, documentType: state.documentType);
+      final saleNo = Helpers.getSaleDocumentNo(
+        scheduleId: state.scheduleId,
+        documentType: state.documentType,
+      );
 
       final response = await _taskRepo.getPosSaleLines(
         params: {'document_no': saleNo, 'document_type': state.documentType},
@@ -88,7 +111,8 @@ class AddCartPreviewCubit extends Cubit<AddCartPreviewState> with MessageMixin {
     });
 
     double subTotalAmt = lines.fold(0.0, (sum, line) {
-      return sum + (Helpers.toDouble(line.quantity) * Helpers.toDouble(line.unitPrice));
+      return sum +
+          (Helpers.toDouble(line.quantity) * Helpers.toDouble(line.unitPrice));
     });
 
     double totalVatAmt = lines.fold(0.0, (sum, line) {
@@ -96,8 +120,10 @@ class AddCartPreviewCubit extends Cubit<AddCartPreviewState> with MessageMixin {
     });
 
     double totalDiscountAmt = lines.fold(0.0, (sum, line) {
-      final subTotal = Helpers.toDouble(line.quantity) * Helpers.toDouble(line.unitPrice);
-      final disAmt = subTotal * (Helpers.toDouble(line.discountPercentage) / 100);
+      final subTotal =
+          Helpers.toDouble(line.quantity) * Helpers.toDouble(line.unitPrice);
+      final disAmt =
+          subTotal * (Helpers.toDouble(line.discountPercentage) / 100);
 
       return sum + Helpers.toDouble(line.discountAmount) + disAmt;
     });
@@ -115,9 +141,11 @@ class AddCartPreviewCubit extends Cubit<AddCartPreviewState> with MessageMixin {
 
   void _getItems(List<PosSalesLine> r) async {
     final filterItemNo = r.map((e) => '"${e.no}"').toList();
-    await _taskRepo.getItems(param: {'no': 'IN {${filterItemNo.join(",")}}'}).then((response) {
-      response.fold((l) {}, (r) => emit(state.copyWith(items: r)));
-    });
+    await _taskRepo
+        .getItems(param: {'no': 'IN {${filterItemNo.join(",")}}'})
+        .then((response) {
+          response.fold((l) {}, (r) => emit(state.copyWith(items: r)));
+        });
   }
 
   Future<void> deletedLine(PosSalesLine line) async {
@@ -175,7 +203,9 @@ class AddCartPreviewCubit extends Cubit<AddCartPreviewState> with MessageMixin {
 
   Future<void> getCustomerLedgerEntry(String customerNo) async {
     try {
-      final response = await _taskRepo.getCustomerLedgerEntry(param: {"customer_no": customerNo});
+      final response = await _taskRepo.getCustomerLedgerEntry(
+        param: {"customer_no": customerNo},
+      );
 
       response.fold((l) => throw GeneralException(l.message), (r) {
         emit(state.copyWith(customerLedgerEntries: r));
@@ -187,5 +217,9 @@ class AddCartPreviewCubit extends Cubit<AddCartPreviewState> with MessageMixin {
     } finally {
       emit(state.copyWith(isLoading: false));
     }
+  }
+
+  void setCreditLimitText([String text = ""]) {
+    emit(state.copyWith(creditLimitText: text));
   }
 }

@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
 import 'package:salesforce/core/utils/logger.dart';
+import 'package:salesforce/injection_container.dart';
 
 enum LocationTrackingMode { foreground, background, significant, periodic }
 
@@ -29,6 +32,10 @@ class LocationService {
   LocationTrackingMode _currentMode = LocationTrackingMode.foreground;
   final bool _isTracking = false;
 
+  int locationCount = 0;
+
+  final appRepo = getIt<BaseAppRepository>();
+
   LocationService._internal() {
     _setupMethodHandler();
   }
@@ -47,14 +54,12 @@ class LocationService {
       if (isAppActive) {
         final permissions = await checkPermissions();
         if (permissions['canTrackForeground'] == true) {
-          await _switchToMode(LocationTrackingMode.foreground, 10.0);
+          await _switchToMode(LocationTrackingMode.foreground);
         }
       } else {
         final permissions = await checkPermissions();
         if (permissions['background'] == true) {
-          LocationTrackingMode bgMode = _getBestBackgroundMode();
-          double distanceFilter = getDistanceFilterForMode(bgMode);
-          await _switchToMode(bgMode, distanceFilter);
+          await _switchToMode(_getBestBackgroundMode());
         }
       }
     } catch (e) {
@@ -65,34 +70,17 @@ class LocationService {
     }
   }
 
-  double getDistanceFilterForMode(LocationTrackingMode mode) {
-    switch (mode) {
-      case LocationTrackingMode.foreground:
-        return 10.0;
-      case LocationTrackingMode.background:
-        return 50.0;
-      case LocationTrackingMode.periodic:
-        return 100.0;
-      case LocationTrackingMode.significant:
-        return 200.0;
-    }
-  }
-
-  Future<void> _switchToMode(
-    LocationTrackingMode mode,
-    double distanceFilter,
-  ) async {
+  Future<void> _switchToMode(LocationTrackingMode mode) async {
     _currentMode = mode;
 
     final success = await _channel.invokeMethod('startService', {
       'mode': mode.name,
-      'filter': distanceFilter,
     });
 
     if (success) {
       _eventController.add({
         'type': 'modeSwitch',
-        'message': 'Switched to ${mode.name} mode (${distanceFilter}m filter)',
+        'message': 'Switched to ${mode.name} mode)',
       });
     }
   }
@@ -105,69 +93,70 @@ class LocationService {
 
   void _setupMethodHandler() {
     if (_isListening) return;
-    _channel.setMethodCallHandler((call) async {
-      final args = (call.arguments as Map?)?.cast<String, dynamic>() ?? {};
 
-      switch (call.method) {
-        case 'locationUpdate':
-          if (_appActive) {
-            _locationController.add(args);
-          } else {
+    try {
+      _channel.setMethodCallHandler((call) async {
+        final args = (call.arguments as Map?)?.cast<String, dynamic>() ?? {};
+
+        switch (call.method) {
+          case 'locationUpdate':
+            // if (_appActive) {
+            //   _locationController.add(args);
+            // } else {
+            //   await _saveLocationWhenBackgrounded(args);
+            // }
+
             await _saveLocationWhenBackgrounded(args);
-          }
 
-          break;
-        case 'permissionStatus':
-          _locationController.add(args);
-          break;
-        case 'permissionChanged':
-          _eventController.add({'type': 'permissionChanged', ...args});
-          break;
-        case 'trackingStarted':
-          _eventController.add({'type': 'started', ...args});
-          break;
-        case 'trackingStopped':
-          _eventController.add({'type': 'stopped'});
-          break;
-        case 'error':
-          _eventController.add({
-            'type': 'error',
-            'message': args['message'] ?? 'Unknown',
-          });
-          break;
-        case 'log':
-          _eventController.add({
-            'type': 'log',
-            'message': args['message'] ?? 'Warning',
-          });
-          break;
-        case 'terminationLocation':
-          _eventController.add({'type': 'terminationLocation', ...args});
-          break;
-        case 'syncLocations':
-          final locations = call.arguments as List<dynamic>;
-          _eventController.add({'type': 'syncLocations', 'data': locations});
-          break;
-        default:
-          Logger.log("Unhandled method: ${call.method}");
-      }
+            break;
+          case 'permissionStatus':
+            _locationController.add(args);
+            break;
+          case 'permissionChanged':
+            _eventController.add({'type': 'permissionChanged', ...args});
+            break;
+          case 'trackingStarted':
+            _eventController.add({'type': 'started', ...args});
+            break;
+          case 'trackingStopped':
+            _eventController.add({'type': 'stopped'});
+            break;
+          case 'error':
+            _eventController.add({
+              'type': 'error',
+              'message': args['message'] ?? 'Unknown',
+            });
+            break;
+          case 'log':
+            Logger.log(args['message']);
+            break;
+          case 'terminationLocation':
+            _eventController.add({'type': 'terminationLocation', ...args});
+            break;
+          case 'syncLocations':
+            Logger.log("syncLocations: $args");
+            _eventController.add({
+              'type': 'syncLocations',
+              'data': args['data'],
+            });
+            break;
+          default:
+            Logger.log("Unhandled method: ${call.method}");
+        }
 
-      return null;
-    });
+        return null;
+      });
+    } catch (e) {
+      Logger.log("Error Called method: $e");
+    }
 
     _isListening = true;
   }
 
-  Future<bool> startTracking({
-    required LocationTrackingMode mode,
-    double distanceFilter = 0.0,
-    double scheduledInterval = 300.0,
-  }) async {
+  Future<bool> startTracking({required LocationTrackingMode mode}) async {
     try {
       final res = await _channel.invokeMethod('startService', {
         'mode': mode.name,
-        'filter': distanceFilter,
-        'scheduledInterval': scheduledInterval,
       });
       return res == true;
     } on PlatformException catch (e) {
@@ -209,21 +198,26 @@ class LocationService {
   }
 
   Future<void> _saveLocationWhenBackgrounded(Map<String, dynamic> loc) async {
-    Logger.log(
-      "GPS bufferFile  processed: ${loc['latitude']}, ${loc['longitude']}",
-    );
     try {
-      final f = await bufferFile();
-      final json = jsonEncode(loc);
-      await f.writeAsString('$json\n', mode: FileMode.append, flush: true);
+      await appRepo.storeLocationOffline(
+        LatLng(loc['latitude'], loc['longitude']),
+      );
+
+      if (!_appActive && locationCount >= 0) {
+        await appRepo.syncOfflineLocationToBackend();
+        await appRepo.heartbeatStatus(
+          params: {'status': 'online', 'rtype': 'heartbeat'},
+        );
+
+        Logger.log('syncOfflineLocationToBackend.... $locationCount');
+
+        locationCount = 0;
+      }
+
+      locationCount += 1;
     } catch (e) {
       Logger.log('Failed to buffer location: $e');
     }
-  }
-
-  Future<File> bufferFile() async {
-    final dir = await getApplicationDocumentsDirectory();
-    return File('${dir.path}/location_buffer.jsonl');
   }
 
   bool get isTracking => _isTracking;

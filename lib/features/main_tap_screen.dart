@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/app/custom_bottom_navigation_bar.dart';
 import 'package:salesforce/app/navigation_item.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
@@ -16,10 +14,6 @@ import 'package:salesforce/features/report/main_page_report_screen.dart';
 import 'package:salesforce/features/stock/main_page_stock_screen.dart';
 import 'package:salesforce/features/tasks/tasks_main_cubit.dart';
 import 'package:salesforce/features/tasks/tasks_main_screen.dart';
-import 'package:salesforce/infrastructure/gps/gps_service.dart';
-import 'package:salesforce/infrastructure/gps/gps_service_impl.dart';
-import 'package:salesforce/infrastructure/heartbeat/heartbeat_service.dart';
-import 'package:salesforce/infrastructure/heartbeat/heartbeat_service_impl.dart';
 import 'package:salesforce/infrastructure/services/location_service.dart';
 import 'package:salesforce/injection_container.dart' as di;
 import 'package:salesforce/realm/scheme/general_schemas.dart';
@@ -38,8 +32,6 @@ class _MainTapScreenState extends State<MainTapScreen>
   final ValueNotifier<int> _selectedIndex = ValueNotifier<int>(0);
   final appRepo = di.getIt<BaseAppRepository>();
   final svc = LocationService.instance;
-  late IGpsService? gpsService;
-  late IHeartbeatService? heartbeatService;
 
   bool _hasBackgroundPermission = false;
   Map<String, dynamic>? latestLocation;
@@ -50,17 +42,10 @@ class _MainTapScreenState extends State<MainTapScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    final isActive =
-        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
 
-    LocationService.instance.setAppActive(isActive);
-    gpsService = GpsServiceImpl(appRepo);
-    heartbeatService = HeartbeatServiceImpl(appRepo);
+    LocationService.instance.setAppActive(true);
 
     _initBGTasks();
-
-    importBufferedToRealm();
-
     _startTimers();
   }
 
@@ -80,14 +65,15 @@ class _MainTapScreenState extends State<MainTapScreen>
       return;
     }
 
-    await gpsService?.syncToBackend(auth: auth);
-    await heartbeatService?.execute(auth: auth);
+    await appRepo.syncOfflineLocationToBackend();
+    await appRepo.heartbeatStatus(
+      params: {'status': 'online', 'rtype': 'heartbeat'},
+    );
 
-    // Start periodic sync (every 60 seconds)
     syncTimer = Timer.periodic(Duration(seconds: 60), (timer) async {
       if (latestLocation != null) {
         try {
-          await gpsService?.syncToBackend(auth: auth);
+          await appRepo.syncOfflineLocationToBackend();
           Logger.log(
             "Synced to backend: ${latestLocation!['latitude']}, ${latestLocation!['longitude']}",
           );
@@ -97,11 +83,12 @@ class _MainTapScreenState extends State<MainTapScreen>
       }
     });
 
-    // Start periodic heartbeat sync (every 60 seconds)
     heartbeatTimer = Timer.periodic(Duration(seconds: 90), (timer) async {
       if (latestLocation != null) {
         try {
-          await heartbeatService?.execute(auth: auth);
+          await appRepo.heartbeatStatus(
+            params: {'status': 'online', 'rtype': 'heartbeat'},
+          );
         } catch (e) {
           Logger.log("Error syncing to backend: $e");
         }
@@ -144,7 +131,6 @@ class _MainTapScreenState extends State<MainTapScreen>
   }
 
   Future<void> _handleAppResumed() async {
-    await importBufferedToRealm();
     _startTimers();
   }
 
@@ -154,97 +140,21 @@ class _MainTapScreenState extends State<MainTapScreen>
 
   Future<void> _handleAppTerminating() async {
     if (_hasBackgroundPermission && svc.isTracking) {
-      await svc.startTracking(
-        mode: LocationTrackingMode.significant,
-        distanceFilter: 50.0,
-      );
-    }
-  }
-
-  Future<void> importBufferedToRealm() async {
-    try {
-      final f = await svc.bufferFile();
-      if (!await f.exists()) {
-        return;
-      }
-
-      final lines = await f.readAsLines();
-      if (lines.isEmpty) {
-        await f.delete();
-        return;
-      }
-
-      final auth = di.getAuth();
-      if (auth == null) {
-        return;
-      }
-
-      late String saleCode = auth.salepersonCode;
-      if (saleCode.isEmpty) {
-        await appRepo.getUserSetup().then((response) {
-          response.fold((l) => null, (r) {
-            saleCode = r?.salespersonCode ?? "";
-          });
-        });
-      }
-
-      final List<GpsRouteTracking> gpsRecords = [];
-      int skippedRecords = 0;
-
-      for (int i = 0; i < lines.length; i++) {
-        try {
-          final Map m = jsonDecode(lines[i]);
-
-          if (!m.containsKey('latitude') ||
-              !m.containsKey('longitude') ||
-              !m.containsKey('timestamp')) {
-            skippedRecords++;
-            continue;
-          }
-
-          final line = GpsRouteTracking(
-            saleCode,
-            (m['latitude'] as num).toDouble(),
-            (m['longitude'] as num).toDouble(),
-            DateTime.parse(m['timestamp'] as String).toDateString(),
-            DateTime.parse(m['timestamp'] as String).toDateTimeString(),
-            isSync: "No",
-          );
-
-          gpsRecords.add(line);
-        } catch (e) {
-          Logger.log("Failed to parse GPS record at line ${i + 1}: $e");
-          skippedRecords++;
-        }
-      }
-
-      if (gpsRecords.isNotEmpty) {
-        await gpsService?.storeGps(records: gpsRecords);
-        await gpsService?.syncToBackend(auth: auth);
-
-        if (skippedRecords > 0) {
-          Logger.log("Skipped $skippedRecords invalid records");
-        }
-      }
-
-      await f.delete();
-    } catch (e) {
-      Logger.log("importBufferedToRealm failed: $e");
+      await svc.startTracking(mode: LocationTrackingMode.significant);
     }
   }
 
   // MARK: - Enhanced Background Task Initialization
   Future<void> _initBGTasks() async {
-    // Enhanced location listener with better error handling
-    svc.onLocation.listen((loc) async {
-      try {
-        await gpsService?.execute(
-          latlng: LatLng(loc['latitude'], loc['longitude']),
-        );
-      } catch (e) {
-        Logger.log("Error processing GPS location: $e");
-      }
-    });
+    // svc.onLocation.listen((loc) async {
+    //   try {
+    //     await appRepo.storeLocationOffline(
+    //       LatLng(loc['latitude'], loc['longitude']),
+    //     );
+    //   } catch (e) {
+    //     Logger.log("Error processing GPS location: $e");
+    //   }
+    // });
 
     // Enhanced event listener
     svc.onEvent.listen((e) {
@@ -259,7 +169,7 @@ class _MainTapScreenState extends State<MainTapScreen>
           _handlePermissionChange(e);
           break;
         case 'syncLocations':
-          _handleSyncLocations(e['data']);
+          _handleSyncLocations(e['data'] ?? []);
           break;
       }
     });
@@ -268,8 +178,22 @@ class _MainTapScreenState extends State<MainTapScreen>
     await _startTracking();
   }
 
-  void _handleSyncLocations(List<dynamic> data) {
-    Logger.log("handleSyncLocations $data");
+  void _handleSyncLocations(List<dynamic> locationData) async {
+    String saleCode = await _getCurrentSaleCode();
+    if (saleCode.isEmpty) return;
+
+    final gpsRecords = <GpsRouteTracking>[];
+    for (var data in locationData) {
+      final record = _createGpsRecord(data, saleCode);
+      if (record != null) {
+        gpsRecords.add(record);
+      }
+    }
+
+    if (gpsRecords.isNotEmpty) {
+      await appRepo.storeGps(gpsRecords);
+      await appRepo.syncOfflineLocationToBackend();
+    }
   }
 
   void _handleGpsError(String error) {
@@ -286,7 +210,6 @@ class _MainTapScreenState extends State<MainTapScreen>
           'authorizedAlways',
           'authorizedWhenInUse',
         ].contains(data['status']))) {
-      Logger.log(data);
       if (data['status'] == "authorizedWhenInUse") {
         await _requestPermissions();
       }
@@ -304,8 +227,6 @@ class _MainTapScreenState extends State<MainTapScreen>
       final fgGranted = await svc.requestPermissions(
         LocationTrackingMode.foreground,
       );
-
-      Logger.log("requestPermissions : $fgGranted");
 
       if (!fgGranted) {
         Logger.log("Foreground location permission denied");
@@ -345,10 +266,7 @@ class _MainTapScreenState extends State<MainTapScreen>
         return;
       }
 
-      final success = await svc.startTracking(
-        mode: mode,
-        distanceFilter: svc.getDistanceFilterForMode(mode),
-      );
+      final success = await svc.startTracking(mode: mode);
 
       if (!success) {
         Logger.log("Failed to start GPS tracking");
@@ -356,6 +274,42 @@ class _MainTapScreenState extends State<MainTapScreen>
     } catch (e) {
       Logger.log("Start tracking failed: $e");
     }
+  }
+
+  GpsRouteTracking? _createGpsRecord(Map data, String saleCode) {
+    if (!data.containsKey('latitude') ||
+        !data.containsKey('longitude') ||
+        !data.containsKey('timestamp')) {
+      return null;
+    }
+
+    try {
+      return GpsRouteTracking(
+        saleCode,
+        (data['latitude'] as num).toDouble(),
+        (data['longitude'] as num).toDouble(),
+        DateTime.parse(data['timestamp'] as String).toDateString(),
+        DateTime.parse(data['timestamp'] as String).toDateTimeString(),
+        isSync: "No",
+      );
+    } catch (e) {
+      Logger.log("Error creating GPS record: $e");
+      return null;
+    }
+  }
+
+  Future<String> _getCurrentSaleCode() async {
+    final auth = di.getAuth();
+
+    if (auth?.salepersonCode.isNotEmpty == true) {
+      return auth?.salepersonCode ?? "";
+    }
+
+    // Fallback to user setup
+    final response = await appRepo.getUserSetup();
+    return response.fold((l) => "", (r) {
+      return r?.salespersonCode ?? "";
+    });
   }
 
   final List<NavigationItem> _navigationItems = [

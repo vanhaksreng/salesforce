@@ -2,6 +2,7 @@ import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/data/datasources/realm/base_realm_data_source_impl.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
+import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/infrastructure/storage/i_local_storage.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -15,26 +16,39 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
-class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTaskDataSource {
+class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
+    implements RealmTaskDataSource {
   final ILocalStorage _storage;
 
   RealmTaskDataSourceImpl({required super.ils}) : _storage = ils;
 
   @override
-  Future<void> storeItemCheckStock({required CustomerItemLedgerEntry cile, required CheckItemStockArg arg}) async {
+  Future<void> storeItemCheckStock({
+    required CustomerItemLedgerEntry cile,
+    required CheckItemStockArg arg,
+  }) async {
     try {
       final qtyCount = Helpers.toDouble(arg.stockQty);
       final qtyPerUnit = Helpers.toDouble(cile.qtyPerUnitOfMeasure);
 
       await _storage.writeTransaction((realm) {
         if (!arg.updateOnlyQty) {
-          cile.expirationDate = DateTimeExt.parse(arg.expirationDate).toDateString();
+          cile.expirationDate = DateTimeExt.parse(
+            arg.expirationDate,
+          ).toDateString();
           cile.plannedQuantity = Helpers.toDouble(arg.plannedQuantity);
-          cile.plannedQuantityBase = Helpers.toDouble(arg.plannedQuantity) * qtyPerUnit;
-          cile.plannedQuantityReturn = Helpers.toDouble(arg.plannedQuantityReturn);
-          cile.plannedQuantityReturnBase = Helpers.toDouble(arg.plannedQuantityReturn) * qtyPerUnit;
-          cile.quantityBuyFromOther = Helpers.toDouble(arg.quantityBuyFromOther);
-          cile.quantityBuyFromOtherBase = Helpers.toDouble(arg.quantityBuyFromOther) * qtyPerUnit;
+          cile.plannedQuantityBase =
+              Helpers.toDouble(arg.plannedQuantity) * qtyPerUnit;
+          cile.plannedQuantityReturn = Helpers.toDouble(
+            arg.plannedQuantityReturn,
+          );
+          cile.plannedQuantityReturnBase =
+              Helpers.toDouble(arg.plannedQuantityReturn) * qtyPerUnit;
+          cile.quantityBuyFromOther = Helpers.toDouble(
+            arg.quantityBuyFromOther,
+          );
+          cile.quantityBuyFromOtherBase =
+              Helpers.toDouble(arg.quantityBuyFromOther) * qtyPerUnit;
           cile.lotNo = Helpers.toStrings(arg.lotNo);
           cile.serialNo = Helpers.toStrings(arg.serialNo);
           cile.remark = Helpers.toStrings(arg.remark);
@@ -53,7 +67,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<List<CustomerItemLedgerEntry>> submitCheckStock(List<CustomerItemLedgerEntry> cile) async {
+  Future<List<CustomerItemLedgerEntry>> submitCheckStock(
+    List<CustomerItemLedgerEntry> cile,
+  ) async {
     try {
       return _storage.writeTransaction((realm) {
         for (var record in cile) {
@@ -69,7 +85,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<List<CompetitorItemLedgerEntry>> submitCheckStockCometitorItem(List<CompetitorItemLedgerEntry> cile) async {
+  Future<List<CompetitorItemLedgerEntry>> submitCheckStockCometitorItem(
+    List<CompetitorItemLedgerEntry> cile,
+  ) async {
     try {
       return _storage.writeTransaction((realm) {
         for (var record in cile) {
@@ -85,8 +103,12 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<List<CustomerItemLedgerEntry>> deleteItemCheckStock(CheckItemStockArg data) async {
-    final record = await _storage.getFirst<CustomerItemLedgerEntry>(args: {"itemNo": data.item.no});
+  Future<List<CustomerItemLedgerEntry>> deleteItemCheckStock(
+    CheckItemStockArg data,
+  ) async {
+    final record = await _storage.getFirst<CustomerItemLedgerEntry>(
+      args: {"itemNo": data.item.no},
+    );
 
     if (record != null) {
       await _storage.delete(record);
@@ -98,7 +120,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<List<SalespersonSchedule>> getSchedules({Map<String, dynamic>? param}) async {
+  Future<List<SalespersonSchedule>> getSchedules({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       return await _storage.getAll<SalespersonSchedule>(args: param);
     } catch (error) {
@@ -116,9 +140,14 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<SalespersonSchedule> checkIn({required SalespersonSchedule schedule, required CheckInArg args}) async {
+  Future<SalespersonSchedule> checkIn({
+    required SalespersonSchedule schedule,
+    required CheckInArg args,
+  }) async {
     try {
-      final saleperson = await _storage.getFirst<Salesperson>(args: {"code": schedule.salespersonCode});
+      final saleperson = await _storage.getFirst<Salesperson>(
+        args: {"code": schedule.salespersonCode},
+      );
 
       if (saleperson == null) {
         throw GeneralException(
@@ -207,7 +236,10 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<SalespersonSchedule> checkout({required SalespersonSchedule schedule, required CheckInArg args}) async {
+  Future<SalespersonSchedule> checkout({
+    required SalespersonSchedule schedule,
+    required CheckInArg args,
+  }) async {
     try {
       final auth = getAuth();
 
@@ -216,7 +248,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
       final String formattedDate = now.toDateString();
       final String formattedTime = now.toTime24String();
 
-      final saleperson = await _storage.getFirst<Salesperson>(args: {"code": schedule.salespersonCode});
+      final saleperson = await _storage.getFirst<Salesperson>(
+        args: {"code": schedule.salespersonCode},
+      );
 
       if (saleperson == null) {
         throw GeneralException(
@@ -292,19 +326,30 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<CustomerItemLedgerEntry?> getCustomerItemLedgerEntry({Map<String, dynamic>? args}) async {
+  Future<CustomerItemLedgerEntry?> getCustomerItemLedgerEntry({
+    Map<String, dynamic>? args,
+  }) async {
     return await _storage.getFirst<CustomerItemLedgerEntry>(args: args);
   }
 
   @override
-  Future<List<CompetitorItem>> getCompletitorItems({Map<String, dynamic>? param, int page = 1}) async {
-    return await _storage.getWithPagination<CompetitorItem>(args: param, page: page);
+  Future<List<CompetitorItem>> getCompletitorItems({
+    Map<String, dynamic>? param,
+    int page = 1,
+  }) async {
+    return await _storage.getWithPagination<CompetitorItem>(
+      args: param,
+      page: page,
+    );
   }
 
   @override
   Future<List<Competitor>> getCompetitors({Map<String, dynamic>? param}) async {
     try {
-      return await _storage.getWithPagination<Competitor>(args: param, page: param?["page"] ?? 1);
+      return await _storage.getWithPagination<Competitor>(
+        args: param,
+        page: param?["page"] ?? 1,
+      );
     } catch (e) {
       rethrow;
     }
@@ -320,9 +365,14 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<List<PointOfSalesMaterial>> posms({Map<String, dynamic>? param}) async {
+  Future<List<PointOfSalesMaterial>> posms({
+    Map<String, dynamic>? param,
+  }) async {
     try {
-      return await _storage.getWithPagination<PointOfSalesMaterial>(args: param, page: param?["page"] ?? 1);
+      return await _storage.getWithPagination<PointOfSalesMaterial>(
+        args: param,
+        page: param?["page"] ?? 1,
+      );
     } catch (e) {
       rethrow;
     }
@@ -331,14 +381,19 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   @override
   Future<List<Merchandise>> merchandises({Map<String, dynamic>? param}) async {
     try {
-      return await _storage.getWithPagination<Merchandise>(args: param, page: param?["page"] ?? 1);
+      return await _storage.getWithPagination<Merchandise>(
+        args: param,
+        page: param?["page"] ?? 1,
+      );
     } catch (e) {
       rethrow;
     }
   }
 
   @override
-  Future<CompetitorItemLedgerEntry?> detailItemCompetitorLederEntry({Map<String, dynamic>? param}) async {
+  Future<CompetitorItemLedgerEntry?> detailItemCompetitorLederEntry({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       return await _storage.getFirst<CompetitorItemLedgerEntry>(args: param);
     } catch (e) {
@@ -360,24 +415,41 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
 
       await _storage.writeTransaction((realm) {
         if (!arg.updateOnlyQty) {
-          cile.expirationDate = DateTimeExt.parse(arg.expirationDate).toDateString();
+          cile.expirationDate = DateTimeExt.parse(
+            arg.expirationDate,
+          ).toDateString();
           cile.itemNo = arg.item.no;
           cile.unitOfMeasureCode = arg.item.salesUomCode;
-          cile.volumeSalesQuantity = Helpers.formatNumberDb(arg.volumSale, option: FormatType.quantity);
+          cile.volumeSalesQuantity = Helpers.formatNumberDb(
+            arg.volumSale,
+            option: FormatType.quantity,
+          );
           cile.volumeSalesQuantityBase = Helpers.formatNumberDb(
             Helpers.toDouble(cile.volumeSalesQuantity) * qtyPerUnit,
             option: FormatType.quantity,
           );
-          cile.unitPrice = Helpers.formatNumberDb(arg.unitPrice, option: FormatType.price);
-          cile.unitCost = Helpers.formatNumberDb(arg.unitCost, option: FormatType.cost);
+          cile.unitPrice = Helpers.formatNumberDb(
+            arg.unitPrice,
+            option: FormatType.price,
+          );
+          cile.unitCost = Helpers.formatNumberDb(
+            arg.unitCost,
+            option: FormatType.cost,
+          );
           cile.lotNo = Helpers.toStrings(arg.lotNo);
           cile.serialNo = Helpers.toStrings(arg.serialNo);
           cile.remark = Helpers.toStrings(arg.remark);
         }
 
         cile.countingDate = DateTime.now().toDateString();
-        cile.quantity = Helpers.formatNumberDb(qtyCount, option: FormatType.quantity);
-        cile.quantityBase = Helpers.formatNumberDb(qtyCount * qtyPerUnit, option: FormatType.quantity);
+        cile.quantity = Helpers.formatNumberDb(
+          qtyCount,
+          option: FormatType.quantity,
+        );
+        cile.quantityBase = Helpers.formatNumberDb(
+          qtyCount * qtyPerUnit,
+          option: FormatType.quantity,
+        );
 
         realm.add(cile, update: true);
         return "Success";
@@ -388,7 +460,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<List<CompetitorItemLedgerEntry>> getCompetitorItemLedgetEntry({Map<String, dynamic>? param}) async {
+  Future<List<CompetitorItemLedgerEntry>> getCompetitorItemLedgetEntry({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       return await _storage.getAll<CompetitorItemLedgerEntry>(args: param);
     } catch (error) {
@@ -397,7 +471,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<SalespersonSchedule?> getSchedule({Map<String, dynamic>? param}) async {
+  Future<SalespersonSchedule?> getSchedule({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       return await _storage.getFirst<SalespersonSchedule>(args: param);
     } catch (error) {
@@ -425,7 +501,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }) async {
     return _storage.writeTransaction((realm) {
       // Check if the record already exists
-      final existingRecord = realm.find<SalesPersonScheduleMerchandise>(record.id);
+      final existingRecord = realm.find<SalesPersonScheduleMerchandise>(
+        record.id,
+      );
 
       if (existingRecord != null) {
         existingRecord.quantity = Helpers.formatNumberDb(quantity);
@@ -438,7 +516,8 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<List<SalesPersonScheduleMerchandise>> updateSalesPersonScheduleMerchandiseStatus(
+  Future<List<SalesPersonScheduleMerchandise>>
+  updateSalesPersonScheduleMerchandiseStatus(
     List<SalesPersonScheduleMerchandise> records, {
     required String status,
   }) async {
@@ -453,32 +532,43 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<void> deleteSalesPersonScheduleMerchandise(SalesPersonScheduleMerchandise record) async {
+  Future<void> deleteSalesPersonScheduleMerchandise(
+    SalesPersonScheduleMerchandise record,
+  ) async {
     await _storage.delete(record);
   }
 
   @override
-  Future<List<SalesPersonScheduleMerchandise>> getSalesPersonScheduleMerchandises({Map<String, dynamic>? args}) async {
+  Future<List<SalesPersonScheduleMerchandise>>
+  getSalesPersonScheduleMerchandises({Map<String, dynamic>? args}) async {
     return await _storage.getAll<SalesPersonScheduleMerchandise>(args: args);
   }
 
   @override
-  Future<SalesPersonScheduleMerchandise?> getSalesPersonScheduleMerchandise({Map<String, dynamic>? args}) async {
+  Future<SalesPersonScheduleMerchandise?> getSalesPersonScheduleMerchandise({
+    Map<String, dynamic>? args,
+  }) async {
     return await _storage.getFirst<SalesPersonScheduleMerchandise>(args: args);
   }
 
   @override
-  Future<List<CustomerLedgerEntry>> getCustomerLedgerEntry(Map<String, dynamic>? param) async {
+  Future<List<CustomerLedgerEntry>> getCustomerLedgerEntry(
+    Map<String, dynamic>? param,
+  ) async {
     return await _storage.getAll<CustomerLedgerEntry>(args: param);
   }
 
   @override
-  Future<CustomerLedgerEntry?> getDetailCustomerLedgerEntry(Map<String, dynamic>? param) async {
+  Future<CustomerLedgerEntry?> getDetailCustomerLedgerEntry(
+    Map<String, dynamic>? param,
+  ) async {
     return await _storage.getFirst<CustomerLedgerEntry>(args: param);
   }
 
   @override
-  Future<List<PaymentMethod>> getPaymentType(Map<String, dynamic>? param) async {
+  Future<List<PaymentMethod>> getPaymentType(
+    Map<String, dynamic>? param,
+  ) async {
     final Map<String, dynamic> p = {'inactived': 'No', ...?param};
 
     return await _storage.getAll<PaymentMethod>(args: p);
@@ -497,25 +587,33 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<void> updateRemainingAmount(CustomerLedgerEntry record, double remainingAmount) async {
+  Future<void> updateRemainingAmount(
+    CustomerLedgerEntry record,
+    double remainingAmount,
+  ) async {
     await _storage.writeTransaction((realm) {
       if (record.currencyFactor == 0) {
         record.currencyFactor = 1.0;
       }
 
       record.remainingAmount = remainingAmount;
-      record.remainingAmountLcy = remainingAmount * record.currencyFactor!; // TODO
+      record.remainingAmountLcy =
+          remainingAmount * record.currencyFactor!; // TODO
       realm.add(record, update: true);
     });
   }
 
   @override
-  Future<List<CashReceiptJournals>> getCashReceiptJournals(Map<String, dynamic>? param) async {
+  Future<List<CashReceiptJournals>> getCashReceiptJournals(
+    Map<String, dynamic>? param,
+  ) async {
     return await _storage.getAll<CashReceiptJournals>(args: param);
   }
 
   @override
-  Future<CashReceiptJournals?> getCashReceiptJournal(Map<String, dynamic>? param) async {
+  Future<CashReceiptJournals?> getCashReceiptJournal(
+    Map<String, dynamic>? param,
+  ) async {
     return await _storage.getFirst<CashReceiptJournals>(args: param);
   }
 
@@ -525,7 +623,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<List<CashReceiptJournals>> processCashReceiptJournals(List<CashReceiptJournals> journals) async {
+  Future<List<CashReceiptJournals>> processCashReceiptJournals(
+    List<CashReceiptJournals> journals,
+  ) async {
     if (journals.isEmpty) {
       throw GeneralException("No transaction to submit!");
     }
@@ -567,7 +667,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
 
   @override
   Future<bool> deletedPosSaleHeader(String headerNo) async {
-    final header = await _storage.getFirst<PosSalesHeader>(args: {'no': headerNo});
+    final header = await _storage.getFirst<PosSalesHeader>(
+      args: {'no': headerNo},
+    );
 
     if (header == null) {
       throw GeneralException("Header not found");
@@ -593,7 +695,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<PosSalesHeader?> getPosSaleHeader({Map<String, dynamic>? params}) async {
+  Future<PosSalesHeader?> getPosSaleHeader({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       return await _storage.getFirst<PosSalesHeader>(args: params);
     } catch (e) {
@@ -602,7 +706,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<List<PosSalesHeader>> getPosSaleHeaders({Map<String, dynamic>? params}) async {
+  Future<List<PosSalesHeader>> getPosSaleHeaders({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       return await _storage.getAll<PosSalesHeader>(args: params);
     } catch (e) {
@@ -672,7 +778,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
 
       if (posSaleHeader.documentType != kSaleCreditMemo) {
         for (final line in saleLines) {
-          double qty = Helpers.formatNumberDb(line.quantity) * Helpers.formatNumberDb(line.qtyPerUnitOfMeasure);
+          double qty =
+              Helpers.formatNumberDb(line.quantity) *
+              Helpers.formatNumberDb(line.qtyPerUnitOfMeasure);
 
           realm.add(
             ItemLedgerEntry(
@@ -686,8 +794,13 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
 
           final item = realm.find<Item>(line.no);
           if (item != null) {
-            final entries = realm.query<ItemLedgerEntry>('item_no = \$0', [line.no]);
-            final endingQty = entries.fold<double>(0, (sum, entry) => sum + (entry.quantity));
+            final entries = realm.query<ItemLedgerEntry>('item_no = \$0', [
+              line.no,
+            ]);
+            final endingQty = entries.fold<double>(
+              0,
+              (sum, entry) => sum + (entry.quantity),
+            );
 
             item.inventory = endingQty;
             realm.add(item, update: true);
@@ -714,7 +827,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<List<PosSalesLine>> getPosSaleLines({Map<String, dynamic>? params}) async {
+  Future<List<PosSalesLine>> getPosSaleLines({
+    Map<String, dynamic>? params,
+  }) async {
     return _storage.getAll<PosSalesLine>(args: params);
   }
 
@@ -729,22 +844,30 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<GeneralJournalBatch?> getGeneralJournalBatch({Map<String, dynamic>? param}) {
+  Future<GeneralJournalBatch?> getGeneralJournalBatch({
+    Map<String, dynamic>? param,
+  }) {
     return _storage.getFirst<GeneralJournalBatch>(args: param);
   }
 
   @override
-  Future<List<ItemPrizeRedemptionHeader>> getItemPrizeRedemptionHeader({Map<String, dynamic>? param}) async {
+  Future<List<ItemPrizeRedemptionHeader>> getItemPrizeRedemptionHeader({
+    Map<String, dynamic>? param,
+  }) async {
     return await _storage.getAll<ItemPrizeRedemptionHeader>(args: param);
   }
 
   @override
-  Future<List<ItemPrizeRedemptionLine>> getItemPrizeRedemptionLine({Map<String, dynamic>? param}) async {
+  Future<List<ItemPrizeRedemptionLine>> getItemPrizeRedemptionLine({
+    Map<String, dynamic>? param,
+  }) async {
     return await _storage.getAll<ItemPrizeRedemptionLine>(args: param);
   }
 
   @override
-  Future<List<ItemPrizeRedemptionLineEntry>> getItemPrizeRedemptionEntries({Map<String, dynamic>? param}) async {
+  Future<List<ItemPrizeRedemptionLineEntry>> getItemPrizeRedemptionEntries({
+    Map<String, dynamic>? param,
+  }) async {
     return await _storage.getAll<ItemPrizeRedemptionLineEntry>(args: param);
   }
 
@@ -772,7 +895,10 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<bool> deleteTakeInRedemption(ItemPrizeRedemptionHeader header, String scheduleId) async {
+  Future<bool> deleteTakeInRedemption(
+    ItemPrizeRedemptionHeader header,
+    String scheduleId,
+  ) async {
     final existedEntry = await _storage.getAll<ItemPrizeRedemptionLineEntry>(
       args: {'promotion_no': header.no, 'schedule_id': scheduleId},
     );
@@ -788,12 +914,16 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<List<CompetitorPromotionLine>> getCompetitorProLine({Map<String, dynamic>? param}) async {
+  Future<List<CompetitorPromotionLine>> getCompetitorProLine({
+    Map<String, dynamic>? param,
+  }) async {
     return await _storage.getAll<CompetitorPromotionLine>(args: param);
   }
 
   @override
-  Future<bool> processSubmitRedemption(List<ItemPrizeRedemptionLineEntry> entries) {
+  Future<bool> processSubmitRedemption(
+    List<ItemPrizeRedemptionLineEntry> entries,
+  ) {
     return _storage.writeTransaction((realm) {
       for (var entry in entries) {
         entry.status = kStatusSubmit;
@@ -805,7 +935,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl implements RealmTa
   }
 
   @override
-  Future<bool> moveOldScheduleToCurrentDate(List<SalespersonSchedule> oldSchedules) async {
+  Future<bool> moveOldScheduleToCurrentDate(
+    List<SalespersonSchedule> oldSchedules,
+  ) async {
     return await _storage.writeTransaction((realm) {
       final today = DateTime.now().toDateString();
       for (final s in oldSchedules) {

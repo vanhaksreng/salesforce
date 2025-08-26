@@ -46,7 +46,8 @@ class SaleCheckoutScreen extends StatefulWidget {
   State<SaleCheckoutScreen> createState() => _SaleCheckoutScreenState();
 }
 
-class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMixin {
+class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
+    with MessageMixin {
   final _cubit = SaleCheckoutCubit();
   final _shipmentDateCntr = TextEditingController();
   final _shipmentCodeCtr = TextEditingController();
@@ -69,8 +70,12 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
   }
 
   void _initLoad() async {
-    await _cubit.getCustomerLedgerEntry(widget.arg.salesHeader.customerNo ?? "");
-    await _cubit.getDefaultPaymentTerm(widget.arg.salesHeader.paymentTermCode ?? "");
+    await _cubit.getCustomerLedgerEntry(
+      widget.arg.salesHeader.customerNo ?? "",
+    );
+    await _cubit.getDefaultPaymentTerm(
+      widget.arg.salesHeader.paymentTermCode ?? "",
+    );
     if (_cubit.state.paymentTerm != null) {
       _paymentTermCtr.text = _cubit.state.paymentTerm?.description ?? "";
     }
@@ -90,7 +95,7 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
           throw GeneralException("Payment method is required");
         }
       } else if (widget.arg.salesHeader.documentType == kSaleOrder) {
-        await _validateSaleCreditAmount();
+        // await _validateSaleCreditLimitAmount();
       }
 
       _processCheckout();
@@ -144,62 +149,69 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
   Future<void> _validateSaleInvoice() async {
     final paymentAmt = Helpers.toDouble(_paymentAmoutCtr.text);
 
-    if (paymentAmt <= 0) {
-      throw GeneralException("Payment amount is required");
-    }
+    // if (paymentAmt <= 0) {
+    //   throw GeneralException("Payment amount is required");
+    // }
 
-    final amountDue = Helpers.formatNumberDb(widget.arg.amountDue, option: FormatType.amount);
+    final amountDue = Helpers.formatNumberDb(
+      widget.arg.amountDue,
+      option: FormatType.amount,
+    );
+
     if (paymentAmt > amountDue) {
-      throw GeneralException("Payment amount cannot greater than amount due. $amountDue");
+      throw GeneralException(
+        "Payment amount cannot greater than amount due. $amountDue",
+      );
     }
 
-    if (_paymentMethod == null) {
+    if (paymentAmt > 0 && _paymentMethod == null) {
       throw GeneralException("Payment method is required");
     }
 
-    if (!await _cubit.hasPermission(kPostCreditInvoice) && (widget.arg.amountDue - paymentAmt) > 0) {
+    if (!await _cubit.hasPermission(kPostCreditInvoice) &&
+        (widget.arg.amountDue - paymentAmt) > 0) {
       throw GeneralException(
         "Payment amount must ${Helpers.formatNumber(widget.arg.amountDue, option: FormatType.amount)}",
       );
     }
   }
 
-  Future<void> _validateSaleCreditAmount() async {
-    final customer = _cubit.state.customer;
-    final customerLedgerEntries = _cubit.state.customerLedgerEntries;
+  Future<void> _validateSaleCreditLimitAmount() async {
+    // final customer = _cubit.state.customer;
+    // final customerLedgerEntries = _cubit.state.customerLedgerEntries;
 
-    if (customer == null) {
-      throw GeneralException("Customer is required");
-    }
+    // if (customer == null) {
+    //   throw GeneralException("Customer is required");
+    // }
 
-    final String creditLimitType = customer.creditLimitedType ?? "";
-    final double cla = customer.creditLimitedAmount ?? 0;
+    // final String creditLimitType = customer.creditLimitedType ?? "";
+    // final double cla = customer.creditLimitedAmount ?? 0;
 
-    double sumRemaining = customerLedgerEntries.fold(
-      0.0,
-      (sum, entry) => sum + Helpers.toDouble(entry.remainingAmount),
-    );
+    // double sumRemaining = customerLedgerEntries.fold(
+    //   0.0,
+    //   (sum, entry) => sum + Helpers.toDouble(entry.remainingAmount),
+    // );
 
-    if (cla > 0) {
-      switch (creditLimitType) {
-        case kBalance:
-          if (sumRemaining > cla) {
-            throw GeneralException(
-              "Customer credit limit is ${Helpers.formatNumberLink(customer.creditLimitedAmount, option: FormatType.amount)}. Please clear pending payments before proceeding.",
-            );
-          }
+    // if (cla > 0) {
+    //   switch (creditLimitType) {
+    //     case kBalance:
+    //       if (sumRemaining > cla) {
+    //         throw GeneralException(
+    //           "Customer credit limit is ${Helpers.formatNumberLink(customer.creditLimitedAmount, option: FormatType.amount)}. Please clear pending payments before proceeding.",
+    //         );
+    //       }
 
-        case kNoOfInvoice:
-          if (customerLedgerEntries.length > cla) {
-            throw GeneralException(
-              "Customer has pending payments exceeding the credit limit of ${Helpers.formatNumber(customer.creditLimitedAmount ?? "0", option: FormatType.quantity)} invoices.",
-            );
-          }
+    //     case kNoOfInvoice:
+    //       if (customerLedgerEntries.length > cla) {
+    //         throw GeneralException(
+    //           "Customer has pending payments exceeding the credit limit of ${Helpers.formatNumber(customer.creditLimitedAmount ?? "0", option: FormatType.quantity)} invoices.",
+    //         );
+    //       }
 
-        case kNoCredit:
-          throw GeneralException("No credit allowed for this customer");
-      }
-    }
+    //     case kNoCredit:
+    //       throw GeneralException("No credit allowed for this customer");
+    //   }
+    // }
 
     // Check if credit limit type is no empty
     // Balance, by amount : Allow to credit up to $100
@@ -226,7 +238,11 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
   }
 
   void _navigatorToDistributorScreen() {
-    Navigator.pushNamed(context, DistributorScreen.routeName, arguments: _paymentTypeCtr.text).then((value) {
+    Navigator.pushNamed(
+      context,
+      DistributorScreen.routeName,
+      arguments: _paymentTypeCtr.text,
+    ).then((value) {
       if (value == null) return;
 
       if (value is Distributor) {
@@ -238,7 +254,11 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
   }
 
   void _navigatorToPaymentTermScreen() {
-    Navigator.pushNamed(context, PaymentTermScreen.routeName, arguments: _paymentTypeCtr.text).then((value) {
+    Navigator.pushNamed(
+      context,
+      PaymentTermScreen.routeName,
+      arguments: _paymentTypeCtr.text,
+    ).then((value) {
       if (value == null) return;
 
       if (value is PaymentTerm) {
@@ -281,7 +301,8 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
     ).then((selectedDate) {
       if (selectedDate != null && selectedDate != pickDate) {
         _cubit.onPickDate(selectedDate);
-        _shipmentDateCntr.text = (_cubit.state.pickDate ?? pickDate)?.toDateString() ?? '';
+        _shipmentDateCntr.text =
+            (_cubit.state.pickDate ?? pickDate)?.toDateString() ?? '';
       }
     });
   }
@@ -314,7 +335,11 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
         },
       ),
       persistentFooterButtons: [
-        BtnWidget(gradient: linearGradient, onPressed: () => _onCheckoutHandler(), title: greeting("Submit")),
+        BtnWidget(
+          gradient: linearGradient,
+          onPressed: () => _onCheckoutHandler(),
+          title: greeting("Submit"),
+        ),
       ],
     );
   }
@@ -323,7 +348,10 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
     return ListView(
       padding: const EdgeInsets.all(appSpace),
       children: [
-        if (state.shipmentAddress != null) ...[_shipmentBox(state.shipmentAddress!), Helpers.gapH(15)],
+        if (state.shipmentAddress != null) ...[
+          _shipmentBox(state.shipmentAddress!),
+          Helpers.gapH(15),
+        ],
         _geenralBox(state),
         Helpers.gapH(15),
         _headerBoxInfo(),
@@ -349,12 +377,21 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
                 vertical: 6,
                 horizontal: 3,
                 fontSize: 11,
-                child: TextWidget(text: Helpers.currencySymble(), fontSize: 11, color: _getTagColor()),
+                child: TextWidget(
+                  text: Helpers.currencySymble(),
+                  fontSize: 11,
+                  color: _getTagColor(),
+                ),
               ),
-              const TextWidget(text: "Price Breakdown", fontSize: 16, fontWeight: FontWeight.bold),
+              const TextWidget(
+                text: "Price Breakdown",
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
               const Spacer(),
               ChipWidget(
-                label: (widget.arg.salesHeader.documentType ?? "").toUpperCase(),
+                label: (widget.arg.salesHeader.documentType ?? "")
+                    .toUpperCase(),
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
                 vertical: 6,
@@ -367,27 +404,37 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
           Helpers.gapH(1),
           _rowTitle(
             key: "Subtotal",
-            value: Helpers.formatNumberLink(widget.arg.subtotalAmount, option: FormatType.amount),
+            value: Helpers.formatNumberLink(
+              widget.arg.subtotalAmount,
+              option: FormatType.amount,
+            ),
             keyColor: Colors.black87,
             fontSize: 15,
           ),
           _rowTitle(
             key: "Discount",
-            value: "-${Helpers.formatNumber(widget.arg.discountAmount, option: FormatType.amount)}",
+            value:
+                "-${Helpers.formatNumber(widget.arg.discountAmount, option: FormatType.amount)}",
             keyColor: red,
             valueColor: red,
             fontSize: 15,
           ),
           _rowTitle(
             key: "Total VAT",
-            value: Helpers.formatNumberLink(widget.arg.vatAmount, option: FormatType.amount),
+            value: Helpers.formatNumberLink(
+              widget.arg.vatAmount,
+              option: FormatType.amount,
+            ),
             keyColor: Colors.black87,
             fontSize: 15,
           ),
           const Hr(width: double.infinity),
           _rowTitle(
             key: "Total",
-            value: Helpers.formatNumberLink(widget.arg.amountDue, option: FormatType.amount),
+            value: Helpers.formatNumberLink(
+              widget.arg.amountDue,
+              option: FormatType.amount,
+            ),
             keyColor: Colors.black,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -412,9 +459,17 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
                 radius: 8,
                 vertical: 6,
                 horizontal: 0,
-                child: Icon(Icons.info_outline, size: 12.scale, color: _getTagColor()),
+                child: Icon(
+                  Icons.info_outline,
+                  size: 12.scale,
+                  color: _getTagColor(),
+                ),
               ),
-              const TextWidget(text: 'General Info', fontSize: 16, fontWeight: FontWeight.bold),
+              const TextWidget(
+                text: 'General Info',
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ],
           ),
           TextFormFieldWidget(
@@ -424,7 +479,11 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
             controller: _paymentTermCtr,
             isDense: true,
             label: greeting("Payment Term"),
-            suffixIcon: const Icon(Icons.arrow_forward_ios_sharp, size: 10, color: primary),
+            suffixIcon: const Icon(
+              Icons.arrow_forward_ios_sharp,
+              size: 10,
+              color: primary,
+            ),
             isDefaultTextForm: true,
           ),
           TextFormFieldWidget(
@@ -438,7 +497,9 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
               flipX: false,
               onPressed: () => _cubit.clearTextFromField(_distributorCtr),
               icons: Icon(
-                state.codeDis.isNotEmpty ? Icons.cancel : Icons.arrow_forward_ios_sharp,
+                state.codeDis.isNotEmpty
+                    ? Icons.cancel
+                    : Icons.arrow_forward_ios_sharp,
                 size: state.codeDis.isNotEmpty ? 24.scale : 10.scale,
                 color: state.codeDis.isNotEmpty ? error : primary,
               ),
@@ -470,15 +531,26 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
                 radius: 8,
                 vertical: 6,
                 horizontal: 0,
-                child: Icon(Icons.payment, color: _getTagColor(), size: 13.scale),
+                child: Icon(
+                  Icons.payment,
+                  color: _getTagColor(),
+                  size: 13.scale,
+                ),
               ),
-              const TextWidget(text: 'Payment', fontSize: 16, fontWeight: FontWeight.bold),
+              const TextWidget(
+                text: 'Payment',
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ],
           ),
           TextFormFieldWidget(
             controller: _paymentAmoutCtr,
             isDense: true,
-            keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(
+              signed: true,
+              decimal: true,
+            ),
             inputFormatters: const [QuantityInputFormatter(decimalRange: 8)],
             textColor: textColor50,
             label: greeting("Payment Amount"),
@@ -491,7 +563,11 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
             controller: _paymentTypeCtr,
             isDense: true,
             label: greeting("payment_type"),
-            suffixIcon: const Icon(Icons.arrow_forward_ios_sharp, size: 10, color: primary),
+            suffixIcon: const Icon(
+              Icons.arrow_forward_ios_sharp,
+              size: 10,
+              color: primary,
+            ),
             isDefaultTextForm: true,
           ),
         ],
@@ -513,9 +589,18 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
                 radius: 8,
                 vertical: 6,
                 horizontal: 0,
-                child: SvgWidget(assetName: kSvgTruck, colorSvg: _getTagColor(), width: 12, height: 12),
+                child: SvgWidget(
+                  assetName: kSvgTruck,
+                  colorSvg: _getTagColor(),
+                  width: 12,
+                  height: 12,
+                ),
               ),
-              const TextWidget(text: 'Shipment', fontSize: 16, fontWeight: FontWeight.bold),
+              const TextWidget(
+                text: 'Shipment',
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ],
           ),
           if (widget.arg.salesHeader.documentType == kSaleOrder)
@@ -528,11 +613,21 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
                   controller: _shipmentDateCntr,
                   label: greeting("Request Shipment Date"),
                   suffixIcon: BtnIconCircleWidget(
-                    icons: Icon(Icons.date_range, color: primary, size: 18.scale),
+                    icons: Icon(
+                      Icons.date_range,
+                      color: primary,
+                      size: 18.scale,
+                    ),
                     onPressed: () => _onChangeDateHandler(),
                   ),
-                  inputFormatters: switchInputFormater(isInputrDate: true, isInputrQty: false),
-                  keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+                  inputFormatters: switchInputFormater(
+                    isInputrDate: true,
+                    isInputrQty: false,
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    signed: true,
+                    decimal: true,
+                  ),
                 );
               },
             ),
@@ -543,7 +638,11 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
             controller: _shipmentCodeCtr,
             isDense: true,
             label: greeting("Ship To Code"),
-            suffixIcon: const Icon(Icons.arrow_forward_ios_sharp, size: 10, color: primary),
+            suffixIcon: const Icon(
+              Icons.arrow_forward_ios_sharp,
+              size: 10,
+              color: primary,
+            ),
             isDefaultTextForm: true,
           ),
           _shipmentRow(
@@ -552,8 +651,14 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
             key2: "Phone No".toUpperCase(),
             value2: shipment.phoneNo ?? "",
           ),
-          _shipmentRow(key: "Address".toUpperCase(), value: shipment.address ?? ""),
-          _shipmentRow(key: "Address 2".toUpperCase(), value: shipment.address2 ?? ""),
+          _shipmentRow(
+            key: "Address".toUpperCase(),
+            value: shipment.address ?? "",
+          ),
+          _shipmentRow(
+            key: "Address 2".toUpperCase(),
+            value: shipment.address2 ?? "",
+          ),
         ],
       ),
     );
@@ -576,11 +681,17 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
             children: [
               Text(
                 key,
-                style: TextStyle(color: Colors.grey, fontSize: scaleFontSize(fontSize - 3)),
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: scaleFontSize(fontSize - 3),
+                ),
               ),
               Text(
                 value,
-                style: TextStyle(color: valueColor, fontSize: scaleFontSize(fontSize)),
+                style: TextStyle(
+                  color: valueColor,
+                  fontSize: scaleFontSize(fontSize),
+                ),
               ),
             ],
           ),
@@ -592,11 +703,17 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
               children: [
                 Text(
                   key2,
-                  style: TextStyle(color: Colors.grey, fontSize: scaleFontSize(fontSize - 3)),
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: scaleFontSize(fontSize - 3),
+                  ),
                 ),
                 Text(
                   value2,
-                  style: TextStyle(color: value2Color, fontSize: scaleFontSize(fontSize)),
+                  style: TextStyle(
+                    color: value2Color,
+                    fontSize: scaleFontSize(fontSize),
+                  ),
                 ),
               ],
             ),
@@ -605,7 +722,10 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
     );
   }
 
-  List<TextInputFormatter>? switchInputFormater({bool isInputrDate = false, bool isInputrQty = false}) {
+  List<TextInputFormatter>? switchInputFormater({
+    bool isInputrDate = false,
+    bool isInputrQty = false,
+  }) {
     if (isInputrDate) {
       return [DateInputFormatter()];
     } else if (isInputrQty) {
@@ -628,11 +748,19 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen> with MessageMix
       children: [
         Text(
           key,
-          style: TextStyle(color: keyColor, fontSize: scaleFontSize(fontSize), fontWeight: fontWeight),
+          style: TextStyle(
+            color: keyColor,
+            fontSize: scaleFontSize(fontSize),
+            fontWeight: fontWeight,
+          ),
         ),
         Text(
           value,
-          style: TextStyle(fontWeight: FontWeight.w700, color: valueColor, fontSize: scaleFontSize(fontSize)),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: valueColor,
+            fontSize: scaleFontSize(fontSize),
+          ),
         ),
       ],
     );

@@ -39,7 +39,7 @@ object PermissionUtils {
         val fineLocation = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarseLocation = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         return (fineLocation || coarseLocation) &&
-        isGooglePlayServicesAvailable(context)
+                isGooglePlayServicesAvailable(context)
     }
 
     // Checks if the app can track location in the background ("Always")
@@ -67,7 +67,7 @@ object PermissionUtils {
                 (mode == "foreground" || hasBackgroundLocationPermission(context)) &&
                 isGooglePlayServicesAvailable(context)
     }
-    
+
     fun getPermissionStatus(context: Context): Map<String, Boolean> {
         return mapOf(
             "canTrackForeground" to hasLocationPermissions(context),

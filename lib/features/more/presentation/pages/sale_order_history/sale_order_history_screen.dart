@@ -32,7 +32,8 @@ class SaleOrderHistoryScreen extends StatefulWidget {
   State<SaleOrderHistoryScreen> createState() => _SaleOrderScreenState();
 }
 
-class _SaleOrderScreenState extends State<SaleOrderHistoryScreen> with MessageMixin {
+class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
+    with MessageMixin {
   final _cubit = SaleOrderHistoryCubit();
 
   final ScrollController _scrollController = ScrollController();
@@ -48,7 +49,8 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen> with MessageMi
     _cubit.getSaleOrders(
       param: {
         'document_type': 'Order',
-        "posting_date": "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+        "posting_date":
+            "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
       },
     );
     _scrollController.addListener(_handleScrolling);
@@ -62,7 +64,9 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen> with MessageMi
   }
 
   bool _shouldLoadMore() {
-    return _scrollController.position.pixels == _scrollController.position.maxScrollExtent && !_cubit.state.isFetching;
+    return _scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent &&
+        !_cubit.state.isFetching;
   }
 
   void _loadMoreItems() async {
@@ -83,7 +87,11 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen> with MessageMi
     _cubit.getSaleOrders(param: param, page: 1, fetchingApi: true);
   }
 
-  Future<Object?> navigatorToSaleHistoryList(BuildContext context, List<dynamic> records, int index) {
+  Future<Object?> navigatorToSaleHistoryList(
+    BuildContext context,
+    List<dynamic> records,
+    int index,
+  ) {
     return Navigator.pushNamed(
       context,
       SaleOrderHistoryDetailScreen.routeName,
@@ -107,8 +115,12 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen> with MessageMi
     } else {
       selectedDate = "";
     }
-    final String fromDate = initialFromDate != null ? DateTimeExt.parse(initialFromDate.toString()).toDateString() : "";
-    final String toDate = initialToDate != null ? DateTimeExt.parse(initialToDate.toString()).toDateString() : "";
+    final String fromDate = initialFromDate != null
+        ? DateTimeExt.parse(initialFromDate.toString()).toDateString()
+        : "";
+    final String toDate = initialToDate != null
+        ? DateTimeExt.parse(initialToDate.toString()).toDateString()
+        : "";
 
     if (fromDate.isNotEmpty && toDate.isNotEmpty) {
       param["posting_date"] = '$fromDate .. $toDate';
@@ -133,16 +145,23 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen> with MessageMi
 
   Future<void> shareSaleOrder(String documentNo) async {
     final l = LoadingOverlay.of(context);
+    l.show();
+
     try {
-      l.show();
-      final html = await _cubit.getInvoiceHtml(documentNo: documentNo, documenType: "Order");
+      final html = await _cubit.getInvoiceHtml(
+        documentNo: documentNo,
+        documenType: "Order",
+      );
 
       if (html.isEmpty) {
         l.hide();
         return;
       }
 
-      final pdfFile = await Helpers.generateToPdfDocument(htmlContent: html, documentNo: documentNo);
+      final pdfFile = await Helpers.generateToPdfDocument(
+        htmlContent: html,
+        documentNo: documentNo,
+      );
 
       if (pdfFile == null) {
         l.hide();

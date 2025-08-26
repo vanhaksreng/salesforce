@@ -103,6 +103,9 @@ class _SalespersonSchedule {
   late String? createdAt;
   @MapTo("updated_at")
   late String? updatedAt;
+
+  @Ignored() // not saved in Realm
+  double? distance;
 }
 
 @MapTo("GPS_TRACKING_ENTRY")

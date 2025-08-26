@@ -29,7 +29,7 @@ class LocationWorker(context: Context, params: WorkerParameters) : Worker(contex
                             "trackingMode" to "periodic"
                         )
 
-                        LocationService.saveLocationToPrefs(applicationContext, locationData)
+                        LocationService.saveLocation(applicationContext, locationData)
                         Log.d("LocationWorker", "Saved location from WorkManager: $locationData")
                     } else {
                         Log.w("LocationWorker", "Location is null")

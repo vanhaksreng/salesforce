@@ -12,6 +12,7 @@ import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_row_shape.dart';
 import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/tasks/domain/entities/checkout_arg.dart';
 import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
@@ -48,7 +49,8 @@ class AddCartPreviewScreen extends StatefulWidget {
   State<AddCartPreviewScreen> createState() => _AddCardPreviewScreenState();
 }
 
-class _AddCardPreviewScreenState extends State<AddCartPreviewScreen> with MessageMixin {
+class _AddCardPreviewScreenState extends State<AddCartPreviewScreen>
+    with MessageMixin {
   final _cubit = AddCartPreviewCubit();
 
   @override
@@ -58,12 +60,16 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen> with Messag
   }
 
   void _initLoad() async {
-    await _cubit.loadInitialData(scheduleId: widget.scheduleId, documentType: widget.documentType);
+    await _cubit.loadInitialData(
+      scheduleId: widget.scheduleId,
+      documentType: widget.documentType,
+    );
 
     await _cubit.getSchedule(widget.scheduleId);
     await _cubit.getSaleLines();
     await _cubit.getCustomer(widget.customerNo);
     await _cubit.getCustomerLedgerEntry(widget.customerNo);
+    _checkCreditLimitType();
   }
 
   void _navigateToCheckoutScreen() {
@@ -143,30 +149,56 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen> with Messag
     }
   }
 
-  textHeader() {
+  void _checkCreditLimitType() {
     final customer = _cubit.state.customer;
+    if (customer == null) {
+      _cubit.setCreditLimitText();
+      return;
+    }
+
+    final String creditLimitType = customer.creditLimitedType ?? "";
+    final creditLimitedAmount = Helpers.toDouble(customer.creditLimitedAmount);
+
+    if (creditLimitType == kNoCredit) {
+      _cubit.setCreditLimitText(
+        "[${customer.name}], This customer must pay for what they buy. Please ensure payment is arranged, especially if there are existing unpaid invoices.",
+      );
+      return;
+    }
+
+    if (creditLimitedAmount == 0 && creditLimitType == "") {
+      _cubit.setCreditLimitText();
+      return;
+    }
+
     final customerLedgerEntries = _cubit.state.customerLedgerEntries ?? [];
 
-    if (customer == null) {
-      return "";
-    }
-    final String creditLimitType = _cubit.state.customer?.creditLimitedType ?? "";
+    if (creditLimitType == kBalance) {
+      double remaining = customerLedgerEntries.fold(
+        0.0,
+        (sum, entry) => sum + Helpers.toDouble(entry.remainingAmount),
+      );
 
-    double sumRemaining = customerLedgerEntries.fold(
-      0.0,
-      (sum, entry) => sum + Helpers.toDouble(entry.remainingAmount),
-    );
-    double sumToTalRemaining = sumRemaining + _cubit.state.totalAmt;
+      if ((remaining + _cubit.state.totalAmt) <=
+          Helpers.toDouble(customer.creditLimitedAmount)) {
+        return;
+      }
 
-    if (creditLimitType == kBalance && sumToTalRemaining > Helpers.toDouble(customer.creditLimitedAmount)) {
-      return "Remaining balance ${Helpers.formatNumberLink(sumRemaining, option: FormatType.amount)}";
-    } else if (creditLimitType == kNoOfInvoice &&
-        customerLedgerEntries.length > Helpers.toInt(customer.creditLimitedAmount)) {
-      return "Pending payments ${customerLedgerEntries.length} invoices";
+      _cubit.setCreditLimitText(
+        "[${customer.name}], This sale will cause the customer's total outstanding balance to exceed ${Helpers.formatNumber(creditLimitedAmount, option: FormatType.amount)}",
+      );
+    } else if (creditLimitType == kNoOfInvoice) {
+      if (customerLedgerEntries.length <= creditLimitedAmount) {
+        return;
+      }
+
+      _cubit.setCreditLimitText(
+        "[${customer.name}], This customer already has ${Helpers.formatNumber(creditLimitedAmount, option: FormatType.quantity)} unpaid invoices. Proceeding may exceed the allowed limit.",
+      );
     } else if (creditLimitType == kNoCredit) {
-      return "No credit allowed for this customer";
-    } else {
-      return "";
+      _cubit.setCreditLimitText(
+        "[${customer.name}], This customer must pay for what they buy. Please ensure payment is arranged, especially if there are existing unpaid invoices.",
+      );
     }
   }
 
@@ -219,14 +251,21 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen> with Messag
 
     return Column(
       children: [
-        if (textHeader() != "")
+        if (state.creditLimitText.isNotEmpty)
           BoxWidget(
             rounding: 0,
             color: orangeColor.withValues(alpha: 0.1),
-            padding: EdgeInsets.symmetric(horizontal: scaleFontSize(appSpace), vertical: scaleFontSize(8)),
+            padding: EdgeInsets.symmetric(
+              horizontal: scaleFontSize(appSpace),
+              vertical: scaleFontSize(8),
+            ),
             width: double.infinity,
             isBoxShadow: false,
-            child: TextWidget(color: warning, text: textHeader(), fontSize: 16),
+            child: TextWidget(
+              color: warning,
+              text: state.creditLimitText,
+              fontSize: 16,
+            ),
           ),
         Expanded(
           child: ListView.builder(
@@ -245,21 +284,32 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen> with Messag
                       TextShapeRow(
                         label: "Subtotal",
                         labelColor: textColor,
-                        value: Helpers.formatNumberLink(state.subTotalAmt, option: FormatType.amount),
+                        value: Helpers.formatNumberLink(
+                          state.subTotalAmt,
+                          option: FormatType.amount,
+                        ),
                       ),
                       TextShapeRow(
                         label: "Discount",
                         labelColor: error,
                         valueColor: error,
-                        value: Helpers.formatNumberLink(state.totalDiscountAmt, option: FormatType.amount),
+                        value: Helpers.formatNumberLink(
+                          state.totalDiscountAmt,
+                          option: FormatType.amount,
+                        ),
                       ),
                       TextShapeRow(
                         label: "Total VAT",
                         labelColor: textColor,
-                        value: Helpers.formatNumberLink(state.totalTaxAmt, option: FormatType.amount),
+                        value: Helpers.formatNumberLink(
+                          state.totalTaxAmt,
+                          option: FormatType.amount,
+                        ),
                       ),
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: scaleFontSize(8)),
+                        padding: EdgeInsets.symmetric(
+                          vertical: scaleFontSize(8),
+                        ),
                         child: const DotLine(),
                       ),
                       TextShapeRow(
@@ -267,7 +317,10 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen> with Messag
                         labelColor: textColor,
                         labelFontWeight: FontWeight.bold,
                         labelFontSize: 18,
-                        value: Helpers.formatNumberLink(state.totalAmt, option: FormatType.amount),
+                        value: Helpers.formatNumberLink(
+                          state.totalAmt,
+                          option: FormatType.amount,
+                        ),
                       ),
                     ],
                   ),
@@ -282,7 +335,9 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen> with Messag
                 item = state.items[indexItem];
               }
 
-              final lineSubtotal = Helpers.toDouble(line.quantity) * Helpers.toDouble(line.unitPrice);
+              final lineSubtotal =
+                  Helpers.toDouble(line.quantity) *
+                  Helpers.toDouble(line.unitPrice);
               final disAmt = lineSubtotal - Helpers.toDouble(line.amount);
 
               return BoxWidget(
@@ -320,26 +375,42 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen> with Messag
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       spacing: 6.scale,
                                       children: [
-                                        TextWidget(text: line.no ?? "", fontWeight: FontWeight.bold, fontSize: 16),
-                                        TextWidget(text: line.description ?? ""),
+                                        TextWidget(
+                                          text: line.no ?? "",
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                        TextWidget(
+                                          text: line.description ?? "",
+                                        ),
                                       ],
                                     ),
                                   ),
                                   if ((line.specialType ?? "").isNotEmpty)
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: _getChipColor(line.specialType ?? ""),
-                                        borderRadius: BorderRadius.circular(6.scale),
+                                        color: _getChipColor(
+                                          line.specialType ?? "",
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          6.scale,
+                                        ),
                                       ),
                                       padding: EdgeInsets.all(5.scale),
                                       height: 70.scale,
                                       child: Text(
                                         line.specialType ?? "",
-                                        style: TextStyle(color: white, fontWeight: FontWeight.bold, fontSize: 13.scale),
+                                        style: TextStyle(
+                                          color: white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13.scale,
+                                        ),
                                       ),
                                     ),
                                 ],
@@ -359,7 +430,10 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen> with Messag
                               "${Helpers.formatNumber(line.quantity, option: FormatType.quantity)} ${line.unitOfMeasure ?? ''}",
                         ),
                         TextWidget(
-                          text: Helpers.formatNumber(line.unitPrice, option: FormatType.amount),
+                          text: Helpers.formatNumber(
+                            line.unitPrice,
+                            option: FormatType.amount,
+                          ),
                           fontSize: 16,
                           color: success,
                           fontWeight: FontWeight.bold,
@@ -377,20 +451,29 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen> with Messag
                         children: [
                           TextShapeRow(
                             label: "Price",
-                            value: Helpers.formatNumberLink(lineSubtotal, option: FormatType.price),
+                            value: Helpers.formatNumberLink(
+                              lineSubtotal,
+                              option: FormatType.price,
+                            ),
                             labelFontSize: 12,
                             valueFontSize: 13,
                           ),
                           TextShapeRow(
                             label: "Discount",
-                            value: Helpers.formatNumberLink(disAmt, option: FormatType.amount),
+                            value: Helpers.formatNumberLink(
+                              disAmt,
+                              option: FormatType.amount,
+                            ),
                             valueColor: error,
                             labelFontSize: 12,
                             valueFontSize: 13,
                           ),
                           TextShapeRow(
                             label: "VAT",
-                            value: Helpers.formatNumberLink(line.vatAmount, option: FormatType.amount),
+                            value: Helpers.formatNumberLink(
+                              line.vatAmount,
+                              option: FormatType.amount,
+                            ),
                             labelFontSize: 12,
                             valueFontSize: 13,
                           ),
@@ -402,7 +485,10 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen> with Messag
                             labelColor: textColor,
                             valueColor: primary,
                             label: "Line Total",
-                            value: Helpers.formatNumberLink(line.amountIncludingVatLcy, option: FormatType.amount),
+                            value: Helpers.formatNumberLink(
+                              line.amountIncludingVatLcy,
+                              option: FormatType.amount,
+                            ),
                             labelFontSize: 12,
                             valueFontSize: 13,
                           ),
@@ -420,7 +506,12 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen> with Messag
                             textColor: mainColor,
                             onPressed: () => _onEditHandler(line, item),
                             title: "Edit",
-                            icon: const SvgWidget(width: 20, height: 20, colorSvg: mainColor, assetName: kEditIcon),
+                            icon: const SvgWidget(
+                              width: 20,
+                              height: 20,
+                              colorSvg: mainColor,
+                              assetName: kEditIcon,
+                            ),
                           ),
                         ),
                         // Expanded(
@@ -441,7 +532,10 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen> with Messag
                             textColor: error,
                             onPressed: () => _onDeleteHandler(line),
                             title: "Delete",
-                            icon: const SvgWidget(colorSvg: error, assetName: kSvgDelete),
+                            icon: const SvgWidget(
+                              colorSvg: error,
+                              assetName: kSvgDelete,
+                            ),
                           ),
                         ),
                       ],
