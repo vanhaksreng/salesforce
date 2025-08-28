@@ -104,7 +104,7 @@ class _SalespersonSchedule {
   @MapTo("updated_at")
   late String? updatedAt;
 
-  @Ignored() // not saved in Realm
+  @Ignored()
   double? distance;
 }
 

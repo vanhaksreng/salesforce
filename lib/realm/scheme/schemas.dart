@@ -264,6 +264,9 @@ class _Customer {
   late String? createdAt;
   @MapTo('updated_at')
   late String? updatedAt;
+
+  @Ignored()
+  double? distance;
 }
 
 @MapTo('CUSTOMER_ADDRESS')
