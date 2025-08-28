@@ -35,7 +35,9 @@ class AlertDialogBuilderWidget extends StatelessWidget {
 
   Widget _buildAlertDialog(context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.scale)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.scale),
+      ),
       title: TextWidget(
         textAlign: TextAlign.center,
         text: Helpers.capitalizeWords(labelAction),
@@ -43,22 +45,33 @@ class AlertDialogBuilderWidget extends StatelessWidget {
         fontWeight: FontWeight.bold,
       ),
       insetPadding: EdgeInsets.all(scaleFontSize(appSpace)),
-      contentPadding: EdgeInsets.fromLTRB(16.scale, 16.scale, 16.scale, 24.scale),
+      contentPadding: EdgeInsets.fromLTRB(
+        16.scale,
+        16.scale,
+        16.scale,
+        24.scale,
+      ),
       content: SingleChildScrollView(
-        child: child ?? TextWidget(textAlign: TextAlign.center, text: subTitle, fontSize: 14),
+        child:
+            child ??
+            TextWidget(
+              textAlign: TextAlign.center,
+              text: subTitle,
+              fontSize: 14,
+            ),
       ),
       actionsOverflowButtonSpacing: scaleFontSize(appSpace),
       actions: [
         if (confirm != null)
           BtnWidget(
-            size: BtnSize.small,
+            size: BtnSize.medium,
             gradient: linearGradient,
             onPressed: confirm,
             title: Helpers.capitalizeWords(confirmText),
           ),
         if (canCancel)
           BtnWidget(
-            size: BtnSize.small,
+            size: BtnSize.medium,
             variant: BtnVariant.outline,
             bgColor: white,
             borderColor: error.withAlpha(50),

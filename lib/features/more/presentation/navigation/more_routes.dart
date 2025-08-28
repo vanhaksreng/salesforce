@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/app/route_slide_transaction.dart';
+import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/domain/entities/more_model.dart';
 import 'package:salesforce/features/more/presentation/pages/about/about_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/bussiness_unit/bussiness_unit_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/customer_address/customer_address_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/customer_address_form/customer_address_form_screen.dart';
@@ -12,6 +14,7 @@ import 'package:salesforce/features/more/presentation/pages/customer_map/custome
 import 'package:salesforce/features/more/presentation/pages/customers/customers_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/downloads/download_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/invoice_printer/invoice_printer_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/items/items_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/profile_form/profile_form_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/promotion/promotion_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/promotion_detail/promotion_detail_screen.dart';
@@ -19,6 +22,7 @@ import 'package:salesforce/features/more/presentation/pages/redemptions/redempti
 import 'package:salesforce/features/more/presentation/pages/reset_password/reset_password_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_credit_memo_history/sale_credit_memo_history_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_credit_memo_history_detail/sale_credit_memo_history_detail_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_form_item/sale_form_item_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_invoice_history/sale_invoice_history_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_invoice_history_detail/sale_invoice_history_detail_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history/sale_order_history_screen.dart';
@@ -80,7 +84,9 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
     case CustomerAddressScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return CustomerAddressScreen(customer: settings.arguments as Customer);
+          return CustomerAddressScreen(
+            customer: settings.arguments as Customer,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -137,7 +143,10 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
           final args = settings.arguments as Map<String, dynamic>;
           final documentNo = args["documentNo"] as String;
           final docType = args["docType"] as String;
-          return SaleOrderHistoryDetailScreen(documentNo: documentNo, typeDoc: docType);
+          return SaleOrderHistoryDetailScreen(
+            documentNo: documentNo,
+            typeDoc: docType,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -213,7 +222,9 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
     case PromotionDetailScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return PromotionDetailScreen(arg: settings.arguments as ItemPromotionHeader);
+          return PromotionDetailScreen(
+            arg: settings.arguments as ItemPromotionHeader,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -262,6 +273,35 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
           return RouteST.st(animation, child, begin: 1, end: 0);
         },
       );
+
+    case AddCustomerScreen.routeName:
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return const AddCustomerScreen();
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return RouteST.st(animation, child, begin: 1, end: 0);
+        },
+      );
+    case ItemsScreen.routeName:
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return ItemsScreen(args: settings.arguments as ItemSaleArg);
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return RouteST.st(animation, child, begin: 1, end: 0);
+        },
+      );
+    case SaleFormItemScreen.routeName:
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return SaleFormItemScreen(args: settings.arguments as ItemSaleArg);
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return RouteST.st(animation, child, begin: 1, end: 0);
+        },
+      );
+
     default:
       return null; // Let the global router handle unknown routes
   }

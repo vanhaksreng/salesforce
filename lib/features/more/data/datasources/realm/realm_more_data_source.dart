@@ -18,9 +18,21 @@ abstract class RealmMoreDataSource extends BaseRealmDataSource {
   Future<void> deleteCustomerAddress(CustomerAddress address);
 
   Future<CustomerAddress> updateOrNewCustomerAddress(CustomerAddress address);
-  Future<List<ItemPrizeRedemptionHeader>> getItemPrizeRedemptionHeader({Map<String, dynamic>? param});
+  Future<List<ItemPrizeRedemptionHeader>> getItemPrizeRedemptionHeader({
+    Map<String, dynamic>? param,
+  });
 
-  Future<List<ItemPrizeRedemptionLine>> getItemPrizeRedemptionLine({Map<String, dynamic>? param});
+  Future<List<ItemPrizeRedemptionLine>> getItemPrizeRedemptionLine({
+    Map<String, dynamic>? param,
+  });
 
-  Future<void> updateProfileUser({required LoginSession user, UserInfo? userInfo});
+  Future<void> updateProfileUser({
+    required LoginSession user,
+    UserInfo? userInfo,
+  });
+  Future<void> storePosSale({
+    required PosSalesHeader saleHeader,
+    required List<PosSalesLine> saleLines,
+    bool refreshLine = true,
+  });
 }

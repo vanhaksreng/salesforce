@@ -30,7 +30,8 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
-class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository {
+class TaskRepositoryImpl extends BaseAppRepositoryImpl
+    implements TaskRepository {
   final ApiTaskDataSource _remote;
   final RealmTaskDataSource _local;
   final NetworkInfo _networkInfo;
@@ -44,7 +45,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
        _networkInfo = networkInfo;
 
   @override
-  Future<Either<Failure, CustomerItemLedgerEntry>> updateItemCheckStock(CheckItemStockArg data) async {
+  Future<Either<Failure, CustomerItemLedgerEntry>> updateItemCheckStock(
+    CheckItemStockArg data,
+  ) async {
     try {
       final schedule = data.schedule;
       final item = data.item;
@@ -55,7 +58,12 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
       if (cile == null) {
         final User? auth = getAuth();
 
-        final uom = await _local.getItemUom(params: {"item_no": item.no, "unit_of_measure_code": item.stockUomCode});
+        final uom = await _local.getItemUom(
+          params: {
+            "item_no": item.no,
+            "unit_of_measure_code": item.stockUomCode,
+          },
+        );
 
         if (uom == null) {
           throw GeneralException(
@@ -83,7 +91,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
       }
 
       if (cile.status != null && cile.status != kStatusOpen) {
-        throw GeneralException("You cannot modify while the record have been submited.");
+        throw GeneralException(
+          "You cannot modify while the record have been submited.",
+        );
       }
 
       await _local.storeItemCheckStock(cile: cile, arg: data);
@@ -131,7 +141,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, SalespersonSchedule?>> getSchedule({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, SalespersonSchedule?>> getSchedule({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final result = await _local.getSchedule(param: param);
       return Right(result);
@@ -195,7 +207,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<SalespersonSchedule>>> getLocalSchedules({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, List<SalespersonSchedule>>> getLocalSchedules({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final schedules = await _local.getSchedules(param: param);
       return Right(schedules);
@@ -206,7 +220,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
     }
   }
 
-  Future<Either<Failure, List<Permission>>> getPermissions({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, List<Permission>>> getPermissions({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final permissions = await _local.getPermissions(param: param);
       return Right(permissions);
@@ -215,7 +231,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
     }
   }
 
-  Future<Either<Failure, Permission?>> getPermission({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, Permission?>> getPermission({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final permission = await _local.getPermission(param: param);
       return Right(permission);
@@ -224,9 +242,8 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
     }
   }
 
-  Future<Either<Failure, List<CustomerItemLedgerEntry>>> getCustomerItemLedgerEntries({
-    Map<String, dynamic>? param,
-  }) async {
+  Future<Either<Failure, List<CustomerItemLedgerEntry>>>
+  getCustomerItemLedgerEntries({Map<String, dynamic>? param}) async {
     try {
       final records = await _local.getCustomerItemLedgerEntries(param: param);
       return Right(records);
@@ -257,7 +274,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
     //   await _local.storeData(records, handler.extractKey, date, tableName);
     // }
 
-    final localData = await _local.getPromotionType(param: {'allow_manual': 'Yes'});
+    final localData = await _local.getPromotionType(
+      param: {'allow_manual': 'Yes'},
+    );
 
     return Right(localData);
   }
@@ -296,7 +315,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, CustomerAddress?>> getCustomerAddress({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, CustomerAddress?>> getCustomerAddress({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final customerAddress = await _getCustomerAddress(params: params);
       return Right(customerAddress);
@@ -306,7 +327,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<CustomerAddress>>> getCustomerAddresses({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, List<CustomerAddress>>> getCustomerAddresses({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final customerAddress = await _local.getCustomerAddresses(args: params);
 
@@ -316,13 +339,21 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
     }
   }
 
-  Future<CustomerAddress?> _getCustomerAddress({Map<String, dynamic>? params}) async {
+  Future<CustomerAddress?> _getCustomerAddress({
+    Map<String, dynamic>? params,
+  }) async {
     return await _local.getCustomerAddress(args: params);
   }
 
-  Future<VatPostingSetup?> _getVatSetup({required String busPostingGroup, required String prodPostingGroup}) async {
+  Future<VatPostingSetup?> _getVatSetup({
+    required String busPostingGroup,
+    required String prodPostingGroup,
+  }) async {
     return await _local.getVatSetup(
-      param: {'vat_bus_posting_group': busPostingGroup, 'vat_prod_posting_group': prodPostingGroup},
+      param: {
+        'vat_bus_posting_group': busPostingGroup,
+        'vat_prod_posting_group': prodPostingGroup,
+      },
     );
   }
 
@@ -355,12 +386,22 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
     return await _local.getItemSaleLinePrice(param: p);
   }
 
-  Future<PosSalesHeader?> _getPosSaleHeader({required String no, required String documentType}) async {
-    return await _local.getPosSaleHeader(params: {'no': no, 'document_type': documentType});
+  Future<PosSalesHeader?> _getPosSaleHeader({
+    required String no,
+    required String documentType,
+  }) async {
+    return await _local.getPosSaleHeader(
+      params: {'no': no, 'document_type': documentType},
+    );
   }
 
-  Future<ItemUnitOfMeasure?> _getItemUom({required String itemNo, required String uomCode}) async {
-    return await _local.getItemUom(params: {'item_no': itemNo, 'unit_of_measure_code': uomCode});
+  Future<ItemUnitOfMeasure?> _getItemUom({
+    required String itemNo,
+    required String uomCode,
+  }) async {
+    return await _local.getItemUom(
+      params: {'item_no': itemNo, 'unit_of_measure_code': uomCode},
+    );
   }
 
   Future<PosSalesHeader> _generateNewSaleHeader({
@@ -375,7 +416,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
       CustomerAddress? customerAddress;
 
       if (schedule.shipToCode != null) {
-        customerAddress = await _getCustomerAddress(params: {'customer_no': customer.no, 'code': schedule.shipToCode});
+        customerAddress = await _getCustomerAddress(
+          params: {'customer_no': customer.no, 'code': schedule.shipToCode},
+        );
       }
 
       final userSetup = await _local.getUserSetup();
@@ -449,7 +492,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
       final item = saleArg.item;
       final schedule = saleArg.schedule;
 
-      final customer = await _getCustomer(no: schedule.customerNo ?? "");
+      final customer = await _getCustomer(no: schedule?.customerNo ?? "");
       if (customer == null) {
         throw GeneralException('Customer not found');
       }
@@ -459,12 +502,18 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
         throw GeneralException('Please kill app and open again.');
       }
 
-      final String saleNo = Helpers.getSaleDocumentNo(scheduleId: schedule.id, documentType: saleArg.documentType);
+      final String saleNo = Helpers.getSaleDocumentNo(
+        scheduleId: schedule?.id ?? "",
+        documentType: saleArg.documentType,
+      );
 
-      PosSalesHeader? saleHeader = await _getPosSaleHeader(no: saleNo, documentType: saleArg.documentType);
+      PosSalesHeader? saleHeader = await _getPosSaleHeader(
+        no: saleNo,
+        documentType: saleArg.documentType,
+      );
 
       saleHeader ??= await _generateNewSaleHeader(
-        schedule: schedule,
+        schedule: schedule!,
         documentNo: saleNo,
         customer: customer,
         documentType: saleArg.documentType,
@@ -475,9 +524,14 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
       final bus = customer.vatPostingGroupCode ?? "";
       final prod = item.vatProdPostingGroupCode ?? "";
 
-      final vatSetup = await _getVatSetup(busPostingGroup: bus, prodPostingGroup: prod);
+      final vatSetup = await _getVatSetup(
+        busPostingGroup: bus,
+        prodPostingGroup: prod,
+      );
       if (vatSetup == null) {
-        throw GeneralException('VAT setup not found. Product posting [$prod] with Bus. Posting [$bus]');
+        throw GeneralException(
+          'VAT setup not found. Product posting [$prod] with Bus. Posting [$bus]',
+        );
       }
 
       List<PosSalesLine> saleLines = [];
@@ -486,7 +540,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
 
       await Future.wait(
         inputs.map((input) async {
-          final itemUom = await _getItemUom(itemNo: item.no, uomCode: input.uomCode);
+          final itemUom = await _getItemUom(
+            itemNo: item.no,
+            uomCode: input.uomCode,
+          );
 
           if (itemUom == null) {
             throw GeneralException("Item uom not found.[${input.uomCode}]");
@@ -494,7 +551,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
 
           final qtyPerUnit = Helpers.toDouble(itemUom.qtyPerUnit);
           if (qtyPerUnit <= 0) {
-            throw GeneralException("Quantity per unit of item uom cannot zero.[${input.uomCode}]");
+            throw GeneralException(
+              "Quantity per unit of item uom cannot zero.[${input.uomCode}]",
+            );
           }
 
           double discountAmt = saleArg.discountAmount ?? 0;
@@ -507,8 +566,14 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
             discountAmt = 0;
             unitPrice = item.unitPrice ?? 0;
           } else {
-            manualPrice = Helpers.formatNumberDb(saleArg.manualPrice, option: FormatType.price);
-            unitPrice = Helpers.formatNumberDb(saleArg.itemUnitPrice, option: FormatType.price);
+            manualPrice = Helpers.formatNumberDb(
+              saleArg.manualPrice,
+              option: FormatType.price,
+            );
+            unitPrice = Helpers.formatNumberDb(
+              saleArg.itemUnitPrice,
+              option: FormatType.price,
+            );
             if (manualPrice > 0) {
               unitPrice = manualPrice;
             }
@@ -588,7 +653,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
             manualUnitPrice: manualPrice,
             isManualEdit: manualPrice > 0 ? kStatusYes : kStatusNo,
             documentDate: DateTime.now().toDateString(),
-            unitPriceOri: Helpers.formatNumberDb(saleArg.itemUnitPrice, option: FormatType.price),
+            unitPriceOri: Helpers.formatNumberDb(
+              saleArg.itemUnitPrice,
+              option: FormatType.price,
+            ),
           );
 
           saleLines.add(saleLine);
@@ -614,11 +682,17 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
       final now = DateTime.now();
 
       List<SalesHeader> totalSales = await _local.getSaleHeaders(
-        args: {'posting_date': now.toDateString(), 'document_type': posHeader.documentType},
+        args: {
+          'posting_date': now.toDateString(),
+          'document_type': posHeader.documentType,
+        },
       );
 
       final posLines = await _local.getPosSaleLines(
-        params: {'document_no': posHeader.no, 'document_type': posHeader.documentType},
+        params: {
+          'document_no': posHeader.no,
+          'document_type': posHeader.documentType,
+        },
       );
 
       if (posLines.isEmpty) {
@@ -676,7 +750,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
         externalDocumentNo: posHeader.externalDocumentNo,
         sourceNo: posHeader.sourceNo,
         sourceType: posHeader.sourceType,
-        amount: Helpers.formatNumberDb(arg.paymentAmount, option: FormatType.amount),
+        amount: Helpers.formatNumberDb(
+          arg.paymentAmount,
+          option: FormatType.amount,
+        ),
       );
 
       int lineNo = 0;
@@ -766,7 +843,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
     }
   }
 
-  void _processUploadSale({required List<SalesHeader> salesHeaders, required List<SalesLine> salesLines}) async {
+  void _processUploadSale({
+    required List<SalesHeader> salesHeaders,
+    required List<SalesLine> salesLines,
+  }) async {
     try {
       List<Map<String, dynamic>> jsonData = [];
       for (var sale in salesHeaders) {
@@ -781,7 +861,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
         return;
       }
 
-      final result = await _remote.processUpload(data: {'table_name': 'sales', 'data': jsonEncode(jsonData)});
+      final result = await _remote.processUpload(
+        data: {'table_name': 'sales', 'data': jsonEncode(jsonData)},
+      );
 
       final List<SalesHeader> remoteSalesHeaders = [];
       for (var sh in result['headers']) {
@@ -793,7 +875,11 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
         remoteLines.add(SalesLineExtension.fromMap(sh));
       }
 
-      _local.updateSales(saleHeaders: salesHeaders, remoteSaleHeaders: remoteSalesHeaders, remoteLines: remoteLines);
+      _local.updateSales(
+        saleHeaders: salesHeaders,
+        remoteSaleHeaders: remoteSalesHeaders,
+        remoteLines: remoteLines,
+      );
     } on Exception {
       //
     }
@@ -817,9 +903,15 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
         throw GeneralException('Please kill app and open again.');
       }
 
-      final String saleNo = Helpers.getSaleDocumentNo(scheduleId: schedule.id, documentType: documentType);
+      final String saleNo = Helpers.getSaleDocumentNo(
+        scheduleId: schedule.id,
+        documentType: documentType,
+      );
 
-      PosSalesHeader? saleHeader = await _getPosSaleHeader(no: saleNo, documentType: documentType);
+      PosSalesHeader? saleHeader = await _getPosSaleHeader(
+        no: saleNo,
+        documentType: documentType,
+      );
 
       String priceIncludeVat = customer.priceIncludeVat ?? kStatusNo;
 
@@ -842,7 +934,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
 
           if (record.type != "G/L Account") {
             final prod = l.item?.vatProdPostingGroupCode ?? "";
-            vatSetup = await _getVatSetup(busPostingGroup: bus, prodPostingGroup: prod);
+            vatSetup = await _getVatSetup(
+              busPostingGroup: bus,
+              prodPostingGroup: prod,
+            );
 
             if (vatSetup == null) {
               throw GeneralException(
@@ -856,16 +951,28 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
 
           ItemUnitOfMeasure? itemUom;
 
-          double unitPrice = Helpers.formatNumberDb(record.line.unitPrice, option: FormatType.price);
+          double unitPrice = Helpers.formatNumberDb(
+            record.line.unitPrice,
+            option: FormatType.price,
+          );
 
           if (['Item', 'G/L Account'].contains(record.type)) {
             if (record.type == "Item") {
-              itemUom = await _getItemUom(itemNo: l.item?.no ?? "", uomCode: l.saleUomCode);
+              itemUom = await _getItemUom(
+                itemNo: l.item?.no ?? "",
+                uomCode: l.saleUomCode,
+              );
             }
           } else {
-            itemUom = await _getItemUom(itemNo: l.itemNo, uomCode: l.item?.salesUomCode ?? "");
+            itemUom = await _getItemUom(
+              itemNo: l.itemNo,
+              uomCode: l.item?.salesUomCode ?? "",
+            );
 
-            unitPrice = Helpers.formatNumberDb(l.item?.unitPrice, option: FormatType.price);
+            unitPrice = Helpers.formatNumberDb(
+              l.item?.unitPrice,
+              option: FormatType.price,
+            );
           }
 
           double qtyPerUnit = 1;
@@ -876,7 +983,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
 
             qtyPerUnit = Helpers.toDouble(itemUom.qtyPerUnit);
             if (qtyPerUnit <= 0) {
-              throw GeneralException("Quantity per unit of item uom cannot be zero. [${itemUom.unitOfMeasureCode}]");
+              throw GeneralException(
+                "Quantity per unit of item uom cannot be zero. [${itemUom.unitOfMeasureCode}]",
+              );
             }
           }
 
@@ -888,8 +997,14 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
             unitPrice: unitPrice,
             quantity: Helpers.toDouble(l.orderQty),
             vatPercentage: Helpers.toDouble(vatSetup?.vatAmount),
-            discountAmount: Helpers.formatNumberDb(record.line.discountAmount, option: FormatType.amount),
-            discountPercentage: Helpers.formatNumberDb(record.line.discountPercentage, option: FormatType.percentage),
+            discountAmount: Helpers.formatNumberDb(
+              record.line.discountAmount,
+              option: FormatType.amount,
+            ),
+            discountPercentage: Helpers.formatNumberDb(
+              record.line.discountPercentage,
+              option: FormatType.percentage,
+            ),
             priceIncludeVat: priceIncludeVat == kStatusYes,
           );
 
@@ -928,7 +1043,8 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
             requestShipmentDate: saleHeader.requestShipmentDate,
             currencyCode: saleHeader.currencyCode,
             currencyFactor: saleHeader.currencyFactor,
-            vatCalculationType: vatSetup?.vatCalculationType ?? "VAT After Disc.",
+            vatCalculationType:
+                vatSetup?.vatCalculationType ?? "VAT After Disc.",
             vatPercentage: Helpers.toDouble(vatSetup?.vatAmount),
             unitOfMeasure: itemUom?.unitOfMeasureCode ?? "",
             qtyPerUnitOfMeasure: qtyPerUnit,
@@ -941,8 +1057,14 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
             quantityShipped: 0,
             unitPrice: unitPrice,
             unitPriceLcy: unitPrice,
-            discountAmount: Helpers.formatNumberDb(record.line.discountAmount, option: FormatType.amount),
-            discountPercentage: Helpers.formatNumberDb(record.line.discountPercentage, option: FormatType.percentage),
+            discountAmount: Helpers.formatNumberDb(
+              record.line.discountAmount,
+              option: FormatType.amount,
+            ),
+            discountPercentage: Helpers.formatNumberDb(
+              record.line.discountPercentage,
+              option: FormatType.percentage,
+            ),
             vatAmount: calculated.vatAmount,
             vatBaseAmount: calculated.vatBaseAmount,
             amount: calculated.amount,
@@ -956,7 +1078,11 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
         }
       }
 
-      await _local.storePosSale(saleHeader: saleHeader, saleLines: saleLines, refreshLine: false);
+      await _local.storePosSale(
+        saleHeader: saleHeader,
+        saleLines: saleLines,
+        refreshLine: false,
+      );
 
       return const Right(true);
     } on GeneralException catch (e) {
@@ -988,7 +1114,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
     int page = 1,
   }) async {
     try {
-      final records = await _local.getCompletitorItems(param: params, page: page);
+      final records = await _local.getCompletitorItems(
+        param: params,
+        page: page,
+      );
       return Right(records);
     } on Exception {
       return const Left(CacheFailure(errorInternetMessage));
@@ -996,7 +1125,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<Competitor>>> getCompetitors({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, List<Competitor>>> getCompetitors({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final competitors = await _local.getCompetitors(param: param);
       return Right(competitors);
@@ -1006,7 +1137,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<PointOfSalesMaterial>>> posms({Map<String, dynamic>? param, int? page}) async {
+  Future<Either<Failure, List<PointOfSalesMaterial>>> posms({
+    Map<String, dynamic>? param,
+    int? page,
+  }) async {
     try {
       final posms = await _local.posms(param: param);
 
@@ -1017,7 +1151,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<Merchandise>>> merchandises({Map<String, dynamic>? param, int? page}) async {
+  Future<Either<Failure, List<Merchandise>>> merchandises({
+    Map<String, dynamic>? param,
+    int? page,
+  }) async {
     try {
       final merchandises = await _local.merchandises(param: param);
 
@@ -1028,11 +1165,11 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<SalesPersonScheduleMerchandise>>> getSalesPersonScheduleMerchandises({
-    Map<String, dynamic>? param,
-  }) async {
+  Future<Either<Failure, List<SalesPersonScheduleMerchandise>>>
+  getSalesPersonScheduleMerchandises({Map<String, dynamic>? param}) async {
     try {
-      final merchandiseSchedule = await _local.getSalesPersonScheduleMerchandises(args: param);
+      final merchandiseSchedule = await _local
+          .getSalesPersonScheduleMerchandises(args: param);
       return Right(merchandiseSchedule);
     } on GeneralException {
       return const Left(CacheFailure(errorInternetMessage));
@@ -1040,9 +1177,12 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<CustomerLedgerEntry>>> getCustomerLedgerEntry({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, List<CustomerLedgerEntry>>> getCustomerLedgerEntry({
+    Map<String, dynamic>? param,
+  }) async {
     try {
-      final List<CustomerLedgerEntry> cusLedgerEntry = await _local.getCustomerLedgerEntry(param);
+      final List<CustomerLedgerEntry> cusLedgerEntry = await _local
+          .getCustomerLedgerEntry(param);
       return Right(cusLedgerEntry);
     } on GeneralException {
       return const Left(CacheFailure(errorInternetMessage));
@@ -1050,9 +1190,12 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, CustomerLedgerEntry?>> getDetailCustomerLedgerEntry({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, CustomerLedgerEntry?>> getDetailCustomerLedgerEntry({
+    Map<String, dynamic>? param,
+  }) async {
     try {
-      final CustomerLedgerEntry? cusLedgerEntry = await _local.getDetailCustomerLedgerEntry(param);
+      final CustomerLedgerEntry? cusLedgerEntry = await _local
+          .getDetailCustomerLedgerEntry(param);
       return Right(cusLedgerEntry);
     } on GeneralException {
       return const Left(CacheFailure(errorInternetMessage));
@@ -1060,9 +1203,13 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<PaymentMethod>>> getPaymentType({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, List<PaymentMethod>>> getPaymentType({
+    Map<String, dynamic>? param,
+  }) async {
     try {
-      final List<PaymentMethod> paymentMethods = await _local.getPaymentType(param);
+      final List<PaymentMethod> paymentMethods = await _local.getPaymentType(
+        param,
+      );
       return Right(paymentMethods);
     } on GeneralException {
       return const Left(CacheFailure(errorInternetMessage));
@@ -1070,7 +1217,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<CustomerItemLedgerEntry>>> deleteItemCheckStock(CheckItemStockArg data) async {
+  Future<Either<Failure, List<CustomerItemLedgerEntry>>> deleteItemCheckStock(
+    CheckItemStockArg data,
+  ) async {
     try {
       final success = await _local.deleteItemCheckStock(data);
 
@@ -1083,7 +1232,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, CustomerItemLedgerEntry?>> getCustomerItemLedgerEntry({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, CustomerItemLedgerEntry?>> getCustomerItemLedgerEntry({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final cile = await _local.getCustomerItemLedgerEntry(args: param);
       return Right(cile);
@@ -1095,12 +1246,16 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<CustomerItemLedgerEntry>>> getCustomerItemLegerEntries({
+  Future<Either<Failure, List<CustomerItemLedgerEntry>>>
+  getCustomerItemLegerEntries({
     Map<String, dynamic>? param,
     int page = 1,
   }) async {
     try {
-      final cile = await _local.getCustomerItemLedgerEntries(param: param, page: page);
+      final cile = await _local.getCustomerItemLedgerEntries(
+        param: param,
+        page: page,
+      );
       return Right(cile);
     } on GeneralException catch (e) {
       return Left(ServerFailure(e.message));
@@ -1110,7 +1265,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<CustomerItemLedgerEntry>>> submitCheckStock(List<CustomerItemLedgerEntry> records) async {
+  Future<Either<Failure, List<CustomerItemLedgerEntry>>> submitCheckStock(
+    List<CustomerItemLedgerEntry> records,
+  ) async {
     try {
       final cile = await _local.submitCheckStock(records);
       return Right(cile);
@@ -1122,7 +1279,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, PosSalesHeader>> getPosSaleHeader({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, PosSalesHeader>> getPosSaleHeader({
+    Map<String, dynamic>? params,
+  }) async {
     final saleHeader = await _local.getPosSaleHeader(params: params);
     if (saleHeader == null) {
       return Left(ServerFailure("Sale header not found."));
@@ -1132,7 +1291,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<PosSalesHeader>>> getPosSaleHeaders({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, List<PosSalesHeader>>> getPosSaleHeaders({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final headers = await _local.getPosSaleHeaders(params: params);
       return Right(headers);
@@ -1144,7 +1305,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<PosSalesLine>>> getPosSaleLines({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, List<PosSalesLine>>> getPosSaleLines({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final saleLines = await _local.getPosSaleLines(params: params);
       return Right(saleLines);
@@ -1156,7 +1319,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, PosSalesLine?>> getPosSaleLine({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, PosSalesLine?>> getPosSaleLine({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final saleLine = await _local.getPosSaleLine(params: params);
       return Right(saleLine);
@@ -1168,9 +1333,8 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<CompetitorItemLedgerEntry>>> submitCheckStockCometitorItem(
-    List<CompetitorItemLedgerEntry> records,
-  ) async {
+  Future<Either<Failure, List<CompetitorItemLedgerEntry>>>
+  submitCheckStockCometitorItem(List<CompetitorItemLedgerEntry> records) async {
     try {
       final cile = await _local.submitCheckStockCometitorItem(records);
       return Right(cile);
@@ -1182,12 +1346,15 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, CompetitorItemLedgerEntry?>> detailItemCompetitorLederEntry({
+  Future<Either<Failure, CompetitorItemLedgerEntry?>>
+  detailItemCompetitorLederEntry({
     required String itemNo,
     required String visitNo,
   }) async {
     try {
-      final records = await _local.detailItemCompetitorLederEntry(param: {"item_no": itemNo, "schedule_id": visitNo});
+      final records = await _local.detailItemCompetitorLederEntry(
+        param: {"item_no": itemNo, "schedule_id": visitNo},
+      );
 
       return Right(records);
     } on Exception {
@@ -1196,16 +1363,16 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, CompetitorItemLedgerEntry>> updateCompititorItemLedgerEntry(
-    CheckCompititorItemStockArg data,
-  ) async {
+  Future<Either<Failure, CompetitorItemLedgerEntry>>
+  updateCompititorItemLedgerEntry(CheckCompititorItemStockArg data) async {
     try {
       final schedule = data.schedule;
       final item = data.item;
 
-      CompetitorItemLedgerEntry? cile = await _local.detailItemCompetitorLederEntry(
-        param: {'schedule_id': schedule.id, 'item_no': item.no},
-      );
+      CompetitorItemLedgerEntry? cile = await _local
+          .detailItemCompetitorLederEntry(
+            param: {'schedule_id': schedule.id, 'item_no': item.no},
+          );
 
       if (cile == null) {
         final User? auth = getAuth();
@@ -1215,7 +1382,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
           throw GeneralException("This item not link to competitor.");
         }
 
-        final compititor = await _local.getCompetitor(param: {'no': item.competitorNo});
+        final compititor = await _local.getCompetitor(
+          param: {'no': item.competitorNo},
+        );
 
         if (compititor == null) {
           throw GeneralException("Competitor not found.[${item.competitorNo}]");
@@ -1252,15 +1421,29 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
           lotNo: data.lotNo,
           serialNo: data.serialNo,
           remark: data.remark,
-          quantity: Helpers.formatNumberDb(data.stockQty, option: FormatType.quantity),
-          volumeSalesQuantity: Helpers.formatNumberDb(data.volumSale, option: FormatType.quantity),
-          unitPrice: Helpers.formatNumberDb(data.unitPrice, option: FormatType.price),
-          unitCost: Helpers.formatNumberDb(data.unitCost, option: FormatType.cost),
+          quantity: Helpers.formatNumberDb(
+            data.stockQty,
+            option: FormatType.quantity,
+          ),
+          volumeSalesQuantity: Helpers.formatNumberDb(
+            data.volumSale,
+            option: FormatType.quantity,
+          ),
+          unitPrice: Helpers.formatNumberDb(
+            data.unitPrice,
+            option: FormatType.price,
+          ),
+          unitCost: Helpers.formatNumberDb(
+            data.unitCost,
+            option: FormatType.cost,
+          ),
         );
       }
 
       if (cile.status != null && cile.status != kStatusOpen) {
-        throw GeneralException("You cannot modify while the record have been submited.");
+        throw GeneralException(
+          "You cannot modify while the record have been submited.",
+        );
       }
 
       await _local.storeComPetitorItemLedgerEntry(cile: cile, arg: data);
@@ -1274,9 +1457,8 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<CompetitorItemLedgerEntry>>> getCompetitorItemLedgetEntry({
-    Map<String, dynamic>? param,
-  }) async {
+  Future<Either<Failure, List<CompetitorItemLedgerEntry>>>
+  getCompetitorItemLedgetEntry({Map<String, dynamic>? param}) async {
     try {
       final cile = await _local.getCompetitorItemLedgetEntry(param: param);
       return Right(cile);
@@ -1288,24 +1470,31 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<CompetitorPromtionHeader>>> getCompetitorPromotionHeader({
+  Future<Either<Failure, List<CompetitorPromtionHeader>>>
+  getCompetitorPromotionHeader({
     Map<String, dynamic>? param,
     int page = 1,
   }) async {
     try {
-      final records = await _local.getCompetitorPromotionHeader(param: param, page: page);
+      final records = await _local.getCompetitorPromotionHeader(
+        param: param,
+        page: page,
+      );
       return Right(records);
     } on Exception {
       return const Left(CacheFailure(errorInternetMessage));
     }
   }
 
-  Future<SalesPersonScheduleMerchandise?> _getSalesPersonScheduleMerchandise({Map<String, dynamic>? param}) async {
+  Future<SalesPersonScheduleMerchandise?> _getSalesPersonScheduleMerchandise({
+    Map<String, dynamic>? param,
+  }) async {
     return await _local.getSalesPersonScheduleMerchandise(args: param);
   }
 
   @override
-  Future<Either<Failure, SalesPersonScheduleMerchandise>> storeSalesPersonScheduleMerchandise({
+  Future<Either<Failure, SalesPersonScheduleMerchandise>>
+  storeSalesPersonScheduleMerchandise({
     required ItemPosmAndMerchandiseArg args,
   }) async {
     try {
@@ -1346,7 +1535,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
             quantity: Helpers.formatNumberDb(args.qty),
             appId: docNo,
             visitNo: Helpers.toInt(args.schedule.id),
-            scheduleDate: DateTimeExt.parse(args.schedule.scheduleDate).toDateString(),
+            scheduleDate: DateTimeExt.parse(
+              args.schedule.scheduleDate,
+            ).toDateString(),
             customerNo: args.schedule.customerNo ?? "",
             name: args.schedule.name ?? "",
             name2: args.schedule.name2 ?? "",
@@ -1376,7 +1567,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, bool>> deleteSalesPersonScheduleMerchandise(SalesPersonScheduleMerchandise record) async {
+  Future<Either<Failure, bool>> deleteSalesPersonScheduleMerchandise(
+    SalesPersonScheduleMerchandise record,
+  ) async {
     try {
       await _local.deleteSalesPersonScheduleMerchandise(record);
       return const Right(true);
@@ -1388,12 +1581,16 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<SalesPersonScheduleMerchandise>>> updateSalesPersonScheduleMerchandiseStatus(
+  Future<Either<Failure, List<SalesPersonScheduleMerchandise>>>
+  updateSalesPersonScheduleMerchandiseStatus(
     List<SalesPersonScheduleMerchandise> records, {
     required String status,
   }) async {
     try {
-      final results = await _local.updateSalesPersonScheduleMerchandiseStatus(records, status: status);
+      final results = await _local.updateSalesPersonScheduleMerchandiseStatus(
+        records,
+        status: status,
+      );
 
       return Right(results);
     } on GeneralException catch (e) {
@@ -1404,7 +1601,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, PaymentMethod?>> getPaymentMethod({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, PaymentMethod?>> getPaymentMethod({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final reuslt = await _local.getPaymentMethod(param: param);
       return Right(reuslt);
@@ -1414,7 +1613,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, CashReceiptJournals>> processPayment({required PaymentArg arg}) async {
+  Future<Either<Failure, CashReceiptJournals>> processPayment({
+    required PaymentArg arg,
+  }) async {
     try {
       final cEntry = arg.customerLedgerEntry;
       final paymentMethod = arg.paymentMethod;
@@ -1425,7 +1626,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
       }
 
       if (Helpers.toStrings(paymentMethod.balanceAccountType).isEmpty) {
-        throw GeneralException('Payment type missing link balance account type');
+        throw GeneralException(
+          'Payment type missing link balance account type',
+        );
       }
 
       final customer = await _getCustomer(no: schedule.customerNo ?? "");
@@ -1440,7 +1643,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
 
       final batchCode = userSetup.genJournalBatchName ?? "";
 
-      final batch = await _local.getGeneralJournalBatch(param: {'code': batchCode});
+      final batch = await _local.getGeneralJournalBatch(
+        param: {'code': batchCode},
+      );
 
       if (batch == null) {
         throw GeneralException("General journal batch not found.[$batchCode]");
@@ -1506,7 +1711,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   void _updateRemainingAmount(CustomerLedgerEntry cEntry) async {
-    final journal = await _local.getCashReceiptJournals({"apply_to_doc_no": cEntry.documentNo});
+    final journal = await _local.getCashReceiptJournals({
+      "apply_to_doc_no": cEntry.documentNo,
+    });
 
     final totalAmt = journal.fold(0.0, (sum, j) {
       return sum + Helpers.toDouble(j.amountLcy);
@@ -1517,9 +1724,12 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<CashReceiptJournals>>> getCashReceiptJournals({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, List<CashReceiptJournals>>> getCashReceiptJournals({
+    Map<String, dynamic>? param,
+  }) async {
     try {
-      final List<CashReceiptJournals> reuslt = await _local.getCashReceiptJournals(param);
+      final List<CashReceiptJournals> reuslt = await _local
+          .getCashReceiptJournals(param);
       return Right(reuslt);
     } on GeneralException catch (e) {
       return Left(ServerFailure(e.message));
@@ -1529,7 +1739,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, CashReceiptJournals?>> getCashReceiptJournal({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, CashReceiptJournals?>> getCashReceiptJournal({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final reuslt = await _local.getCashReceiptJournal(param);
       return Right(reuslt);
@@ -1541,7 +1753,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, bool>> deletedPayment(CashReceiptJournals journal, CustomerLedgerEntry cEntry) async {
+  Future<Either<Failure, bool>> deletedPayment(
+    CashReceiptJournals journal,
+    CustomerLedgerEntry cEntry,
+  ) async {
     try {
       await _local.deletedPayment(journal);
       _updateRemainingAmount(cEntry);
@@ -1593,7 +1808,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<PaymentTerm>>> getPaymentTerms({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, List<PaymentTerm>>> getPaymentTerms({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final reuslt = await _local.getPaymentTerms(param);
       return Right(reuslt);
@@ -1605,7 +1822,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<Distributor>>> getDistributors({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, List<Distributor>>> getDistributors({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final reuslt = await _local.getDistributors(param);
       return Right(reuslt);
@@ -1617,7 +1836,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, PaymentTerm?>> getPaymentTerm({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, PaymentTerm?>> getPaymentTerm({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final reuslt = await _local.getPaymentTerm(param);
       return Right(reuslt);
@@ -1629,7 +1850,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<SalesHeader>>> getSaleHeaders({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, List<SalesHeader>>> getSaleHeaders({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final reuslt = await _local.getSaleHeaders(args: params);
       return Right(reuslt);
@@ -1641,7 +1864,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<SalesLine>>> getSaleLines({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, List<SalesLine>>> getSaleLines({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final reuslt = await _local.getSaleLines(args: params);
       return Right(reuslt);
@@ -1653,9 +1878,8 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<ItemPrizeRedemptionHeader>>> getItemPrizeRedemptionHeader({
-    Map<String, dynamic>? param,
-  }) async {
+  Future<Either<Failure, List<ItemPrizeRedemptionHeader>>>
+  getItemPrizeRedemptionHeader({Map<String, dynamic>? param}) async {
     try {
       final reuslt = await _local.getItemPrizeRedemptionHeader(param: param);
       return Right(reuslt);
@@ -1667,9 +1891,8 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<ItemPrizeRedemptionLine>>> getItemPrizeRedemptionLine({
-    Map<String, dynamic>? param,
-  }) async {
+  Future<Either<Failure, List<ItemPrizeRedemptionLine>>>
+  getItemPrizeRedemptionLine({Map<String, dynamic>? param}) async {
     try {
       final reuslt = await _local.getItemPrizeRedemptionLine(param: param);
       return Right(reuslt);
@@ -1681,9 +1904,8 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<ItemPrizeRedemptionLineEntry>>> getItemPrizeRedemptionEntries({
-    Map<String, dynamic>? param,
-  }) async {
+  Future<Either<Failure, List<ItemPrizeRedemptionLineEntry>>>
+  getItemPrizeRedemptionEntries({Map<String, dynamic>? param}) async {
     try {
       final reuslt = await _local.getItemPrizeRedemptionEntries(param: param);
 
@@ -1696,7 +1918,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<CompetitorPromotionLine>>> getCompetitorProLine({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, List<CompetitorPromotionLine>>> getCompetitorProLine({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final reuslt = await _local.getCompetitorProLine(param: param);
       return Right(reuslt);
@@ -1708,7 +1932,8 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, List<ItemPrizeRedemptionLineEntry>>> processTakeInRedemption({
+  Future<Either<Failure, List<ItemPrizeRedemptionLineEntry>>>
+  processTakeInRedemption({
     required ItemPrizeRedemptionHeader header,
     required SalespersonSchedule schedule,
     required double quantity,
@@ -1719,7 +1944,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
         throw GeneralException('Customer not found');
       }
 
-      final lines = await _local.getItemPrizeRedemptionLine(param: {'promotion_no': header.no});
+      final lines = await _local.getItemPrizeRedemptionLine(
+        param: {'promotion_no': header.no},
+      );
 
       if (lines.isEmpty) {
         return Left(ServerFailure("Line not found."));
@@ -1769,7 +1996,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, bool>> deleteTakeInRedemption(ItemPrizeRedemptionHeader header, String scheduleId) async {
+  Future<Either<Failure, bool>> deleteTakeInRedemption(
+    ItemPrizeRedemptionHeader header,
+    String scheduleId,
+  ) async {
     try {
       await _local.deleteTakeInRedemption(header, scheduleId);
       return const Right(true);
@@ -1781,7 +2011,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, bool>> processSubmitRedemption(List<ItemPrizeRedemptionLineEntry> entries) async {
+  Future<Either<Failure, bool>> processSubmitRedemption(
+    List<ItemPrizeRedemptionLineEntry> entries,
+  ) async {
     try {
       await _local.processSubmitRedemption(entries);
       return const Right(true);
@@ -1793,7 +2025,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, SalesLine?>> getSaleLine({Map<String, dynamic>? params}) async {
+  Future<Either<Failure, SalesLine?>> getSaleLine({
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final sale = await _local.getSaleLine(args: params);
       return Right(sale);
@@ -1805,7 +2039,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, AppVersion?>> checkAppVersion({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, AppVersion?>> checkAppVersion({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       if (await _networkInfo.isConnected) {
         final appVersion = await _remote.checkAppVersion(data: param);
@@ -1820,7 +2056,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
   }
 
   @override
-  Future<Either<Failure, bool>> moveOldScheduleToCurrentDate(List<SalespersonSchedule> oldSchedules) async {
+  Future<Either<Failure, bool>> moveOldScheduleToCurrentDate(
+    List<SalespersonSchedule> oldSchedules,
+  ) async {
     try {
       if (await _networkInfo.isConnected && await _remote.isValidApiSession()) {
         List<Map<String, dynamic>> jsonData = [];
@@ -1833,7 +2071,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl implements TaskRepository
           return const Left(CacheFailure("Nothing to upload"));
         }
 
-        await _remote.processUpload(data: {'table_name': 'schedule', 'data': jsonEncode(jsonData)});
+        await _remote.processUpload(
+          data: {'table_name': 'schedule', 'data': jsonEncode(jsonData)},
+        );
       }
       final result = await _local.moveOldScheduleToCurrentDate(oldSchedules);
       return Right(result);

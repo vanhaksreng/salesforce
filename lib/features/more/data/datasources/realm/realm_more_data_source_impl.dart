@@ -8,7 +8,8 @@ import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
-class RealmMoreDataSourceImpl extends BaseRealmDataSourceImpl implements RealmMoreDataSource {
+class RealmMoreDataSourceImpl extends BaseRealmDataSourceImpl
+    implements RealmMoreDataSource {
   final ILocalStorage ils;
   RealmMoreDataSourceImpl({required this.ils}) : super(ils: ils);
 
@@ -18,17 +19,23 @@ class RealmMoreDataSourceImpl extends BaseRealmDataSourceImpl implements RealmMo
   }
 
   @override
-  Future<PosSalesHeader?> getPosSaleHeader({Map<String, dynamic>? param}) async {
+  Future<PosSalesHeader?> getPosSaleHeader({
+    Map<String, dynamic>? param,
+  }) async {
     return await ils.getFirst(args: param);
   }
 
   @override
-  Future<List<PosSalesLine>> getPosSaleLines({Map<String, dynamic>? param}) async {
-    return await ils.getAll(args: param);
+  Future<List<PosSalesLine>> getPosSaleLines({
+    Map<String, dynamic>? param,
+  }) async {
+    return ils.getAll<PosSalesLine>(args: param);
   }
 
   @override
-  Future<CustomerAddress> updateOrNewCustomerAddress(CustomerAddress address) async {
+  Future<CustomerAddress> updateOrNewCustomerAddress(
+    CustomerAddress address,
+  ) async {
     return await ils.writeTransaction((realm) {
       realm.add(address, update: true);
 
@@ -67,23 +74,69 @@ class RealmMoreDataSourceImpl extends BaseRealmDataSourceImpl implements RealmMo
   }
 
   @override
-  Future<List<ItemPrizeRedemptionHeader>> getItemPrizeRedemptionHeader({Map<String, dynamic>? param}) async {
+  Future<List<ItemPrizeRedemptionHeader>> getItemPrizeRedemptionHeader({
+    Map<String, dynamic>? param,
+  }) async {
     return await ils.getAll<ItemPrizeRedemptionHeader>(args: param);
   }
 
   @override
-  Future<List<ItemPrizeRedemptionLine>> getItemPrizeRedemptionLine({Map<String, dynamic>? param}) async {
+  Future<List<ItemPrizeRedemptionLine>> getItemPrizeRedemptionLine({
+    Map<String, dynamic>? param,
+  }) async {
     return await ils.getAll<ItemPrizeRedemptionLine>(args: param);
   }
 
   @override
-  Future<void> updateProfileUser({required LoginSession user, UserInfo? userInfo}) async {
+  Future<void> updateProfileUser({
+    required LoginSession user,
+    UserInfo? userInfo,
+  }) async {
     return await ils.writeTransaction((realm) {
       user.username = userInfo?.userName ?? "";
       user.avatar128 = userInfo?.userImagePath ?? "";
       user.phoneNo = userInfo?.phoneNumber ?? "";
 
       realm.add(user, update: true);
+    });
+  }
+
+  @override
+  Future<void> storePosSale({
+    required PosSalesHeader saleHeader,
+    required List<PosSalesLine> saleLines,
+    bool refreshLine = true,
+  }) async {
+    final header = await ils.getFirst<PosSalesHeader>(
+      args: {'no': saleHeader.no, 'document_type': saleHeader.documentType},
+    );
+
+    List<PosSalesLine> allExistedLines = [];
+    if (refreshLine) {
+      final itemNos = saleLines.map((line) => '"${line.no}"').toList();
+      allExistedLines = await ils.getAll<PosSalesLine>(
+        args: {
+          'document_no': saleHeader.no,
+          'customer_no': saleHeader.customerNo,
+          'document_type': saleHeader.documentType,
+          'no': 'IN {${itemNos.join(",")}}',
+          'special_type_no': '',
+        },
+      );
+    }
+
+    await ils.writeTransaction((realm) {
+      if (header == null) {
+        realm.add(saleHeader);
+      }
+
+      if (refreshLine && allExistedLines.isNotEmpty) {
+        realm.deleteMany(allExistedLines);
+      }
+
+      realm.addAll(saleLines);
+
+      return "Success";
     });
   }
 }

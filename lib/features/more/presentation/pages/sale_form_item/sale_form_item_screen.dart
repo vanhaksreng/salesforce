@@ -3,40 +3,40 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/domain/entities/app_args.dart';
 import 'package:salesforce/core/enums/enums.dart';
+import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/bottom_sheet_fn.dart';
+import 'package:salesforce/core/presentation/widgets/box_widget.dart';
+import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
 import 'package:salesforce/core/presentation/widgets/image_box_cover_widget.dart';
+import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
+import 'package:salesforce/core/presentation/widgets/text_form_field_widget.dart';
+import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/quantity_input_formatter.dart';
 import 'package:salesforce/core/utils/size_config.dart';
+import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_form_item/sale_form_item_cubit.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_form_item/sale_form_item_state.dart';
 import 'package:salesforce/features/tasks/domain/entities/sale_form_input.dart';
 import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
 import 'package:salesforce/features/tasks/presentation/pages/task_component/build_uom_selected/build_uom_selected.dart';
-import 'package:salesforce/features/tasks/presentation/pages/sale_components/sale_form/sale_form_cubit.dart';
-import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
-import 'package:salesforce/core/presentation/widgets/box_widget.dart';
-import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
-import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
-import 'package:salesforce/core/presentation/widgets/text_form_field_widget.dart';
-import 'package:salesforce/core/presentation/widgets/text_widget.dart';
+import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
-class SaleFormScreen extends StatefulWidget {
-  const SaleFormScreen({super.key, required this.args});
-
-  static const String routeName = "saleFormScreen";
-
-  final SaleFormArg args;
+class SaleFormItemScreen extends StatefulWidget {
+  static const String routeName = "saleFromITemScreen";
+  const SaleFormItemScreen({super.key, required this.args});
+  final ItemSaleArg args;
 
   @override
-  State<SaleFormScreen> createState() => _SaleFormScreenState();
+  SaleFormItemScreenState createState() => SaleFormItemScreenState();
 }
 
-class _SaleFormScreenState extends State<SaleFormScreen> {
-  final _cubit = SaleFormCubit();
-
+class SaleFormItemScreenState extends State<SaleFormItemScreen> {
+  final _cubit = SaleFormItemCubit();
   final Map<String, TextEditingController> _quantityCntr = {};
   final Map<String, TextEditingController> _uomCntr = {};
 
@@ -44,19 +44,24 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
   final _disAmountCntr = TextEditingController();
   final _manualPriceCntr = TextEditingController();
 
-  late final Item _item;
-
+  late final Item? _item;
   @override
   void initState() {
     super.initState();
-
     _item = widget.args.item;
     _initLoad();
   }
 
   void _initLoad() async {
     await _cubit.getPromotionType();
-    await _cubit.loadInitialData(widget.args);
+    await _cubit.loadInitialData(
+      ItemSaleArg(
+        item: widget.args.item,
+        documentType: widget.args.documentType,
+        isRefreshing: widget.args.isRefreshing,
+        customer: widget.args.customer,
+      ),
+    );
   }
 
   @override
@@ -122,9 +127,9 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
       context,
       child: BuildUomSelected(
         arg: BuildUomArg(
-          inputLabel: _item.description,
+          inputLabel: _item?.description,
           modalTitle: input.description,
-          itemNo: _item.no,
+          itemNo: _item?.no ?? "",
           uomCode: input.uomCode,
           onChanged: (value) {
             _onSelectedUomHandler(input.code, value);
@@ -141,21 +146,17 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
     _cubit.updateSaleUom(inputCode, uomCode);
   }
 
-  String _screenTitle() {
-    return "Sale ${widget.args.documentType} Form";
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBarWidget(title: _screenTitle()),
-      body: BlocBuilder<SaleFormCubit, SaleFormState>(
+      appBar: AppBarWidget(title: greeting("Sale Form")),
+      body: BlocBuilder<SaleFormItemCubit, SaleFormItemState>(
         bloc: _cubit,
-        builder: (BuildContext context, SaleFormState state) {
-          if (state.isLoading) {
-            return const LoadingPageWidget();
-          }
 
+        builder: (BuildContext context, SaleFormItemState state) {
+          if (state.isLoading) {
+            return Center(child: LoadingPageWidget());
+          }
           return buildBody(state);
         },
       ),
@@ -173,7 +174,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
   }
 
   Widget _buildInventoryChip() {
-    final inventory = Helpers.toDouble(_item.inventory);
+    final inventory = Helpers.toDouble(_item?.inventory);
     Color chipColor;
     Color backgroundColor;
 
@@ -193,12 +194,14 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
       bgColor: backgroundColor,
       label: inventory <= 0
           ? "Out of stock"
-          : "${Helpers.formatNumberLink(_item.inventory, option: FormatType.quantity)} ${_item.stockUomCode}",
+          : "${Helpers.formatNumberLink(_item?.inventory, option: FormatType.quantity)} ${_item?.stockUomCode}",
     );
   }
 
-  Widget buildBody(SaleFormState state) {
+  Widget buildBody(SaleFormItemState state) {
     final inputs = state.saleForm;
+
+    print("==================$inputs");
 
     if (inputs.isNotEmpty && (_quantityCntr.isEmpty)) {
       _initializeControllers(inputs);
@@ -215,7 +218,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
             children: [
               ImageBoxCoverWidget(
                 image: ImageNetWorkWidget(
-                  imageUrl: _item.picture ?? "",
+                  imageUrl: _item?.picture ?? "",
                   width: 60.scale,
                   height: 60.scale,
                 ),
@@ -230,7 +233,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                       children: [
                         TextWidget(
                           text:
-                              "${Helpers.formatNumber(state.itemUnitPrice, option: FormatType.amount)} / ${_item.salesUomCode}",
+                              "${Helpers.formatNumber(state.itemUnitPrice, option: FormatType.amount)} / ${_item?.salesUomCode}",
                           fontWeight: FontWeight.bold,
                           color: primary,
                           fontSize: 16,
@@ -239,7 +242,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                       ],
                     ),
                     SizedBox(height: scaleFontSize(8)),
-                    TextWidget(text: _item.description ?? ""),
+                    TextWidget(text: _item?.description ?? ""),
                   ],
                 ),
               ),

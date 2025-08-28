@@ -1,47 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
+import 'package:salesforce/core/constants/app_config.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
+import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
+import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
+import 'package:salesforce/core/presentation/widgets/badge_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
-import 'package:salesforce/core/presentation/widgets/item_builder_widget.dart';
-import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
-import 'package:salesforce/core/utils/helpers.dart';
-import 'package:salesforce/core/utils/size_config.dart';
-import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
-import 'package:salesforce/features/tasks/presentation/pages/group_screen_filter_item/group_screen_filter_item.dart';
-import 'package:salesforce/features/tasks/presentation/pages/sale_components/items/items_cubit.dart';
-import 'package:salesforce/features/tasks/presentation/pages/sale_components/sale_form/sale_form_screen.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
+import 'package:salesforce/core/presentation/widgets/item_builder_widget.dart';
+import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
+import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/search_widget.dart';
 import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
+import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/core/utils/size_config.dart';
+import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
+import 'package:salesforce/features/more/presentation/pages/items/items_cubit.dart';
+import 'package:salesforce/features/more/presentation/pages/items/items_state.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_form_item/sale_form_item_screen.dart';
+import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
+import 'package:salesforce/features/tasks/presentation/pages/group_screen_filter_item/group_screen_filter_item.dart';
+import 'package:salesforce/features/tasks/presentation/pages/sale_components/add_card_preview/add_cart_preview_screen.dart';
+import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
-import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
-class ItemScreen extends StatefulWidget {
-  static const String routeName = "Itemscreen";
-  const ItemScreen({
-    super.key,
-    required this.schedule,
-    required this.documentType,
-    required this.onRefresh,
-    this.isRefreshing = false,
-  });
-
-  final SalespersonSchedule schedule;
-  final String documentType;
-  final void Function()? onRefresh;
-  final bool isRefreshing;
-
+class ItemsScreen extends StatefulWidget {
+  static const String routeName = "itemScreenMore";
+  const ItemsScreen({super.key, required this.args});
+  final ItemSaleArg args;
   @override
-  State<ItemScreen> createState() => _ItemScreenState();
+  ItemsScreenState createState() => ItemsScreenState();
 }
 
-class _ItemScreenState extends State<ItemScreen>
+class ItemsScreenState extends State<ItemsScreen>
     with AutomaticKeepAliveClientMixin, MessageMixin {
   final _cubit = ItemsCubit();
 
@@ -58,25 +55,17 @@ class _ItemScreenState extends State<ItemScreen>
 
   @override
   void initState() {
-    super.initState();
-    _getSaleLines();
     _scrollController.addListener(_handleScrolling);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _cubit.getItems();
     });
+    super.initState();
   }
 
   void _handleScrolling() {
     if (_shouldLoadMore()) {
       _loadMoreItems();
     }
-  }
-
-  void _getSaleLines() {
-    _cubit.getSaleLines(
-      documentType: widget.documentType,
-      scheduleId: widget.schedule.id,
-    );
   }
 
   bool _shouldLoadMore() {
@@ -113,22 +102,6 @@ class _ItemScreenState extends State<ItemScreen>
     return "IN {${_selectedGroups.map((e) => "'$e'").join(', ')}}";
   }
 
-  String checkInventory(String status) {
-    if (status == kInStock) {
-      return '> 0';
-    } else if (status == kOutOfStock) {
-      return '< 1';
-    }
-    return '';
-  }
-
-  bool _checkShowFilter() {
-    return filterString.isNotEmpty && filterString != "IN {}" ||
-            statusStock.isNotEmpty
-        ? true
-        : false;
-  }
-
   void _navigateToGroupScreenFilter() {
     Navigator.pushNamed(
       context,
@@ -151,7 +124,7 @@ class _ItemScreenState extends State<ItemScreen>
   void _handleGroupCodesUpdate(List<String> groupCodes, String status) {
     _selectedGroups = groupCodes;
     filterString = _formatGroupCodesFilter(groupCodes);
-    statusStock = checkInventory(status);
+    // statusStock = checkInventory(status);
 
     _itemFilter();
   }
@@ -162,32 +135,30 @@ class _ItemScreenState extends State<ItemScreen>
   }
 
   @override
-  void didUpdateWidget(ItemScreen oldWidget) {
+  void didUpdateWidget(ItemsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.isRefreshing != widget.isRefreshing) {
+    if (oldWidget.args.isRefreshing != widget.args.isRefreshing) {
       _itemFilter();
     }
   }
 
   void _navigateToProcessForm(Item item) {
-    if (widget.documentType != kSaleCreditMemo &&
-        Helpers.toDouble(item.inventory) <= 0) {
-      showWarningMessage("No stock left.");
-      return;
-    }
+    // if (widget.documentType != kSaleCreditMemo &&
+    //     Helpers.toDouble(item.inventory) <= 0) {
+    //   showWarningMessage("No stock left.");
+    //   return;
+    // }
 
     Navigator.pushNamed(
       context,
-      SaleFormScreen.routeName,
-      arguments: SaleFormArg(
+      SaleFormItemScreen.routeName,
+      arguments: ItemSaleArg(
         item: item,
-        schedule: widget.schedule,
-        documentType: widget.documentType,
+        documentType: kSaleOrder,
+        isRefreshing: widget.args.isRefreshing,
+        customer: widget.args.customer,
       ),
-    ).then((value) {
-      _getSaleLines();
-      widget.onRefresh?.call();
-    });
+    );
   }
 
   void _changLayout() {
@@ -198,16 +169,99 @@ class _ItemScreenState extends State<ItemScreen>
     }
   }
 
+  void _navigateToAddedCart() {
+    Navigator.pushNamed(
+      context,
+      AddCartPreviewScreen.routeName,
+      arguments: {
+        'customerNo': widget.args.customer.no,
+        'scheduleId': "",
+        'documentType': widget.args.documentType,
+      },
+    );
+    // .then((value) {
+    //   _loadCountCart();
+    // });
+  }
+
+  bool _checkShowFilter() {
+    return filterString.isNotEmpty && filterString != "IN {}" ||
+            statusStock.isNotEmpty
+        ? true
+        : false;
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
 
+  void _handleDownload() async {
+    if (!await _cubit.isConnectedToNetwork()) {
+      showWarningMessage(errorInternetMessage);
+      return;
+    }
+
+    if (!mounted) return;
+
+    final l = LoadingOverlay.of(context);
+    l.show(1);
+    await Future.delayed(const Duration(milliseconds: 200));
+    try {
+      List<String> tables = [
+        "item",
+        "item_sales_line_prices",
+        "item_unit_of_measure",
+      ];
+
+      final filter = tables.map((table) => '"$table"').toList();
+
+      final appSyncLogs = await _cubit.getAppSyncLogs({
+        'tableName': 'IN {${filter.join(",")}}',
+      });
+
+      if (tables.isEmpty) {
+        throw GeneralException("Cannot find any table related");
+      }
+
+      const String text = "System will donwload only related data.";
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      await _cubit.downloadDatas(
+        appSyncLogs,
+        onProgress: (progress, count, tableName, errorMsg) {
+          l.updateProgress(progress, text: text);
+        },
+      );
+      l.hide();
+    } on GeneralException catch (e) {
+      l.hide();
+      showWarningMessage(e.message);
+    } on Exception catch (e) {
+      l.hide();
+      showErrorMessage(e.toString());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
+      appBar: AppBarWidget(
+        enableGradient: true,
+        title: greeting("Items"),
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: scaleFontSize(appSpace)),
+            child: BtnIconCircleWidget(
+              onPressed: _handleDownload,
+              icons: const Icon(Icons.cloud_download_rounded, color: white),
+              rounded: appBtnRound,
+            ),
+          ),
+        ],
+      ),
       body: BlocBuilder<ItemsCubit, ItemsState>(
         bloc: _cubit,
         builder: (context, state) {
@@ -218,6 +272,7 @@ class _ItemScreenState extends State<ItemScreen>
           return buildBody(state);
         },
       ),
+      floatingActionButton: _buildStoreItemBtn(),
     );
   }
 
@@ -321,6 +376,20 @@ class _ItemScreenState extends State<ItemScreen>
         height: 35.scale,
         width: 35.scale,
         bgColor: secondary.withAlpha(70),
+      ),
+    );
+  }
+
+  Widget _buildStoreItemBtn() {
+    return SafeArea(
+      child: BtnIconCircleWidget(
+        bgColor: mainColor50,
+        flipX: false,
+        onPressed: () {},
+        // onPressed: () => _navigateToAddedCart(),
+        icons: Center(
+          child: BadgeWidget(label: "0", colorIcon: white, iconSvg: kAddCart),
+        ),
       ),
     );
   }

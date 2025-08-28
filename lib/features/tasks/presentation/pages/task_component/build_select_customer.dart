@@ -11,7 +11,12 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class BuildSelectCustomer extends StatelessWidget {
-  const BuildSelectCustomer({super.key, required this.isSelected, required this.customer, required this.onTap});
+  const BuildSelectCustomer({
+    super.key,
+    required this.isSelected,
+    required this.customer,
+    required this.onTap,
+  });
 
   final bool isSelected;
   final Customer customer;
@@ -22,7 +27,10 @@ class BuildSelectCustomer extends StatelessWidget {
     return BoxWidget(
       padding: EdgeInsets.all(scaleFontSize(appSpace)),
       onPress: onTap,
-      margin: EdgeInsets.symmetric(vertical: scaleFontSize(2), horizontal: scaleFontSize(appSpace)),
+      margin: EdgeInsets.symmetric(
+        vertical: scaleFontSize(2),
+        horizontal: scaleFontSize(appSpace),
+      ),
       isBoxShadow: false,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -40,7 +48,11 @@ class BuildSelectCustomer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: scaleFontSize(8),
               children: [
-                TextWidget(text: customer.name ?? "", fontWeight: FontWeight.bold, color: textColor),
+                TextWidget(
+                  text: customer.name ?? "",
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
                 ChipWidget(
                   radius: 4,
                   label: customer.no,
@@ -83,7 +95,11 @@ class BuildSelectCustomer extends StatelessWidget {
                         height: 16,
                       ),
                       Expanded(
-                        child: TextWidget(text: customer.phoneNo ?? "", maxLines: 2, color: textColor50),
+                        child: TextWidget(
+                          text: customer.phoneNo ?? "",
+                          maxLines: 2,
+                          color: textColor50,
+                        ),
                       ),
                     ],
                   ),
@@ -92,7 +108,11 @@ class BuildSelectCustomer extends StatelessWidget {
             ),
           ),
           onTap == null
-              ? Icon(Icons.check_circle, color: success, size: scaleFontSize(24))
+              ? Icon(
+                  Icons.check_circle,
+                  color: success,
+                  size: scaleFontSize(24),
+                )
               : Icon(
                   isSelected ? Icons.check_circle : Icons.circle_outlined,
                   size: scaleFontSize(24),

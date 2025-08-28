@@ -7,28 +7,25 @@ import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/mixins/permission_mixin.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/logger.dart';
+import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
+import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_form_item/sale_form_item_state.dart';
 import 'package:salesforce/features/tasks/domain/entities/sale_form_input.dart';
 import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
-import 'package:salesforce/features/tasks/domain/repositories/task_repository.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
-import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 
-part 'sale_form_state.dart';
-
-class SaleFormCubit extends Cubit<SaleFormState>
+class SaleFormItemCubit extends Cubit<SaleFormItemState>
     with PermissionMixin, MessageMixin {
-  SaleFormCubit() : super(const SaleFormState(isLoading: true));
-
-  final _taskRepos = getIt<TaskRepository>();
-
+  SaleFormItemCubit() : super(SaleFormItemState(isLoading: true));
+  final _moreRepos = getIt<MoreRepository>();
   PosSalesLine? stdSaleLine;
 
   Future<void> getPromotionType() async {
     try {
-      final res = await _taskRepos.getPromotionType();
+      final res = await _moreRepos.getPromotionType();
       res.fold((l) => throw Exception(l.message), (promotion) {
         List<SaleFormInput> frmInput =
             promotion.map((p) => SaleFormInput.fromJson(p)).toList()
@@ -50,13 +47,13 @@ class SaleFormCubit extends Cubit<SaleFormState>
     }
   }
 
-  Future<void> loadInitialData(SaleFormArg arg) async {
+  Future<void> loadInitialData(ItemSaleArg arg) async {
     final stableState = state;
     try {
       emit(state.copyWith(isLoading: true));
 
-      final customerResult = await _taskRepos.getCustomer(
-        no: arg.schedule.customerNo ?? "",
+      final customerResult = await _moreRepos.getCustomer(
+        params: {"no": arg.customer.no ?? ""},
       );
 
       Customer? customer = await customerResult.fold(
@@ -69,11 +66,11 @@ class SaleFormCubit extends Cubit<SaleFormState>
       }
 
       final saleNo = Helpers.getSaleDocumentNo(
-        scheduleId: arg.schedule.id,
+        scheduleId: "M",
         documentType: arg.documentType,
       );
 
-      final getSaleLines = await _taskRepos.getPosSaleLines(
+      final getSaleLines = await _moreRepos.getPosSaleLines(
         params: {'document_type': arg.documentType, 'document_no': saleNo},
       );
 
@@ -82,7 +79,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
       final canDiscount = await hasPermission(kManualSellingDiscount);
       final canModifyPrice = await hasPermission(kManualSellingPrice);
 
-      final String itemNo = arg.item.no;
+      final String itemNo = arg.item?.no ?? "";
       double manualPrice = 0;
 
       final updatedForms = state.saleForm.map((form) {
@@ -107,7 +104,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
         }
 
         if (uomCode.isEmpty) {
-          uomCode = arg.item.salesUomCode ?? "";
+          uomCode = arg.item?.salesUomCode ?? "";
         }
 
         if (form.code == kPromotionTypeStd) {
@@ -126,9 +123,9 @@ class SaleFormCubit extends Cubit<SaleFormState>
           canDiscount: canDiscount,
           canModifyPrice: canModifyPrice,
           customer: customer,
-          schedule: arg.schedule,
+          schedule: null,
           item: arg.item,
-          itemUnitPrice: arg.item.unitPrice,
+          itemUnitPrice: arg.item?.unitPrice,
           documentType: arg.documentType,
           saleLines: lines,
           saleForm: updatedForms,
@@ -170,7 +167,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
     }
 
     if (salePrice == null) {
-      final itemUomResponse = await _taskRepos.getItemUom(
+      final itemUomResponse = await _moreRepos.getItemUom(
         params: {
           'item_no': state.item?.no ?? "",
           'unit_of_measure_code': uomCode,
@@ -269,7 +266,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
   }) async {
     if (customer == null) return null;
 
-    final salePriceResult = await _taskRepos.getItemSaleLinePrice(
+    final salePriceResult = await _moreRepos.getItemSaleLinePrice(
       saleType: "Customer",
       saleCode: customer.no,
       orderQty: orderQty,
@@ -283,7 +280,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
     );
 
     if (salePrice == null) {
-      final groupPriceResult = await _taskRepos.getItemSaleLinePrice(
+      final groupPriceResult = await _moreRepos.getItemSaleLinePrice(
         saleType: "Customer Price Group",
         saleCode: customer.customerPriceGroupCode ?? "_N0NE_",
         orderQty: orderQty,
@@ -298,7 +295,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
     }
 
     if (salePrice == null) {
-      final allCustomersPriceResult = await _taskRepos.getItemSaleLinePrice(
+      final allCustomersPriceResult = await _moreRepos.getItemSaleLinePrice(
         saleType: "All Customers",
         orderQty: orderQty,
         itemNo: state.item?.no ?? "",
@@ -337,7 +334,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
       final saleData = _prepareSaleData();
 
       //Save to repository
-      final result = await _taskRepos.insertSale(saleData);
+      final result = await _moreRepos.insertSale(saleData);
 
       result.fold((failure) => throw GeneralException(failure.message), (
         success,
@@ -383,15 +380,12 @@ class SaleFormCubit extends Cubit<SaleFormState>
     return true;
   }
 
-  SaleArg _prepareSaleData() {
+  SaleItemArg _prepareSaleData() {
     final item = state.item;
+    final customer = state.customer;
 
     if (item == null) {
       throw GeneralException("Item cannot empty");
-    }
-
-    if (state.schedule == null) {
-      throw GeneralException("Schedule cannot empty");
     }
 
     final inputs = state.saleForm.where((form) {
@@ -430,10 +424,10 @@ class SaleFormCubit extends Cubit<SaleFormState>
       );
     }
 
-    return SaleArg(
+    return SaleItemArg(
       item: item,
-      schedule: state.schedule!,
       inputs: inputs,
+      customer: customer!,
       discountAmount: _getDiscountAmt(),
       discountPercentage: _getDiscountPercent(),
       manualPrice: _getManualPrice(),

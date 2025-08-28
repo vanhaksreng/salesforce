@@ -59,15 +59,22 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
   bool _shouldLoadMore() {
     return !_cubit.state.isLoadingMore &&
         _cubit.state.currentPage != _cubit.state.lastPage &&
-        _scrollController.position.pixels == _scrollController.position.maxScrollExtent;
+        _scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent;
   }
 
-  void _onSelectedCustomerHandler(String customerNo, {CustomerAddress? addresss}) async {
+  void _onSelectedCustomerHandler(
+    String customerNo, {
+    CustomerAddress? addresss,
+  }) async {
     await _processSelectCustomer(customerNo, addresss);
     selectedCustomerCount.value = _cubit.state.selectedCustomers.length;
   }
 
-  Future<void> _processSelectCustomer(String customerNo, CustomerAddress? addresss) async {
+  Future<void> _processSelectCustomer(
+    String customerNo,
+    CustomerAddress? addresss,
+  ) async {
     bool isExisted = _cubit.state.selectedCustomers.any((e) {
       return e["customer_no"] == customerNo;
     });
@@ -97,7 +104,11 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
       enableDrag: true,
       showDragHandle: false,
       isDismissible: true,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(scaleFontSize(16)))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(scaleFontSize(16)),
+        ),
+      ),
       constraints: BoxConstraints(
         maxWidth: MediaQuery.of(context).size.width,
         minWidth: MediaQuery.of(context).size.width,
@@ -105,12 +116,17 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
       builder: (BuildContext context) {
         return SafeArea(
           child: SingleChildScrollView(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
             child: ChooseAddressCustomer(
               cusAddress: address,
               getValue: "",
               getAddress: (addresss) {
-                _onSelectedCustomerHandler(addresss.customerNo ?? "", addresss: addresss);
+                _onSelectedCustomerHandler(
+                  addresss.customerNo ?? "",
+                  addresss: addresss,
+                );
               },
             ),
           ),
@@ -165,7 +181,9 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
         return;
       }
 
-      final tables = await _cubit.getAppSyncLogs({'tableName': 'IN {"customer", "customer_address"}'});
+      final tables = await _cubit.getAppSyncLogs({
+        'tableName': 'IN {"customer", "customer_address"}',
+      });
 
       if (tables.isEmpty) {
         throw GeneralException("Cannot find any table related");
@@ -274,7 +292,9 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
             return e["customer_no"] == customer.no;
           }),
           customer: customer,
-          onTap: hasSchedule ? null : () => _onSelectedCustomerHandler(customer.no),
+          onTap: hasSchedule
+              ? null
+              : () => _onSelectedCustomerHandler(customer.no),
         );
       },
     );

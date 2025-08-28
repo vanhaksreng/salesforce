@@ -105,13 +105,20 @@ class SaleItemArgs extends ProcessArgs {
   final String documentType;
   final String customerNo;
 
-  SaleItemArgs({required this.schedule, required this.documentType, required this.customerNo});
+  SaleItemArgs({
+    required this.schedule,
+    required this.documentType,
+    required this.customerNo,
+  });
 }
 
 class PosmAndMerchandingCompetitorArg extends ProcessArgs {
   final PosmMerchandingType posmMerchandingType;
   final SalespersonSchedule schedule;
-  PosmAndMerchandingCompetitorArg({required this.posmMerchandingType, required this.schedule});
+  PosmAndMerchandingCompetitorArg({
+    required this.posmMerchandingType,
+    required this.schedule,
+  });
 }
 
 class SaleFormArg {
@@ -119,7 +126,11 @@ class SaleFormArg {
   final String documentType;
   final SalespersonSchedule schedule;
 
-  SaleFormArg({required this.item, required this.schedule, required this.documentType});
+  SaleFormArg({
+    required this.item,
+    required this.schedule,
+    required this.documentType,
+  });
 }
 
 class SaleArg {

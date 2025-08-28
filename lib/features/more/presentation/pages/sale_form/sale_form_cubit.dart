@@ -18,8 +18,7 @@ import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 
 part 'sale_form_state.dart';
 
-class SaleFormCubit extends Cubit<SaleFormState>
-    with PermissionMixin, MessageMixin {
+class SaleFormCubit extends Cubit<SaleFormState> with PermissionMixin, MessageMixin {
   SaleFormCubit() : super(const SaleFormState(isLoading: true));
 
   final _taskRepos = getIt<TaskRepository>();
@@ -30,20 +29,14 @@ class SaleFormCubit extends Cubit<SaleFormState>
     try {
       final res = await _taskRepos.getPromotionType();
       res.fold((l) => throw Exception(l.message), (promotion) {
-        List<SaleFormInput> frmInput =
-            promotion.map((p) => SaleFormInput.fromJson(p)).toList()
-              ..sort((a, b) {
-                if (a.code == "STD") return -1;
-                if (b.code == "STD") return 1;
-                return a.code.compareTo(b.code);
-              });
+        List<SaleFormInput> frmInput = promotion.map((p) => SaleFormInput.fromJson(p)).toList()
+          ..sort((a, b) {
+            if (a.code == "STD") return -1;
+            if (b.code == "STD") return 1;
+            return a.code.compareTo(b.code);
+          });
 
-        emit(
-          state.copyWith(
-            saleForm: frmInput,
-            isExistedStd: frmInput.any((e) => e.code == "STD"),
-          ),
-        );
+        emit(state.copyWith(saleForm: frmInput, isExistedStd: frmInput.any((e) => e.code == "STD")));
       });
     } catch (e) {
       //
@@ -55,23 +48,15 @@ class SaleFormCubit extends Cubit<SaleFormState>
     try {
       emit(state.copyWith(isLoading: true));
 
-      final customerResult = await _taskRepos.getCustomer(
-        no: arg.schedule.customerNo ?? "",
-      );
+      final customerResult = await _taskRepos.getCustomer(no: arg.schedule.customerNo ?? "");
 
-      Customer? customer = await customerResult.fold(
-        (failure) => null,
-        (customer) => customer,
-      );
+      Customer? customer = await customerResult.fold((failure) => null, (customer) => customer);
 
       if (customer == null) {
         throw Exception("Customer not found.");
       }
 
-      final saleNo = Helpers.getSaleDocumentNo(
-        scheduleId: arg.schedule.id,
-        documentType: arg.documentType,
-      );
+      final saleNo = Helpers.getSaleDocumentNo(scheduleId: arg.schedule.id, documentType: arg.documentType);
 
       final getSaleLines = await _taskRepos.getPosSaleLines(
         params: {'document_type': arg.documentType, 'document_no': saleNo},
@@ -94,10 +79,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
         String uomCode = form.uomCode;
 
         if (rIndex != -1) {
-          quantity = Helpers.formatNumberDb(
-            lines[rIndex].quantity,
-            option: FormatType.quantity,
-          );
+          quantity = Helpers.formatNumberDb(lines[rIndex].quantity, option: FormatType.quantity);
           uomCode = lines[rIndex].unitOfMeasure ?? uomCode;
 
           if (form.code == kPromotionTypeStd) {
@@ -111,10 +93,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
         }
 
         if (form.code == kPromotionTypeStd) {
-          _updateItemPrice(
-            uomCode: form.uomCode,
-            orderQty: Helpers.toStrings(quantity),
-          );
+          _updateItemPrice(uomCode: form.uomCode, orderQty: Helpers.toStrings(quantity));
         }
 
         return form.copyWith(quantity: quantity, uomCode: uomCode);
@@ -141,22 +120,14 @@ class SaleFormCubit extends Cubit<SaleFormState>
     }
   }
 
-  void _updateItemPrice({
-    required String orderQty,
-    required String uomCode,
-  }) async {
+  void _updateItemPrice({required String orderQty, required String uomCode}) async {
     ItemSalesLinePrices? salePrice = await _getItemSalelinePrice(
       customer: state.customer,
       uomCode: uomCode,
       orderQty: orderQty,
     );
 
-    salePrice ??
-        await _getItemSalelinePrice(
-          customer: state.customer,
-          orderQty: orderQty,
-          uomCode: "",
-        );
+    salePrice ?? await _getItemSalelinePrice(customer: state.customer, orderQty: orderQty, uomCode: "");
 
     double itemUnitPrice = 0;
     double manualPrice = 0;
@@ -171,17 +142,11 @@ class SaleFormCubit extends Cubit<SaleFormState>
 
     if (salePrice == null) {
       final itemUomResponse = await _taskRepos.getItemUom(
-        params: {
-          'item_no': state.item?.no ?? "",
-          'unit_of_measure_code': uomCode,
-        },
+        params: {'item_no': state.item?.no ?? "", 'unit_of_measure_code': uomCode},
       );
 
       if (itemUnitPrice == 0) {
-        ItemUnitOfMeasure? itemUom = await itemUomResponse.fold(
-          (failure) => null,
-          (itemUom) => itemUom,
-        );
+        ItemUnitOfMeasure? itemUom = await itemUomResponse.fold((failure) => null, (itemUom) => itemUom);
 
         if (itemUom != null) {
           itemUnitPrice = Helpers.toDouble(itemUom.price);
@@ -235,10 +200,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
     final updatedForms = state.saleForm.map((form) {
       if (form.code == code) {
         if (code == kPromotionTypeStd) {
-          _updateItemPrice(
-            uomCode: form.uomCode,
-            orderQty: Helpers.toStrings(quantity),
-          );
+          _updateItemPrice(uomCode: form.uomCode, orderQty: Helpers.toStrings(quantity));
         }
 
         return form.copyWith(quantity: quantity);
@@ -277,10 +239,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
       uomCode: uomCode,
     );
 
-    ItemSalesLinePrices? salePrice = await salePriceResult.fold(
-      (failure) => null,
-      (price) => price,
-    );
+    ItemSalesLinePrices? salePrice = await salePriceResult.fold((failure) => null, (price) => price);
 
     if (salePrice == null) {
       final groupPriceResult = await _taskRepos.getItemSaleLinePrice(
@@ -291,10 +250,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
         uomCode: uomCode,
       );
 
-      salePrice = await groupPriceResult.fold(
-        (failure) => null,
-        (price) => price,
-      );
+      salePrice = await groupPriceResult.fold((failure) => null, (price) => price);
     }
 
     if (salePrice == null) {
@@ -305,10 +261,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
         uomCode: uomCode,
       );
 
-      salePrice = await allCustomersPriceResult.fold(
-        (failure) => null,
-        (price) => price,
-      );
+      salePrice = await allCustomersPriceResult.fold((failure) => null, (price) => price);
     }
 
     return salePrice;
@@ -339,9 +292,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
       //Save to repository
       final result = await _taskRepos.insertSale(saleData);
 
-      result.fold((failure) => throw GeneralException(failure.message), (
-        success,
-      ) {
+      result.fold((failure) => throw GeneralException(failure.message), (success) {
         showSuccessMessage("Added success");
       });
 
@@ -374,8 +325,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
     }
 
     // Validate discount if applied
-    if ((state.discountAmt > 0 || state.discountPercentage < 0) &&
-        !state.canDiscount) {
+    if ((state.discountAmt > 0 || state.discountPercentage < 0) && !state.canDiscount) {
       showWarningMessage('You do not have permission to apply discounts');
       return false;
     }
@@ -402,8 +352,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
       throw GeneralException('No items with quantity found');
     }
 
-    if (item.preventNegativeInventory != kStatusNo &&
-        state.documentType != kSaleCreditMemo) {
+    if (item.preventNegativeInventory != kStatusNo && state.documentType != kSaleCreditMemo) {
       double decreaseQty = inputs.fold(0.0, (sum, line) {
         return sum + Helpers.toDouble(line.quantity);
       });
@@ -411,23 +360,17 @@ class SaleFormCubit extends Cubit<SaleFormState>
       double inventory = state.item?.inventory ?? 0;
 
       if (decreaseQty > inventory) {
-        throw GeneralException(
-          'Only $inventory available, but you tried to sell $decreaseQty.',
-        );
+        throw GeneralException('Only $inventory available, but you tried to sell $decreaseQty.');
       }
     }
 
     final double subTotal = inputs.fold(0.0, (sum, line) {
-      double price = state.manualPrice > 0
-          ? state.manualPrice
-          : state.itemUnitPrice;
+      double price = state.manualPrice > 0 ? state.manualPrice : state.itemUnitPrice;
       return sum + (Helpers.toDouble(line.quantity) * price);
     });
 
     if (state.discountAmt > subTotal) {
-      throw GeneralException(
-        'Discount amount cannot exceed subtotal of $subTotal',
-      );
+      throw GeneralException('Discount amount cannot exceed subtotal of $subTotal');
     }
 
     return SaleArg(

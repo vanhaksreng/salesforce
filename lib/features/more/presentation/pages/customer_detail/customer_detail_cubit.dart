@@ -16,7 +16,10 @@ class CustomerDetailCubit extends Cubit<CustomerDetailState> {
 
       final result = await _repos.getCustomer(params: params);
 
-      result.fold((l) => throw Exception(), (record) => emit(state.copyWith(loading: false, record: record)));
+      result.fold(
+        (l) => throw Exception(),
+        (record) => emit(state.copyWith(loading: false, record: record)),
+      );
     } catch (error) {
       emit(state.copyWith(loading: false, error: error.toString()));
     }
@@ -26,7 +29,11 @@ class CustomerDetailCubit extends Cubit<CustomerDetailState> {
     try {
       emit(state.copyWith(loading: true));
       final result = await _repos.getCustomerAddresses(params: params);
-      result.fold((l) => throw Exception, (records) => emit(state.copyWith(loading: false, recordAddresses: records)));
+      result.fold(
+        (l) => throw Exception,
+        (records) =>
+            emit(state.copyWith(loading: false, recordAddresses: records)),
+      );
     } catch (error) {
       emit(state.copyWith(loading: false, error: error.toString()));
     }
@@ -49,7 +56,13 @@ class CustomerDetailCubit extends Cubit<CustomerDetailState> {
   }
 
   void setLocation(CameraPosition cameraPosition, Marker marker) {
-    emit(state.copyWith(initialCameraPosition: cameraPosition, currentLocationMarker: marker, locationLoaded: true));
+    emit(
+      state.copyWith(
+        initialCameraPosition: cameraPosition,
+        currentLocationMarker: marker,
+        locationLoaded: true,
+      ),
+    );
   }
 
   void setTabIndex(int index) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
@@ -176,6 +177,9 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     }
   }
 
+  Future<void> pushToAddCustomer() =>
+      Navigator.pushNamed(context, AddCustomerScreen.routeName);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -184,7 +188,19 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
         title: greeting("sale_orders"),
         actions: [
           BtnIconCircleWidget(
+            onPressed: () => pushToAddCustomer(),
+            icons: Icon(Icons.add, color: white),
+            rounded: appBtnRound,
+          ),
+          Helpers.gapW(appSpace),
+        ],
+        heightBottom: heightBottomSearch,
+        bottom: SearchWidget(
+          showPrefixIcon: true,
+          suffixIcon: BtnIconCircleWidget(
+            isShowBadge: false,
             onPressed: () => _showModalFiltter(context),
+            rounded: 6,
             icons: SvgWidget(
               assetName: kAppOptionIcon,
               colorSvg: white,
@@ -192,12 +208,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
               width: 18,
               height: 18,
             ),
-            rounded: appBtnRound,
           ),
-          Helpers.gapW(appSpace),
-        ],
-        heightBottom: heightBottomSearch,
-        bottom: SearchWidget(
           onSubmitted: (text) => _onSearch(text: text),
           hintText: greeting("Find Sale Orders..."),
         ),

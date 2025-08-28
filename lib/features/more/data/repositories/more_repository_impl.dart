@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dartz/dartz.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:salesforce/core/constants/app_config.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/data/models/extension/cash_receipt_journals_extension.dart';
 import 'package:salesforce/core/data/models/extension/competitor_item_ledger_entry_extension.dart';
 import 'package:salesforce/core/data/models/extension/customer_address_extension.dart';
@@ -14,10 +15,16 @@ import 'package:salesforce/core/data/models/extension/sale_line_extension.dart';
 import 'package:salesforce/core/data/models/extension/salesperson_schedule_extension.dart';
 import 'package:salesforce/core/data/models/extension/salesperson_schedule_merchandise_extenstion.dart';
 import 'package:salesforce/core/data/repositories/base_app_repository_impl.dart';
+import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/errors/failures.dart';
+import 'package:salesforce/core/utils/date_extensions.dart';
+import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/domain/services/calculate_sale_price.dart';
+import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/domain/entities/record_sale_header.dart';
 import 'package:salesforce/features/more/domain/entities/user_info.dart';
+import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
 import 'package:salesforce/infrastructure/network/network_info.dart';
 import 'package:salesforce/features/more/data/datasources/api/api_more_data_source.dart';
 import 'package:salesforce/features/more/data/datasources/realm/realm_more_data_source.dart';
@@ -715,6 +722,400 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
       return Right(html);
     } on GeneralException catch (e) {
       return Left(CacheFailure(e.message));
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<PosSalesLine>>> getPosSaleLines({
+    Map<String, dynamic>? params,
+  }) async {
+    try {
+      final saleLines = await _local.getPosSaleLines(param: params);
+      return Right(saleLines);
+    } on GeneralException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<PromotionType>>> getPromotionType() async {
+    // if (await _networkInfo.isConnected && await _remote.isValidApiSession()) {
+    //   const String tableName = "promotion_type";
+    //   final datas = await _remote.downloadTranData(data: {
+    //     "table": tableName,
+    //   });
+
+    //   final handler = TableHandlerFactory.getHandler(tableName);
+    //   if (handler == null) {
+    //     return throw Exception("No handler found for table: $tableName");
+    //   }
+
+    //   final date = datas['datetime'] as String;
+
+    //   final records = (datas["records"] as List).map((item) {
+    //     return handler.fromMap(item as Map<String, dynamic>);
+    //   }).toList();
+
+    //   await _local.storeData(records, handler.extractKey, date, tableName);
+    // }
+
+    final localData = await _local.getPromotionType(
+      param: {'allow_manual': 'Yes'},
+    );
+
+    return Right(localData);
+  }
+
+  @override
+  Future<Either<Failure, ItemSalesLinePrices?>> getItemSaleLinePrice({
+    required String itemNo,
+    required String saleType,
+    String orderQty = "1",
+    String? saleCode,
+    String uomCode = "",
+  }) async {
+    try {
+      final salingPrice = await _getItemSaleLinePrice(
+        saleType: saleType,
+        saleCode: saleCode,
+        orderQty: orderQty,
+        itemNo: itemNo,
+        uomCode: uomCode,
+      );
+
+      return Right(salingPrice);
+    } on GeneralException {
+      return const Left(CacheFailure(errorInternetMessage));
+    }
+  }
+
+  Future<ItemSalesLinePrices?> _getItemSaleLinePrice({
+    required String itemNo,
+    required String saleType,
+    String orderQty = "1",
+    String? saleCode,
+    String uomCode = "",
+  }) async {
+    final now = DateTime.now();
+    final date = "${now.year}-${now.month}-${now.day}";
+    Map<String, dynamic> p = {
+      "item_no": itemNo,
+      "sales_type": saleType,
+      'starting_date': '<=$date',
+      'ending_date': '>=$date',
+      'minimum_quantity': '<=$orderQty',
+      'uom_code': uomCode,
+    };
+
+    if (saleCode != null) {
+      p["sales_code"] = saleCode;
+    }
+
+    return await _local.getItemSaleLinePrice(param: p);
+  }
+
+  Future<ItemUnitOfMeasure?> _getItemUom({
+    required String itemNo,
+    required String uomCode,
+  }) async {
+    return await _local.getItemUom(
+      params: {'item_no': itemNo, 'unit_of_measure_code': uomCode},
+    );
+  }
+
+  Future<Customer?> _getCustomer({required String no}) async {
+    return await _local.getCustomer(params: {'no': no});
+  }
+
+  Future<PosSalesHeader?> _getPosSaleHeader({
+    required String no,
+    required String documentType,
+  }) async {
+    return await _local.getPosSaleHeader(
+      param: {'no': no, 'document_type': documentType},
+    );
+  }
+
+  Future<CustomerAddress?> _getCustomerAddress({
+    Map<String, dynamic>? params,
+  }) async {
+    return await _local.getCustomerAddress(args: params);
+  }
+
+  Future<PosSalesHeader> _generateNewSaleHeader({
+    required String documentNo,
+    required Customer customer,
+    required String documentType,
+  }) async {
+    try {
+      final int headerId = Helpers.generateUniqueNumber();
+      final String today = DateTime.now().toDateString();
+      CustomerAddress? customerAddress;
+
+      if (customer.shipToCode != null) {
+        customerAddress = await _getCustomerAddress(
+          params: {'customer_no': customer.no, 'code': customer.shipToCode},
+        );
+      }
+
+      final userSetup = await _local.getUserSetup();
+      if (userSetup == null) {
+        throw GeneralException("User setup not found");
+      }
+
+      if (userSetup.locationCode == null) {
+        throw GeneralException("User setup not link to location yet.");
+      }
+
+      final header = PosSalesHeader(
+        headerId,
+        no: documentNo,
+        locationCode: userSetup.locationCode,
+        documentType: documentType,
+        customerNo: customer.no,
+        customerName: customer.name,
+        customerName2: customer.name2,
+        address: customer.address,
+        address2: customer.address2,
+        shipToName: customer.name,
+        shipToName2: customer.name2,
+        shipToAddress: customer.address,
+        shipToAddress2: customer.address2,
+        shipToContactName: customer.contactName,
+        shipToPhoneNo: customer.phoneNo,
+        shipToPhoneNo2: customer.phoneNo2,
+        arPostingGroupCode: customer.recPostingGroupCode,
+        genBusPostingGroupCode: customer.genBusPostingGroupCode,
+        vatBusPostingGroupCode: customer.vatPostingGroupCode,
+        priceIncludeVat: customer.priceIncludeVat,
+        paymentTermCode: customer.paymentTermCode,
+        orderDate: today,
+        documentDate: today,
+        postingDate: today,
+        status: kStatusOpen,
+        storeCode: userSetup.storeCode,
+        divisionCode: userSetup.divisionCode,
+        businessUnitCode: userSetup.businessUnitCode,
+        departmentCode: userSetup.departmentCode,
+        projectCode: userSetup.projectCode,
+        sourceType: kSourceTypeVisit,
+        sourceNo: "",
+        currencyCode: "",
+        currencyFactor: 1,
+      );
+
+      if (customerAddress != null) {
+        header.shipToCode = customerAddress.code;
+        header.shipToName = customerAddress.name;
+        header.shipToName = customerAddress.name2;
+        header.shipToAddress = customerAddress.address;
+        header.shipToAddress2 = customerAddress.address2;
+        header.shipToContactName = customerAddress.contactName;
+        header.shipToPhoneNo = customerAddress.phoneNo;
+        header.shipToPhoneNo2 = customerAddress.phoneNo2;
+      }
+
+      return header;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<VatPostingSetup?> _getVatSetup({
+    required String busPostingGroup,
+    required String prodPostingGroup,
+  }) async {
+    return await _local.getVatSetup(
+      param: {
+        'vat_bus_posting_group': busPostingGroup,
+        'vat_prod_posting_group': prodPostingGroup,
+      },
+    );
+  }
+
+  @override
+  Future<Either<Failure, bool>> insertSale(SaleItemArg saleArg) async {
+    try {
+      final inputs = saleArg.inputs;
+      final item = saleArg.item;
+
+      final customer = await _getCustomer(no: saleArg.customer.no);
+      if (customer == null) {
+        throw GeneralException('Customer not found');
+      }
+
+      final user = getAuth();
+      if (user == null) {
+        throw GeneralException('Please kill app and open again.');
+      }
+
+      final String saleNo = Helpers.getSaleDocumentNo(
+        scheduleId: customer.no,
+        documentType: saleArg.documentType,
+      );
+
+      PosSalesHeader? saleHeader = await _getPosSaleHeader(
+        no: saleNo,
+        documentType: saleArg.documentType,
+      );
+
+      saleHeader ??= await _generateNewSaleHeader(
+        documentNo: saleNo,
+        customer: customer,
+        documentType: saleArg.documentType,
+      );
+
+      String priceIncludeVat = customer.priceIncludeVat ?? kStatusNo;
+
+      final bus = customer.vatPostingGroupCode ?? "";
+      final prod = item.vatProdPostingGroupCode ?? "";
+
+      final vatSetup = await _getVatSetup(
+        busPostingGroup: bus,
+        prodPostingGroup: prod,
+      );
+      if (vatSetup == null) {
+        throw GeneralException(
+          'VAT setup not found. Product posting [$prod] with Bus. Posting [$bus]',
+        );
+      }
+
+      List<PosSalesLine> saleLines = [];
+      int lineNo = 0;
+      int referentLineNo = Helpers.generateUniqueNumber();
+
+      await Future.wait(
+        inputs.map((input) async {
+          final itemUom = await _getItemUom(
+            itemNo: item.no,
+            uomCode: input.uomCode,
+          );
+
+          if (itemUom == null) {
+            throw GeneralException("Item uom not found.[${input.uomCode}]");
+          }
+
+          final qtyPerUnit = Helpers.toDouble(itemUom.qtyPerUnit);
+          if (qtyPerUnit <= 0) {
+            throw GeneralException(
+              "Quantity per unit of item uom cannot zero.[${input.uomCode}]",
+            );
+          }
+
+          double discountAmt = saleArg.discountAmount ?? 0;
+          double discountPercent = saleArg.discountPercentage ?? 0;
+          double manualPrice = 0;
+          double unitPrice = 0;
+
+          if (input.code != kPromotionTypeStd) {
+            discountPercent = 100;
+            discountAmt = 0;
+            unitPrice = item.unitPrice ?? 0;
+          } else {
+            manualPrice = Helpers.formatNumberDb(
+              saleArg.manualPrice,
+              option: FormatType.price,
+            );
+            unitPrice = Helpers.formatNumberDb(
+              saleArg.itemUnitPrice,
+              option: FormatType.price,
+            );
+            if (manualPrice > 0) {
+              unitPrice = manualPrice;
+            }
+          }
+
+          final calculated = CalculateSalePrices(
+            unitPrice: unitPrice,
+            quantity: input.quantity,
+            vatPercentage: Helpers.toDouble(vatSetup.vatAmount),
+            discountAmount: discountAmt,
+            discountPercentage: discountPercent,
+            priceIncludeVat: priceIncludeVat == kStatusYes,
+          );
+
+          if (discountAmt > calculated.baseAmount) {
+            throw GeneralException(
+              "Discount amount[$discountAmt] cannot greather than base amount[${calculated.baseAmount}]",
+            );
+          }
+
+          final int lineId = Helpers.generateUniqueNumber();
+          lineNo += 10000;
+
+          final saleLine = PosSalesLine(
+            lineId,
+            documentNo: saleHeader?.no,
+            specialType: input.code,
+            specialTypeNo: "",
+            type: kTypeItem,
+            lineNo: lineNo,
+            referLineNo: referentLineNo,
+            customerNo: customer.no,
+            no: item.no,
+            description: item.description,
+            description2: item.description2,
+            itemBrandCode: item.itemBrandCode,
+            itemCategoryCode: item.itemCategoryCode,
+            itemGroupCode: item.itemGroupCode,
+            itemDiscGroupCode: item.itemDiscountGroupCode,
+            postingGroup: item.invPostingGroupCode,
+            genProdPostingGroupCode: item.genProdPostingGroupCode,
+            vatProdPostingGroupCode: item.vatProdPostingGroupCode,
+            genBusPostingGroupCode: saleHeader?.genBusPostingGroupCode,
+            vatBusPostingGroupCode: saleHeader?.vatBusPostingGroupCode,
+            locationCode: saleHeader?.locationCode,
+            documentType: saleHeader?.documentType,
+            salespersonCode: saleHeader?.salespersonCode,
+            storeCode: saleHeader?.storeCode,
+            divisionCode: saleHeader?.divisionCode,
+            distributorCode: saleHeader?.distributorCode,
+            departmentCode: saleHeader?.departmentCode,
+            businessUnitCode: saleHeader?.businessUnitCode,
+            projectCode: saleHeader?.projectCode,
+            requestShipmentDate: saleHeader?.requestShipmentDate,
+            currencyCode: saleHeader?.currencyCode,
+            currencyFactor: saleHeader?.currencyFactor,
+            vatCalculationType: vatSetup.vatCalculationType,
+            vatPercentage: Helpers.toDouble(vatSetup.vatAmount),
+            unitOfMeasure: itemUom.unitOfMeasureCode,
+            qtyPerUnitOfMeasure: qtyPerUnit,
+            quantity: input.quantity,
+            quantityToShip: input.quantity,
+            quantityToInvoice: input.quantity,
+            outstandingQuantity: input.quantity,
+            outstandingQuantityBase: input.quantity * qtyPerUnit,
+            quantityInvoiced: 0,
+            quantityShipped: 0,
+            unitPrice: unitPrice,
+            unitPriceLcy: unitPrice,
+            discountAmount: discountAmt,
+            discountPercentage: discountPercent,
+            vatAmount: calculated.vatAmount,
+            vatBaseAmount: calculated.vatBaseAmount,
+            amount: calculated.amount,
+            amountIncludingVat: calculated.amountIncludeVat,
+            amountIncludingVatLcy: calculated.amountIncludeVat,
+            manualUnitPrice: manualPrice,
+            isManualEdit: manualPrice > 0 ? kStatusYes : kStatusNo,
+            documentDate: DateTime.now().toDateString(),
+            unitPriceOri: Helpers.formatNumberDb(
+              saleArg.itemUnitPrice,
+              option: FormatType.price,
+            ),
+          );
+
+          saleLines.add(saleLine);
+        }),
+      );
+
+      await _local.storePosSale(saleHeader: saleHeader, saleLines: saleLines);
+
+      return const Right(true);
     } catch (e) {
       return Left(CacheFailure(e.toString()));
     }
