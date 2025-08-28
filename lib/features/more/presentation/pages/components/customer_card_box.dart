@@ -14,8 +14,15 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class CustomerCardBox extends StatelessWidget {
-  const CustomerCardBox({super.key, required this.customer, this.onEdit, this.onAddAddress});
+  const CustomerCardBox({
+    super.key,
+    required this.customer,
+    this.onEdit,
+    this.onAddAddress,
+    required this.distance,
+  });
   final Customer customer;
+  final String distance;
   final Function(String)? onEdit;
   final Function(String)? onAddAddress;
 
@@ -44,13 +51,16 @@ class CustomerCardBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BoxWidget(
-      // border: Border(left: BorderSide(color: getColorStatus(), width: 4.scale)),
       padding: const EdgeInsets.all(appSpace),
       margin: EdgeInsets.symmetric(vertical: scaleFontSize(4)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: scaleFontSize(appSpace),
-        children: [_buildHeader(), if ((customer.address ?? "").isNotEmpty) _buildAddres(), _buildFooterBtn()],
+        children: [
+          _buildHeader(),
+          if ((customer.address ?? "").isNotEmpty) _buildAddres(),
+          _buildFooterBtn(),
+        ],
       ),
     );
   }
@@ -68,14 +78,18 @@ class CustomerCardBox extends StatelessWidget {
         ),
         Expanded(
           child: Column(
-            spacing: 8.scale,
+            spacing: 4.scale,
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextWidget(text: customer.no, fontSize: 16, fontWeight: FontWeight.bold),
+                  TextWidget(
+                    text: customer.no,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                   ChipWidget(
                     bgColor: getColorStatus().withValues(alpha: .2),
                     label: customer.inactived == "No" ? kActive : kInActive,
@@ -87,8 +101,11 @@ class CustomerCardBox extends StatelessWidget {
                 softWrap: true,
                 overflow: TextOverflow.ellipsis,
                 text: customer.name ?? "",
+              ),
+
+              TextWidget(
+                text: "${greeting("Distance :")}  $distance",
                 color: textColor50,
-                fontWeight: FontWeight.w600,
               ),
             ],
           ),
@@ -102,18 +119,23 @@ class CustomerCardBox extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       rounding: 6,
       isBoxShadow: false,
-      color: grey20.withValues(alpha: .2),
+      color: grey20.withValues(alpha: .1),
       child: Row(
         spacing: 8.scale,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SvgWidget(assetName: klocationOutlineIcon, width: 20, colorSvg: textColor50, height: 20),
+          const SvgWidget(
+            assetName: klocationOutlineIcon,
+            width: 20,
+            colorSvg: textColor50,
+            height: 20,
+          ),
           Flexible(
             flex: 3,
             child: TextWidget(
               softWrap: true,
               maxLines: 2,
-              fontSize: 12,
+              color: textColor50,
               overflow: TextOverflow.ellipsis,
               text: customer.address ?? "",
             ),
@@ -131,7 +153,12 @@ class CustomerCardBox extends StatelessWidget {
       icon: Row(
         spacing: 8.scale,
         children: [
-          const SvgWidget(assetName: kEditIcon, width: 16, height: 16, colorSvg: mainColor),
+          const SvgWidget(
+            assetName: kEditIcon,
+            width: 16,
+            height: 16,
+            colorSvg: mainColor,
+          ),
           TextWidget(text: greeting("edit"), color: mainColor),
         ],
       ),

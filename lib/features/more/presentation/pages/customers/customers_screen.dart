@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_config.dart';
 import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
@@ -12,9 +13,11 @@ import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/bottom_sheet_fn.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
+import 'package:salesforce/core/presentation/widgets/buttom_sheet_filter_widget.dart';
 import 'package:salesforce/core/presentation/widgets/header_bottom_sheet.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
+import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_btn_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_form_field_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
@@ -24,6 +27,7 @@ import 'package:salesforce/features/more/presentation/pages/components/customer_
 import 'package:salesforce/features/more/presentation/pages/customer_detail/customer_detail_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/customers/customers_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/customers/customers_state.dart';
+import 'package:salesforce/features/more/presentation/pages/customers/filter_distance_custom.dart';
 import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
 import 'package:salesforce/infrastructure/external_services/location/i_location_service.dart';
 import 'package:salesforce/localization/trans.dart';
@@ -70,7 +74,9 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
     try {
       l.show(1);
 
-      final tables = await _cubit.getAppSyncLogs({'tableName': 'IN {"customer","customer_address"}'});
+      final tables = await _cubit.getAppSyncLogs({
+        'tableName': 'IN {"customer","customer_address"}',
+      });
 
       if (tables.isEmpty) {
         throw GeneralException("Cannot find any table related");
@@ -100,7 +106,11 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
   }
 
   void _editCustomer(Customer customer) {
-    Navigator.pushNamed(context, CustomerDetailScreen.routeName, arguments: customer).then((value) {
+    Navigator.pushNamed(
+      context,
+      CustomerDetailScreen.routeName,
+      arguments: customer,
+    ).then((value) {
       if (Helpers.shouldReload(value)) {
         _cubit.getCustomers();
       }
@@ -127,7 +137,11 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
     _cubit.isValidate("");
 
     Navigator.of(context).pop();
-    Navigator.pushNamed(context, CustomerDetailScreen.routeName, arguments: customer).then((value) {
+    Navigator.pushNamed(
+      context,
+      CustomerDetailScreen.routeName,
+      arguments: customer,
+    ).then((value) {
       if (Helpers.shouldReload(value)) {
         _cubit.getCustomers();
       }
@@ -154,7 +168,10 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
             "existed_customer",
             params: {
               'name': existingCustomer.name ?? "",
-              'km': Helpers.formatNumber(maxDistanceKm, option: FormatType.quantity),
+              'km': Helpers.formatNumber(
+                maxDistanceKm,
+                option: FormatType.quantity,
+              ),
             },
           ),
         );
@@ -169,7 +186,9 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
     l.show();
 
     try {
-      final String setting = await _cubit.getSetting(kCheckExistingCustomerByArea);
+      final String setting = await _cubit.getSetting(
+        kCheckExistingCustomerByArea,
+      );
       if (setting == kStatusYes) {
         final String maxvalue = await _cubit.getSetting(kMaxDistanceKm);
 
@@ -179,7 +198,10 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
           throw GeneralException("Cannot get Latitude & Longitude");
         }
 
-        if (!await _canAddNewCustomer(LatLng(location.latitude, location.longitude), Helpers.toDouble(maxvalue))) {
+        if (!await _canAddNewCustomer(
+          LatLng(location.latitude, location.longitude),
+          Helpers.toDouble(maxvalue),
+        )) {
           return;
         }
       }
@@ -227,6 +249,42 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
     // });
   }
 
+  void _showModalFiltter() {
+    modalBottomSheet(context, child: _buildFilter());
+  }
+
+  String gpsDisplay(double distInMeters) {
+    final double distInKm = distInMeters / 1000;
+
+    if (distInKm > 1) {
+      return "${Helpers.formatNumberLink(distInKm, option: FormatType.quantity)}km";
+    }
+
+    return "${Helpers.formatNumberLink(distInMeters, option: FormatType.quantity)}m";
+  }
+
+  Future<void> _onApplyFilter({
+    required bool isSort,
+    required double distance,
+  }) async {
+    print("====================${distance}");
+    Navigator.of(context).pop();
+    final l = LoadingOverlay.of(context);
+    try {
+      l.show();
+      if (isSort) {
+        await _cubit.sortCustomer();
+        return;
+      }
+      await _cubit.sortCustomerViaDistance(distance);
+      if (!mounted) return;
+    } catch (e) {
+      showErrorMessage();
+    } finally {
+      l.hide();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -240,7 +298,10 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
             rounded: appBtnRound,
           ),
           Padding(
-            padding: EdgeInsets.only(right: scaleFontSize(appSpace), left: scaleFontSize(appSpace)),
+            padding: EdgeInsets.only(
+              right: scaleFontSize(appSpace),
+              left: scaleFontSize(appSpace),
+            ),
             child: BtnIconCircleWidget(
               onPressed: () => _addNewCustomer(),
               icons: const Icon(Icons.add, color: white),
@@ -248,7 +309,25 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
             ),
           ),
         ],
-        bottom: SearchWidget(onSubmitted: (value) async => _filter(value)),
+        bottom: SearchWidget(
+          onSubmitted: (value) async => _filter(value),
+          showPrefixIcon: true,
+
+          suffixIcon: BtnIconCircleWidget(
+            isShowBadge: true,
+            onPressed: () {
+              _showModalFiltter();
+            },
+            rounded: 6,
+            icons: SvgWidget(
+              assetName: kAppOptionIcon,
+              colorSvg: white,
+              padding: EdgeInsets.all(4.scale),
+              width: 18,
+              height: 18,
+            ),
+          ),
+        ),
         heightBottom: heightBottomSearch,
       ),
       body: BlocBuilder<CustomersCubit, CustomersState>(
@@ -275,8 +354,10 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
       itemBuilder: (context, index) {
         final customer = records[index];
         return CustomerCardBox(
+          distance: gpsDisplay(Helpers.toDouble(customer.distance)),
           customer: customer,
-          onAddAddress: (p0) => _onPushToCreateAddressScreen(customer: customer),
+          onAddAddress: (p0) =>
+              _onPushToCreateAddressScreen(customer: customer),
           onEdit: (value) => _editCustomer(customer),
         );
       },
@@ -308,10 +389,15 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
                   TextFormFieldWidget(
                     controller: _codeController,
                     isDefaultTextForm: true,
-                    suffix: TextBtnWidget(titleBtn: "clear", colorBtn: textColor50, onTap: () => onclear()),
+                    suffix: TextBtnWidget(
+                      titleBtn: "clear",
+                      colorBtn: textColor50,
+                      onTap: () => onclear(),
+                    ),
                     label: greeting("Customer No"),
                   ),
-                  if (state.messageCode.isNotEmpty) TextWidget(text: state.messageCode, color: error),
+                  if (state.messageCode.isNotEmpty)
+                    TextWidget(text: state.messageCode, color: error),
                   BtnWidget(
                     gradient: linearGradient,
                     onPressed: () => _onCreateNewCustonerHandler(),
@@ -321,6 +407,27 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
               ),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Widget _buildFilter() {
+    return BlocBuilder<CustomersCubit, CustomersState>(
+      bloc: _cubit,
+      builder: (context, state) {
+        return ButtomSheetFilterWidget(
+          child: FilterDistanceCustom(
+            distancevalue: state.distanceValue,
+            isSortDistance: state.isSortdistance,
+            changeSortBy: (bool isSort) => _cubit.isSortDistance(isSort),
+            onSelectedDistance: (double v) => _cubit.onChangeDistance(v),
+            onChanged: (newValue) => _cubit.onChangeDistance(newValue),
+          ),
+          onApply: () => _onApplyFilter(
+            isSort: state.isSortdistance,
+            distance: state.distanceValue,
+          ),
         );
       },
     );

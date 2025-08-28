@@ -35,7 +35,11 @@ class BtnIconCircleWidget extends StatelessWidget {
           shape: rounded == null
               ? null
               : WidgetStatePropertyAll(
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(scaleFontSize(rounded!))),
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      scaleFontSize(rounded!),
+                    ),
+                  ),
                 ),
         ),
         iconSize: 20.scale,

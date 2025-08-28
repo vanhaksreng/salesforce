@@ -9,6 +9,8 @@ class CustomersState {
   final bool isValidation;
   final String messageCode;
   final LatLng? latLng;
+  final double distanceValue;
+  final bool isSortdistance;
 
   const CustomersState({
     this.isLoading = false,
@@ -16,8 +18,10 @@ class CustomersState {
     this.records = const [],
     this.customer,
     this.isValidation = false,
+    this.isSortdistance = false,
     this.messageCode = "",
     this.latLng,
+    this.distanceValue = 0,
   });
 
   CustomersState copyWith({
@@ -28,6 +32,8 @@ class CustomersState {
     bool? isValidation,
     String? messageCode,
     LatLng? latLng,
+    double? distanceValue,
+    bool? isSortdistance,
   }) {
     return CustomersState(
       isLoading: isLoading ?? this.isLoading,
@@ -37,6 +43,8 @@ class CustomersState {
       isValidation: isValidation ?? this.isValidation,
       messageCode: messageCode ?? this.messageCode,
       latLng: latLng ?? this.latLng,
+      distanceValue: distanceValue ?? this.distanceValue,
+      isSortdistance: isSortdistance ?? this.isSortdistance,
     );
   }
 }
