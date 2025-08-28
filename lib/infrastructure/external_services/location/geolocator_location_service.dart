@@ -72,11 +72,6 @@ class GeolocatorLocationService implements ILocationService {
         locationSettings: locationSettings,
       ).timeout(_locationTimeout);
 
-      Logger.log(
-        "Current location obtained: ${position.latitude}, ${position.longitude} "
-        "(accuracy: ${position.accuracy}m)",
-      );
-
       return position;
     } on TimeoutException {
       throw GeneralException(

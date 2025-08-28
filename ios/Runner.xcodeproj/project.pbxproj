@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -12,6 +12,8 @@
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		49A4FF1D43E4A3ACA90B8C05 /* Pods_OneSignalNotificationServiceExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FAE99E89B8C65496EFD422EB /* Pods_OneSignalNotificationServiceExtension.framework */; };
+		632D8EFC2E5EA9460011C00E /* MyLocationPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632D8EFB2E5EA9440011C00E /* MyLocationPlugin.swift */; };
+		632D8EFE2E5EAA810011C00E /* MyLocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632D8EFD2E5EAA810011C00E /* MyLocationManager.swift */; };
 		632ED5502E5D544F004F6908 /* KalmanLocationFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632ED54F2E5D544D004F6908 /* KalmanLocationFilter.swift */; };
 		63C636282E5C555F002A086E /* LocalStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C636272E5C555A002A086E /* LocalStorageManager.swift */; };
 		63D41BFE2E5057F600DEE8AA /* OneSignalNotificationServiceExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 63D41BF72E5057F600DEE8AA /* OneSignalNotificationServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -76,6 +78,8 @@
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		336010589840AAB6D38B9295 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
+		632D8EFB2E5EA9440011C00E /* MyLocationPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyLocationPlugin.swift; sourceTree = "<group>"; };
+		632D8EFD2E5EAA810011C00E /* MyLocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyLocationManager.swift; sourceTree = "<group>"; };
 		632ED54F2E5D544D004F6908 /* KalmanLocationFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KalmanLocationFilter.swift; sourceTree = "<group>"; };
 		639A845B2E4C447300B01D6C /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		63C636272E5C555A002A086E /* LocalStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStorageManager.swift; sourceTree = "<group>"; };
@@ -207,12 +211,10 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
-<<<<<<< HEAD
+				632D8EFD2E5EAA810011C00E /* MyLocationManager.swift */,
+				632D8EFB2E5EA9440011C00E /* MyLocationPlugin.swift */,
 				632ED54F2E5D544D004F6908 /* KalmanLocationFilter.swift */,
 				63C636272E5C555A002A086E /* LocalStorageManager.swift */,
-				63E8EE352E4DD9FD0049DC55 /* MyLocationManager.swift */,
-=======
->>>>>>> 203858391080aaf83546ae60c7cace8771ae6bfe
 				FA4D5A5E2E4C7B5200945787 /* FlutterHtmlToPdfPlugin.swift */,
 				FA4D5A5B2E4C7B4600945787 /* Classes */,
 				639A845B2E4C447300B01D6C /* Runner.entitlements */,
@@ -440,9 +442,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -494,9 +500,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -551,9 +561,11 @@
 				FA4D5A5C2E4C7B4600945787 /* FileHelper.swift in Sources */,
 				FA4D5A5F2E4C7B5200945787 /* FlutterHtmlToPdfPlugin.swift in Sources */,
 				FA4D5A5D2E4C7B4600945787 /* PDFCreator.swift in Sources */,
+				632D8EFE2E5EAA810011C00E /* MyLocationManager.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				63C636282E5C555F002A086E /* LocalStorageManager.swift in Sources */,
+				632D8EFC2E5EA9460011C00E /* MyLocationPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

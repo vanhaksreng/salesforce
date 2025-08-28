@@ -178,6 +178,7 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
       final areaByMeters = Helpers.toDouble(
         await _cubit.getSetting(kCheckedInAreaKey),
       );
+
       if (areaByMeters > 0) {
         final currentLocation = await getCurrentLocation();
         if (currentLocation.latitude == 0 && currentLocation.longitude == 0) {

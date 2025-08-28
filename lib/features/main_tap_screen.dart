@@ -43,8 +43,6 @@ class _MainTapScreenState extends State<MainTapScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    LocationService.instance.setAppActive(true);
-
     _initBGTasks();
     _startTimers();
   }
@@ -109,23 +107,16 @@ class _MainTapScreenState extends State<MainTapScreen>
 
     switch (state) {
       case AppLifecycleState.resumed:
-        LocationService.instance.setAppActive(true);
         _handleAppResumed();
         break;
 
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
-        LocationService.instance.setAppActive(false);
         _handleAppBackground();
         break;
 
       case AppLifecycleState.detached:
-        LocationService.instance.setAppActive(false);
-        _handleAppTerminating();
-        break;
-
       case AppLifecycleState.hidden:
-        LocationService.instance.setAppActive(false);
         break;
     }
   }
@@ -136,12 +127,6 @@ class _MainTapScreenState extends State<MainTapScreen>
 
   Future<void> _handleAppBackground() async {
     _stopTimers();
-  }
-
-  Future<void> _handleAppTerminating() async {
-    if (_hasBackgroundPermission && svc.isTracking) {
-      await svc.startTracking(mode: LocationTrackingMode.significant);
-    }
   }
 
   // MARK: - Enhanced Background Task Initialization
@@ -234,7 +219,7 @@ class _MainTapScreenState extends State<MainTapScreen>
       }
 
       final bgGranted = await svc.requestPermissions(
-        LocationTrackingMode.periodic,
+        LocationTrackingMode.background,
       );
 
       _hasBackgroundPermission = bgGranted;
@@ -258,7 +243,7 @@ class _MainTapScreenState extends State<MainTapScreen>
       LocationTrackingMode mode;
 
       if (_hasBackgroundPermission) {
-        mode = LocationTrackingMode.periodic;
+        mode = LocationTrackingMode.background;
       } else if (perm['canTrackForeground'] == true) {
         mode = LocationTrackingMode.foreground;
       } else {

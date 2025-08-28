@@ -1,48 +1,58 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
+import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/injection_container.dart';
 
-enum LocationTrackingMode { foreground, background, significant, periodic }
+enum LocationTrackingMode { foreground, background }
 
-class LocationService {
+class LocationService with WidgetsBindingObserver {
   static const String _channelName =
       'com.clearviewerp.salesforce/background_service';
   static final LocationService instance = LocationService._internal();
-  final MethodChannel _channel = const MethodChannel(_channelName);
 
-  // Stream controllers
+  late final MethodChannel _channel;
+
   final StreamController<Map<String, dynamic>> _locationController =
       StreamController<Map<String, dynamic>>.broadcast();
   final StreamController<Map<String, dynamic>> _eventController =
       StreamController<Map<String, dynamic>>.broadcast();
 
-  // Public streams (matching your existing API)
   Stream<Map<String, dynamic>> get onLocation => _locationController.stream;
   Stream<Map<String, dynamic>> get onEvent => _eventController.stream;
 
   bool _isListening = false;
-  bool _appActive = true;
-  final bool _isAppActive = true;
+  bool _isTracking = false;
   LocationTrackingMode _currentMode = LocationTrackingMode.foreground;
-  final bool _isTracking = false;
 
-  int locationCount = 0;
+  final int _syncThreshold = 5;
+  int _locationCount = 0;
 
   final appRepo = getIt<BaseAppRepository>();
 
   LocationService._internal() {
+    _channel = const MethodChannel(_channelName);
     _setupMethodHandler();
+    WidgetsBinding.instance.addObserver(this);
   }
 
-  void setAppActive(bool active) {
-    final wasActive = _isAppActive;
-    _appActive = active;
+  void init() {
+    if (_isListening) return;
+    _setupMethodHandler();
+    _isListening = true;
+  }
 
-    if (_isTracking && wasActive != active) {
-      _handleAppStateChange(active);
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_isTracking) {
+      if (state == AppLifecycleState.resumed) {
+        _handleAppStateChange(true);
+      } else if (state == AppLifecycleState.paused) {
+        _handleAppStateChange(false);
+      }
     }
   }
 
@@ -56,13 +66,13 @@ class LocationService {
       } else {
         final permissions = await checkPermissions();
         if (permissions['background'] == true) {
-          await _switchToMode(_getBestBackgroundMode());
+          await _switchToMode(LocationTrackingMode.background);
         }
       }
-    } catch (e) {
+    } on PlatformException catch (e) {
       _eventController.add({
         'type': 'error',
-        'message': 'Failed to switch tracking mode: $e',
+        'message': 'Failed to switch tracking mode: ${e.message}',
       });
     }
   }
@@ -77,77 +87,46 @@ class LocationService {
     if (success) {
       _eventController.add({
         'type': 'modeSwitch',
-        'message': 'Switched to ${mode.name} mode)',
+        'message': 'Switched to ${mode.name} mode',
       });
     }
-  }
-
-  LocationTrackingMode _getBestBackgroundMode() {
-    // You can make this configurable or add user preferences
-    // Periodic is a good balance of accuracy and battery life
-    return LocationTrackingMode.periodic;
   }
 
   void _setupMethodHandler() {
-    if (_isListening) return;
+    _channel.setMethodCallHandler((call) async {
+      final args = (call.arguments as Map?)?.cast<String, dynamic>() ?? {};
 
-    try {
-      _channel.setMethodCallHandler((call) async {
-        final args = (call.arguments as Map?)?.cast<String, dynamic>() ?? {};
-
-        switch (call.method) {
-          case 'locationUpdate':
-            // if (_appActive) {
-            //   _locationController.add(args);
-            // } else {
-            //   await _saveLocationWhenBackgrounded(args);
-            // }
-
-            await _saveLocationWhenBackgrounded(args);
-
-            break;
-          case 'permissionStatus':
-            _locationController.add(args);
-            break;
-          case 'permissionChanged':
-            _eventController.add({'type': 'permissionChanged', ...args});
-            break;
-          case 'trackingStarted':
-            _eventController.add({'type': 'started', ...args});
-            break;
-          case 'trackingStopped':
-            _eventController.add({'type': 'stopped'});
-            break;
-          case 'error':
-            _eventController.add({
-              'type': 'error',
-              'message': args['message'] ?? 'Unknown',
-            });
-            break;
-          case 'log':
-            Logger.log(args['message']);
-            break;
-          case 'terminationLocation':
-            _eventController.add({'type': 'terminationLocation', ...args});
-            break;
-          case 'syncLocations':
-            Logger.log("syncLocations: $args");
-            _eventController.add({
-              'type': 'syncLocations',
-              'data': args['data'],
-            });
-            break;
-          default:
-            Logger.log("Unhandled method: ${call.method}");
-        }
-
-        return null;
-      });
-    } catch (e) {
-      Logger.log("Error Called method: $e");
-    }
-
-    _isListening = true;
+      switch (call.method) {
+        case 'locationUpdate':
+          await _saveLocationWhenBackgrounded(args);
+          break;
+        case 'permissionChanged':
+          _eventController.add({'type': 'permissionChanged', ...args});
+          break;
+        case 'trackingStarted':
+          _isTracking = true;
+          _eventController.add({'type': 'started', ...args});
+          break;
+        case 'trackingStopped':
+          _isTracking = false;
+          _eventController.add({'type': 'stopped'});
+          break;
+        case 'error':
+          Logger.log("error: $args");
+          _eventController.add({
+            'type': 'error',
+            'message': args['message'] ?? 'Unknown',
+          });
+          break;
+        case 'syncLocations':
+          Logger.log("syncLocations: $args");
+          _eventController.add({'type': 'syncLocations', 'data': args['data']});
+          break;
+        default:
+          Logger.log("Unhandled method: ${call.method}");
+      }
+      return null;
+    });
   }
 
   Future<bool> startTracking({required LocationTrackingMode mode}) async {
@@ -155,6 +134,7 @@ class LocationService {
       final res = await _channel.invokeMethod('startService', {
         'mode': mode.name,
       });
+      _isTracking = res == true;
       return res == true;
     } on PlatformException catch (e) {
       _eventController.add({'type': 'error', 'message': e.message ?? e.code});
@@ -165,6 +145,7 @@ class LocationService {
   Future<bool> stopTracking() async {
     try {
       final res = await _channel.invokeMethod('stopService');
+      _isTracking = !(res == true);
       return res == true;
     } on PlatformException catch (e) {
       _eventController.add({'type': 'error', 'message': e.message ?? e.code});
@@ -196,33 +177,35 @@ class LocationService {
 
   Future<void> _saveLocationWhenBackgrounded(Map<String, dynamic> loc) async {
     try {
+      if (Helpers.toDouble(loc['accuracy']) > 15) {
+        return;
+      }
+
       await appRepo.storeLocationOffline(
         LatLng(loc['latitude'], loc['longitude']),
       );
 
-      if (!_appActive && locationCount >= 0) {
+      _locationCount++;
+
+      if (_locationCount >= _syncThreshold) {
         await appRepo.syncOfflineLocationToBackend();
         await appRepo.heartbeatStatus(
           params: {'status': 'online', 'rtype': 'heartbeat'},
         );
 
-        Logger.log('syncOfflineLocationToBackend.... $locationCount');
-
-        locationCount = 0;
+        _locationCount = 0;
       }
-
-      locationCount += 1;
     } catch (e) {
       Logger.log('Failed to buffer location: $e');
     }
   }
 
   bool get isTracking => _isTracking;
-  bool get isAppActive => _isAppActive;
   LocationTrackingMode get currentMode => _currentMode;
 
   void dispose() {
     _locationController.close();
     _eventController.close();
+    WidgetsBinding.instance.removeObserver(this);
   }
 }
