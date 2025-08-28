@@ -43,34 +43,35 @@ class CustomersCubit extends Cubit<CustomersState>
     }
   }
 
-  Future<void> sortCustomer() async {
-    final currentLocation = await _location.getCurrentLocation();
-    List<Customer> customers = state.records;
-    for (var s in customers) {
-      s.distance = Helpers.calculateDistanceInMeters(
-        currentLocation.latitude,
-        currentLocation.longitude,
-        s.latitude ?? 0,
-        s.longitude ?? 0,
-      );
-    }
-    customers.sort((a, b) => a.distance!.compareTo(b.distance!));
-    emit(state.copyWith(records: customers));
-  }
+  Future<void> sortCustomer({
+    bool sortByDistance = false,
+    double? maxDistance,
+    Map<String, dynamic>? params,
+    int page = 1,
+  }) async {
+    final currentLatLng = await _location.getCurrentLocation();
+    final result = await _repos.getCustomers(params: params, page: page);
 
-  Future<void> sortCustomerViaDistance(double maxDistance) async {
-    final currentLocation = await _location.getCurrentLocation();
-    List<Customer> customers = state.records;
-    for (var s in customers) {
-      s.distance = Helpers.calculateDistanceInMeters(
-        currentLocation.latitude,
-        currentLocation.longitude,
-        s.latitude ?? 0,
-        s.longitude ?? 0,
-      );
-    }
-    customers.where((c) => c.distance! <= maxDistance).toList();
-    emit(state.copyWith(records: customers));
+    result.fold((l) => throw Exception(), (records) {
+      for (var a in records) {
+        a.distance = _location.getDistanceBetween(
+          a.latitude ?? 0,
+          a.longitude ?? 0,
+          currentLatLng.latitude,
+          currentLatLng.longitude,
+        );
+      }
+
+      if (sortByDistance) {
+        records.sort((a, b) => a.distance!.compareTo(b.distance!));
+      }
+
+      final finalRecords = maxDistance != null
+          ? records.where((c) => c.distance! <= maxDistance).toList()
+          : records;
+
+      emit(state.copyWith(isLoading: false, records: finalRecords));
+    });
   }
 
   Future<bool> createNewCustomer(String customerNo) async {

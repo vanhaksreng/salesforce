@@ -267,16 +267,19 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
     required bool isSort,
     required double distance,
   }) async {
-    print("====================${distance}");
     Navigator.of(context).pop();
     final l = LoadingOverlay.of(context);
     try {
       l.show();
       if (isSort) {
-        await _cubit.sortCustomer();
-        return;
+        await _cubit.sortCustomer(
+          sortByDistance: true,
+          maxDistance: distance > 0 ? distance : null,
+        );
+      } else {
+        await _cubit.sortCustomer(maxDistance: distance);
       }
-      await _cubit.sortCustomerViaDistance(distance);
+
       if (!mounted) return;
     } catch (e) {
       showErrorMessage();
@@ -312,12 +315,9 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
         bottom: SearchWidget(
           onSubmitted: (value) async => _filter(value),
           showPrefixIcon: true,
-
           suffixIcon: BtnIconCircleWidget(
-            isShowBadge: true,
-            onPressed: () {
-              _showModalFiltter();
-            },
+            isShowBadge: false,
+            onPressed: () => _showModalFiltter(),
             rounded: 6,
             icons: SvgWidget(
               assetName: kAppOptionIcon,
@@ -426,7 +426,7 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
           ),
           onApply: () => _onApplyFilter(
             isSort: state.isSortdistance,
-            distance: state.distanceValue,
+            distance: state.distanceValue * 1000,
           ),
         );
       },
