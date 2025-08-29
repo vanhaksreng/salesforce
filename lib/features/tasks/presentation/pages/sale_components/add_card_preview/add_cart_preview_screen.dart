@@ -12,7 +12,6 @@ import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_row_shape.dart';
 import 'package:salesforce/core/utils/helpers.dart';
-import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/tasks/domain/entities/checkout_arg.dart';
 import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';

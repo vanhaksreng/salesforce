@@ -4,13 +4,11 @@ import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/mixins/download_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
-import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
 import 'package:salesforce/features/more/presentation/pages/customers/customers_state.dart';
 import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
 import 'package:salesforce/infrastructure/external_services/location/i_location_service.dart';
 import 'package:salesforce/injection_container.dart';
-import 'package:salesforce/realm/scheme/schemas.dart';
 
 class CustomersCubit extends Cubit<CustomersState>
     with DownloadMixin, AppMixin, MessageMixin {

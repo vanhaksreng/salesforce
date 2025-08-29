@@ -2,7 +2,6 @@ import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/data/datasources/realm/base_realm_data_source_impl.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
-import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/infrastructure/storage/i_local_storage.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';

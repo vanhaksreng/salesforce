@@ -11,7 +11,6 @@ import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_form_item/sale_form_item_state.dart';
 import 'package:salesforce/features/tasks/domain/entities/sale_form_input.dart';
-import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
@@ -53,7 +52,7 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
       emit(state.copyWith(isLoading: true));
 
       final customerResult = await _moreRepos.getCustomer(
-        params: {"no": arg.customer.no ?? ""},
+        params: {"no": arg.customer.no},
       );
 
       Customer? customer = await customerResult.fold(

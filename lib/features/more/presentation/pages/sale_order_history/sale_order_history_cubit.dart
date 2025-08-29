@@ -34,7 +34,7 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
       );
 
       result.fold((l) => throw Exception(l.message), (records) {
-        if (page > 1 && (records.saleHeaders ?? []).isEmpty) {
+        if (page > 1 && (records.saleHeaders).isEmpty) {
           hasMorePage = false;
           return;
         }
@@ -45,8 +45,8 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
             currentPage: records.currentPage ?? 1,
             lastPage: records.lastPage ?? 1,
             records: page == 1
-                ? (records.saleHeaders ?? [])
-                : (records.saleHeaders ?? []) + oldData,
+                ? (records.saleHeaders)
+                : (records.saleHeaders) + oldData,
           ),
         );
       });

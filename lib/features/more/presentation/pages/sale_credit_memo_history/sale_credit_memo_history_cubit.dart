@@ -5,13 +5,19 @@ import 'package:salesforce/features/more/domain/repositories/more_repository.dar
 import 'package:salesforce/features/more/presentation/pages/sale_credit_memo_history/sale_credit_memo_history_state.dart';
 import 'package:salesforce/injection_container.dart';
 
-class SaleCreditMemoHistoryCubit extends Cubit<SaleCreditMemoHistoryState> with MessageMixin, GeneratePdfMixin {
-  SaleCreditMemoHistoryCubit() : super(const SaleCreditMemoHistoryState(isLoading: true));
+class SaleCreditMemoHistoryCubit extends Cubit<SaleCreditMemoHistoryState>
+    with MessageMixin, GeneratePdfMixin {
+  SaleCreditMemoHistoryCubit()
+    : super(const SaleCreditMemoHistoryState(isLoading: true));
   final MoreRepository appRepos = getIt<MoreRepository>();
 
   late bool hasMorePage = true;
 
-  Future<void> getSaleCreditMemo({int page = 1, Map<String, dynamic>? param, bool fetchingApi = true}) async {
+  Future<void> getSaleCreditMemo({
+    int page = 1,
+    Map<String, dynamic>? param,
+    bool fetchingApi = true,
+  }) async {
     if (!hasMorePage && page > 1) {
       return;
     }
@@ -22,10 +28,14 @@ class SaleCreditMemoHistoryCubit extends Cubit<SaleCreditMemoHistoryState> with 
       emit(state.copyWith(isFetching: true));
 
       final oldData = state.records;
-      final result = await appRepos.getSaleHeaders(param: param, page: page, fetchingApi: fetchingApi);
+      final result = await appRepos.getSaleHeaders(
+        param: param,
+        page: page,
+        fetchingApi: fetchingApi,
+      );
 
       result.fold((l) => throw Exception(l.message), (records) {
-        if (page > 1 && (records.saleHeaders ?? []).isEmpty) {
+        if (page > 1 && (records.saleHeaders).isEmpty) {
           hasMorePage = false;
           return;
         }
@@ -34,7 +44,9 @@ class SaleCreditMemoHistoryCubit extends Cubit<SaleCreditMemoHistoryState> with 
             isLoading: false,
             currentPage: records.currentPage ?? 1,
             lastPage: records.lastPage ?? 1,
-            records: page == 1 ? (records.saleHeaders ?? []) : (records.saleHeaders ?? []) + oldData,
+            records: page == 1
+                ? (records.saleHeaders)
+                : (records.saleHeaders) + oldData,
           ),
         );
       });
