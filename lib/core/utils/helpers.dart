@@ -205,10 +205,21 @@ class Helpers {
     return Helpers.toInt("${now.year}${now.month}${now.day}${random}1");
   }
 
+  // static int generateSaleId(String scheduleId, {int digit = 5}) {
+  //   final random = math.Random().nextInt(100).toString().padLeft(digit, '0');
+  //   final now = DateTime.now();
+  //   // return Helpers.toInt("${now.year}${now.month}${now.day}$scheduleId$random");
+  // }
+
   static int generateSaleId(String scheduleId, {int digit = 5}) {
-    final random = math.Random().nextInt(100).toString().padLeft(digit, '0');
+    final random = math.Random().nextInt(99999).toString().padLeft(digit, '0');
     final now = DateTime.now();
-    return Helpers.toInt("${now.year}${now.month}${now.day}$scheduleId$random");
+    final date =
+        "${now.year % 100}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}";
+
+    final hash = scheduleId.codeUnits.fold(0, (p, c) => (p + c) % 999999);
+
+    return int.parse("$date$hash$random");
   }
 
   static String getSalePrefix(String documentType) {

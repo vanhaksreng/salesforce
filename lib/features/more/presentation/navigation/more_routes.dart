@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/app/route_slide_transaction.dart';
+import 'package:salesforce/features/more/domain/entities/cart_preview_arg.dart';
 import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/domain/entities/more_model.dart';
 import 'package:salesforce/features/more/presentation/pages/about/about_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/bussiness_unit/bussiness_unit_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/cart_preview_item/cart_preview_item_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/customer_address/customer_address_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/customer_address_form/customer_address_form_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/customer_detail/customer_detail_screen.dart';
@@ -277,7 +279,7 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
     case AddCustomerScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return const AddCustomerScreen();
+          return AddCustomerScreen(documentType: settings.arguments as String);
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -296,6 +298,17 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
           return SaleFormItemScreen(args: settings.arguments as ItemSaleArg);
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return RouteST.st(animation, child, begin: 1, end: 0);
+        },
+      );
+    case CartPreviewItemScreen.routeName:
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return CartPreviewItemScreen(
+            args: settings.arguments as CartPreviewArg,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);

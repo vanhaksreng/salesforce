@@ -134,7 +134,7 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
         showSuccessMessage("Checkout success.");
         int count = 0;
         Navigator.popUntil(context, (route) {
-          return count++ == 3;
+          return count++ == (widget.arg.fromScreen == "task" ? 3 : 4);
         });
       }
     } on GeneralException catch (e) {

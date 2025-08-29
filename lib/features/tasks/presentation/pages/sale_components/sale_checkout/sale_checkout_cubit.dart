@@ -10,7 +10,8 @@ import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
-class SaleCheckoutCubit extends Cubit<SaleCheckoutState> with PermissionMixin, MessageMixin {
+class SaleCheckoutCubit extends Cubit<SaleCheckoutState>
+    with PermissionMixin, MessageMixin {
   SaleCheckoutCubit() : super(const SaleCheckoutState(isLoading: true));
 
   final _taskRepo = getIt<TaskRepository>();
@@ -35,7 +36,13 @@ class SaleCheckoutCubit extends Cubit<SaleCheckoutState> with PermissionMixin, M
         phoneNo2: saleHeaser.shipToPhoneNo2,
       );
 
-      emit(state.copyWith(isLoading: false, saleHeaser: saleHeaser, shipmentAddress: _defaultShipment));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          saleHeaser: saleHeaser,
+          shipmentAddress: _defaultShipment,
+        ),
+      );
     } catch (error) {
       emit(state.copyWith(isLoading: false));
     }
@@ -94,7 +101,9 @@ class SaleCheckoutCubit extends Cubit<SaleCheckoutState> with PermissionMixin, M
 
   Future<void> getCustomerLedgerEntry(String customerNo) async {
     try {
-      final response = await _taskRepo.getCustomerLedgerEntry(param: {"customer_no": customerNo});
+      final response = await _taskRepo.getCustomerLedgerEntry(
+        param: {"customer_no": customerNo},
+      );
 
       response.fold((l) => throw GeneralException(l.message), (r) {
         emit(state.copyWith(customerLedgerEntries: r));

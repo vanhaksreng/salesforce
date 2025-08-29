@@ -29,7 +29,8 @@ class SalesItemScreen extends StatefulWidget {
   State<SalesItemScreen> createState() => _SalesItemScreenState();
 }
 
-class _SalesItemScreenState extends State<SalesItemScreen> with SingleTickerProviderStateMixin, MessageMixin {
+class _SalesItemScreenState extends State<SalesItemScreen>
+    with SingleTickerProviderStateMixin, MessageMixin {
   final _cubit = ProcessCubit();
   ValueNotifier<int> activeTap = ValueNotifier<int>(0);
 
@@ -40,7 +41,10 @@ class _SalesItemScreenState extends State<SalesItemScreen> with SingleTickerProv
   }
 
   void _loadCountCart() {
-    _cubit.getSaleLines(scheduleId: widget.args.schedule.id, documentType: widget.args.documentType);
+    _cubit.getSaleLines(
+      scheduleId: widget.args.schedule.id,
+      documentType: widget.args.documentType,
+    );
   }
 
   @override
@@ -49,7 +53,10 @@ class _SalesItemScreenState extends State<SalesItemScreen> with SingleTickerProv
     super.dispose();
   }
 
-  final List<Tab> tabBarName = [Tab(text: greeting("items")), Tab(text: greeting("promotion"))];
+  final List<Tab> tabBarName = [
+    Tab(text: greeting("items")),
+    Tab(text: greeting("promotion")),
+  ];
 
   void _handleDownload() async {
     if (!await _cubit.isConnectedToNetwork()) {
@@ -63,7 +70,11 @@ class _SalesItemScreenState extends State<SalesItemScreen> with SingleTickerProv
     l.show(1);
     await Future.delayed(const Duration(milliseconds: 200));
     try {
-      List<String> tables = ["item", "item_sales_line_prices", "item_unit_of_measure"];
+      List<String> tables = [
+        "item",
+        "item_sales_line_prices",
+        "item_unit_of_measure",
+      ];
 
       if (activeTap.value == 1) {
         tables = ["item_promotion_header", "item_promotion_line"];
@@ -71,7 +82,9 @@ class _SalesItemScreenState extends State<SalesItemScreen> with SingleTickerProv
 
       final filter = tables.map((table) => '"$table"').toList();
 
-      final appSyncLogs = await _cubit.getAppSyncLogs({'tableName': 'IN {${filter.join(",")}}'});
+      final appSyncLogs = await _cubit.getAppSyncLogs({
+        'tableName': 'IN {${filter.join(",")}}',
+      });
 
       if (tables.isEmpty) {
         throw GeneralException("Cannot find any table related");
@@ -179,7 +192,11 @@ class _SalesItemScreenState extends State<SalesItemScreen> with SingleTickerProv
             flipX: false,
             onPressed: () => _navigateToAddedCart(),
             icons: Center(
-              child: BadgeWidget(label: "${state.cartCount}", colorIcon: white, iconSvg: kAddCart),
+              child: BadgeWidget(
+                label: "${state.cartCount}",
+                colorIcon: white,
+                iconSvg: kAddCart,
+              ),
             ),
           ),
         );

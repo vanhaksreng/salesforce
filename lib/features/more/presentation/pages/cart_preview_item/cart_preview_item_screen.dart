@@ -5,70 +5,60 @@ import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
-import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
-import 'package:salesforce/core/presentation/widgets/dot_line_widget.dart';
-import 'package:salesforce/core/presentation/widgets/image_box_cover_widget.dart';
-import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
-import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
-import 'package:salesforce/core/presentation/widgets/text_row_shape.dart';
-import 'package:salesforce/core/utils/helpers.dart';
-import 'package:salesforce/core/utils/logger.dart';
-import 'package:salesforce/core/utils/size_config.dart';
-import 'package:salesforce/features/tasks/domain/entities/checkout_arg.dart';
-import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
-import 'package:salesforce/features/tasks/presentation/pages/sale_components/add_card_preview/add_cart_preview_cubit.dart';
-import 'package:salesforce/features/tasks/presentation/pages/sale_components/add_card_preview/add_cart_preview_state.dart';
-import 'package:salesforce/features/tasks/presentation/pages/sale_components/sale_checkout/sale_checkout_screen.dart';
-import 'package:salesforce/features/tasks/presentation/pages/sale_components/sale_form/sale_form_screen.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
+import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
+import 'package:salesforce/core/presentation/widgets/dot_line_widget.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
+import 'package:salesforce/core/presentation/widgets/image_box_cover_widget.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
+import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
+import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
+import 'package:salesforce/core/presentation/widgets/text_row_shape.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
+import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/core/utils/size_config.dart';
+import 'package:salesforce/features/more/domain/entities/cart_preview_arg.dart';
+import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
+import 'package:salesforce/features/more/presentation/pages/cart_preview_item/cart_preview_item_cubit.dart';
+import 'package:salesforce/features/more/presentation/pages/cart_preview_item/cart_preview_item_state.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_form_item/sale_form_item_screen.dart';
+import 'package:salesforce/features/tasks/domain/entities/checkout_arg.dart';
+import 'package:salesforce/features/tasks/presentation/pages/sale_components/sale_checkout/sale_checkout_screen.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
-class AddCartPreviewScreen extends StatefulWidget {
-  const AddCartPreviewScreen({
-    super.key,
-    required this.scheduleId,
-    required this.documentType,
-    required this.customerNo,
-  });
-
-  final String scheduleId;
-  final String documentType;
-  final String customerNo;
-
-  static const String routeName = "addedCardPreveiw";
+class CartPreviewItemScreen extends StatefulWidget {
+  static const String routeName = "cartPriviewScreen";
+  const CartPreviewItemScreen({super.key, required this.args});
+  final CartPreviewArg args;
 
   @override
-  State<AddCartPreviewScreen> createState() => _AddCardPreviewScreenState();
+  CartPreviewItemScreenState createState() => CartPreviewItemScreenState();
 }
 
-class _AddCardPreviewScreenState extends State<AddCartPreviewScreen>
+class CartPreviewItemScreenState extends State<CartPreviewItemScreen>
     with MessageMixin {
-  final _cubit = AddCartPreviewCubit();
+  final _cubit = CartPreviewItemCubit();
 
   @override
   void initState() {
-    super.initState();
     _initLoad();
+    super.initState();
   }
 
   void _initLoad() async {
     await _cubit.loadInitialData(
-      scheduleId: widget.scheduleId,
-      documentType: widget.documentType,
+      documentType: widget.args.documentType,
+      customer: widget.args.customer,
     );
 
-    await _cubit.getSchedule(widget.scheduleId);
     await _cubit.getSaleLines();
-    await _cubit.getCustomer(widget.customerNo);
-    await _cubit.getCustomerLedgerEntry(widget.customerNo);
+    await _cubit.getCustomer(widget.args.customer.no);
+    await _cubit.getCustomerLedgerEntry(widget.args.customer.no);
     _checkCreditLimitType();
   }
 
@@ -87,8 +77,8 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen>
       context,
       SaleCheckoutScreen.routeName,
       arguments: CheckoutArg(
-        fromScreen: "task",
-        scheduleId: widget.scheduleId,
+        fromScreen: "more",
+        scheduleId: widget.args.customer.no,
         salesHeader: _cubit.state.salesHeader!,
         subtotalAmount: _cubit.state.subTotalAmt,
         discountAmount: _cubit.state.totalDiscountAmt,
@@ -123,11 +113,13 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen>
     if (!mounted) return;
     Navigator.pushNamed(
       context,
-      SaleFormScreen.routeName,
-      arguments: SaleFormArg(
+      SaleFormItemScreen.routeName,
+      arguments: ItemSaleArg(
         item: item,
-        schedule: _cubit.state.schedule!,
-        documentType: line.documentType ?? widget.documentType,
+
+        documentType: line.documentType ?? widget.args.documentType,
+        isRefreshing: true,
+        customer: widget.args.customer,
       ),
     ).then((value) {
       _cubit.getSaleLines();
@@ -206,23 +198,19 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBarWidget(title: "Sale ${widget.documentType} Cart"),
-      body: BlocBuilder<AddCartPreviewCubit, AddCartPreviewState>(
+      appBar: AppBarWidget(title: "Sale ${widget.args.documentType} Cart"),
+      body: BlocBuilder<CartPreviewItemCubit, CartPreviewItemState>(
         bloc: _cubit,
-        builder: (BuildContext context, AddCartPreviewState state) {
+        builder: (BuildContext context, CartPreviewItemState state) {
           if (state.isLoading) {
-            return const LoadingPageWidget();
-          }
-
-          if (state.saleLines.isEmpty) {
-            return const EmptyScreen();
+            return LoadingPageWidget();
           }
 
           return buildBody(state);
         },
       ),
       persistentFooterButtons: [
-        BlocBuilder<AddCartPreviewCubit, AddCartPreviewState>(
+        BlocBuilder<CartPreviewItemCubit, CartPreviewItemState>(
           bloc: _cubit,
           builder: (context, state) {
             if (state.saleLines.isEmpty) {
@@ -243,7 +231,7 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen>
     );
   }
 
-  Widget buildBody(AddCartPreviewState state) {
+  Widget buildBody(CartPreviewItemState state) {
     if (state.saleLines.isEmpty) {
       return const EmptyScreen();
     }

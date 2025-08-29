@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
@@ -45,6 +46,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
 
   @override
   void initState() {
+    super.initState();
     initialFromDate = DateTime.now().firstDayOfWeek();
     initialToDate = DateTime.now().endDayOfWeek();
     _cubit.getSaleOrders(
@@ -55,7 +57,6 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
       },
     );
     _scrollController.addListener(_handleScrolling);
-    super.initState();
   }
 
   void _handleScrolling() {
@@ -178,7 +179,19 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
   }
 
   Future<void> pushToAddCustomer() =>
-      Navigator.pushNamed(context, AddCustomerScreen.routeName);
+      Navigator.pushNamed(
+        context,
+        AddCustomerScreen.routeName,
+        arguments: kSaleOrder,
+      ).then((value) async {
+        await _cubit.getSaleOrders(
+          param: {
+            'document_type': 'Order',
+            "posting_date":
+                "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+          },
+        );
+      });
 
   @override
   Widget build(BuildContext context) {

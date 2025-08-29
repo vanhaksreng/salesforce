@@ -67,9 +67,15 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
           data: param,
         );
 
-        if (localSale.length == cloudSales.length) {
-          return Right(RecordSaleHeader());
-        }
+        // if (localSale.length == cloudSales.length) {
+        //   return Right(
+        //     RecordSaleHeader(
+        //       saleHeaders: localSale,
+        //       currentPage: cloudSales["currentPage"] ?? 1,
+        //       lastPage: cloudSales["lastPage"] ?? 1,
+        //     ),
+        //   );
+        // }
 
         // final localIds = localSale.map((e) => e.id).toSet();
 
@@ -93,7 +99,7 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
         );
       }
 
-      return Right(RecordSaleHeader());
+      return Right(RecordSaleHeader(saleHeaders: localSale));
     } on GeneralException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (_) {

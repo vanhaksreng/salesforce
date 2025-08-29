@@ -66,7 +66,7 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
       }
 
       final saleNo = Helpers.getSaleDocumentNo(
-        scheduleId: "M",
+        scheduleId: customer.no,
         documentType: arg.documentType,
       );
 

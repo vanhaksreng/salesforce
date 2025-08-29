@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
@@ -31,7 +33,8 @@ class SaleInvoiceHistoryScreen extends StatefulWidget {
   State<SaleInvoiceHistoryScreen> createState() => _SaleInvoiceScreenState();
 }
 
-class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen> with MessageMixin {
+class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
+    with MessageMixin {
   final _cubit = SaleInvoiceHistoryCubit();
 
   final ScrollController _scrollController = ScrollController();
@@ -48,7 +51,8 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen> with Messa
     _cubit.getSaleInvoice(
       param: {
         'document_type': 'Invoice',
-        "posting_date": "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+        "posting_date":
+            "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
       },
     );
     _scrollController.addListener(_handleScrolling);
@@ -62,7 +66,9 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen> with Messa
   }
 
   bool _shouldLoadMore() {
-    return _scrollController.position.pixels == _scrollController.position.maxScrollExtent && !_cubit.state.isFetching;
+    return _scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent &&
+        !_cubit.state.isFetching;
   }
 
   void _loadMoreItems() async {
@@ -86,8 +92,12 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen> with Messa
     } else {
       selectedDate = "";
     }
-    final String fromDate = initialFromDate != null ? DateTimeExt.parse(initialFromDate.toString()).toDateString() : "";
-    final String toDate = initialToDate != null ? DateTimeExt.parse(initialToDate.toString()).toDateString() : "";
+    final String fromDate = initialFromDate != null
+        ? DateTimeExt.parse(initialFromDate.toString()).toDateString()
+        : "";
+    final String toDate = initialToDate != null
+        ? DateTimeExt.parse(initialToDate.toString()).toDateString()
+        : "";
 
     if (fromDate.isNotEmpty && toDate.isNotEmpty) {
       param["posting_date"] = '$fromDate .. $toDate';
@@ -106,7 +116,11 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen> with Messa
     Navigator.of(context).pop();
   }
 
-  Future<Object?> navigatorToSaleHistoryList(BuildContext context, List<dynamic> records, int index) {
+  Future<Object?> navigatorToSaleHistoryList(
+    BuildContext context,
+    List<dynamic> records,
+    int index,
+  ) {
     return Navigator.pushNamed(
       context,
       SaleOrderHistoryDetailScreen.routeName,
@@ -135,14 +149,20 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen> with Messa
     final l = LoadingOverlay.of(context);
     try {
       l.show();
-      final html = await _cubit.getInvoiceHtml(documentNo: documentNo, documenType: "Invoice");
+      final html = await _cubit.getInvoiceHtml(
+        documentNo: documentNo,
+        documenType: "Invoice",
+      );
 
       if (html.isEmpty) {
         l.hide();
         return;
       }
 
-      final pdfFile = await Helpers.generateToPdfDocument(htmlContent: html, documentNo: documentNo);
+      final pdfFile = await Helpers.generateToPdfDocument(
+        htmlContent: html,
+        documentNo: documentNo,
+      );
 
       if (pdfFile == null) {
         l.hide();
@@ -157,6 +177,20 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen> with Messa
     }
   }
 
+  Future<void> pushToAddCustomer() =>
+      Navigator.pushNamed(
+        context,
+        AddCustomerScreen.routeName,
+        arguments: kSaleInvoice,
+      ).then((value) async {
+        await _cubit.getSaleInvoice(
+          param: {
+            'document_type': 'Invoice',
+            "posting_date":
+                "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+          },
+        );
+      });
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -165,7 +199,19 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen> with Messa
         title: greeting("sale_invoice"),
         actions: [
           BtnIconCircleWidget(
+            onPressed: () => pushToAddCustomer(),
+            icons: Icon(Icons.add, color: white),
+            rounded: appBtnRound,
+          ),
+          Helpers.gapW(appSpace),
+        ],
+        heightBottom: heightBottomSearch,
+        bottom: SearchWidget(
+          showPrefixIcon: true,
+          suffixIcon: BtnIconCircleWidget(
+            isShowBadge: false,
             onPressed: () => _showModalFiltter(context),
+            rounded: 6,
             icons: SvgWidget(
               assetName: kAppOptionIcon,
               colorSvg: white,
@@ -173,12 +219,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen> with Messa
               width: 18,
               height: 18,
             ),
-            rounded: appBtnRound,
           ),
-          Helpers.gapW(appSpace),
-        ],
-        heightBottom: heightBottomSearch,
-        bottom: SearchWidget(
           onSubmitted: (text) => _onSearch(text: text),
           hintText: greeting("Find Sale Invoice..."),
         ),

@@ -20,7 +20,6 @@ import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_form_item/sale_form_item_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_form_item/sale_form_item_state.dart';
 import 'package:salesforce/features/tasks/domain/entities/sale_form_input.dart';
-import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
 import 'package:salesforce/features/tasks/presentation/pages/task_component/build_uom_selected/build_uom_selected.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
@@ -200,8 +199,6 @@ class SaleFormItemScreenState extends State<SaleFormItemScreen> {
 
   Widget buildBody(SaleFormItemState state) {
     final inputs = state.saleForm;
-
-    print("==================$inputs");
 
     if (inputs.isNotEmpty && (_quantityCntr.isEmpty)) {
       _initializeControllers(inputs);

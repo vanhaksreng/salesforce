@@ -24,8 +24,9 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class AddCustomerScreen extends StatefulWidget {
-  const AddCustomerScreen({super.key});
+  const AddCustomerScreen({super.key, required this.documentType});
   static const String routeName = "addCustomerScreen";
+  final String documentType;
 
   @override
   AddCustomerScreenState createState() => AddCustomerScreenState();
@@ -38,7 +39,6 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
   @override
   void initState() {
     _cubit.loadCustomers(page: 1);
-
     _scrollController.addListener(_handleScrolling);
     super.initState();
   }
@@ -122,7 +122,7 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
           arguments: ItemSaleArg(
             isRefreshing: false,
             customer: customer,
-            documentType: kSaleOrder,
+            documentType: widget.documentType,
           ),
         );
       },

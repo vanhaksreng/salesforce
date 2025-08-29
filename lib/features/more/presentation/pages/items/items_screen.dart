@@ -18,13 +18,14 @@ import 'package:salesforce/core/presentation/widgets/search_widget.dart';
 import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
+import 'package:salesforce/features/more/domain/entities/cart_preview_arg.dart';
 import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
+import 'package:salesforce/features/more/presentation/pages/cart_preview_item/cart_preview_item_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/items/items_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/items/items_state.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_form_item/sale_form_item_screen.dart';
 import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
 import 'package:salesforce/features/tasks/presentation/pages/group_screen_filter_item/group_screen_filter_item.dart';
-import 'package:salesforce/features/tasks/presentation/pages/sale_components/add_card_preview/add_cart_preview_screen.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
@@ -59,6 +60,7 @@ class ItemsScreenState extends State<ItemsScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _cubit.getItems();
     });
+    _loadCountCart();
     super.initState();
   }
 
@@ -121,10 +123,19 @@ class ItemsScreenState extends State<ItemsScreen>
     _handleGroupCodesUpdate(groupCodes, result["stock"].toString());
   }
 
+  String checkInventory(String status) {
+    if (status == kInStock) {
+      return '> 0';
+    } else if (status == kOutOfStock) {
+      return '< 1';
+    }
+    return '';
+  }
+
   void _handleGroupCodesUpdate(List<String> groupCodes, String status) {
     _selectedGroups = groupCodes;
     filterString = _formatGroupCodesFilter(groupCodes);
-    // statusStock = checkInventory(status);
+    statusStock = checkInventory(status);
 
     _itemFilter();
   }
@@ -142,23 +153,32 @@ class ItemsScreenState extends State<ItemsScreen>
     }
   }
 
+  void _loadCountCart() {
+    _cubit.getSaleLines(
+      scheduleId: widget.args.customer.no,
+      documentType: widget.args.documentType,
+    );
+  }
+
   void _navigateToProcessForm(Item item) {
-    // if (widget.documentType != kSaleCreditMemo &&
-    //     Helpers.toDouble(item.inventory) <= 0) {
-    //   showWarningMessage("No stock left.");
-    //   return;
-    // }
+    if (widget.args.documentType != kSaleCreditMemo &&
+        Helpers.toDouble(item.inventory) <= 0) {
+      showWarningMessage("No stock left.");
+      return;
+    }
 
     Navigator.pushNamed(
       context,
       SaleFormItemScreen.routeName,
       arguments: ItemSaleArg(
         item: item,
-        documentType: kSaleOrder,
+        documentType: widget.args.documentType,
         isRefreshing: widget.args.isRefreshing,
         customer: widget.args.customer,
       ),
-    );
+    ).then((value) {
+      _loadCountCart();
+    });
   }
 
   void _changLayout() {
@@ -172,16 +192,14 @@ class ItemsScreenState extends State<ItemsScreen>
   void _navigateToAddedCart() {
     Navigator.pushNamed(
       context,
-      AddCartPreviewScreen.routeName,
-      arguments: {
-        'customerNo': widget.args.customer.no,
-        'scheduleId': "",
-        'documentType': widget.args.documentType,
-      },
-    );
-    // .then((value) {
-    //   _loadCountCart();
-    // });
+      CartPreviewItemScreen.routeName,
+      arguments: CartPreviewArg(
+        documentType: widget.args.documentType,
+        customer: widget.args.customer,
+      ),
+    ).then((value) {
+      _loadCountCart();
+    });
   }
 
   bool _checkShowFilter() {
@@ -382,14 +400,22 @@ class ItemsScreenState extends State<ItemsScreen>
 
   Widget _buildStoreItemBtn() {
     return SafeArea(
-      child: BtnIconCircleWidget(
-        bgColor: mainColor50,
-        flipX: false,
-        onPressed: () {},
-        // onPressed: () => _navigateToAddedCart(),
-        icons: Center(
-          child: BadgeWidget(label: "0", colorIcon: white, iconSvg: kAddCart),
-        ),
+      child: BlocBuilder<ItemsCubit, ItemsState>(
+        bloc: _cubit,
+        builder: (context, state) {
+          return BtnIconCircleWidget(
+            bgColor: mainColor50,
+            flipX: false,
+            onPressed: () => _navigateToAddedCart(),
+            icons: Center(
+              child: BadgeWidget(
+                label: "${state.cartCount}",
+                colorIcon: white,
+                iconSvg: kAddCart,
+              ),
+            ),
+          );
+        },
       ),
     );
   }

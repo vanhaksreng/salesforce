@@ -5,13 +5,18 @@ import 'package:salesforce/features/more/domain/repositories/more_repository.dar
 import 'package:salesforce/features/more/presentation/pages/sale_order_history/sale_order_history_state.dart';
 import 'package:salesforce/injection_container.dart';
 
-class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState> with MessageMixin, GeneratePdfMixin {
+class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
+    with MessageMixin, GeneratePdfMixin {
   SaleOrderHistoryCubit() : super(const SaleOrderHistoryState(isLoading: true));
   final MoreRepository appRepos = getIt<MoreRepository>();
 
   late bool hasMorePage = true;
 
-  Future<void> getSaleOrders({int page = 1, Map<String, dynamic>? param, bool fetchingApi = true}) async {
+  Future<void> getSaleOrders({
+    int page = 1,
+    Map<String, dynamic>? param,
+    bool fetchingApi = true,
+  }) async {
     if (!hasMorePage && page > 1) {
       return;
     }
@@ -22,19 +27,26 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState> with MessageMix
       emit(state.copyWith(isFetching: true));
 
       final oldData = state.records;
-      final result = await appRepos.getSaleHeaders(param: param, page: page, fetchingApi: fetchingApi);
+      final result = await appRepos.getSaleHeaders(
+        param: param,
+        page: page,
+        fetchingApi: fetchingApi,
+      );
 
       result.fold((l) => throw Exception(l.message), (records) {
         if (page > 1 && (records.saleHeaders ?? []).isEmpty) {
           hasMorePage = false;
           return;
         }
+
         emit(
           state.copyWith(
             isLoading: false,
             currentPage: records.currentPage ?? 1,
             lastPage: records.lastPage ?? 1,
-            records: page == 1 ? (records.saleHeaders ?? []) : (records.saleHeaders ?? []) + oldData,
+            records: page == 1
+                ? (records.saleHeaders ?? [])
+                : (records.saleHeaders ?? []) + oldData,
           ),
         );
       });
@@ -62,13 +74,19 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState> with MessageMix
     emit(state.copyWith(selectedDate: selectDate));
   }
 
-  Future<void> isReset({DateTime? startDate, DateTime? toDate, String? selectedDate}) async {
+  Future<void> isReset({
+    DateTime? startDate,
+    DateTime? toDate,
+    String? selectedDate,
+  }) async {
     emit(
       state.copyWith(
         startDate: startDate,
         toDate: toDate,
         selectedDate: selectedDate,
-        selectedStatus: state.selectedStatus == "All" ? null : state.selectedStatus,
+        selectedStatus: state.selectedStatus == "All"
+            ? null
+            : state.selectedStatus,
       ),
     );
   }

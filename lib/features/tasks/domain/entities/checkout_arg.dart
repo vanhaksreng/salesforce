@@ -10,6 +10,7 @@ class CheckoutArg {
   final double vatAmount;
   final double amountDue;
   final String scheduleId;
+  final String fromScreen;
 
   const CheckoutArg({
     required this.salesHeader,
@@ -18,6 +19,7 @@ class CheckoutArg {
     required this.vatAmount,
     required this.amountDue,
     required this.scheduleId,
+    required this.fromScreen,
   });
 }
 
@@ -58,5 +60,9 @@ class ItemPromotionFormArg {
   final SalespersonSchedule schedule;
   final String documentType;
 
-  const ItemPromotionFormArg({required this.header, required this.schedule, required this.documentType});
+  const ItemPromotionFormArg({
+    required this.header,
+    required this.schedule,
+    required this.documentType,
+  });
 }
