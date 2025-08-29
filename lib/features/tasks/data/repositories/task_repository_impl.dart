@@ -112,7 +112,19 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
     required CheckInArg args,
   }) async {
     try {
-      final result = await _local.checkIn(schedule: schedule, args: args);
+      String statusInternet = kOffline;
+      if (await _networkInfo.isConnected) {
+        statusInternet = kOnline;
+      }
+      final newArg = CheckInArg(
+        latitude: args.latitude,
+        longitude: args.latitude,
+        comment: args.comment,
+        imagePath: args.imagePath,
+        isCloseShop: args.isCloseShop,
+        statusInternet: statusInternet,
+      );
+      final result = await _local.checkIn(schedule: schedule, args: newArg);
       if (await _networkInfo.isConnected && await _remote.isValidApiSession()) {
         _remote.updateSchedule(result, type: result.status ?? kStatusCheckIn);
       }
@@ -129,7 +141,20 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
     required CheckInArg args,
   }) async {
     try {
-      final result = await _local.checkout(schedule: schedule, args: args);
+      String statusInternet = kOffline;
+      if (await _networkInfo.isConnected) {
+        statusInternet = kOnline;
+      }
+      final newArg = CheckInArg(
+        latitude: args.latitude,
+        longitude: args.latitude,
+        comment: args.comment,
+        imagePath: args.imagePath,
+        isCloseShop: args.isCloseShop,
+        statusInternet: statusInternet,
+        startingTime: schedule.startingTime,
+      );
+      final result = await _local.checkout(schedule: schedule, args: newArg);
       if (await _networkInfo.isConnected && await _remote.isValidApiSession()) {
         _remote.updateSchedule(result, type: result.status ?? kStatusCheckOut);
       }

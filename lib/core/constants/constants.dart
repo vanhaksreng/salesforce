@@ -40,3 +40,5 @@ const String kOutOfStock = "Out of stock";
 const String kBalance = "Balance";
 const String kNoOfInvoice = "No of Invoices";
 const String kNoCredit = "No Credit";
+const String kOffline = "Offline";
+const String kOnline = "Online";

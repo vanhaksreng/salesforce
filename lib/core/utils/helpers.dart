@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as https;
 import 'package:http/io_client.dart';
 import 'package:image/image.dart' as img;
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
@@ -841,5 +842,21 @@ class Helpers {
     fileCopy.writeAsBytesSync(File.fromUri(fileOriginal.uri).readAsBytesSync());
     fileOriginal.delete();
     return fileCopy;
+  }
+
+  static String calculateDuration(String start, String end) {
+    final format = DateFormat("HH:mm:ss");
+
+    final startTime = format.parse(start);
+    final endTime = format.parse(end);
+
+    final diff = endTime.difference(startTime);
+
+    // format as HH:mm:ss
+    final hours = diff.inHours.toString().padLeft(2, '0');
+    final minutes = (diff.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (diff.inSeconds % 60).toString().padLeft(2, '0');
+
+    return "$hours:$minutes:$seconds";
   }
 }
