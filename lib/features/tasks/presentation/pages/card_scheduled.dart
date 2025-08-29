@@ -148,6 +148,21 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
               ],
             ),
           ),
+
+          if (schedule.duration != "" &&
+              schedule.status == kStatusCheckOut) ...[
+            const DotLine(),
+            BtnWidget(
+              isDisabled: false,
+              bgColor: red.withValues(alpha: 0.1),
+              size: BtnSize.medium,
+              onPressed: () {},
+              textColor: red,
+
+              title: greeting("Operation Duration: ${schedule.duration}"),
+            ),
+          ],
+
           if (schedule.status != kStatusCheckOut && isReadOnly == false) ...[
             const DotLine(),
             Row(

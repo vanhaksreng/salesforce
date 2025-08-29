@@ -269,7 +269,7 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
           ..status = kStatusCheckOut
           ..endingTime = formattedTime
           ..checkOutRemark = args.comment
-          ..statusInternetCheckIn = args.statusInternet
+          ..statusInternetCheckOut = args.statusInternet
           ..duration = Helpers.calculateDuration(
             schedule.startingTime ?? "00.00.00",
             formattedTime,

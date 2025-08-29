@@ -847,16 +847,15 @@ class Helpers {
   static String calculateDuration(String start, String end) {
     final format = DateFormat("HH:mm:ss");
 
-    final startTime = format.parse(start);
-    final endTime = format.parse(end);
+    final startTime = format.parse(start.trim());
+    final endTime = format.parse(end.trim());
 
     final diff = endTime.difference(startTime);
 
-    // format as HH:mm:ss
     final hours = diff.inHours.toString().padLeft(2, '0');
     final minutes = (diff.inMinutes % 60).toString().padLeft(2, '0');
     final seconds = (diff.inSeconds % 60).toString().padLeft(2, '0');
 
-    return "$hours:$minutes:$seconds";
+    return "${hours}h ${minutes}m ${seconds}s";
   }
 }

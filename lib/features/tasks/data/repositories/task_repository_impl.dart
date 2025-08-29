@@ -152,7 +152,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         imagePath: args.imagePath,
         isCloseShop: args.isCloseShop,
         statusInternet: statusInternet,
-        startingTime: schedule.startingTime,
       );
       final result = await _local.checkout(schedule: schedule, args: newArg);
       if (await _networkInfo.isConnected && await _remote.isValidApiSession()) {
