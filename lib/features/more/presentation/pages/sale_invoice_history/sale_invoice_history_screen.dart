@@ -183,13 +183,16 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
         AddCustomerScreen.routeName,
         arguments: kSaleInvoice,
       ).then((value) async {
-        await _cubit.getSaleInvoice(
-          param: {
-            'document_type': 'Invoice',
-            "posting_date":
-                "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
-          },
-        );
+        if (value == null) return;
+        if (value is Map && value['checkout'] == true) {
+          await _cubit.getSaleInvoice(
+            param: {
+              'document_type': kSaleInvoice,
+              "posting_date":
+                  "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+            },
+          );
+        }
       });
   @override
   Widget build(BuildContext context) {

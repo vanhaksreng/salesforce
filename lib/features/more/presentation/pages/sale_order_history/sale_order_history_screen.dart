@@ -184,13 +184,16 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
         AddCustomerScreen.routeName,
         arguments: kSaleOrder,
       ).then((value) async {
-        await _cubit.getSaleOrders(
-          param: {
-            'document_type': 'Order',
-            "posting_date":
-                "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
-          },
-        );
+        if (value == null) return;
+        if (value is Map && value['checkout'] == true) {
+          await _cubit.getSaleOrders(
+            param: {
+              'document_type': kSaleOrder,
+              "posting_date":
+                  "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+            },
+          );
+        }
       });
 
   @override

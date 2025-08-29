@@ -136,7 +136,8 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
         Navigator.popUntil(context, (route) {
           return count++ == (widget.arg.fromScreen == "task" ? 2 : 3);
         });
-        Navigator.pop(context, {"checkout": true});
+
+        Navigator.of(context).maybePop({"checkout": true});
       }
     } on GeneralException catch (e) {
       l.hide();
