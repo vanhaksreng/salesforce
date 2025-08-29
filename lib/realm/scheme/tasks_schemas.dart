@@ -27,6 +27,12 @@ class _SalespersonSchedule {
   late String? startingTime;
   @MapTo("ending_time")
   late String? endingTime;
+  @MapTo("duration")
+  late String? duration;
+  @MapTo("status_internet_check_in")
+  late String? statusInternetCheckIn;
+  @MapTo("status_internet_check_out")
+  late String? statusInternetCheckOut;
   @MapTo("name")
   late String? name;
   @MapTo("name_2")

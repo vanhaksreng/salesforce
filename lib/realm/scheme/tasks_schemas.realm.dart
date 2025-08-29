@@ -25,6 +25,9 @@ class SalespersonSchedule extends _SalespersonSchedule
     String? scheduleEndingTime,
     String? startingTime,
     String? endingTime,
+    String? duration,
+    String? statusInternetCheckIn,
+    String? statusInternetCheckOut,
     String? name,
     String? name2,
     String? shipToCode,
@@ -82,6 +85,17 @@ class SalespersonSchedule extends _SalespersonSchedule
     RealmObjectBase.set(this, 'schedule_ending_time', scheduleEndingTime);
     RealmObjectBase.set(this, 'starting_time', startingTime);
     RealmObjectBase.set(this, 'ending_time', endingTime);
+    RealmObjectBase.set(this, 'duration', duration);
+    RealmObjectBase.set(
+      this,
+      'status_internet_check_in',
+      statusInternetCheckIn,
+    );
+    RealmObjectBase.set(
+      this,
+      'status_internet_check_out',
+      statusInternetCheckOut,
+    );
     RealmObjectBase.set(this, 'name', name);
     RealmObjectBase.set(this, 'name_2', name2);
     RealmObjectBase.set(this, 'ship_to_code', shipToCode);
@@ -198,6 +212,26 @@ class SalespersonSchedule extends _SalespersonSchedule
   @override
   set endingTime(String? value) =>
       RealmObjectBase.set(this, 'ending_time', value);
+
+  @override
+  String? get duration =>
+      RealmObjectBase.get<String>(this, 'duration') as String?;
+  @override
+  set duration(String? value) => RealmObjectBase.set(this, 'duration', value);
+
+  @override
+  String? get statusInternetCheckIn =>
+      RealmObjectBase.get<String>(this, 'status_internet_check_in') as String?;
+  @override
+  set statusInternetCheckIn(String? value) =>
+      RealmObjectBase.set(this, 'status_internet_check_in', value);
+
+  @override
+  String? get statusInternetCheckOut =>
+      RealmObjectBase.get<String>(this, 'status_internet_check_out') as String?;
+  @override
+  set statusInternetCheckOut(String? value) =>
+      RealmObjectBase.set(this, 'status_internet_check_out', value);
 
   @override
   String? get name => RealmObjectBase.get<String>(this, 'name') as String?;
@@ -470,6 +504,9 @@ class SalespersonSchedule extends _SalespersonSchedule
       'schedule_ending_time': scheduleEndingTime.toEJson(),
       'starting_time': startingTime.toEJson(),
       'ending_time': endingTime.toEJson(),
+      'duration': duration.toEJson(),
+      'status_internet_check_in': statusInternetCheckIn.toEJson(),
+      'status_internet_check_out': statusInternetCheckOut.toEJson(),
       'name': name.toEJson(),
       'name_2': name2.toEJson(),
       'ship_to_code': shipToCode.toEJson(),
@@ -527,6 +564,9 @@ class SalespersonSchedule extends _SalespersonSchedule
         scheduleEndingTime: fromEJson(ejson['schedule_ending_time']),
         startingTime: fromEJson(ejson['starting_time']),
         endingTime: fromEJson(ejson['ending_time']),
+        duration: fromEJson(ejson['duration']),
+        statusInternetCheckIn: fromEJson(ejson['status_internet_check_in']),
+        statusInternetCheckOut: fromEJson(ejson['status_internet_check_out']),
         name: fromEJson(ejson['name']),
         name2: fromEJson(ejson['name_2']),
         shipToCode: fromEJson(ejson['ship_to_code']),
@@ -632,6 +672,19 @@ class SalespersonSchedule extends _SalespersonSchedule
           'endingTime',
           RealmPropertyType.string,
           mapTo: 'ending_time',
+          optional: true,
+        ),
+        SchemaProperty('duration', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'statusInternetCheckIn',
+          RealmPropertyType.string,
+          mapTo: 'status_internet_check_in',
+          optional: true,
+        ),
+        SchemaProperty(
+          'statusInternetCheckOut',
+          RealmPropertyType.string,
+          mapTo: 'status_internet_check_out',
           optional: true,
         ),
         SchemaProperty('name', RealmPropertyType.string, optional: true),
