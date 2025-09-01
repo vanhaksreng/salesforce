@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/app/route_slide_transaction.dart';
+import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/domain/entities/cart_preview_arg.dart';
 import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/domain/entities/more_model.dart';
@@ -279,7 +280,9 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
     case AddCustomerScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return AddCustomerScreen(documentType: settings.arguments as String);
+          return AddCustomerScreen(
+            addCustomerArg: settings.arguments as AddCustomerArg,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);

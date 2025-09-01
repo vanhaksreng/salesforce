@@ -68,6 +68,7 @@ class _TradeB2bState extends State<TradeB2b> {
       scaffoldMessengerKey: kAppScaffoldMsgKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      navigatorObservers: [routeObserver],
       localizationsDelegates: [
         LocalsDelegate(),
         // GlobalMaterialLocalizations.delegate,

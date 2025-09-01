@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
@@ -34,7 +35,7 @@ class SaleInvoiceHistoryScreen extends StatefulWidget {
 }
 
 class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
-    with MessageMixin {
+    with MessageMixin, RouteAware {
   final _cubit = SaleInvoiceHistoryCubit();
 
   final ScrollController _scrollController = ScrollController();
@@ -50,7 +51,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     initialToDate = DateTime.now().endDayOfWeek();
     _cubit.getSaleInvoice(
       param: {
-        'document_type': 'Invoice',
+        'document_type': kSaleInvoice,
         "posting_date":
             "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
       },
@@ -177,15 +178,14 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     }
   }
 
-  Future<void> pushToAddCustomer() =>
-      Navigator.pushNamed(
-        context,
-        AddCustomerScreen.routeName,
-        arguments: kSaleInvoice,
-      ).then((value) async {
-        if (value == null) return;
-        if (value is Map && value['checkout'] == true) {
-          await _cubit.getSaleInvoice(
+  Future<void> pushToAddCustomer() => Navigator.pushNamed(
+    context,
+    AddCustomerScreen.routeName,
+    arguments: AddCustomerArg(
+      documentType: kSaleInvoice,
+      onRefresh: (isRefresh) {
+        if (isRefresh) {
+          _cubit.getSaleInvoice(
             param: {
               'document_type': kSaleInvoice,
               "posting_date":
@@ -193,7 +193,34 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
             },
           );
         }
-      });
+      },
+    ),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    _cubit.close();
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() async {
+    await _cubit.getSaleInvoice(
+      param: {
+        'document_type': kSaleInvoice,
+        "posting_date":
+            "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

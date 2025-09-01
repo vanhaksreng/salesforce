@@ -13,6 +13,7 @@ import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/search_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
+import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_state.dart';
@@ -23,9 +24,9 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class AddCustomerScreen extends StatefulWidget {
-  const AddCustomerScreen({super.key, required this.documentType});
+  const AddCustomerScreen({super.key, required this.addCustomerArg});
   static const String routeName = "addCustomerScreen";
-  final String documentType;
+  final AddCustomerArg addCustomerArg;
 
   @override
   AddCustomerScreenState createState() => AddCustomerScreenState();
@@ -121,9 +122,14 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
           arguments: ItemSaleArg(
             isRefreshing: false,
             customer: customer,
-            documentType: widget.documentType,
+            documentType: widget.addCustomerArg.documentType,
           ),
-        );
+        ).then((value) {
+          if (value == null) return;
+          widget.addCustomerArg.onRefresh?.call(value as bool);
+          if (!mounted) return;
+          Navigator.pop(context);
+        });
       },
     );
   }

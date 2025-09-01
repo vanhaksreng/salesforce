@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 final kAppNavigatorKey = GlobalKey<NavigatorState>();
 final kAppScaffoldMsgKey = GlobalKey<ScaffoldMessengerState>();
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
 
 const String kStatusNo = "No";
 const String kStatusYes = "Yes";

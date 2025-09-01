@@ -8,13 +8,18 @@ import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
 
 class SaleOrderHistoryDetailScreen extends StatefulWidget {
-  const SaleOrderHistoryDetailScreen({super.key, required this.documentNo, required this.typeDoc});
+  const SaleOrderHistoryDetailScreen({
+    super.key,
+    required this.documentNo,
+    required this.typeDoc,
+  });
   final String documentNo;
   final String typeDoc;
   static const String routeName = "SaleOrderDetailHistoryScreen";
 
   @override
-  State<SaleOrderHistoryDetailScreen> createState() => _SaleOrderDetailScreenState();
+  State<SaleOrderHistoryDetailScreen> createState() =>
+      _SaleOrderDetailScreenState();
 }
 
 class _SaleOrderDetailScreenState extends State<SaleOrderHistoryDetailScreen> {
@@ -39,15 +44,16 @@ class _SaleOrderDetailScreenState extends State<SaleOrderHistoryDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBarWidget(title: greeting(titleVildate())),
-      body: BlocBuilder<SaleOrderHistoryDetailCubit, SaleOrderHistoryDetailState>(
-        bloc: _cubit,
-        builder: (BuildContext context, SaleOrderHistoryDetailState state) {
-          if (state.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          return buildBody(state);
-        },
-      ),
+      body:
+          BlocBuilder<SaleOrderHistoryDetailCubit, SaleOrderHistoryDetailState>(
+            bloc: _cubit,
+            builder: (BuildContext context, SaleOrderHistoryDetailState state) {
+              if (state.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return buildBody(state);
+            },
+          ),
     );
   }
 
@@ -59,10 +65,9 @@ class _SaleOrderDetailScreenState extends State<SaleOrderHistoryDetailScreen> {
     final header = record.header;
     final lines = record.lines;
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(appSpace),
       child: SaleHistoryDetailBox(header: header, lines: lines),
-      // saleHistoryCard(header, lines),
     );
   }
 }
