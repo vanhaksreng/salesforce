@@ -128,7 +128,7 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
           if (value == null) return;
           widget.addCustomerArg.onRefresh?.call(value as bool);
           if (!mounted) return;
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         });
       },
     );
