@@ -178,19 +178,17 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     }
   }
 
-  Future<void> pushToAddCustomer() => Navigator.pushNamed(
-    context,
-    AddCustomerScreen.routeName,
-    arguments: AddCustomerArg(
-      documentType: kSaleInvoice,
-      onRefresh: (isRefresh) {
-        if (isRefresh) {
-          if (!mounted) return;
+  Future<void> pushToAddCustomer() =>
+      Navigator.pushNamed(
+        context,
+        AddCustomerScreen.routeName,
+        arguments: AddCustomerArg(documentType: kSaleInvoice, isRefresh: true),
+      ).then((value) {
+        if (value == null) return;
+        if (value as bool) {
           _getSaleInvoice();
         }
-      },
-    ),
-  );
+      });
 
   @override
   void didChangeDependencies() {

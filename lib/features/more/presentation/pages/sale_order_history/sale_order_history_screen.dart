@@ -52,7 +52,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     initialToDate = DateTime.now().endDayOfWeek();
     _cubit.getSaleOrders(
       param: {
-        'document_type': 'Order',
+        'document_type': kSaleOrder,
         "posting_date":
             "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
       },
@@ -189,19 +189,17 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     );
   }
 
-  Future<void> pushToAddCustomer() => Navigator.pushNamed(
-    context,
-    AddCustomerScreen.routeName,
-    arguments: AddCustomerArg(
-      documentType: kSaleOrder,
-      onRefresh: (isRefresh) {
-        if (isRefresh) {
-          if (!mounted) return;
+  Future<void> pushToAddCustomer() =>
+      Navigator.pushNamed(
+        context,
+        AddCustomerScreen.routeName,
+        arguments: AddCustomerArg(documentType: kSaleOrder),
+      ).then((value) {
+        if (value == null) return;
+        if (value as bool) {
           _getSaleOrder();
         }
-      },
-    ),
-  );
+      });
 
   @override
   void didChangeDependencies() {

@@ -124,9 +124,7 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
             customer: customer,
             documentType: widget.addCustomerArg.documentType,
           ),
-        ).then((value) {
-          if (value == null) return;
-          widget.addCustomerArg.onRefresh?.call(value as bool);
+        ).then((value) async {
           if (!mounted) return;
           Navigator.pop(context, true);
         });

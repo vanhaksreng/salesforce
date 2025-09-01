@@ -1,5 +1,6 @@
 class AddCustomerArg {
-  AddCustomerArg({required this.documentType, this.onRefresh});
+  AddCustomerArg({required this.documentType, this.isRefresh});
   final String documentType;
-  final Function(bool isRefresh)? onRefresh;
+
+  final bool? isRefresh;
 }
