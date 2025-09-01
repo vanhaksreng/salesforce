@@ -179,6 +179,16 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     }
   }
 
+  Future<void> _getSaleOrder() {
+    return _cubit.getSaleOrders(
+      param: {
+        'document_type': kSaleOrder,
+        "posting_date":
+            "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+      },
+    );
+  }
+
   Future<void> pushToAddCustomer() => Navigator.pushNamed(
     context,
     AddCustomerScreen.routeName,
@@ -186,13 +196,8 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
       documentType: kSaleOrder,
       onRefresh: (isRefresh) {
         if (isRefresh) {
-          _cubit.getSaleOrders(
-            param: {
-              'document_type': kSaleOrder,
-              "posting_date":
-                  "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
-            },
-          );
+          if (!mounted) return;
+          _getSaleOrder();
         }
       },
     ),
@@ -213,13 +218,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
 
   @override
   void didPopNext() async {
-    await _cubit.getSaleOrders(
-      param: {
-        'document_type': kSaleOrder,
-        "posting_date":
-            "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
-      },
-    );
+    _getSaleOrder();
   }
 
   @override
@@ -255,14 +254,26 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
           hintText: greeting("Find Sale Orders..."),
         ),
       ),
-      body: BlocBuilder<SaleOrderHistoryCubit, SaleOrderHistoryState>(
-        bloc: _cubit,
-        builder: (BuildContext context, SaleOrderHistoryState state) {
-          if (state.isLoading) {
-            return const LoadingPageWidget();
-          }
-          return _buildBody(state);
-        },
+      body: RefreshIndicator(
+        onRefresh: () => _getSaleOrder(),
+        child: BlocBuilder<SaleOrderHistoryCubit, SaleOrderHistoryState>(
+          bloc: _cubit,
+          builder: (BuildContext context, SaleOrderHistoryState state) {
+            if (state.isLoading) {
+              return const LoadingPageWidget();
+            }
+            return CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(appSpace),
+                  sliver: _buildBody(state),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -271,18 +282,15 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     final records = state.records;
 
     if (records.isEmpty) {
-      return const EmptyScreen();
+      return SliverFillRemaining(child: const EmptyScreen());
     }
-
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: records.length,
-      padding: const EdgeInsets.all(appSpace),
+    return SliverList.builder(
       itemBuilder: (context, index) => SaleHistoryCardBox(
         header: records[index],
         onTapShare: () => shareSaleOrder(records[index].no ?? ""),
         onTap: () => navigatorToSaleHistoryList(context, records, index),
       ),
+      itemCount: records.length,
     );
   }
 

@@ -185,13 +185,8 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
       documentType: kSaleInvoice,
       onRefresh: (isRefresh) {
         if (isRefresh) {
-          _cubit.getSaleInvoice(
-            param: {
-              'document_type': kSaleInvoice,
-              "posting_date":
-                  "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
-            },
-          );
+          if (!mounted) return;
+          _getSaleInvoice();
         }
       },
     ),
@@ -212,7 +207,11 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
 
   @override
   void didPopNext() async {
-    await _cubit.getSaleInvoice(
+    _getSaleInvoice();
+  }
+
+  Future<void> _getSaleInvoice() async {
+    return await _cubit.getSaleInvoice(
       param: {
         'document_type': kSaleInvoice,
         "posting_date":
@@ -254,15 +253,26 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
           hintText: greeting("Find Sale Invoice..."),
         ),
       ),
-      body: BlocBuilder<SaleInvoiceHistoryCubit, SaleInvoiceHistoryState>(
-        bloc: _cubit,
-        builder: (BuildContext context, SaleInvoiceHistoryState state) {
-          if (state.isLoading) {
-            return const LoadingPageWidget();
-          }
-
-          return _buildBody(state);
-        },
+      body: RefreshIndicator(
+        onRefresh: () => _getSaleInvoice(),
+        child: BlocBuilder<SaleInvoiceHistoryCubit, SaleInvoiceHistoryState>(
+          bloc: _cubit,
+          builder: (BuildContext context, SaleInvoiceHistoryState state) {
+            if (state.isLoading) {
+              return const LoadingPageWidget();
+            }
+            return CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              controller: _scrollController,
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(appSpace),
+                  sliver: _buildBody(state),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -271,17 +281,15 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     final records = state.records;
 
     if (records.isEmpty) {
-      return const EmptyScreen();
+      return SliverFillRemaining(child: const EmptyScreen());
     }
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: records.length,
-      padding: const EdgeInsets.all(appSpace),
+    return SliverList.builder(
       itemBuilder: (context, index) => SaleHistoryCardBox(
         header: records[index],
         onTapShare: () => shareSaleOrder(records[index].no ?? ""),
         onTap: () => navigatorToSaleHistoryList(context, records, index),
       ),
+      itemCount: records.length,
     );
   }
 

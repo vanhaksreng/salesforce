@@ -138,7 +138,6 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
         Navigator.popUntil(context, (route) {
           return count++ == 2;
         });
-        Future.delayed(const Duration(milliseconds: 300));
         Navigator.of(context).pop(true);
       }
     } on GeneralException catch (e) {
