@@ -97,10 +97,6 @@ class ItemsScreenState extends State<ItemsScreen>
     if (statusStock.isNotEmpty) {
       params["inventory"] = statusStock;
     }
-
-    if (statusStock.isNotEmpty) {
-      params["inventory"] = statusStock;
-    }
     await _cubit.getItems(page: page, isLoading: false, param: params);
   }
 
