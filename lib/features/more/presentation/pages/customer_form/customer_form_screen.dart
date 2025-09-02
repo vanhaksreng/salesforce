@@ -11,7 +11,6 @@ import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/bottom_sheet_fn.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
-import 'package:salesforce/core/presentation/widgets/dotted_border_painter.dart';
 import 'package:salesforce/core/presentation/widgets/header_bottom_sheet.dart';
 import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
