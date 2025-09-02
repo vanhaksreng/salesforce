@@ -13,9 +13,11 @@ import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/dotted_border_painter.dart';
 import 'package:salesforce/core/presentation/widgets/header_bottom_sheet.dart';
+import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/list_tile_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
+import 'package:salesforce/core/presentation/widgets/text_btn_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_form_field_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -303,7 +305,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
         child: Column(
           spacing: 15.scale,
           children: [
-            buildImageUpload(),
+            // buildImageUpload(),
             BoxWidget(
               padding: EdgeInsets.all(scaleFontSize(appSpace8)),
               child: Form(
@@ -312,9 +314,39 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: scaleFontSize(appSpace),
                   children: [
-                    const BuildHeader(
-                      icon: Icons.person,
-                      label: "customer_info",
+                    Row(
+                      spacing: scaleFontSize(8),
+                      children: [
+                        GestureDetector(
+                          onTap: () => showBottomSheetCamera(),
+                          child: ImageNetWorkWidget(
+                            imageUrl: imgPath?.path ?? "",
+                            height: 60.scale,
+                            width: 60.scale,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextWidget(
+                              text: greeting("Personal Information"),
+                              fontWeight: FontWeight.bold,
+                            ),
+                            TextBtnWidget(
+                              onTap: () => showBottomSheetCamera(),
+                              fontSize: 12,
+                              colorBtn: primary,
+                              textDecoration: TextDecoration.underline,
+                              titleBtn: greeting("Tap to change photo"),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Hr(
+                      width: double.infinity,
+                      color: primary.withValues(alpha: .1),
                     ),
                     TextFormFieldWidget(
                       label: greeting("Customer No"),
@@ -408,6 +440,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
                       child: CustomerMapScreen(
                         isShowPin: true,
                         isGPS: true,
+
                         onMapCreated: (GoogleMapController controller) {
                           _mapController = controller;
                         },
@@ -415,7 +448,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
                           widget.customer.latitude ?? 0.0,
                           widget.customer.longitude ?? 0.0,
                         ),
-                        scrollGesturesEnabled: true,
+                        scrollGesturesEnabled: false,
                         onCameraIdle: (latLng) => _getLatLng(latLng),
                       ),
                     ),
@@ -427,40 +460,6 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
           ],
         ),
       ),
-    );
-  }
-
-  Widget buildImageUpload() {
-    return BoxWidget(
-      isBorder: false,
-      color: white,
-      onPress: () => showBottomSheetCamera(),
-      margin: const EdgeInsets.only(top: 2, left: 2),
-      isBoxShadow: true,
-      rounding: 8,
-      padding: EdgeInsets.all(scaleFontSize(8)),
-      child: showImage(),
-    );
-  }
-
-  Widget showImage() {
-    if (imgPath == null) {
-      return Row(
-        spacing: scaleFontSize(8.scale),
-        children: [
-          Icon(Icons.photo, color: mainColor, size: scaleFontSize(32)),
-          TextWidget(
-            text: greeting("Tap to upload you image"),
-            color: textColor50,
-          ),
-        ],
-      );
-    }
-    return ImageNetWorkWidget(
-      width: double.infinity,
-      height: scaleFontSize(100),
-      imageUrl: imgPath?.path ?? "",
-      fit: BoxFit.contain,
     );
   }
 
