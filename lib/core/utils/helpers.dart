@@ -852,10 +852,20 @@ class Helpers {
 
     final diff = endTime.difference(startTime);
 
-    final hours = diff.inHours.toString().padLeft(2, '0');
-    final minutes = (diff.inMinutes % 60).toString().padLeft(2, '0');
-    final seconds = (diff.inSeconds % 60).toString().padLeft(2, '0');
+    final hours = diff.inHours;
+    final minutes = diff.inMinutes % 60;
+    final seconds = diff.inSeconds % 60;
 
-    return "${hours}h ${minutes}m ${seconds}s";
+    final parts = <String>[];
+
+    if (hours > 0) {
+      parts.add("${hours.toString().padLeft(2, '0')}h");
+    }
+    if (minutes > 0 || hours > 0) {
+      parts.add("${minutes.toString().padLeft(2, '0')}m");
+    }
+    parts.add("${seconds.toString().padLeft(2, '0')}s");
+
+    return parts.join(" ");
   }
 }

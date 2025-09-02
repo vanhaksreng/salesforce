@@ -39,6 +39,7 @@ const String kActive = "Active";
 const String kInActive = "Inactive";
 const String kInStock = "In stock";
 const String kOutOfStock = "Out of stock";
+const String kAll = "All";
 const String kBalance = "Balance";
 const String kNoOfInvoice = "No of Invoices";
 const String kNoCredit = "No Credit";
