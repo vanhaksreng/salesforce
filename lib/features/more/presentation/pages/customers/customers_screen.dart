@@ -399,7 +399,7 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
                     controller: _codeController,
                     isDefaultTextForm: true,
                     suffix: TextBtnWidget(
-                      titleBtn: "clear",
+                      titleBtn: "Clear",
                       colorBtn: textColor50,
                       onTap: () => onclear(),
                     ),
