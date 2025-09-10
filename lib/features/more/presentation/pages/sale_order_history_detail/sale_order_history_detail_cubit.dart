@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
 import 'package:salesforce/injection_container.dart';
@@ -22,5 +23,21 @@ class SaleOrderHistoryDetailCubit extends Cubit<SaleOrderHistoryDetailState> {
       emit(state.copyWith(error: error.toString()));
       emit(stableState.copyWith(isLoading: false));
     }
+  }
+
+  void scaningBluetooth(bool isScan) {
+    emit(state.copyWith(isScanning: isScan));
+  }
+
+  void setConnectingBluetooth(bool isConnect) {
+    emit(state.copyWith(isConnected: isConnect));
+  }
+
+  void setBluetoothAdapterState(BluetoothAdapterState adapter) {
+    emit(state.copyWith(adapterState: adapter));
+  }
+
+  void setBluetoothDevice(BluetoothDevice? device) {
+    emit(state.copyWith(connectedDevice: device));
   }
 }
