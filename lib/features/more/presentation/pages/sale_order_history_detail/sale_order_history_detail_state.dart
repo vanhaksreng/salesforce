@@ -8,6 +8,7 @@ class SaleOrderHistoryDetailState {
   final bool isConnected;
   final BluetoothAdapterState adapterState;
   final BluetoothDevice? connectedDevice;
+  final CompanyInformation? comPanyInfo;
 
   const SaleOrderHistoryDetailState({
     this.isLoading = false,
@@ -17,6 +18,7 @@ class SaleOrderHistoryDetailState {
     this.record,
     this.adapterState = BluetoothAdapterState.unknown,
     this.connectedDevice,
+    this.comPanyInfo,
   });
 
   SaleOrderHistoryDetailState copyWith({
@@ -27,6 +29,7 @@ class SaleOrderHistoryDetailState {
     SaleDetail? record,
     BluetoothAdapterState? adapterState,
     BluetoothDevice? connectedDevice,
+    CompanyInformation? comPanyInfo,
   }) {
     return SaleOrderHistoryDetailState(
       isLoading: isLoading ?? this.isLoading,
@@ -36,6 +39,7 @@ class SaleOrderHistoryDetailState {
       isConnected: isConnected ?? this.isConnected,
       adapterState: adapterState ?? this.adapterState,
       connectedDevice: connectedDevice ?? this.connectedDevice,
+      comPanyInfo: comPanyInfo ?? this.comPanyInfo,
     );
   }
 }

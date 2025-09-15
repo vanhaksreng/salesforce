@@ -1,10 +1,7 @@
 import 'dart:async';
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:http/http.dart' as http;
-import 'package:image/image.dart' as img;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
@@ -15,6 +12,7 @@ import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/features/more/presentation/pages/components/sale_history_detail_box.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_mm80.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_cubit.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
@@ -50,6 +48,7 @@ class _SaleOrderHistoryDetailScreenState
   void initState() {
     super.initState();
     _cubit.getSaleDetails(no: widget.documentNo);
+    _cubit.getComapyInfo();
     _initBluetooth();
   }
 
@@ -197,6 +196,7 @@ class _SaleOrderHistoryDetailScreenState
     }
   }
 
+  //===============================test==========================================
   Future<void> _printReceipt() async {
     if (!_cubit.state.isConnected || _writeCharacteristic == null) {
       showErrorMessage(
@@ -206,46 +206,60 @@ class _SaleOrderHistoryDetailScreenState
     }
 
     try {
-      final response = await http.get(
-        Uri.parse(
-          'https://static.wixstatic.com/media/74d6b3_90bfe62be075409f869ae62e07dfa76e~mv2.png',
-        ),
+      //=======================Generate Receipt Bytes==================
+      final bytes = await ReceiptMm80.generateCustomReceiptBytes(
+        detail: _cubit.state.record,
+        companyInfo: _cubit.state.comPanyInfo,
       );
-      final imageBytes = response.bodyBytes;
-      final decodedImage = img.decodeImage(imageBytes)!;
-      final profile = await CapabilityProfile.load();
-      final generator = Generator(PaperSize.mm58, profile);
-
-      final bytes = <int>[
-        ...generator.image(decodedImage),
-        ...generator.text(
-          'FLUTTER THERMAL PRINTER',
-          styles: const PosStyles(align: PosAlign.center, bold: true),
-        ),
-        ...generator.text('========================'),
-        ...generator.text('${DateTime.now()}'),
-        ...generator.text('========================'),
-        ...generator.text('Item              Price'),
-        ...generator.text('------------------------'),
-        ...generator.text('Apple             \$1.00'),
-        ...generator.text('Banana            \$0.50'),
-        ...generator.text('Orange            \$0.75'),
-        ...generator.text('========================'),
-        ...generator.text(
-          'Total             \$2.25',
-          styles: const PosStyles(bold: true),
-        ),
-        ...generator.text(
-          '\nThank you for shopping!\n\n\n',
-          styles: const PosStyles(align: PosAlign.center),
-        ),
-      ];
 
       await _sendDataInChunks(_writeCharacteristic!, bytes);
+      showSuccessMessage('Receipt printed successfully!');
     } catch (e) {
       showErrorMessage('Printing failed: $e');
     }
   }
+
+  //------------------------------------------------------------------------------
+
+  // Future<void> _printReceipt() async {
+  //   if (!_cubit.state.isConnected || _writeCharacteristic == null) {
+  //     showErrorMessage(
+  //       'Not connected to a printer or no writable characteristic found',
+  //     );
+  //     return;
+  //   }
+
+  //   try {
+  //     final response = await http.get(
+  //       Uri.parse(
+  //         'https://static.wixstatic.com/media/74d6b3_90bfe62be075409f869ae62e07dfa76e~mv2.png',
+  //       ),
+  //     );
+  //     final imageBytes = response.bodyBytes;
+  //     final decodedImage = img.decodeImage(imageBytes)!;
+  //     final profile = await CapabilityProfile.load();
+  //     final generator = Generator(PaperSize.mm80, profile);
+
+  //     //=======================asdffasdf==================
+  //     final bytes = await ReceiptMm80.generateCustomReceiptBytes(
+  //       saleDate: widget.typeDoc,
+  //       staff: "",
+  //       invoiceNo: widget.documentNo,
+  //       telephone: "08888",
+  //       items: _cubit.state.record!.lines,
+  //       subTotal: 09999,
+  //       grandTotal: 344,
+  //       receivedAmount: 2345,
+  //       accountName: "Hello",
+  //       // logoUrl:
+  //       //     "https://static.wixstatic.com/media/74d6b3_90bfe62be075409f869ae62e07dfa76e~mv2.png",
+  //     );
+
+  //     await _sendDataInChunks(_writeCharacteristic!, bytes);
+  //   } catch (e) {
+  //     showErrorMessage('Printing failed: $e');
+  //   }
+  // }
 
   Future<void> _sendDataInChunks(
     BluetoothCharacteristic characteristic,
@@ -255,7 +269,16 @@ class _SaleOrderHistoryDetailScreenState
     for (var i = 0; i < data.length; i += chunkSize) {
       final end = (i + chunkSize < data.length) ? i + chunkSize : data.length;
       final chunk = data.sublist(i, end);
-      await characteristic.write(chunk, withoutResponse: true);
+
+      try {
+        await characteristic.write(chunk, withoutResponse: true);
+      } catch (e) {
+        // Optional: retry once if failed
+        await Future.delayed(const Duration(milliseconds: 50));
+        await characteristic.write(chunk, withoutResponse: true);
+      }
+
+      // Delay to avoid BLE overflow
       await Future.delayed(const Duration(milliseconds: 20));
     }
   }

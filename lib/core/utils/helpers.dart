@@ -126,14 +126,35 @@ class Helpers {
     }
   }
 
-  static int toInt(value) {
-    if (value == null || value == "") {
+  // static int toInt(value) {
+  //   if (value == null || value == "") {
+  //     return 0;
+  //   }
+
+  //   String v = value.toString().replaceAll("\$", "");
+  //   v = v.replaceAll("%", "");
+  //   return int.parse(v);
+  // }
+
+  static int toInt(dynamic value) {
+    if (value == null || value.toString().trim().isEmpty) {
       return 0;
     }
 
-    String v = value.toString().replaceAll("\$", "");
-    v = v.replaceAll("%", "");
-    return int.parse(v);
+    try {
+      String v = value.toString().trim();
+
+      v = v.replaceAll(RegExp(r'[^0-9\.\-]'), '');
+
+      if (v.isEmpty || v == "-" || v == "." || v == "-.") {
+        return 0;
+      }
+
+      double d = double.parse(v);
+      return d.toInt();
+    } catch (e) {
+      return 0;
+    }
   }
 
   static String rmZeroFormat(double n) {
