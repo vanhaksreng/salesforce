@@ -39,7 +39,7 @@ dependencies:
   shared_preferences: ^2.5.3
   esc_pos_utils_plus: ^2.0.4
   flutter_blue_plus: ^1.35.10
-  characters: ^1.4.0
+  # characters: ^1.4.0
 
 dev_dependencies:
   flutter_test:

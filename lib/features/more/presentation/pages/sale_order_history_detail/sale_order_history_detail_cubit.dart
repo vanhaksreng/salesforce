@@ -26,21 +26,21 @@ class SaleOrderHistoryDetailCubit extends Cubit<SaleOrderHistoryDetailState> {
     }
   }
 
-  void scaningBluetooth(bool isScan) {
-    emit(state.copyWith(isScanning: isScan));
-  }
+  // void scaningBluetooth(bool isScan) {
+  //   emit(state.copyWith(isScanning: isScan));
+  // }
 
-  void setConnectingBluetooth(bool isConnect) {
-    emit(state.copyWith(isConnected: isConnect));
-  }
+  // void setConnectingBluetooth(bool isConnect) {
+  //   emit(state.copyWith(isConnected: isConnect));
+  // }
 
-  void setBluetoothAdapterState(BluetoothAdapterState adapter) {
-    emit(state.copyWith(adapterState: adapter));
-  }
+  // void setBluetoothAdapterState(BluetoothAdapterState adapter) {
+  //   emit(state.copyWith(adapterState: adapter));
+  // }
 
-  void setBluetoothDevice(BluetoothDevice? device) {
-    emit(state.copyWith(connectedDevice: device));
-  }
+  // void setBluetoothDevice(BluetoothDevice? device) {
+  //   emit(state.copyWith(connectedDevice: device));
+  // }
 
   Future<void> getComapyInfo() async {
     final stableState = state;
