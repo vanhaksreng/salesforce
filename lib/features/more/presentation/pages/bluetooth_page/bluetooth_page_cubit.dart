@@ -5,8 +5,15 @@ import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluet
 class BluetoothPageCubit extends Cubit<BluetoothPageState> {
   BluetoothPageCubit() : super(BluetoothPageState(isLoading: true));
 
+  List<BluetoothDevice> _originalDevices = [];
+
+  void setListBluetoothDevice(List<BluetoothDevice> devices) {
+    _originalDevices = List.from(devices); // Store original list
+    emit(state.copyWith(devices: devices));
+  }
+
   void scaningBluetooth(bool isScan) async {
-    emit(state.copyWith(isScanning: isScan, isLoading: false));
+    emit(state.copyWith(isScanning: isScan, isLoading: isScan));
   }
 
   void setConnectingBluetooth(bool isConnect) {
@@ -25,25 +32,43 @@ class BluetoothPageCubit extends Cubit<BluetoothPageState> {
     emit(state.copyWith(bluetoothActionState: actionState, isLoading: false));
   }
 
-  handleScanResults(List<ScanResult> results) {
-    final List<BluetoothDevice> devices = List.from(state.devices);
+  Future<void> onSearchBlueTooth(String query) async {
+    emit(state.copyWith(isLoading: true, error: null));
 
-    final newDevices = results
-        .map((result) => result.device)
-        .where(
-          (device) =>
-              !devices.contains(device) && device.platformName.isNotEmpty,
-        )
-        .toList();
+    try {
+      List<BluetoothDevice> devicesToShow;
 
-    if (newDevices.isNotEmpty) {
-      devices.addAll(newDevices);
+      if (query.isEmpty || query.trim().isEmpty) {
+        // If query is empty, show all original devices
+        devicesToShow = List.from(_originalDevices);
+      } else {
+        // Filter original devices based on query (not current filtered devices)
+        devicesToShow = _originalDevices
+            .where(
+              (d) => d.platformName.toLowerCase().contains(query.toLowerCase()),
+            )
+            .toList();
+      }
 
-      emit(state.copyWith(devices: devices));
+      emit(state.copyWith(isLoading: false, devices: devicesToShow));
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
-  void setListBluetoothDevice(List<BluetoothDevice>? devices) {
-    emit(state.copyWith(devices: devices, isLoading: false));
+  void handleScanResults(List<ScanResult> scanResults) {
+    final newDevices = scanResults
+        .map((result) => result.device)
+        .where((device) => device.platformName.isNotEmpty)
+        .toList();
+
+    final currentDevices = List<BluetoothDevice>.from(_originalDevices);
+
+    for (final device in newDevices) {
+      if (!currentDevices.any((d) => d.remoteId == device.remoteId)) {
+        currentDevices.add(device);
+      }
+    }
+    setListBluetoothDevice(currentDevices);
   }
 }

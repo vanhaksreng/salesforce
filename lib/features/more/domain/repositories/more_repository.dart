@@ -118,5 +118,4 @@ abstract class MoreRepository extends BaseAppRepository {
   });
 
   Future<Either<Failure, bool>> insertSale(SaleItemArg saleArg);
-  Future<Either<Failure, CompanyInformation?>> getCompanyInfo();
 }

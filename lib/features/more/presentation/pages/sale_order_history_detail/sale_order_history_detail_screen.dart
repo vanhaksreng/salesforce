@@ -1,19 +1,22 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+
+import 'package:image/image.dart' as img;
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
-import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
+import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
-import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_page_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/components/sale_history_detail_box.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_mm80.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_cubit.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
@@ -38,35 +41,65 @@ class _SaleOrderHistoryDetailScreenState
     extends State<SaleOrderHistoryDetailScreen>
     with MessageMixin {
   final _cubit = SaleOrderHistoryDetailCubit();
-  BluetoothDevice? bluetoothDevice;
+  late BluetoothDevice bluetoothDevice;
+  BluetoothCharacteristic? _writeCharacteristic;
+  final Map<String, BluetoothCharacteristic> _writeCharacteristics = {};
 
-  // final List<BluetoothDevice> _devices = [];
-  // BluetoothCharacteristic? _writeCharacteristic;
-  // StreamSubscription<List<ScanResult>>? _scanSubscription;
-  // StreamSubscription<BluetoothAdapterState>? _adapterStateSubscription;
-  // StreamSubscription<BluetoothConnectionState>? _connectionStateSubscription;
-  // StreamSubscription<bool>? _scanningStateSubscription;
+  ReceiptPreview? preview;
 
   @override
   void initState() {
     super.initState();
-    _cubit.getSaleDetails(no: widget.documentNo);
-    _cubit.getComapyInfo();
+    _loadData();
     checkBluetoothDevie();
+    _waitForDataAndLoadPreview();
   }
 
-  checkBluetoothDevie() {
-    List<BluetoothDevice> devices = FlutterBluePlus.connectedDevices;
-    if (devices.isEmpty) {
+  _loadData() async {
+    _cubit.getSaleDetails(no: widget.documentNo);
+    _cubit.getComapyInfo();
+
+    // Wait a bit and then check for data periodically
+    _waitForDataAndLoadPreview();
+  }
+
+  _waitForDataAndLoadPreview() async {
+    // Poll until data is available
+    while (_cubit.state.record == null || _cubit.state.comPanyInfo == null) {
+      await Future.delayed(Duration(milliseconds: 100));
+      if (!mounted) return; // Exit if widget is disposed
+    }
+
+    // Data is now available, load preview
+    await loadPreview();
+  }
+
+  loadPreview() async {
+    // Add null checks to be safe
+    if (_cubit.state.record == null || _cubit.state.comPanyInfo == null) {
+      print("Data not ready for preview");
       return;
     }
-    bluetoothDevice = FlutterBluePlus.connectedDevices[0];
+
+    final segments = buildReceiptSegmentsForPreview(
+      detail: _cubit.state.record,
+      companyInfo: _cubit.state.comPanyInfo,
+    );
+
+    preview = await generateReceiptPreview(segments);
+
+    if (mounted) {
+      setState(() {});
+    }
   }
-  // @override
-  // void dispose() {
-  //   _cleanupBluetooth();
-  //   super.dispose();
-  // }
+
+  Future<void> checkBluetoothDevie() async {
+    final devices = FlutterBluePlus.connectedDevices;
+    if (devices.isEmpty) return;
+
+    bluetoothDevice = devices[0];
+    await _discoverServices(bluetoothDevice);
+  }
 
   String _getTitle() {
     switch (widget.typeDoc) {
@@ -79,236 +112,94 @@ class _SaleOrderHistoryDetailScreenState
     }
   }
 
-  // Future<void> _initBluetooth() async {
-  //   await _checkPermissions();
-  //   _setupBluetoothStreams();
-  //   if (await FlutterBluePlus.isSupported) {
-  //     await _startScan();
-  //   }
-  // }
+  Future<void> _printReceipt() async {
+    if (_writeCharacteristic == null ||
+        bluetoothDevice.remoteId.str.isEmpty ||
+        bluetoothDevice.isDisconnected) {
+      showErrorMessage(
+        'Not connected to a printer or no writable characteristic found',
+      );
+      return;
+    }
 
-  // Future<void> _checkPermissions() async {
-  //   final permissions = await [
-  //     Permission.bluetoothScan,
-  //     Permission.bluetoothConnect,
-  //     Permission.bluetoothAdvertise,
-  //     Permission.location,
-  //   ].request();
+    try {
+      final bytes = await ReceiptMm80.generateCustomReceiptBytes(
+        detail: _cubit.state.record,
+        companyInfo: _cubit.state.comPanyInfo,
+      );
 
-  //   if (permissions.values.any((status) => !status.isGranted)) {
-  //     showWarningMessage(
-  //       'Some permissions were denied. Bluetooth functionality may be limited.',
-  //     );
-  //   }
-  // }
+      await _sendDataInChunks(_writeCharacteristic!, bytes);
+      showSuccessMessage('Receipt printed successfully!');
+    } catch (e) {
+      showErrorMessage('Printing failed: $e');
+    }
+  }
 
-  // void _setupBluetoothStreams() {
-  //   _adapterStateSubscription = FlutterBluePlus.adapterState.listen((state) {
-  //     _cubit.setBluetoothAdapterState(state);
-  //     if (state == BluetoothAdapterState.on) {
-  //       showSuccessMessage(greeting('Bluetooth enabled'));
-  //       _startScan();
-  //     } else if (state == BluetoothAdapterState.off) {
-  //       showErrorMessage(greeting('Bluetooth disabled'));
-  //       _cubit.scaningBluetooth(false);
-  //       _devices.clear();
-  //       _cubit.setBluetoothDevice(null);
-  //     }
-  //   });
+  Future<void> _discoverServices(BluetoothDevice device) async {
+    try {
+      final services = await device.discoverServices();
+      BluetoothCharacteristic? writeCharacteristic;
 
-  //   _scanningStateSubscription = FlutterBluePlus.isScanning.listen((scanning) {
-  //     _cubit.scaningBluetooth(scanning);
-  //   });
+      outerLoop:
+      for (final service in services) {
+        for (final characteristic in service.characteristics) {
+          if (characteristic.properties.write ||
+              characteristic.properties.writeWithoutResponse) {
+            writeCharacteristic = characteristic;
+            break outerLoop;
+          }
+        }
+      }
 
-  //   _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
-  //     for (final result in results) {
-  //       if (!_devices.contains(result.device)) {
-  //         _devices.add(result.device);
-  //       }
-  //     }
-  //   });
-  // }
+      if (writeCharacteristic != null) {
+        _writeCharacteristics[device.remoteId.toString()] = writeCharacteristic;
+        _writeCharacteristic = writeCharacteristic;
+      }
+    } catch (e) {
+      debugPrint('Service discovery error: $e');
+    }
+  }
 
-  // Future<void> _startScan() async {
-  //   if (_cubit.state.adapterState != BluetoothAdapterState.on) return;
-
-  //   try {
-  //     final systemDevices = await FlutterBluePlus.bondedDevices;
-  //     _devices.addAll(
-  //       systemDevices.where((device) => !_devices.contains(device)),
-  //     );
-
-  //     await FlutterBluePlus.startScan(
-  //       timeout: const Duration(seconds: 15),
-  //       androidUsesFineLocation: true,
-  //     );
-  //   } catch (e) {
-  //     showErrorMessage('Failed to start Bluetooth scan: $e');
-  //   }
-  // }
-
-  // Future<void> _cleanupBluetooth() async {
-  //   await _scanSubscription?.cancel();
-  //   await _adapterStateSubscription?.cancel();
-  //   await _connectionStateSubscription?.cancel();
-  //   await _scanningStateSubscription?.cancel();
-  //   await FlutterBluePlus.stopScan();
-  // }
-
-  // Future<void> _connectToDevice(BluetoothDevice device) async {
-  //   try {
-  //     showSuccessMessage('Connecting to ${device.platformName}...');
-  //     await device.connect(autoConnect: false);
+  // Future<void> _sendDataInChunks(
+  //   BluetoothCharacteristic characteristic,
+  //   List<int> data, {
+  //   int chunkSize = 182, // smaller is smoother
+  // }) async {
+  //   for (var i = 0; i < data.length; i += chunkSize) {
+  //     final end = (i + chunkSize < data.length) ? i + chunkSize : data.length;
+  //     final chunk = data.sublist(i, end);
 
   //     try {
-  //       await device.requestMtu(512);
+  //       await characteristic.write(chunk, withoutResponse: true);
   //     } catch (e) {
-  //       debugPrint('MTU request failed: $e');
+  //       await Future.delayed(const Duration(milliseconds: 20));
+  //       await characteristic.write(chunk, withoutResponse: true);
   //     }
 
-  //     _connectionStateSubscription?.cancel();
-  //     _connectionStateSubscription = device.connectionState.listen((state) {
-  //       _cubit.setConnectingBluetooth(
-  //         state == BluetoothConnectionState.connected,
-  //       );
-
-  //       if (state == BluetoothConnectionState.connected) {
-  //         showSuccessMessage('Connected to ${device.platformName}');
-  //         _discoverServices(device);
-  //       } else if (state == BluetoothConnectionState.disconnected) {
-  //         showWarningMessage('Disconnected from ${device.platformName}');
-  //       }
-  //     });
-  //   } catch (e) {
-  //     showErrorMessage('Connection failed: $e');
-  //   }
-  // }
-
-  // Future<void> _discoverServices(BluetoothDevice device) async {
-  //   try {
-  //     final services = await device.discoverServices();
-  //     for (final service in services) {
-  //       for (final characteristic in service.characteristics) {
-  //         if (characteristic.properties.write ||
-  //             characteristic.properties.writeWithoutResponse) {
-  //           _writeCharacteristic = characteristic;
-  //           break;
-  //         }
-  //       }
-  //       if (_writeCharacteristic != null) break;
-  //     }
-
-  //     if (_writeCharacteristic == null) {
-  //       showWarningMessage('No writable characteristic found');
-  //     }
-  //   } catch (e) {
-  //     showErrorMessage('Service discovery failed: $e');
-  //   }
-  // }
-
-  //===============================test==========================================
-  // Future<void> _printReceipt() async {
-  //   if (!_cubit.state.isConnected || _writeCharacteristic == null) {
-  //     showErrorMessage(
-  //       'Not connected to a printer or no writable characteristic found',
-  //     );
-  //     return;
-  //   }
-
-  //   try {
-  //     //=======================Generate Receipt Bytes==================
-  //     final bytes = await ReceiptMm80.generateCustomReceiptBytes(
-  //       detail: _cubit.state.record,
-  //       companyInfo: _cubit.state.comPanyInfo,
-  //     );
-
-  //     await _sendDataInChunks(_writeCharacteristic!, bytes);
-  //     showSuccessMessage('Receipt printed successfully!');
-  //   } catch (e) {
-  //     showErrorMessage('Printing failed: $e');
-  //   }
-  // }
-
-  //------------------------------------------------------------------------------
-
-  // Future<void> _printReceipt() async {
-  //   if (!_cubit.state.isConnected || _writeCharacteristic == null) {
-  //     showErrorMessage(
-  //       'Not connected to a printer or no writable characteristic found',
-  //     );
-  //     return;
-  //   }
-
-  //   try {
-  //     final response = await http.get(
-  //       Uri.parse(
-  //         'https://static.wixstatic.com/media/74d6b3_90bfe62be075409f869ae62e07dfa76e~mv2.png',
-  //       ),
-  //     );
-  //     final imageBytes = response.bodyBytes;
-  //     final decodedImage = img.decodeImage(imageBytes)!;
-  //     final profile = await CapabilityProfile.load();
-  //     final generator = Generator(PaperSize.mm80, profile);
-
-  //     //=======================asdffasdf==================
-  //     final bytes = await ReceiptMm80.generateCustomReceiptBytes(
-  //       saleDate: widget.typeDoc,
-  //       staff: "",
-  //       invoiceNo: widget.documentNo,
-  //       telephone: "08888",
-  //       items: _cubit.state.record!.lines,
-  //       subTotal: 09999,
-  //       grandTotal: 344,
-  //       receivedAmount: 2345,
-  //       accountName: "Hello",
-  //       // logoUrl:
-  //       //     "https://static.wixstatic.com/media/74d6b3_90bfe62be075409f869ae62e07dfa76e~mv2.png",
-  //     );
-
-  //     await _sendDataInChunks(_writeCharacteristic!, bytes);
-  //   } catch (e) {
-  //     showErrorMessage('Printing failed: $e');
+  //     // Longer delay helps smoothness
+  //     await Future.delayed(const Duration(milliseconds: 20));
   //   }
   // }
 
   Future<void> _sendDataInChunks(
     BluetoothCharacteristic characteristic,
     List<int> data, {
-    int chunkSize = 180,
+    int chunkSize = 128,
   }) async {
     for (var i = 0; i < data.length; i += chunkSize) {
       final end = (i + chunkSize < data.length) ? i + chunkSize : data.length;
       final chunk = data.sublist(i, end);
 
-      try {
-        await characteristic.write(chunk, withoutResponse: true);
-      } catch (e) {
-        // Optional: retry once if failed
-        await Future.delayed(const Duration(milliseconds: 50));
-        await characteristic.write(chunk, withoutResponse: true);
-      }
+      await characteristic.write(chunk, withoutResponse: true);
 
-      // Delay to avoid BLE overflow
-      await Future.delayed(const Duration(milliseconds: 20));
+      // Delay only if not the last chunk
+      if (end < data.length) {
+        await Future.delayed(Duration(milliseconds: 10));
+      }
     }
-  }
 
-  pushToBluetoothPage(BuildContext context) {
-    return Navigator.pushNamed(
-      context,
-      BluetoothPageScreen.routeName,
-      arguments: bluetoothDevice,
-    ).then((bluetooth) {
-      if (bluetooth == null) {
-        checkBluetoothDevie();
-        bluetoothDevice = null;
-        return;
-      }
-      checkBluetoothDevie();
-      final device = bluetooth as BluetoothDevice;
-      bluetoothDevice = device;
-      setState(() {});
-    });
+    // Final delay to ensure printer processes last command
+    await Future.delayed(Duration(milliseconds: 100));
   }
 
   @override
@@ -321,7 +212,8 @@ class _SaleOrderHistoryDetailScreenState
             bloc: _cubit,
             builder: (context, state) {
               return BtnIconCircleWidget(
-                onPressed: () => pushToBluetoothPage(context),
+                onPressed: () => showReceiptPreviewDialog(context, preview),
+                // onPressed: () => _printReceipt(),
                 icons: const Icon(Icons.print_rounded, color: white),
                 rounded: appBtnRound,
               );
@@ -330,52 +222,53 @@ class _SaleOrderHistoryDetailScreenState
           Helpers.gapW(appSpace),
         ],
         heightBottom: scaleFontSize(30),
-        bottom: BoxWidget(
-          isBoxShadow: false,
-          color: success,
-          padding: EdgeInsets.symmetric(
-            horizontal: scaleFontSize(16),
-            vertical: scaleFontSize(8),
-          ),
-          isRounding: false,
-          width: double.infinity,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextWidget(
-                color: white,
-                text: "Connecting bluetooth ${bluetoothDevice?.advName}",
-              ),
-              // BtnTextWidget(
-              //   onPressed: () {},
-              //   child: TextWidget(text: "Disconnect", color: red),
-              // ),
-            ],
-          ),
-        ),
+        bottom: _buildStatusConnect(),
       ),
       body:
           BlocBuilder<SaleOrderHistoryDetailCubit, SaleOrderHistoryDetailState>(
             bloc: _cubit,
             builder: (context, state) {
-              if (state.isLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
               return _buildBody(state);
             },
           ),
     );
   }
 
+  BoxWidget _buildStatusConnect() {
+    return BoxWidget(
+      isBoxShadow: false,
+      color: success,
+      padding: EdgeInsets.symmetric(
+        horizontal: scaleFontSize(16),
+        vertical: scaleFontSize(8),
+      ),
+      isRounding: false,
+      width: double.infinity,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          TextWidget(color: white, text: "Connecting bluetooth "),
+          // BtnTextWidget(
+          //   onPressed: () {},
+          //   child: TextWidget(text: "Disconnect", color: red),
+          // ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBody(SaleOrderHistoryDetailState state) {
-    final record = state.record;
-    if (record == null) {
-      return const EmptyScreen();
+    if (state.isLoading) {
+      return LoadingPageWidget();
     }
+    final record = state.record;
     return ListView(
       padding: const EdgeInsets.all(appSpace),
       children: [
-        SaleHistoryDetailBox(header: record.header, lines: record.lines),
+        SaleHistoryDetailBox(
+          header: record?.header,
+          lines: record?.lines ?? [],
+        ),
       ],
     );
   }
@@ -386,147 +279,4 @@ class _SaleOrderHistoryDetailScreenState
     }
     return primary;
   }
-
-  // Future<void> _showBluetoothDevices() {
-  //   return showModalBottomSheet(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     backgroundColor: Colors.transparent,
-  //     builder: (context) =>
-  //         BlocBuilder<SaleOrderHistoryDetailCubit, SaleOrderHistoryDetailState>(
-  //           bloc: _cubit,
-  //           builder: (context, state) => DraggableScrollableSheet(
-  //             expand: false,
-  //             initialChildSize: 0.6,
-  //             minChildSize: 0.3,
-  //             maxChildSize: 0.95,
-  //             builder: (context, scrollController) => BoxWidget(
-  //               color: white,
-  //               isBoxShadow: false,
-  //               child: Column(
-  //                 children: [
-  //                   HeaderBottomSheet(
-  //                     childWidget: TextWidget(
-  //                       text: greeting("Please selected bluetooth."),
-  //                       fontSize: 16,
-  //                       color: white,
-  //                       fontWeight: FontWeight.w500,
-  //                     ),
-  //                   ),
-  //                   Expanded(
-  //                     child: ListView.separated(
-  //                       shrinkWrap: true,
-  //                       controller: scrollController,
-  //                       itemCount: _devices.length,
-  //                       itemBuilder: (context, index) {
-  //                         final device = _devices[index];
-  //                         final isDeviceConnected =
-  //                             state.connectedDevice == device;
-
-  //                         return StreamBuilder<BluetoothConnectionState>(
-  //                           stream: device.connectionState,
-  //                           initialData: BluetoothConnectionState.disconnected,
-  //                           builder: (context, snapshot) {
-  //                             final connectionState =
-  //                                 snapshot.data ??
-  //                                 BluetoothConnectionState.disconnected;
-
-  //                             return BoxWidget(
-  //                               isBoxShadow: false,
-  //                               margin: EdgeInsets.symmetric(
-  //                                 horizontal: scaleFontSize(appSpace8),
-  //                                 vertical: scaleFontSize(4),
-  //                               ),
-  //                               child: ListTile(
-  //                                 minVerticalPadding: 4,
-  //                                 leading: ChipWidget(
-  //                                   borderColor: Colors.transparent,
-  //                                   horizontal: 1,
-  //                                   radius: 16,
-  //                                   bgColor: changColor(
-  //                                     isDeviceConnected,
-  //                                   ).withValues(alpha: 0.1),
-  //                                   child: Icon(
-  //                                     Icons.bluetooth,
-  //                                     size: scaleFontSize(20),
-  //                                     color: changColor(isDeviceConnected),
-  //                                   ),
-  //                                 ),
-  //                                 title: TextWidget(
-  //                                   text: device.platformName.isNotEmpty
-  //                                       ? device.platformName
-  //                                       : 'Unknown Device',
-  //                                   fontWeight: isDeviceConnected
-  //                                       ? FontWeight.bold
-  //                                       : FontWeight.normal,
-  //                                 ),
-  //                                 subtitle: Column(
-  //                                   spacing: scaleFontSize(4),
-  //                                   crossAxisAlignment:
-  //                                       CrossAxisAlignment.start,
-  //                                   children: [
-  //                                     TextWidget(
-  //                                       fontSize: 12,
-  //                                       text: 'ID: ${device.remoteId}',
-  //                                     ),
-  //                                     Row(
-  //                                       spacing: scaleFontSize(4),
-  //                                       children: [
-  //                                         Icon(
-  //                                           _getConnectionIcon(connectionState),
-  //                                           size: 12,
-  //                                           color: _getConnectionColor(
-  //                                             connectionState,
-  //                                           ),
-  //                                         ),
-  //                                         TextWidget(
-  //                                           text: _getConnectionText(
-  //                                             connectionState,
-  //                                           ),
-  //                                           fontSize: 12,
-  //                                           color: _getConnectionColor(
-  //                                             connectionState,
-  //                                           ),
-  //                                         ),
-  //                                       ],
-  //                                     ),
-  //                                   ],
-  //                                 ),
-  //                                 trailing: _getTrailingWidget(connectionState),
-  //                                 onTap: () {
-  //                                   if (connectionState ==
-  //                                       BluetoothConnectionState.disconnected) {
-  //                                     _connectToDevice(device);
-  //                                   }
-  //                                 },
-  //                               ),
-  //                             );
-  //                           },
-  //                         );
-  //                       },
-  //                       separatorBuilder: (BuildContext context, int index) {
-  //                         return Hr(width: double.infinity);
-  //                       },
-  //                     ),
-  //                   ),
-
-  //                   Padding(
-  //                     padding: EdgeInsets.all(scaleFontSize(16)),
-  //                     child: BtnWidget(
-  //                       gradient: linearGradient,
-  //                       onPressed: _printReceipt,
-  //                       title: "Print invoice",
-  //                       icon: Icon(
-  //                         Icons.print_rounded,
-  //                         size: scaleFontSize(24),
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ),
-  //         ),
-  //   );
-  // }
 }

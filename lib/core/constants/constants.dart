@@ -5,6 +5,8 @@ final kAppScaffoldMsgKey = GlobalKey<ScaffoldMessengerState>();
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
 
+enum LoadingType { circular, image, imageWithRing, pulse }
+
 const String kStatusNo = "No";
 const String kStatusYes = "Yes";
 

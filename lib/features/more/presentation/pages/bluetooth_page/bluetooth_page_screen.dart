@@ -3,21 +3,22 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
+import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_text_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
-import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/search_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
-import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
+import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_connect_manager.dart';
 import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_page_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_page_state.dart';
+import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_permission.dart';
+import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_stream_manager.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
@@ -33,635 +34,252 @@ class BluetoothPageScreen extends StatefulWidget {
 class BluetoothPageScreenState extends State<BluetoothPageScreen>
     with MessageMixin {
   late final BluetoothPageCubit _cubit;
-
-  // Connection management
-  final Map<String, BluetoothCharacteristic> _writeCharacteristics = {};
-  final Map<String, StreamSubscription<BluetoothConnectionState>>
-  _connectionSubscriptions = {};
-  final Map<String, int> _connectionRetryCount = {};
-  final Set<String> _connectingDevices = {};
-
-  // Stream subscriptions
-  StreamSubscription<List<ScanResult>>? _scanSubscription;
-  StreamSubscription<BluetoothAdapterState>? _adapterStateSubscription;
-  StreamSubscription<bool>? _scanningStateSubscription;
-
-  // Constants
-  static const Duration _scanTimeout = Duration(seconds: 2);
-  static const Duration _connectionTimeout = Duration(seconds: 3);
-  static const Duration _connectionRetryDelay = Duration(seconds: 2);
-  static const Duration _disconnectDelay = Duration(milliseconds: 500);
-  static const int _mtuSize = 512;
-  static const int _maxConnectionRetries = 3;
+  late final BluetoothConnectionManager _connectionManager;
+  late final BluetoothPermissionManager _permissionManager;
+  late final BluetoothStreamManager _streamManager;
 
   @override
   void initState() {
     super.initState();
+    _initializeManagers();
+    _initializePage();
+  }
+
+  @override
+  void dispose() {
+    _streamManager.dispose();
+    _connectionManager.dispose();
+    _cubit.close();
+    super.dispose();
+  }
+
+  // MARK: - Initialization
+  void _initializeManagers() {
     _cubit = BluetoothPageCubit();
-    _initializeBluetoothPage();
+    _connectionManager = BluetoothConnectionManager();
+    _permissionManager = BluetoothPermissionManager();
+    _streamManager = BluetoothStreamManager(
+      onAdapterStateChange: _handleAdapterStateChange,
+      onScanStateChange: _cubit.scaningBluetooth,
+      onScanResults: _cubit.handleScanResults,
+      onError: showErrorMessage,
+    );
   }
 
-  // @override
-  // void dispose() {
-  //   _cleanupResources();
-  //   super.dispose();
-  // }
-
-  /// Initialize the entire Bluetooth page
-  Future<void> _initializeBluetoothPage() async {
+  Future<void> _initializePage() async {
     try {
-      await _checkInitialBluetoothState();
-      await _initBluetooth();
-    } catch (e) {
-      debugPrint('Initialization error: $e');
-      showErrorMessage('Failed to initialize Bluetooth: $e');
-    }
-  }
-
-  /// Check initial Bluetooth state and show appropriate messages
-  Future<void> _checkInitialBluetoothState() async {
-    try {
-      _cubit.setBluetoothDevice(widget.bluetoothDevice);
-
-      if (!await FlutterBluePlus.isSupported) {
-        _cubit.setBluetoothAdapterState(BluetoothAdapterState.unavailable);
-        showErrorMessage('Bluetooth is not supported on this device');
-        return;
+      await _checkInitialState();
+      if (await _permissionManager.requestPermissions()) {
+        await _initializeBluetooth();
       }
-
-      // Get current adapter state with timeout
-      final currentState = await FlutterBluePlus.adapterState.first.timeout(
-        _connectionTimeout,
-      );
-      _cubit.setBluetoothAdapterState(currentState);
-
-      // Show appropriate feedback
-      _showInitialStateMessage(currentState);
     } catch (e) {
-      debugPrint('Initial state check error: $e');
-      showErrorMessage('Failed to check Bluetooth state: $e');
+      _handleError('Initialization failed', e);
     }
   }
 
-  /// Show message based on initial Bluetooth state
-  void _showInitialStateMessage(BluetoothAdapterState state) {
+  Future<void> _checkInitialState() async {
+    _cubit.setBluetoothDevice(widget.bluetoothDevice);
+
+    if (!await FlutterBluePlus.isSupported) {
+      _cubit.setBluetoothAdapterState(BluetoothAdapterState.unavailable);
+      showErrorMessage('Bluetooth is not supported on this device');
+      return;
+    }
+
+    final state = await FlutterBluePlus.adapterState.first.timeout(
+      const Duration(seconds: 3),
+    );
+    _cubit.setBluetoothAdapterState(state);
+    _showStateMessage(state);
+  }
+
+  void _showStateMessage(BluetoothAdapterState state) {
     switch (state) {
       case BluetoothAdapterState.on:
         showSuccessMessage(greeting('Bluetooth is enabled'));
-        break;
       case BluetoothAdapterState.off:
         showWarningMessage(
           greeting(
             'Bluetooth is disabled. Please enable it to scan for devices.',
           ),
         );
-        break;
       case BluetoothAdapterState.unavailable:
         showErrorMessage('Bluetooth is not available on this device');
-        break;
       default:
         break;
     }
   }
 
-  /// Initialize Bluetooth functionality
-  Future<void> _initBluetooth() async {
-    try {
-      final hasPermissions = await _checkAndRequestPermissions();
-      if (!hasPermissions) return;
+  Future<void> _initializeBluetooth() async {
+    _streamManager.setupStreams();
 
-      _setupBluetoothStreams();
-
-      if (_cubit.state.adapterState == BluetoothAdapterState.on) {
-        await _startScan();
-      }
-    } catch (e) {
-      debugPrint('Bluetooth init error: $e');
-      showErrorMessage('Failed to initialize Bluetooth: $e');
+    if (_cubit.state.adapterState == BluetoothAdapterState.on) {
+      await _startScan();
     }
   }
 
-  /// Check and request necessary permissions
-  Future<bool> _checkAndRequestPermissions() async {
-    final permissions = [
-      Permission.bluetoothScan,
-      Permission.bluetoothConnect,
-      Permission.bluetoothAdvertise,
-      Permission.location,
-    ];
+  // MARK: - Device Sorting and Connection Updates
+  Future<List<BluetoothDevice>> _sortDevicesByConnection(
+    List<BluetoothDevice> devices,
+  ) async {
+    final List<BluetoothDevice> connectedDevices = [];
+    final List<BluetoothDevice> disconnectedDevices = [];
 
-    try {
-      final statuses = await permissions.request();
-      final deniedPermissions = statuses.entries
-          .where((entry) => !entry.value.isGranted)
-          .map((entry) => entry.key)
-          .toList();
-
-      if (deniedPermissions.isNotEmpty) {
-        showWarningMessage(
-          'Some permissions were denied. Bluetooth functionality may be limited.',
+    for (final device in devices) {
+      try {
+        final connectionState = await device.connectionState.first.timeout(
+          const Duration(milliseconds: 500),
         );
-        return false;
+
+        if (connectionState == BluetoothConnectionState.connected) {
+          connectedDevices.add(device);
+        } else {
+          disconnectedDevices.add(device);
+        }
+      } catch (e) {
+        // If we can't get connection state, assume disconnected
+        disconnectedDevices.add(device);
       }
-      return true;
-    } catch (e) {
-      debugPrint('Permission error: $e');
-      showErrorMessage('Failed to request permissions: $e');
-      return false;
+    }
+
+    // Sort connected devices by name, then disconnected devices by name
+    connectedDevices.sort(
+      (a, b) => _getDeviceName(a).compareTo(_getDeviceName(b)),
+    );
+    disconnectedDevices.sort(
+      (a, b) => _getDeviceName(a).compareTo(_getDeviceName(b)),
+    );
+
+    return [...connectedDevices, ...disconnectedDevices];
+  }
+
+  Future<void> _refreshDeviceList() async {
+    final currentDevices = _cubit.state.devices ?? [];
+    if (currentDevices.isNotEmpty) {
+      final sortedDevices = await _sortDevicesByConnection(currentDevices);
+      _cubit.setListBluetoothDevice(sortedDevices);
     }
   }
 
-  /// Setup Bluetooth event streams
-  void _setupBluetoothStreams() {
-    _adapterStateSubscription = FlutterBluePlus.adapterState.listen(
-      _handleAdapterStateChange,
-      onError: (error) {
-        debugPrint('Adapter state error: $error');
-        showErrorMessage('Bluetooth adapter error: $error');
-      },
-    );
-
-    _scanningStateSubscription = FlutterBluePlus.isScanning.listen(
-      _cubit.scaningBluetooth,
-      onError: (error) {
-        debugPrint('Scanning state error: $error');
-        showErrorMessage('Scanning state error: $error');
-      },
-    );
-
-    _scanSubscription = FlutterBluePlus.scanResults.listen(
-      _cubit.handleScanResults,
-      onError: (error) {
-        debugPrint('Scan results error: $error');
-        showErrorMessage('Scan error: $error');
-      },
-    );
-  }
-
-  /// Handle Bluetooth adapter state changes
-  void _handleAdapterStateChange(BluetoothAdapterState state) {
-    _cubit.setBluetoothAdapterState(state);
-
-    switch (state) {
-      case BluetoothAdapterState.on:
-        showSuccessMessage(greeting('Bluetooth enabled'));
-        _startScan();
-        break;
-      case BluetoothAdapterState.off:
-        showErrorMessage(greeting('Bluetooth disabled'));
-        _cubit.scaningBluetooth(false);
-        _clearDevices();
-        break;
-      case BluetoothAdapterState.unavailable:
-        showErrorMessage('Bluetooth unavailable');
-        _clearDevices();
-        break;
-      default:
-        break;
-    }
-  }
-
-  /// Clear all devices and cleanup connections
-  void _clearDevices() {
-    _cubit.state.devices?.clear();
-    _cubit.setBluetoothDevice(null);
-    _cleanupConnectionSubscriptions();
-    _connectionRetryCount.clear();
-    _connectingDevices.clear();
-  }
-
-  /// Start Bluetooth device scan
+  // MARK: - Bluetooth Operations
   Future<void> _startScan() async {
     if (_cubit.state.adapterState != BluetoothAdapterState.on) return;
 
     try {
-      // Get bonded devices first
       await _addBondedDevices();
-
-      // Start scanning for new devices
       await FlutterBluePlus.startScan(
-        timeout: _scanTimeout,
+        timeout: const Duration(seconds: 2),
         androidUsesFineLocation: true,
       );
-
-      debugPrint('Bluetooth scan started');
     } catch (e) {
-      debugPrint('Scan start error: $e');
-      showErrorMessage('Failed to start Bluetooth scan: $e');
+      _handleError('Failed to start scan', e);
     }
   }
 
-  /// Add bonded devices to the list
   Future<void> _addBondedDevices() async {
     try {
       final bondedDevices = await FlutterBluePlus.bondedDevices;
       final currentDevices = _cubit.state.devices ?? [];
-      final filteredBondedDevices = bondedDevices
+
+      final newDevices = bondedDevices
           .where(
             (device) =>
-                !currentDevices.any((d) => d.remoteId == device.remoteId) &&
-                device.platformName.isNotEmpty,
+                device.platformName.isNotEmpty &&
+                !_isDuplicateDevice(device, currentDevices),
           )
           .toList();
 
-      if (filteredBondedDevices.isNotEmpty) {
-        final devices = List<BluetoothDevice>.from(currentDevices);
-        devices.addAll(filteredBondedDevices);
-        _cubit.setListBluetoothDevice(devices);
-        debugPrint('Added ${filteredBondedDevices.length} bonded devices');
+      if (newDevices.isNotEmpty) {
+        final devices = List<BluetoothDevice>.from(currentDevices)
+          ..addAll(newDevices);
+        final sortedDevices = await _sortDevicesByConnection(devices);
+        _cubit.setListBluetoothDevice(sortedDevices);
       }
     } catch (e) {
-      debugPrint('Bonded devices error: $e');
+      debugPrint('Failed to add bonded devices: $e');
     }
   }
 
-  /// FIXED: Main connection method with proper retry logic
-  Future<void> _connectToDevice(BluetoothDevice device) async {
-    final deviceId = device.remoteId.toString();
-    final deviceName = _getDeviceName(device);
+  // Check for duplicate devices based on name similarity and recent IDs
+  bool _isDuplicateDevice(
+    BluetoothDevice newDevice,
+    List<BluetoothDevice> existingDevices,
+  ) {
+    final newDeviceName = _getDeviceName(newDevice);
+    final newDeviceId = newDevice.remoteId.toString();
 
-    // Prevent multiple simultaneous connection attempts
-    if (_connectingDevices.contains(deviceId)) {
-      debugPrint('Connection already in progress for $deviceName');
-      return;
-    }
+    for (final existingDevice in existingDevices) {
+      final existingName = _getDeviceName(existingDevice);
+      final existingId = existingDevice.remoteId.toString();
 
-    debugPrint('Processing connection request for $deviceName');
-
-    try {
-      final connectionState = await device.connectionState.first.timeout(
-        const Duration(seconds: 2),
-      );
-
-      if (connectionState == BluetoothConnectionState.connected) {
-        // Device is connected - disconnect it
-        await _performDisconnection(device, deviceName);
-      } else {
-        // Device is disconnected - connect it
-        await _performConnectionWithRetry(device, deviceName);
+      // Same device ID - definitely duplicate
+      if (newDeviceId == existingId) {
+        return true;
       }
-    } catch (e) {
-      debugPrint('Connection state check error for $deviceName: $e');
-      await _performConnectionWithRetry(device, deviceName);
-    }
-  }
 
-  /// FIXED: Connection with proper retry mechanism
-  Future<void> _performConnectionWithRetry(
-    BluetoothDevice device,
-    String deviceName,
-  ) async {
-    final deviceId = device.remoteId.toString();
-    int currentRetry = _connectionRetryCount[deviceId] ?? 0;
-
-    // Check if we've exceeded max retries
-    if (currentRetry >= _maxConnectionRetries) {
-      showErrorMessage(
-        'Failed to connect to $deviceName after $_maxConnectionRetries attempts',
-      );
-      _connectionRetryCount[deviceId] = 0; // Reset for next time
-      return;
-    }
-
-    // Set connecting state
-    _connectingDevices.add(deviceId);
-    _cubit.setConnectingBluetooth(true);
-
-    try {
-      // Show retry message if this is not the first attempt
-      if (currentRetry > 0) {
-        showWarningMessage(
-          'Connection failed (attempt $currentRetry/$_maxConnectionRetries). Retrying...',
+      // Same name and similar MAC address pattern (likely randomized MAC)
+      if (newDeviceName == existingName &&
+          _isSimilarMacAddress(newDeviceId, existingId)) {
+        debugPrint(
+          'Potential duplicate device detected: $newDeviceName ($newDeviceId vs $existingId)',
         );
-        await Future.delayed(_connectionRetryDelay);
+        return true;
       }
+    }
 
-      // Increment retry count BEFORE attempting connection
-      _connectionRetryCount[deviceId] = currentRetry + 1;
+    return false;
+  }
 
-      // Attempt the actual connection
-      await _attemptConnection(device);
+  // Check if MAC addresses are similar (same vendor prefix or pattern)
+  bool _isSimilarMacAddress(String mac1, String mac2) {
+    // Remove colons and convert to uppercase
+    final cleanMac1 = mac1.replaceAll(':', '').toUpperCase();
+    final cleanMac2 = mac2.replaceAll(':', '').toUpperCase();
 
-      // Connection successful - reset retry count and update state
-      _connectionRetryCount[deviceId] = 0;
-      _cubit.setBluetoothDevice(device);
-      _cubit.setBluetoothActionState(BluetoothConnectionState.connected);
+    // Check if first 6 characters (vendor prefix) are the same
+    if (cleanMac1.length >= 6 && cleanMac2.length >= 6) {
+      final vendor1 = cleanMac1.substring(0, 6);
+      final vendor2 = cleanMac2.substring(0, 6);
 
-      // Setup connection monitoring
-      _setupConnectionMonitoring(device);
+      // Same vendor and similar pattern might indicate randomized MAC
+      if (vendor1 == vendor2) {
+        return true;
+      }
+    }
 
-      // Discover services
-      await _discoverServices(device);
+    return false;
+  }
 
-      showSuccessMessage('Connected to $deviceName');
+  Future<void> _connectToDevice(BluetoothDevice device) async {
+    try {
+      final result = await _connectionManager.handleConnection(
+        device: device,
+        onStateUpdate: (state) {
+          _cubit.setBluetoothActionState(state);
+          if (state == BluetoothConnectionState.connected) {
+            _cubit.setBluetoothDevice(device);
+            // Refresh the device list to move connected device to top
+            _refreshDeviceList();
+          } else {
+            _cubit.setBluetoothDevice(null);
+            // Refresh the device list to move disconnected device down
+            _refreshDeviceList();
+          }
+        },
+        onConnectingUpdate: _cubit.setConnectingBluetooth,
+        onMessage: (message, isError) {
+          isError ? showErrorMessage(message) : showSuccessMessage(message);
+        },
+      );
 
-      // Navigate back with connected device
-      if (mounted) {
+      if (result.isSuccess && mounted) {
         Navigator.pop(context, device);
       }
     } catch (e) {
-      debugPrint('Connection attempt failed for $deviceName: $e');
-
-      // Check if we should retry
-      if (_connectionRetryCount[deviceId]! < _maxConnectionRetries &&
-          _isRetryableError(e)) {
-        // Don't show error yet, let the retry mechanism handle it
-        await _performConnectionWithRetry(device, deviceName);
-      } else {
-        // Final failure - show error and reset
-        await _handleFinalConnectionFailure(device, e);
-      }
-    } finally {
-      _connectingDevices.remove(deviceId);
-      _cubit.setConnectingBluetooth(false);
+      _handleError('Connection failed', e);
     }
   }
 
-  /// Handle disconnection flow
-  Future<void> _performDisconnection(
-    BluetoothDevice device,
-    String deviceName,
-  ) async {
-    final deviceId = device.remoteId.toString();
-
-    try {
-      // Cancel connection subscription
-      await _connectionSubscriptions[deviceId]?.cancel();
-      _connectionSubscriptions.remove(deviceId);
-
-      // Small delay before disconnecting
-      await Future.delayed(_disconnectDelay);
-
-      // Disconnect device
-      await device.disconnect();
-
-      // Update state
-      _updateDisconnectedState(device);
-
-      showWarningMessage('Disconnected from $deviceName');
-    } catch (e) {
-      _updateDisconnectedState(device);
-      showErrorMessage('Error disconnecting from $deviceName');
-    }
-  }
-
-  /// FIXED: Connection attempt with proper timeout and cleanup
-  Future<void> _attemptConnection(BluetoothDevice device) async {
-    try {
-      // Ensure device is disconnected first
-      await _ensureDisconnected(device);
-
-      // Connect with timeout
-      await device
-          .connect(autoConnect: false, mtu: null)
-          .timeout(
-            _connectionTimeout,
-            onTimeout: () => throw TimeoutException(
-              'Connection timeout after ${_connectionTimeout.inSeconds}s',
-              _connectionTimeout,
-            ),
-          );
-
-      // Request higher MTU
-      await _requestMtu(device);
-    } catch (e) {
-      await _ensureDisconnected(device);
-      rethrow;
-    }
-  }
-
-  /// Ensure device is properly disconnected
-  Future<void> _ensureDisconnected(BluetoothDevice device) async {
-    try {
-      await device.disconnect();
-      await Future.delayed(_disconnectDelay);
-    } catch (e) {
-      debugPrint('Disconnect error (ignored): $e');
-    }
-  }
-
-  /// Request MTU with error handling
-  Future<void> _requestMtu(BluetoothDevice device) async {
-    try {
-      await device.requestMtu(_mtuSize);
-      debugPrint('MTU set to $_mtuSize for ${_getDeviceName(device)}');
-    } catch (e) {
-      debugPrint('MTU request failed: $e');
-      // Continue without failing - MTU is optional
-    }
-  }
-
-  /// Setup connection state monitoring
-  void _setupConnectionMonitoring(BluetoothDevice device) {
-    final deviceId = device.remoteId.toString();
-
-    // Cancel existing subscription
-    _connectionSubscriptions[deviceId]?.cancel();
-
-    // Setup new connection monitoring
-    _connectionSubscriptions[deviceId] = device.connectionState.listen(
-      (state) => _handleConnectionStateChange(device, state),
-      onError: (error) {
-        debugPrint(
-          'Connection state error for ${_getDeviceName(device)}: $error',
-        );
-        _handleUnexpectedDisconnection(device);
-      },
-    );
-  }
-
-  /// Handle final connection failure
-  Future<void> _handleFinalConnectionFailure(
-    BluetoothDevice device,
-    dynamic error,
-  ) async {
-    final deviceId = device.remoteId.toString();
-    final deviceName = _getDeviceName(device);
-
-    // Reset retry count
-    _connectionRetryCount[deviceId] = 0;
-
-    // Clean up resources
-    await _cleanupDeviceResources(device);
-
-    // Update state
-    _updateDisconnectedState(device);
-
-    // Show error message
-    final errorMessage = _getErrorMessage(error, deviceName);
-    showErrorMessage(errorMessage);
-  }
-
-  /// Determine if error is retryable
-  bool _isRetryableError(dynamic error) {
-    final errorString = error.toString().toLowerCase();
-    return error is TimeoutException ||
-        errorString.contains('133') ||
-        errorString.contains('android_specific_error') ||
-        errorString.contains('gatt_error') ||
-        errorString.contains('gatt') ||
-        errorString.contains('connection') ||
-        errorString.contains('timeout');
-  }
-
-  /// Get user-friendly error message
-  String _getErrorMessage(dynamic error, String deviceName) {
-    if (error.toString().contains('133')) {
-      return 'Connection failed: Device communication error. Try moving closer or restart Bluetooth.';
-    } else if (error is TimeoutException) {
-      return 'Connection failed: Timeout. Device may be out of range or busy.';
-    } else {
-      return 'Connection failed: Unable to connect to $deviceName';
-    }
-  }
-
-  /// Clean up device-specific resources
-  Future<void> _cleanupDeviceResources(BluetoothDevice device) async {
-    final deviceId = device.remoteId.toString();
-
-    await _connectionSubscriptions[deviceId]?.cancel();
-    _connectionSubscriptions.remove(deviceId);
-    _writeCharacteristics.remove(deviceId);
-    _connectingDevices.remove(deviceId);
-  }
-
-  /// Update state to disconnected
-  void _updateDisconnectedState(BluetoothDevice device) {
-    _cubit.setBluetoothActionState(BluetoothConnectionState.disconnected);
-    _cubit.setBluetoothDevice(null);
-    _cubit.setConnectingBluetooth(false);
-  }
-
-  /// Handle unexpected disconnections
-  void _handleUnexpectedDisconnection(BluetoothDevice device) {
-    final deviceName = _getDeviceName(device);
-    final deviceId = device.remoteId.toString();
-
-    _updateDisconnectedState(device);
-    _writeCharacteristics.remove(deviceId);
-    _connectionSubscriptions[deviceId]?.cancel();
-    _connectionSubscriptions.remove(deviceId);
-    _connectingDevices.remove(deviceId);
-
-    showWarningMessage('Lost connection to $deviceName');
-  }
-
-  /// Clear Bluetooth cache
-  Future<void> _clearBluetoothCache(BluetoothDevice device) async {
-    try {
-      await device.disconnect();
-      await Future.delayed(const Duration(milliseconds: 1000));
-      debugPrint('Cleared cache for ${_getDeviceName(device)}');
-    } catch (e) {
-      debugPrint('Cache clear failed: $e');
-    }
-  }
-
-  /// FIXED: Connection state change handler
-  void _handleConnectionStateChange(
-    BluetoothDevice device,
-    BluetoothConnectionState state,
-  ) {
-    final deviceName = _getDeviceName(device);
-
-    switch (state) {
-      case BluetoothConnectionState.connected:
-        if (!_cubit.state.isConnected) {
-          _cubit.setBluetoothActionState(BluetoothConnectionState.connected);
-          _cubit.setBluetoothDevice(device);
-          showSuccessMessage('Connected to $deviceName');
-          _discoverServices(device);
-
-          if (mounted) {
-            Navigator.pop(context, device);
-          }
-        }
-        break;
-
-      case BluetoothConnectionState.disconnected:
-        _handleUnexpectedDisconnection(device);
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  /// Discover device services and characteristics
-  Future<void> _discoverServices(BluetoothDevice device) async {
-    try {
-      final services = await device.discoverServices();
-      BluetoothCharacteristic? writeCharacteristic;
-
-      // Find the first writable characteristic
-      outerLoop:
-      for (final service in services) {
-        for (final characteristic in service.characteristics) {
-          if (characteristic.properties.write ||
-              characteristic.properties.writeWithoutResponse) {
-            writeCharacteristic = characteristic;
-            break outerLoop;
-          }
-        }
-      }
-
-      if (writeCharacteristic != null) {
-        _writeCharacteristics[device.remoteId.toString()] = writeCharacteristic;
-        debugPrint(
-          'Found writable characteristic for ${_getDeviceName(device)}',
-        );
-      } else {
-        showWarningMessage(
-          'No writable characteristic found on ${_getDeviceName(device)}',
-        );
-      }
-    } catch (e) {
-      debugPrint('Service discovery error: $e');
-      showErrorMessage('Service discovery failed: $e');
-    }
-  }
-
-  /// Cleanup all resources
-  Future<void> _cleanupResources() async {
-    try {
-      // await _cleanupBluetooth();
-      _cubit.close();
-    } catch (e) {
-      debugPrint('Cleanup error: $e');
-    }
-  }
-
-  /// Clean up Bluetooth resources
-  // Future<void> _cleanupBluetooth() async {
-  //   try {
-  //     await Future.wait([
-  //       _scanSubscription?.cancel() ?? Future.value(),
-  //       _adapterStateSubscription?.cancel() ?? Future.value(),
-  //       _scanningStateSubscription?.cancel() ?? Future.value(),
-  //       FlutterBluePlus.stopScan(),
-  //     ]);
-  //     _cleanupConnectionSubscriptions();
-  //   } catch (e) {
-  //     debugPrint('Bluetooth cleanup error: $e');
-  //   }
-  // }
-
-  /// Clean up all connection subscriptions
-  void _cleanupConnectionSubscriptions() {
-    for (final subscription in _connectionSubscriptions.values) {
-      subscription.cancel();
-    }
-    _connectionSubscriptions.clear();
-  }
-
-  /// Get device name with fallback
-  String _getDeviceName(BluetoothDevice device) {
-    return device.platformName.isNotEmpty
-        ? device.platformName
-        : 'Unknown Device';
-  }
-
-  /// Turn on Bluetooth
   Future<void> turnOnBluetooth() async {
     try {
       if (await FlutterBluePlus.isSupported) {
@@ -672,35 +290,67 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
     }
   }
 
-  // UI Helper methods
-  Color _getDeviceStatusColor(bool isConnected) {
-    return isConnected ? success : primary;
+  // MARK: - Event Handlers
+  void _handleAdapterStateChange(BluetoothAdapterState state) {
+    _cubit.setBluetoothAdapterState(state);
+
+    switch (state) {
+      case BluetoothAdapterState.on:
+        showSuccessMessage(greeting('Bluetooth enabled'));
+        _startScan();
+      case BluetoothAdapterState.off:
+        showErrorMessage(greeting('Bluetooth disabled'));
+        _cubit.scaningBluetooth(false);
+        _clearDevices();
+      case BluetoothAdapterState.unavailable:
+        showErrorMessage('Bluetooth unavailable');
+        _clearDevices();
+      default:
+        break;
+    }
   }
 
-  IconData _getConnectionIcon(BluetoothConnectionState state) {
-    return switch (state) {
-      BluetoothConnectionState.connected => Icons.link,
-      _ => Icons.link_off,
-    };
+  void _clearDevices() {
+    _cubit.state.devices?.clear();
+    _cubit.setBluetoothDevice(null);
+    _connectionManager.clearAll();
   }
 
-  Color _getConnectionColor(BluetoothConnectionState state) {
-    return switch (state) {
-      BluetoothConnectionState.connected => success,
-      _ => textColor50,
-    };
+  void _handleError(String message, dynamic error) {
+    debugPrint('$message: $error');
+    showErrorMessage('$message: ${error.toString()}');
   }
+
+  // MARK: - UI Helpers
+  String _getDeviceName(BluetoothDevice device) =>
+      device.platformName.isNotEmpty ? device.platformName : 'Unknown Device';
+
+  Color _getButtonColor(bool isConnected) => isConnected ? red : mainColor;
+  Color _getBackgroundColor(bool isConnected) => isConnected ? success : white;
+  Color _getIconBackgroundColor(bool isConnected) =>
+      isConnected ? success.withValues(alpha: 0.6) : primary;
+  Color _getTextColor(bool isConnected) => isConnected ? white : textColor;
+
+  IconData _getConnectionIcon(BluetoothConnectionState state) =>
+      switch (state) {
+        BluetoothConnectionState.connected => Icons.link,
+        _ => Icons.link_off,
+      };
+
+  Color _getConnectionColor(BluetoothConnectionState state) => switch (state) {
+    BluetoothConnectionState.connected => white,
+    _ => textColor50,
+  };
 
   String _getConnectionText(BluetoothConnectionState state, bool isConnecting) {
     if (isConnecting) return 'Connecting...';
-
     return switch (state) {
       BluetoothConnectionState.connected => 'Connected',
-      BluetoothConnectionState.disconnected => 'Tap to connect',
       _ => 'Tap to connect',
     };
   }
 
+  // MARK: - Build Methods
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -709,99 +359,85 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
         onBack: () => Navigator.pop(context, _cubit.state.connectedDevice),
         heightBottom: heightBottomSearch,
         bottom: SearchWidget(
-          onChanged: (value) => debugPrint("Search: $value"),
+          onChanged: (value) => _cubit.onSearchBlueTooth(value),
         ),
       ),
       body: BlocBuilder<BluetoothPageCubit, BluetoothPageState>(
         bloc: _cubit,
-        builder: (context, state) {
-          if (state.isLoading) {
-            return const LoadingPageWidget();
-          }
-
-          if (state.adapterState == BluetoothAdapterState.off) {
-            return _buildBluetoothOffMessage();
-          }
-
-          if (state.adapterState == BluetoothAdapterState.unavailable) {
-            return _buildBluetoothUnavailableMessage();
-          }
-
-          if ((state.devices?.isEmpty ?? true) && !state.isScanning) {
-            return _buildNoDevicesMessage();
-          }
-
-          return _buildDeviceList(state);
-        },
+        builder: (context, state) => _buildBody(state),
       ),
     );
   }
 
-  Widget _buildBluetoothOffMessage() {
+  Widget _buildBody(BluetoothPageState state) {
+    if (state.isLoading) {
+      return LoadingPageWidget(label: "Scanning Bluetooth...");
+    }
+
+    return switch (state.adapterState) {
+      BluetoothAdapterState.off => _buildBluetoothOffMessage(),
+      BluetoothAdapterState.unavailable => _buildBluetoothUnavailableMessage(),
+      _ => _buildContent(state),
+    };
+  }
+
+  Widget _buildContent(BluetoothPageState state) {
+    if ((state.devices?.isEmpty ?? true) && !state.isScanning) {
+      return _buildNoDevicesMessage();
+    }
+    return _buildDeviceList(state);
+  }
+
+  Widget _buildBluetoothOffMessage() => _buildCenteredMessage(
+    icon: Icons.bluetooth_disabled,
+    iconColor: Colors.grey,
+    title: 'Bluetooth is turned off',
+    subtitle: 'Please enable Bluetooth to scan for devices',
+    actionTitle: greeting("Enable Bluetooth"),
+    onAction: turnOnBluetooth,
+  );
+
+  Widget _buildBluetoothUnavailableMessage() => _buildCenteredMessage(
+    icon: Icons.bluetooth_disabled,
+    iconColor: Colors.red,
+    title: 'Bluetooth not supported',
+    subtitle: 'This device does not support Bluetooth',
+  );
+
+  Widget _buildNoDevicesMessage() => _buildCenteredMessage(
+    icon: Icons.bluetooth_searching,
+    iconColor: Colors.grey,
+    title: 'No devices found',
+    subtitle: 'Pull down to refresh and scan again',
+    actionTitle: 'Scan for Devices',
+    onAction: _startScan,
+  );
+
+  Widget _buildCenteredMessage({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    String? actionTitle,
+    VoidCallback? onAction,
+  }) {
     return Center(
       child: Column(
         spacing: scaleFontSize(20),
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.bluetooth_disabled, size: 64, color: Colors.grey),
-          const TextWidget(
-            text: 'Bluetooth is turned off',
-            fontSize: 18,
-            color: textColor,
-          ),
-          const TextWidget(
-            text: 'Please enable Bluetooth to scan for devices',
-            color: textColor50,
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: scaleFontSize(16)),
-            child: BtnWidget(
-              gradient: linearGradient,
-              onPressed: turnOnBluetooth,
-              title: greeting("Enable Bluetooth"),
+          Icon(icon, size: 64, color: iconColor),
+          TextWidget(text: title, fontSize: 18, color: textColor),
+          TextWidget(text: subtitle, color: textColor50),
+          if (actionTitle != null && onAction != null)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: scaleFontSize(16)),
+              child: BtnWidget(
+                gradient: linearGradient,
+                onPressed: onAction,
+                title: actionTitle,
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBluetoothUnavailableMessage() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.bluetooth_disabled, size: 64, color: Colors.red),
-          Helpers.gapH(scaleFontSize(16)),
-          const TextWidget(
-            text: 'Bluetooth not supported',
-            fontSize: 18,
-            color: error,
-          ),
-          const TextWidget(text: 'This device does not support Bluetooth'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoDevicesMessage() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.bluetooth_searching, size: 64, color: Colors.grey),
-          Helpers.gapH(scaleFontSize(16)),
-          const TextWidget(text: 'No devices found', fontSize: 18),
-          const TextWidget(
-            text: 'Pull down to refresh and scan again',
-            color: textColor,
-          ),
-          Helpers.gapH(scaleFontSize(20)),
-          BtnWidget(
-            gradient: linearGradient,
-            onPressed: _startScan,
-            title: 'Scan for Devices',
-          ),
         ],
       ),
     );
@@ -809,24 +445,19 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
 
   Widget _buildDeviceList(BluetoothPageState state) {
     return RefreshIndicator(
-      onRefresh: _startScan,
-      child: ListView.separated(
+      onRefresh: () async {
+        await _startScan();
+        await _refreshDeviceList(); // Also refresh the sorting
+      },
+      child: ListView.builder(
         itemCount: state.devices?.length ?? 0,
         itemBuilder: (context, index) =>
-            _buildDeviceListItem(state.devices![index], state),
-        separatorBuilder: (context, index) => const Hr(width: double.infinity),
+            _buildDeviceListItem(state.devices![index]),
       ),
     );
   }
 
-  Widget _buildDeviceListItem(
-    BluetoothDevice device,
-    BluetoothPageState state,
-  ) {
-    final deviceId = device.remoteId.toString();
-    final retryCount = _connectionRetryCount[deviceId] ?? 0;
-    final isConnecting = _connectingDevices.contains(deviceId);
-
+  Widget _buildDeviceListItem(BluetoothDevice device) {
     return StreamBuilder<BluetoothConnectionState>(
       stream: device.connectionState,
       initialData: BluetoothConnectionState.disconnected,
@@ -836,68 +467,186 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
         final deviceName = _getDeviceName(device);
         final isConnected =
             connectionState == BluetoothConnectionState.connected;
+        final isConnecting = _connectionManager.isConnecting(
+          device.remoteId.toString(),
+        );
+        final retryCount = _connectionManager.getRetryCount(
+          device.remoteId.toString(),
+        );
 
-        return ListTile(
-          minVerticalPadding: 4,
-          leading: ChipWidget(
-            borderColor: Colors.transparent,
-            horizontal: 1,
-            radius: 16,
-            bgColor: _getDeviceStatusColor(isConnected).withValues(alpha: 0.1),
-            child: Icon(
-              isConnecting ? Icons.bluetooth_searching : Icons.bluetooth,
-              size: scaleFontSize(20),
-              color: _getDeviceStatusColor(isConnected),
+        return BoxWidget(
+          margin: EdgeInsets.symmetric(
+            horizontal: scaleFontSize(16),
+            vertical: scaleFontSize(4),
+          ),
+          isBoxShadow: false,
+          color: _getBackgroundColor(isConnected),
+          child: ListTile(
+            minVerticalPadding: 16,
+            leading: _buildDeviceIcon(isConnected, isConnecting),
+            title: _buildDeviceTitle(deviceName, isConnected),
+            subtitle: _buildDeviceSubtitle(
+              device,
+              connectionState,
+              isConnecting,
+              retryCount,
             ),
+            trailing: _buildDeviceAction(
+              isConnected,
+              isConnecting,
+              () => _connectToDevice(device),
+            ),
+            onTap: () => _connectToDevice(device),
           ),
-          title: TextWidget(
-            text: deviceName,
-            fontWeight: isConnected ? FontWeight.bold : FontWeight.normal,
-          ),
-          subtitle: Column(
-            spacing: scaleFontSize(4),
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextWidget(fontSize: 12, text: 'ID: ${device.remoteId}'),
-              Row(
-                spacing: scaleFontSize(4),
-                children: [
-                  Icon(
-                    _getConnectionIcon(connectionState),
-                    size: 12,
-                    color: _getConnectionColor(connectionState),
-                  ),
-                  TextWidget(
-                    text: _getConnectionText(connectionState, isConnecting),
-                    fontSize: 12,
-                    color: _getConnectionColor(connectionState),
-                  ),
-                ],
-              ),
-              if (retryCount > 0)
-                TextWidget(
-                  text: 'Retry attempt: $retryCount/$_maxConnectionRetries',
-                  fontSize: 10,
-                  color: Colors.orange,
-                ),
-            ],
-          ),
-          trailing: isConnecting
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : BtnTextWidget(
-                  onPressed: () => _connectToDevice(device),
-                  child: TextWidget(
-                    text: isConnected ? "Disconnect" : "Connect",
-                    color: _getDeviceStatusColor(isConnected),
-                  ),
-                ),
-          onTap: () => _connectToDevice(device),
         );
       },
     );
   }
+
+  Widget _buildDeviceIcon(bool isConnected, bool isConnecting) {
+    return ChipWidget(
+      borderColor: Colors.transparent,
+      horizontal: 0,
+      vertical: 10,
+      radius: 10,
+      bgColor: _getIconBackgroundColor(isConnected),
+      child: Icon(
+        isConnected ? Icons.bluetooth_searching : Icons.bluetooth,
+        size: scaleFontSize(20),
+        color: white,
+      ),
+    );
+  }
+
+  Widget _buildDeviceTitle(String deviceName, bool isConnected) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: scaleFontSize(6)),
+      child: TextWidget(
+        text: deviceName,
+        fontWeight: FontWeight.bold,
+        color: _getTextColor(isConnected),
+      ),
+    );
+  }
+
+  Widget _buildDeviceSubtitle(
+    BluetoothDevice device,
+    BluetoothConnectionState connectionState,
+    bool isConnecting,
+    int retryCount,
+  ) {
+    return Column(
+      spacing: scaleFontSize(4),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextWidget(
+          fontSize: 12,
+          text: 'ID: ${device.remoteId}',
+          color: _getTextColor(
+            connectionState == BluetoothConnectionState.connected,
+          ),
+        ),
+        Row(
+          spacing: scaleFontSize(4),
+          children: [
+            Icon(
+              _getConnectionIcon(connectionState),
+              size: 12,
+              color: _getConnectionColor(connectionState),
+            ),
+            TextWidget(
+              text: _getConnectionText(connectionState, isConnecting),
+              fontSize: 12,
+              color: _getConnectionColor(connectionState),
+            ),
+          ],
+        ),
+        // Show device type/info if available
+        if (_getDeviceTypeInfo(device).isNotEmpty)
+          TextWidget(
+            text: _getDeviceTypeInfo(device),
+            fontSize: 10,
+            color: _getTextColor(
+              connectionState == BluetoothConnectionState.connected,
+            ).withValues(alpha: .7),
+          ),
+        if (retryCount > 0)
+          TextWidget(
+            text: 'Retry attempt: $retryCount/3',
+            fontSize: 10,
+            color: Colors.orange,
+          ),
+      ],
+    );
+  }
+
+  // Get additional device information to help distinguish similar devices
+  String _getDeviceTypeInfo(BluetoothDevice device) {
+    final deviceName = device.platformName.toLowerCase();
+
+    if (deviceName.contains('airpods') || deviceName.contains('earbud')) {
+      return 'Audio • Earbuds';
+    } else if (deviceName.contains('speaker') ||
+        deviceName.contains('jbl') ||
+        deviceName.contains('bose') ||
+        deviceName.contains('sony')) {
+      return 'Audio • Speaker';
+    } else if (deviceName.contains('watch') || deviceName.contains('band')) {
+      return 'Wearable • Watch';
+    } else if (deviceName.contains('phone') ||
+        deviceName.contains('iphone') ||
+        deviceName.contains('samsung')) {
+      return 'Device • Phone';
+    } else if (deviceName.contains('laptop') ||
+        deviceName.contains('macbook') ||
+        deviceName.contains('pc')) {
+      return 'Device • Computer';
+    } else if (deviceName.contains('mouse') ||
+        deviceName.contains('keyboard')) {
+      return 'Input • Peripheral';
+    } else if (deviceName.contains('car') || deviceName.contains('auto')) {
+      return 'Vehicle • Car Audio';
+    }
+
+    return 'Bluetooth Device';
+  }
+
+  Widget _buildDeviceAction(
+    bool isConnected,
+    bool isConnecting,
+    VoidCallback onPressed,
+  ) {
+    if (isConnecting) {
+      return const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    return BtnTextWidget(
+      rounded: 16,
+      bgColor: _getButtonColor(isConnected),
+      onPressed: onPressed,
+      child: TextWidget(
+        fontWeight: FontWeight.w500,
+        text: isConnected ? "Disconnect" : "Connect",
+        color: white,
+      ),
+    );
+  }
+}
+
+// MARK: - Supporting Classes
+class ConnectionResult {
+  final bool isSuccess;
+  final String? errorMessage;
+
+  ConnectionResult._({required this.isSuccess, this.errorMessage});
+
+  factory ConnectionResult.success() => ConnectionResult._(isSuccess: true);
+  factory ConnectionResult.failure(String message) =>
+      ConnectionResult._(isSuccess: false, errorMessage: message);
+  factory ConnectionResult.alreadyConnecting() =>
+      ConnectionResult._(isSuccess: false, errorMessage: 'Already connecting');
 }

@@ -18,12 +18,8 @@ import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class SaleHistoryDetailBox extends StatelessWidget {
-  const SaleHistoryDetailBox({
-    super.key,
-    required this.header,
-    required this.lines,
-  });
-  final PosSalesHeader header;
+  const SaleHistoryDetailBox({super.key, this.header, required this.lines});
+  final PosSalesHeader? header;
   final List<PosSalesLine> lines;
 
   @override
@@ -50,17 +46,17 @@ class SaleHistoryDetailBox extends StatelessWidget {
                 children: [
                   TextWidget(
                     fontWeight: FontWeight.bold,
-                    text: header.no ?? "",
+                    text: header?.no ?? "",
                     fontSize: 18,
                   ),
                   ChipWidget(
                     ishadowColor: false,
                     fontSize: 12,
                     vertical: 8.scale,
-                    label: header.status?.toUpperCase() ?? "",
-                    colorText: getStatusColor(header.status),
+                    label: header?.status?.toUpperCase() ?? "",
+                    colorText: getStatusColor(header?.status),
                     bgColor: getStatusColor(
-                      header.status,
+                      header?.status,
                     ).withValues(alpha: .2),
                   ),
                 ],
@@ -68,31 +64,31 @@ class SaleHistoryDetailBox extends StatelessWidget {
               TextWidget(
                 fontWeight: FontWeight.w500,
                 color: textColor50,
-                text: header.documentDate ?? "",
+                text: header?.documentDate ?? "",
               ),
             ],
           ),
           RowBoxTextWidget(
             lable1: greeting("customer").toUpperCase(),
-            value1: header.customerName ?? "",
+            value1: header?.customerName ?? "",
             label2: greeting("Ship to name").toUpperCase(),
-            value2: header.shipToName ?? "",
+            value2: header?.shipToName ?? "",
           ),
           RowBoxTextWidget(
             lable1: greeting("document_date").toUpperCase(),
-            value1: header.documentDate ?? "",
+            value1: header?.documentDate ?? "",
             label2: greeting("ship_date").toUpperCase(),
-            value2: header.requestShipmentDate ?? "",
+            value2: header?.requestShipmentDate ?? "",
           ),
-          if ((header.shipToAddress ?? "").isNotEmpty)
+          if ((header?.shipToAddress ?? "").isNotEmpty)
             RowBoxTextWidget(
               lable1: greeting("ship to address").toUpperCase(),
-              value1: header.shipToAddress ?? "",
+              value1: header?.shipToAddress ?? "",
             ),
-          if ((header.shipToAddress2 ?? "").isNotEmpty)
+          if ((header?.shipToAddress2 ?? "").isNotEmpty)
             RowBoxTextWidget(
               lable1: greeting("ship to address").toUpperCase(),
-              value1: header.shipToAddress2 ?? "",
+              value1: header?.shipToAddress2 ?? "",
             ),
           BoxWidget(
             color: grey20,
@@ -108,9 +104,9 @@ class SaleHistoryDetailBox extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
                 TextWidget(
-                  text: header.amount != null
+                  text: header?.amount != null
                       ? Helpers.formatNumber(
-                          header.amount,
+                          header?.amount,
                           option: FormatType.amount,
                         )
                       : "0.00",
@@ -155,7 +151,7 @@ class SaleHistoryDetailBox extends StatelessWidget {
                   ),
                 ),
                 TextWidget(
-                  text: "${greeting("order_items")} (${lines.length})",
+                  text: "${greeting("order_items")} (${lines?.length})",
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
