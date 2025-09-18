@@ -41,18 +41,20 @@ class HeaderWidget extends StatelessWidget {
                 bgColor: bgIcon,
                 child: icon,
               ),
-              Column(
-                spacing: scaleFontSize(4),
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextWidget(
-                    text: title,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  TextWidget(text: subtitle),
-                ],
+              Expanded(
+                child: Column(
+                  spacing: scaleFontSize(4),
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextWidget(
+                      text: title,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    TextWidget(text: subtitle),
+                  ],
+                ),
               ),
             ],
           ),

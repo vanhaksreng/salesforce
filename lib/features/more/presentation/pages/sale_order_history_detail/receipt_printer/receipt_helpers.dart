@@ -28,7 +28,6 @@ class ReceiptHelpers {
 
   static Future<ReceiptPreview?> generateReceiptPreview(
     List<StyledTextSegment> segments,
-    // Uint8List? logoBytes,
   ) async {
     final profile = await CapabilityProfile.load();
     final generator = Generator(PaperSize.mm80, profile);
@@ -47,6 +46,17 @@ class ReceiptHelpers {
     final bytes = generator.image(bwImage) + generator.feed(1);
 
     return ReceiptPreview(bytes: bytes, image: bwImage);
+  }
+
+  static String composeReceiptLine(String label, String value, int lineWidth) {
+    final maxValueLen =
+        lineWidth - label.runes.length - 1; // leave at least 1 space
+    if (value.runes.length > maxValueLen) {
+      value = value.substring(0, maxValueLen); // truncate
+    }
+    final totalLen = label.runes.length + value.runes.length;
+    final padding = totalLen < lineWidth ? ' ' * (lineWidth - totalLen) : ' ';
+    return label + padding + value;
   }
 }
 
@@ -71,6 +81,10 @@ class StyledTextSegment {
   final int maxline;
   final bool isRow;
   final double? rowHeight;
+  final Uint8List? image; // new field for image bytes
+  final double? imageWidth; // optional custom width
+  final double? imageHeight; // optional custom height
+  final TextAlign? textAlign; // optional custom height
 
   StyledTextSegment({
     required this.text,
@@ -80,6 +94,10 @@ class StyledTextSegment {
     this.maxline = 2,
     this.isRow = false,
     this.rowHeight,
+    this.image,
+    this.imageWidth,
+    this.imageHeight,
+    this.textAlign,
   });
 }
 

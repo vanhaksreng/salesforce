@@ -1,8 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:flutter/painting.dart';
 import 'package:image/image.dart' as img;
 import 'package:http/http.dart' as http;
+import 'package:salesforce/core/enums/enums.dart' as format;
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
@@ -29,6 +31,14 @@ class ReceiptMm80 {
           if (decodedImage != null) {
             final resizedImage = img.copyResize(decodedImage, width: 384);
             logoBytes = img.encodePng(resizedImage);
+            segments.add(
+              StyledTextSegment(
+                text: '',
+                image: logoBytes,
+                imageWidth: 120,
+                imageHeight: 120,
+              ),
+            );
           }
         }
       } catch (e) {
@@ -41,38 +51,57 @@ class ReceiptMm80 {
         StyledTextSegment(
           text: companyInfo?.name ?? "",
           style: KhmerTextStyle.bold,
+          textAlign: TextAlign.center,
           fontSize: KhmerFontSize.large,
         ),
       );
     }
-
-    // Company details
     if (companyInfo?.address != null) {
       segments.add(
-        StyledTextSegment(text: "Address : ${companyInfo?.address}"),
+        StyledTextSegment(
+          text: companyInfo?.address ?? "",
+          textAlign: TextAlign.center,
+        ),
       );
     }
     if (companyInfo?.email != null) {
-      segments.add(StyledTextSegment(text: "Email : ${companyInfo?.email}"));
+      segments.add(
+        StyledTextSegment(
+          text: "Email : ${companyInfo?.email}",
+          textAlign: TextAlign.center,
+          rowHeight: 20,
+        ),
+      );
     }
 
-    // Customer and invoice details
     segments.add(
       StyledTextSegment(
-        text: "Customer : ${detail?.header.customerName ?? ''}",
+        text: ReceiptHelpers.composeReceiptLine(
+          "Customer :",
+          detail?.header.customerName ?? '',
+          20,
+        ),
       ),
     );
     segments.add(
-      StyledTextSegment(text: "Date : ${detail?.header.documentDate ?? ''}"),
-    );
-    segments.add(
-      StyledTextSegment(text: "Invoice No : ${detail?.header.no ?? ''}"),
+      StyledTextSegment(
+        text: ReceiptHelpers.composeReceiptLine(
+          "Date :",
+          detail?.header.documentDate ?? '',
+          20,
+        ),
+      ),
     );
     segments.add(
       StyledTextSegment(
-        text: "Invoice Type : ${detail?.header.documentType ?? ''}",
+        text: ReceiptHelpers.composeReceiptLine(
+          "Invoice No :",
+          detail?.header.no ?? '',
+          20,
+        ),
       ),
     );
+
     segments.add(StyledTextSegment(text: "-" * numberSign));
     segments.add(
       StyledTextSegment(
@@ -107,22 +136,56 @@ class ReceiptMm80 {
 
     segments.add(StyledTextSegment(text: "=" * (numberSign - 38)));
 
-    // Total Amount
+    final disPercStr = Helpers.formatNumberLink(
+      detail?.header.priceIncludeVat ?? '',
+      option: format.FormatType.percentage,
+    );
+    final disPer = ReceiptHelpers.composeReceiptLine(
+      'Discount (%) :',
+      disPercStr,
+      numberSign - 30,
+    );
     segments.add(
       StyledTextSegment(
-        text: " | | | |Total Amount|${detail?.header.amount ?? ''}",
-        style: KhmerTextStyle.bold,
+        text: disPer,
         fontSize: KhmerFontSize.large,
-        isRow: true,
+        isRow: false,
       ),
     );
 
-    // Thank you message
+    final totalStr = Helpers.formatNumberLink(detail?.header.amount ?? '');
+    final total = ReceiptHelpers.composeReceiptLine(
+      'Total Amount :',
+      totalStr,
+      numberSign - 30,
+    );
+
     segments.add(
       StyledTextSegment(
+        text: total,
         style: KhmerTextStyle.bold,
         fontSize: KhmerFontSize.large,
-        text: "អរគុណសម្រាប់ការជាវនៅហាងរបស់យើង",
+        isRow: false,
+        rowHeight: 20,
+      ),
+    );
+
+    segments.add(
+      StyledTextSegment(
+        style: KhmerTextStyle.normal,
+        textAlign: TextAlign.center,
+        rowHeight: 20,
+        text:
+            "Thank you for shopping with us. We look forward to serving you again! \u{1F64F}\u2764",
+      ),
+    );
+
+    segments.add(
+      StyledTextSegment(
+        fontSize: KhmerFontSize.small,
+        style: KhmerTextStyle.normal,
+        textAlign: TextAlign.center,
+        text: "Powered by Blue Technology Co., Ltd.",
       ),
     );
 
@@ -136,7 +199,7 @@ class ReceiptMm80 {
     required dynamic price,
     required dynamic discount,
     required dynamic amount,
-    int maxDescLength = 18, // characters per line for description
+    int maxDescLength = 18,
   }) {
     double p = Helpers.toDouble(price);
     double d = Helpers.toDouble(discount);
@@ -200,22 +263,6 @@ class ReceiptMm80 {
     final profile = await CapabilityProfile.load();
     final generator = Generator(paper, profile);
     List<int> bytes = [];
-
-    // if (companyInfo != null && companyInfo.logo128 != null) {
-    //   try {
-    //     final response = await http.get(Uri.parse(companyInfo.logo128 ?? ""));
-    //     if (response.statusCode == 200) {
-    //       final imageBytes = response.bodyBytes;
-    //       final decodedImage = img.decodeImage(imageBytes);
-    //       if (decodedImage != null) {
-    //         final resizedImage = img.copyResize(decodedImage, width: 384);
-    //         bytes += generator.image(resizedImage);
-    //       }
-    //     }
-    //   } catch (e) {
-    //     Logger.log(e);
-    //   }
-    // }
 
     final segments = await buildReceiptSegments(
       detail: detail,

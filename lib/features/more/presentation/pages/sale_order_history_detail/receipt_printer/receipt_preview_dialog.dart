@@ -8,7 +8,6 @@ import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_helpers.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_mm80.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
@@ -90,7 +89,7 @@ class ReceiptPreviewDialog extends StatelessWidget {
           const SizedBox(width: 12),
           const TextWidget(
             text: 'Receipt Preview',
-            fontSize: 20,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
             wordSpacing: 0.5,
           ),

@@ -127,27 +127,6 @@ class _SaleOrderHistoryDetailScreenState
     }
   }
 
-  // Future<void> _sendDataInChunks(
-  //   BluetoothCharacteristic characteristic,
-  //   List<int> data, {
-  //   int chunkSize = 182, // smaller is smoother
-  // }) async {
-  //   for (var i = 0; i < data.length; i += chunkSize) {
-  //     final end = (i + chunkSize < data.length) ? i + chunkSize : data.length;
-  //     final chunk = data.sublist(i, end);
-
-  //     try {
-  //       await characteristic.write(chunk, withoutResponse: true);
-  //     } catch (e) {
-  //       await Future.delayed(const Duration(milliseconds: 20));
-  //       await characteristic.write(chunk, withoutResponse: true);
-  //     }
-
-  //     // Longer delay helps smoothness
-  //     await Future.delayed(const Duration(milliseconds: 20));
-  //   }
-  // }
-
   Future<void> _sendDataInChunks(
     BluetoothCharacteristic characteristic,
     List<int> data, {
@@ -218,7 +197,7 @@ class _SaleOrderHistoryDetailScreenState
 
           Helpers.gapW(appSpace),
         ],
-        heightBottom: scaleFontSize(30),
+        heightBottom: scaleFontSize(40),
         bottom: _buildStatusConnect(),
       ),
       body:
@@ -234,21 +213,30 @@ class _SaleOrderHistoryDetailScreenState
   Widget _buildStatusConnect() {
     return BoxWidget(
       isBoxShadow: false,
-      color: success,
+      width: double.infinity,
+      rounding: 0,
       padding: EdgeInsets.symmetric(
-        horizontal: scaleFontSize(16),
+        horizontal: scaleFontSize(8),
         vertical: scaleFontSize(8),
       ),
-      isRounding: false,
-      width: double.infinity,
+      color: success,
+
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          TextWidget(color: white, text: "Connecting bluetooth "),
-          // BtnTextWidget(
-          //   onPressed: () {},
-          //   child: TextWidget(text: "Disconnect", color: red),
-          // ),
+          Icon(
+            Icons.bluetooth_audio,
+            color: Colors.white,
+            size: scaleFontSize(16),
+          ),
+          Helpers.gapW(8),
+          Expanded(
+            child: TextWidget(
+              text: "Connected to Bluetooth ${bluetoothDevice.platformName}",
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+            ),
+          ),
         ],
       ),
     );

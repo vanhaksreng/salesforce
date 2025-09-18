@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -28,10 +31,18 @@ class AdministrationCubit extends Cubit<AdministrationState> {
     emit(state.copyWith(bluetoothDevice: devices.first));
   }
 
-  // bool isConnection() {
-  //   final blueDevice = state.bluetoothDevice;
-  //   // If we have a device, check connection state from Cubit
-  //   return blueDevice != null &&
-  //       state.bluetoothDevice == blueDevice.isConnected;
-  // }
+  Future<void> checkIminDevice(DeviceInfoPlugin deviceInfo) async {
+    if (!Platform.isAndroid) return;
+
+    AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+    final model = (androidInfo.model ?? "").toLowerCase();
+
+    if (model.contains("m2-202") ||
+        model.contains("m2-203") ||
+        model.contains("m2 pro")) {
+      emit(state.copyWith(isIminDevice: true));
+    } else {
+      emit(state.copyWith(isIminDevice: false));
+    }
+  }
 }

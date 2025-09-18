@@ -1,3 +1,4 @@
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -44,10 +45,15 @@ class AdministrationScreenState extends State<AdministrationScreen>
     super.dispose();
   }
 
-  // MARK: - Initialization
   Future<void> _initializeScreen() async {
     await _cubit.checkInforDevice();
+    await checkIminDevice();
     _refreshBluetoothDevices();
+  }
+
+  Future<void> checkIminDevice() async {
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    await _cubit.checkIminDevice(deviceInfo);
   }
 
   void _refreshBluetoothDevices() {
@@ -117,11 +123,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
           label: "Connected Devices",
           color: success,
         ),
-        _buildStatCard(
-          value: "47", // This should come from state/API
-          label: "Print job today",
-          color: mainColor,
-        ),
+        _buildStatCard(value: "0", label: "Print job today", color: mainColor),
       ],
     );
   }
@@ -155,8 +157,11 @@ class AdministrationScreenState extends State<AdministrationScreen>
     return Column(
       spacing: 16,
       children: [
-        _buildBluetoothPrintingSection(state),
-        _buildAPKDeploymentSection(state),
+        if (!state.isIminDevice) ...[
+          _buildBluetoothPrintingSection(state),
+        ] else ...[
+          _buildAPKDeploymentSection(state),
+        ],
       ],
     );
   }
@@ -196,7 +201,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
             onPressed: () {
               _showComingSoonMessage();
             },
-            title: "Deploy APK",
+            title: "Running on iMin",
             gradient: linearGradient,
             suffixIcon: const Icon(Icons.upload),
           ),
