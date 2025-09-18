@@ -11,12 +11,15 @@ import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
+import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/presentation/pages/components/sale_history_detail_box.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_mm80.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_helpers.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_mm80.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_preview_dialog.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_cubit.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
@@ -45,52 +48,16 @@ class _SaleOrderHistoryDetailScreenState
   BluetoothCharacteristic? _writeCharacteristic;
   final Map<String, BluetoothCharacteristic> _writeCharacteristics = {};
 
-  ReceiptPreview? preview;
-
   @override
   void initState() {
-    super.initState();
-    _loadData();
+    loadData();
     checkBluetoothDevie();
-    _waitForDataAndLoadPreview();
+    super.initState();
   }
 
-  _loadData() async {
-    _cubit.getSaleDetails(no: widget.documentNo);
-    _cubit.getComapyInfo();
-
-    // Wait a bit and then check for data periodically
-    _waitForDataAndLoadPreview();
-  }
-
-  _waitForDataAndLoadPreview() async {
-    // Poll until data is available
-    while (_cubit.state.record == null || _cubit.state.comPanyInfo == null) {
-      await Future.delayed(Duration(milliseconds: 100));
-      if (!mounted) return; // Exit if widget is disposed
-    }
-
-    // Data is now available, load preview
-    await loadPreview();
-  }
-
-  loadPreview() async {
-    // Add null checks to be safe
-    if (_cubit.state.record == null || _cubit.state.comPanyInfo == null) {
-      print("Data not ready for preview");
-      return;
-    }
-
-    final segments = buildReceiptSegmentsForPreview(
-      detail: _cubit.state.record,
-      companyInfo: _cubit.state.comPanyInfo,
-    );
-
-    preview = await generateReceiptPreview(segments);
-
-    if (mounted) {
-      setState(() {});
-    }
+  loadData() async {
+    await _cubit.getSaleDetails(no: widget.documentNo);
+    await _cubit.getComapyInfo();
   }
 
   Future<void> checkBluetoothDevie() async {
@@ -191,15 +158,45 @@ class _SaleOrderHistoryDetailScreenState
       final chunk = data.sublist(i, end);
 
       await characteristic.write(chunk, withoutResponse: true);
-
-      // Delay only if not the last chunk
       if (end < data.length) {
         await Future.delayed(Duration(milliseconds: 10));
       }
     }
-
-    // Final delay to ensure printer processes last command
     await Future.delayed(Duration(milliseconds: 100));
+  }
+
+  Future<void> onShowPreview(SaleOrderHistoryDetailState state) async {
+    late final LoadingOverlay l;
+    l = LoadingOverlay.of(context);
+
+    try {
+      l.show();
+
+      final segments = await ReceiptHelpers.buildReceiptSegmentsForPreview(
+        detail: state.record,
+        companyInfo: state.comPanyInfo,
+      );
+      final generated = await ReceiptHelpers.generateReceiptPreview(segments);
+
+      _cubit.getPreviewReceipt(generated);
+      while (_cubit.state.preview == null) {
+        await Future.delayed(const Duration(milliseconds: 50));
+        if (!mounted) return;
+      }
+
+      if (!mounted) return;
+
+      l.hide();
+
+      await ReceiptPreviewDialog.show(
+        context,
+        _cubit.state.preview!,
+        _printReceipt,
+      );
+    } catch (e) {
+      l.hide();
+      showErrorMessage(e.toString());
+    }
   }
 
   @override
@@ -210,15 +207,15 @@ class _SaleOrderHistoryDetailScreenState
         actions: [
           BlocBuilder<SaleOrderHistoryDetailCubit, SaleOrderHistoryDetailState>(
             bloc: _cubit,
-            builder: (context, state) {
+            builder: (tx, state) {
               return BtnIconCircleWidget(
-                onPressed: () => showReceiptPreviewDialog(context, preview),
-                // onPressed: () => _printReceipt(),
+                onPressed: () async => await onShowPreview(state),
                 icons: const Icon(Icons.print_rounded, color: white),
                 rounded: appBtnRound,
               );
             },
           ),
+
           Helpers.gapW(appSpace),
         ],
         heightBottom: scaleFontSize(30),
@@ -234,7 +231,7 @@ class _SaleOrderHistoryDetailScreenState
     );
   }
 
-  BoxWidget _buildStatusConnect() {
+  Widget _buildStatusConnect() {
     return BoxWidget(
       isBoxShadow: false,
       color: success,

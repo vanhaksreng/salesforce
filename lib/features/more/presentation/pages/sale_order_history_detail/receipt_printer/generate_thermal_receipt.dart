@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_helpers.dart';
 
 // === MAIN PRINT FUNCTION ===
 Future<List<int>> printRichKhmerTextFor80mm(
@@ -30,7 +31,6 @@ Future<List<int>> printRichKhmerTextFor80mm(
   return bytes;
 }
 
-// === RENDER TO IMAGE ===
 Future<ByteData?> generateKhmerTextImageFor80mm(
   List<StyledTextSegment> segments,
   int width,
@@ -55,15 +55,15 @@ Future<ByteData?> generateKhmerTextImageFor80mm(
 
   for (final segment in segments) {
     if (segment.isRow) {
-      // === SPECIAL CASE: DRAW TABLE ROW WITH FIXED COLUMNS ===
-      _drawRow(
+      // === SPECIAL CASE: DRAW TABLE ROW WITH DYNAMIC HEIGHT ===
+      double rowHeight = _drawRow(
         canvas,
         segment.text,
         yOffset,
         width,
         fontSize: _getFontSizeFor80mm(segment.fontSize),
       );
-      yOffset += segment.rowHeight ?? 32; // step down
+      yOffset += rowHeight; // Use the actual height returned by _drawRow
     } else {
       // === NORMAL SINGLE LINE TEXT ===
       final span = TextSpan(
@@ -99,42 +99,58 @@ Future<ByteData?> generateKhmerTextImageFor80mm(
 }
 
 // === TABLE DRAWING FUNCTION ===
-void _drawRow(
+
+double _drawRow(
   ui.Canvas canvas,
   String text,
   double y,
   int paperWidth, {
   double fontSize = 18,
 }) {
-  // Split row by | (pipe) delimiter
-  // Example row text: "1|HANUMAN BEER|2|2.00|—|4.00"
-  final parts = text.split('|');
+  // Split by newlines first, then handle each line
+  final lines = text.split('\n');
+  double currentY = y;
+  double lineHeight = fontSize + 16; // Add some spacing between lines
 
-  // Define X positions for columns (tweak as needed for 80mm = 576px)
-  final colX = [10.0, 60.0, 300.0, 370.0, 440.0, 510.0];
+  for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    final parts = lines[lineIndex].split('|');
+    final colX = [10.0, 60.0, 280.0, 350.0, 420.0, 480.0];
 
-  for (int i = 0; i < parts.length; i++) {
-    final span = TextSpan(
-      text: parts[i].trim(),
-      style: TextStyle(
-        fontFamily: 'Siemreap',
-        fontSize: fontSize,
-        color: Colors.black,
-      ),
-    );
+    for (int i = 0; i < parts.length && i < colX.length; i++) {
+      final span = TextSpan(
+        text: parts[i].trim(),
+        style: TextStyle(
+          fontFamily: 'Siemreap',
+          fontSize: fontSize,
+          color: Colors.black,
+        ),
+      );
 
-    final tp = TextPainter(
-      text: span,
-      textDirection: TextDirection.ltr,
-      textAlign: i == 0 || i == 1 ? TextAlign.left : TextAlign.right,
-    );
+      final tp = TextPainter(
+        text: span,
+        textDirection: TextDirection.ltr,
+        textAlign: i == 0 || i == 1 ? TextAlign.left : TextAlign.right,
+        maxLines: 1,
+      );
 
-    tp.layout(
-      maxWidth: (i < colX.length - 1) ? (colX[i + 1] - colX[i] - 5) : 80,
-    ); // keep columns separate
+      // Calculate maxWidth safely
+      double maxWidth;
+      if (i < colX.length - 1) {
+        maxWidth = colX[i + 1] - colX[i] - 5;
+      } else {
+        maxWidth = paperWidth - colX[i] - 10;
+      }
 
-    tp.paint(canvas, Offset(colX[i], y));
+      tp.layout(maxWidth: maxWidth);
+      tp.paint(canvas, Offset(colX[i], currentY));
+    }
+
+    // Move to next line
+    currentY += lineHeight;
   }
+
+  // Return the total height used by this row
+  return currentY - y;
 }
 
 // === WRAPPER TO IMAGE ===
@@ -181,38 +197,4 @@ FontStyle _getFontStyle(KhmerTextStyle style) {
     default:
       return FontStyle.normal;
   }
-}
-
-// === ENUMS ===
-enum KhmerTextStyle { normal, bold, italic, boldItalic }
-
-enum KhmerFontSize { small, normal, large, extraLarge }
-
-// === STYLED SEGMENT ===
-class StyledTextSegment {
-  final String text;
-  final KhmerTextStyle style;
-  final KhmerFontSize fontSize;
-  final Color? color;
-  final int maxline;
-  final bool isRow; // NEW FLAG: true = table row
-  final double? rowHeight;
-
-  StyledTextSegment({
-    required this.text,
-    this.style = KhmerTextStyle.normal,
-    this.fontSize = KhmerFontSize.normal,
-    this.color,
-    this.maxline = 2,
-    this.isRow = false,
-    this.rowHeight,
-  });
-}
-
-// === XP-P323B CONFIG ===
-class XP323BConfig {
-  static const PaperSize paperSize = PaperSize.mm80;
-  static const int paperWidthPixels = 576;
-  static const int leftMargin = 20;
-  static const int topMargin = 30;
 }

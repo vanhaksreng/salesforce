@@ -9,6 +9,7 @@ class SaleOrderHistoryDetailState {
   // final BluetoothAdapterState adapterState;
   // final BluetoothDevice? connectedDevice;
   final CompanyInformation? comPanyInfo;
+  final ReceiptPreview? preview;
 
   const SaleOrderHistoryDetailState({
     this.isLoading = false,
@@ -19,6 +20,7 @@ class SaleOrderHistoryDetailState {
     // this.adapterState = BluetoothAdapterState.unknown,
     // this.connectedDevice,
     this.comPanyInfo,
+    this.preview,
   });
 
   SaleOrderHistoryDetailState copyWith({
@@ -31,6 +33,7 @@ class SaleOrderHistoryDetailState {
     // BluetoothAdapterState? adapterState,
     // BluetoothDevice? connectedDevice,
     CompanyInformation? comPanyInfo,
+    ReceiptPreview? preview,
   }) {
     return SaleOrderHistoryDetailState(
       isLoading: isLoading ?? this.isLoading,
@@ -41,6 +44,7 @@ class SaleOrderHistoryDetailState {
       // adapterState: adapterState ?? this.adapterState,
       // connectedDevice: connectedDevice ?? this.connectedDevice,
       comPanyInfo: comPanyInfo ?? this.comPanyInfo,
+      preview: preview ?? this.preview,
     );
   }
 }
