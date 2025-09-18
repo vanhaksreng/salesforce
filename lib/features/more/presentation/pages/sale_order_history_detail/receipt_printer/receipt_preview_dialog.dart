@@ -7,7 +7,8 @@ import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_mm80.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_helpers.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_mm80.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
