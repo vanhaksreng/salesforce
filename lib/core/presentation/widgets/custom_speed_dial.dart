@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
+import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
@@ -13,11 +15,13 @@ class CustomSpeedDial extends StatefulWidget {
 class SpeedDialChild {
   final IconData icon;
   final VoidCallback onTap;
+  final String label;
 
-  SpeedDialChild({required this.icon, required this.onTap});
+  SpeedDialChild({required this.icon, required this.onTap, this.label = ""});
 }
 
-class _CustomSpeedDialState extends State<CustomSpeedDial> with SingleTickerProviderStateMixin {
+class _CustomSpeedDialState extends State<CustomSpeedDial>
+    with SingleTickerProviderStateMixin {
   final GlobalKey _fabKey = GlobalKey();
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -27,8 +31,14 @@ class _CustomSpeedDialState extends State<CustomSpeedDial> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 200));
-    _scaleAnimation = CurvedAnimation(parent: _animationController, curve: Curves.easeOut);
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _scaleAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOut,
+    );
   }
 
   @override
@@ -58,7 +68,8 @@ class _CustomSpeedDialState extends State<CustomSpeedDial> with SingleTickerProv
   }
 
   void _showOverlay() {
-    final RenderBox fabRenderBox = _fabKey.currentContext!.findRenderObject() as RenderBox;
+    final RenderBox fabRenderBox =
+        _fabKey.currentContext!.findRenderObject() as RenderBox;
     final fabPosition = fabRenderBox.localToGlobal(Offset.zero);
 
     _overlayEntry = OverlayEntry(
@@ -70,11 +81,22 @@ class _CustomSpeedDialState extends State<CustomSpeedDial> with SingleTickerProv
             child: Stack(
               children: [
                 Positioned(
-                  left: fabPosition.dx,
+                  right:
+                      MediaQuery.of(context).size.width -
+                      fabPosition.dx -
+                      45.scale,
                   top: fabPosition.dy - (widget.children.length * 60.0),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: widget.children.map((child) => _buildChildFab(child.icon, child.onTap)).toList(),
+                    children: widget.children
+                        .map(
+                          (child) => _buildChildFab(
+                            child.icon,
+                            child.onTap,
+                            label: child.label,
+                          ),
+                        )
+                        .toList(),
                   ),
                 ),
               ],
@@ -87,24 +109,41 @@ class _CustomSpeedDialState extends State<CustomSpeedDial> with SingleTickerProv
     Overlay.of(context).insert(_overlayEntry!);
   }
 
-  Widget _buildChildFab(IconData icon, VoidCallback onTap) {
+  Widget _buildChildFab(
+    IconData icon,
+    VoidCallback onTap, {
+    required String label,
+  }) {
     return ScaleTransition(
       scale: _scaleAnimation,
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 10.0),
-        child: SizedBox(
-          width: 45.scale,
-          height: 45.scale,
-          child: FloatingActionButton(
-            backgroundColor: mainColor50,
-            heroTag: null,
-            // mini: true,
-            onPressed: () {
-              onTap();
-              _toggleDial();
-            },
-            child: Icon(icon),
-          ),
+        padding: EdgeInsets.only(bottom: scaleFontSize(10)),
+        child: Row(
+          spacing: scaleFontSize(8),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (label.isNotEmpty)
+              ChipWidget(
+                bgColor: mainColor50,
+                ishadowColor: true,
+                label: label,
+              ),
+
+            SizedBox(
+              width: 45.scale,
+              height: 45.scale,
+              child: FloatingActionButton(
+                backgroundColor: mainColor50,
+                heroTag: null,
+                onPressed: () {
+                  onTap();
+                  _toggleDial();
+                },
+                child: Icon(icon),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -120,7 +159,7 @@ class _CustomSpeedDialState extends State<CustomSpeedDial> with SingleTickerProv
         child: FloatingActionButton(
           backgroundColor: mainColor,
           onPressed: _toggleDial,
-          child: Icon(_isOpen ? Icons.close : Icons.location_on_rounded),
+          child: Icon(_isOpen ? Icons.close : Icons.more_vert),
         ),
       ),
     );
