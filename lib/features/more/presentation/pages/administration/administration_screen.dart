@@ -17,6 +17,7 @@ import 'package:salesforce/features/more/domain/entities/device_info.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_state.dart';
 import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_page_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/imin_device/printer_test_page.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
@@ -162,6 +163,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
         ] else ...[
           _buildAPKDeploymentSection(state),
         ],
+        // _buildAPKDeploymentSection(state),
       ],
     );
   }
@@ -316,6 +318,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
   }
 
   void _showComingSoonMessage() {
+    // Navigator.pushNamed(context, PrinterTestScreen.routeName);
     showErrorMessage("APK deployment feature coming soon!");
   }
 }

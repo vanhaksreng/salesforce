@@ -29,7 +29,14 @@
         android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
-    
+
+    <!-- For Imin printer access -->
+    <!-- <uses-permission android:name="android.permission.ACCESS_SUPERUSER" />
+    <uses-feature android:name="android.hardware.usb.host" />
+    <uses-permission android:name="android.permission.USB_PERMISSION" /> -->
+    <uses-permission android:name="com.imin.printerservice.permission.PRINTER" />
+
+
     <uses-feature 
         android:name="android.hardware.bluetooth" 
         android:required="true" />

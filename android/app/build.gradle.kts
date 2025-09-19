@@ -38,6 +38,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        ndk {
+            abiFilters += setOf( "armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+        }
     }
     
     signingConfigs {
@@ -64,7 +68,13 @@ flutter {
 }
 
 dependencies {
+
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation ("androidx.work:work-runtime-ktx:2.10.3")
+    implementation(files("libs/IminLibs1.0.15.jar"))
+    implementation(files("libs/iminPrinterSDK.jar"))
+    implementation ("io.reactivex.rxjava2:rxjava:2.2.21")
+    implementation ("io.reactivex.rxjava2:rxandroid:2.1.1")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+   
 }
