@@ -7,6 +7,7 @@ import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
 import 'package:salesforce/core/presentation/widgets/custom_alert_dialog_widget.dart';
+import 'package:salesforce/core/presentation/widgets/custom_speed_dial.dart';
 import 'package:salesforce/core/presentation/widgets/header_bottom_sheet.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
@@ -246,25 +247,39 @@ class _TaskScreenState extends State<TasksMainScreen>
               const TeamSchedultScreen(),
             ],
           ),
-          floatingActionButton: showMapCustomer(),
+          floatingActionButton: optionView(),
         );
       },
     );
   }
 
-  showMapCustomer() {
-    return SizedBox(
-      width: 45.scale,
-      height: 45.scale,
-      child: FloatingActionButton(
-        backgroundColor: mainColor,
-        onPressed: () => Navigator.pushNamed(
-          context,
-          CustomerScheduleMapScreen.routeName,
-          arguments: true,
+  optionView() {
+    return CustomSpeedDial(
+      children: [
+        SpeedDialChild(
+          icon: Icons.group_rounded,
+          onTap: () {
+            Helpers.showMessage(
+              msg: "This feature comming soon!",
+              status: MessageStatus.warning,
+            );
+          },
+          label: greeting("SalePersons"),
         ),
-        child: const Icon(Icons.group_rounded),
-      ),
+        SpeedDialChild(
+          icon: Icons.person,
+          onTap: () => pushToCustomerMap(),
+          label: greeting("Customers"),
+        ),
+      ],
+    );
+  }
+
+  Future<Object?> pushToCustomerMap() {
+    return Navigator.pushNamed(
+      context,
+      CustomerScheduleMapScreen.routeName,
+      arguments: true,
     );
   }
 

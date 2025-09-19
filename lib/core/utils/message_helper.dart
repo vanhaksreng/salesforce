@@ -18,7 +18,7 @@ class MessageHelper {
       case MessageStatus.warning:
         return MessageConfig(
           color: warning,
-          icon: Icons.warning_amber_outlined,
+          icon: Icons.warning_amber_rounded,
           duration: Duration(seconds: 5),
         );
       case MessageStatus.errors:
