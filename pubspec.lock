@@ -77,10 +77,10 @@ packages:
     dependency: transitive
     description:
       name: build_cli_annotations
-      sha256: b59d2769769efd6c9ff6d4c4cede0be115a566afc591705c2040b707534b1172
+      sha256: e563c2e01de8974566a1998410d3f6f03521788160a02503b0b1f1a46c7b3d95
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "2.1.1"
   build_config:
     dependency: transitive
     description:
@@ -1236,10 +1236,10 @@ packages:
     dependency: transitive
     description:
       name: realm_common
-      sha256: "738db1835d1d79d4ea73c6dc037d54a0062a26fb1c3fa6c5280b56e6d8d927cc"
+      sha256: efa7ddac1c31c5abfb4d43f74376ffacfc3f6193a83847969955e2dc4d7908b7
       url: "https://pub.dev"
     source: hosted
-    version: "20.1.1"
+    version: "20.2.0"
   realm_dart:
     dependency: transitive
     description:
@@ -1481,10 +1481,10 @@ packages:
     dependency: transitive
     description:
       name: tar
-      sha256: "8e67ab1baa07d3ef2c5d52cfb84e7ed4742799141e9e2ac3d0801a1a7ccb7575"
+      sha256: b2f7bb01fa95e21e7197cd0dc3c087e6e4551c5d698b3e88d6398b2124c566d6
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.0"
+    version: "2.0.1"
   term_glyph:
     dependency: transitive
     description:
