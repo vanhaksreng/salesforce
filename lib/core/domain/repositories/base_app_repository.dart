@@ -88,4 +88,6 @@ abstract class BaseAppRepository {
   Future<Either<Failure, CompanyInformation?>> getRemoteCompanyInfo({
     required Map<String, dynamic> params,
   });
+
+  Future<Either<Failure, bool>> processUploadGpsTracking();
 }

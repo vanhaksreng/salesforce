@@ -217,6 +217,17 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
           );
 
           realm.add(gpsTracking);
+
+          final gpsRoute = GpsRouteTracking(
+            schedule.salespersonCode ?? "",
+            Helpers.toDouble(args.latitude),
+            Helpers.toDouble(args.longitude),
+            now.toDateString(),
+            now.toTimeString(),
+            isSync: kStatusNo,
+          );
+
+          realm.add(gpsRoute);
         }
 
         realm.add(
@@ -300,6 +311,17 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
           );
 
           realm.add(gpsTracking);
+
+          final gpsRoute = GpsRouteTracking(
+            schedule.salespersonCode ?? "",
+            Helpers.toDouble(args.latitude),
+            Helpers.toDouble(args.longitude),
+            now.toDateString(),
+            now.toTimeString(),
+            isSync: kStatusNo,
+          );
+
+          realm.add(gpsRoute);
         }
 
         realm.add(

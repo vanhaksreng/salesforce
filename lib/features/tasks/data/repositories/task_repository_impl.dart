@@ -127,6 +127,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       final result = await _local.checkIn(schedule: schedule, args: newArg);
       if (await _networkInfo.isConnected && await _remote.isValidApiSession()) {
         _remote.updateSchedule(result, type: result.status ?? kStatusCheckIn);
+
+        await syncOfflineLocationToBackend();
+
+        await processUploadGpsTracking();
       }
 
       return Right(result);
@@ -153,9 +157,14 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         isCloseShop: args.isCloseShop,
         statusInternet: statusInternet,
       );
+
       final result = await _local.checkout(schedule: schedule, args: newArg);
       if (await _networkInfo.isConnected && await _remote.isValidApiSession()) {
         _remote.updateSchedule(result, type: result.status ?? kStatusCheckOut);
+
+        await syncOfflineLocationToBackend();
+
+        await processUploadGpsTracking();
       }
 
       return Right(result);

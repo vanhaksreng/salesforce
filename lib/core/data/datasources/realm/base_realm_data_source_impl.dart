@@ -503,6 +503,13 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
+  Future<List<GpsTrackingEntry>> getGPSTrackingEntries({
+    required Map<String, dynamic> param,
+  }) async {
+    return await _storage.getAll<GpsTrackingEntry>(args: param);
+  }
+
+  @override
   Future<List<ItemPrizeRedemptionLineEntry>> updateRedemptionsStatus(
     List<ItemPrizeRedemptionLineEntry> records, {
     required List<ItemPrizeRedemptionLineEntry> remoteRecords,
@@ -525,7 +532,7 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
-  Future<List<GpsRouteTracking>> getGPSTracking({
+  Future<List<GpsRouteTracking>> getGPSRouteTracking({
     required Map<String, dynamic> param,
   }) async {
     return await _storage.getAll<GpsRouteTracking>(args: param);
@@ -602,6 +609,19 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   Future<bool> storeGps(List<GpsRouteTracking> records) async {
     return _storage.writeTransaction((realm) {
       realm.addAll(records);
+
+      return true;
+    });
+  }
+  
+  @override
+  Future<bool> updateStatusGPSTrackingEntries({required List<GpsTrackingEntry> records}) async {
+    return _storage.writeTransaction((realm) {
+      
+      for (var record in records) {
+        record.isSync = kStatusYes;
+        realm.add(record, update: true);
+      }
 
       return true;
     });
