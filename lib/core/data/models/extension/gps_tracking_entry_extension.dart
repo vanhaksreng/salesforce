@@ -24,7 +24,6 @@ extension GpsTrackingEntryExtension on GpsTrackingEntry {
     'longitude': longitude,
     'c_latitude': cLatitude,
     'c_longitude': cLongitude,
-    'is_sync': isSync,
     'created_at': createdAt,
     'updated_at': updatedAt,
   };
