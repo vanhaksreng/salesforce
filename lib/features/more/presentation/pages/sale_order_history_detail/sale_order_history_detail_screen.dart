@@ -40,7 +40,7 @@ class _SaleOrderHistoryDetailScreenState
     extends State<SaleOrderHistoryDetailScreen>
     with MessageMixin {
   final _cubit = SaleOrderHistoryDetailCubit();
-  late BluetoothDevice bluetoothDevice;
+  BluetoothDevice? bluetoothDevice;
   BluetoothCharacteristic? _writeCharacteristic;
   final Map<String, BluetoothCharacteristic> _writeCharacteristics = {};
 
@@ -61,7 +61,7 @@ class _SaleOrderHistoryDetailScreenState
     if (devices.isEmpty) return;
 
     bluetoothDevice = devices[0];
-    await _discoverServices(bluetoothDevice);
+    await _discoverServices(bluetoothDevice!);
   }
 
   String _getTitle() {
@@ -77,8 +77,8 @@ class _SaleOrderHistoryDetailScreenState
 
   Future<void> _printReceipt() async {
     if (_writeCharacteristic == null ||
-        bluetoothDevice.remoteId.str.isEmpty ||
-        bluetoothDevice.isDisconnected) {
+        bluetoothDevice!.remoteId.str.isEmpty ||
+        bluetoothDevice!.isDisconnected) {
       showErrorMessage(
         'Not connected to a printer or no writable characteristic found',
       );
@@ -193,8 +193,9 @@ class _SaleOrderHistoryDetailScreenState
 
           Helpers.gapW(appSpace),
         ],
-        heightBottom: scaleFontSize(40),
-        bottom: _buildStatusConnect(),
+
+        heightBottom: bluetoothDevice == null ? 0 : scaleFontSize(40),
+        bottom: bluetoothDevice == null ? null : _buildStatusConnect(),
       ),
       body:
           BlocBuilder<SaleOrderHistoryDetailCubit, SaleOrderHistoryDetailState>(
@@ -227,7 +228,7 @@ class _SaleOrderHistoryDetailScreenState
           Helpers.gapW(8),
           Expanded(
             child: TextWidget(
-              text: "Connected to Bluetooth ${bluetoothDevice.platformName}",
+              text: "Connected to Bluetooth ${bluetoothDevice?.platformName}",
               color: Colors.white,
               fontWeight: FontWeight.w500,
               fontSize: 14,
