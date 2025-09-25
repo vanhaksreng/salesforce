@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:salesforce/app/route_slide_transaction.dart';
 import 'package:salesforce/features/tasks/domain/entities/checkout_arg.dart';
-import 'package:salesforce/features/tasks/domain/entities/sale_person_gps_model.dart';
 import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
 import 'package:salesforce/features/tasks/presentation/pages/add_schedule/add_schedule_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/checkstock/barcode_scanner_page.dart';
@@ -390,9 +389,7 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case SalesPersonMapScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return SalesPersonMapScreen(
-            salePersonGps: settings.arguments as List<SalePersonGpsModel>,
-          );
+          return SalesPersonMapScreen();
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);

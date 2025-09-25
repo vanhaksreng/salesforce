@@ -16,7 +16,6 @@ import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/auth/domain/entities/user.dart';
-import 'package:salesforce/features/tasks/domain/entities/sale_person_gps_model.dart';
 import 'package:salesforce/features/tasks/domain/entities/task_dtos.dart';
 import 'package:salesforce/features/tasks/presentation/pages/add_schedule/add_schedule_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/customer_schedule_map/customer_schedule_map_screen.dart';
@@ -53,17 +52,17 @@ class _TaskScreenState extends State<TasksMainScreen>
   @override
   void initState() {
     super.initState();
-    _cubit = context.read<TasksMainCubit>();
-    _cubit.getSalePersonGps();
     _auth = getAuth();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_onTabHandler);
     scheduleDate = DateTime.now();
+    _cubit = context.read<TasksMainCubit>();
     _initLoad();
   }
 
   void _initLoad() async {
     await _cubit.getUserSetup();
+
     final option = await _cubit.getSetting(kScheduleOptionKey);
     if (option == "Forward old Schedule to the Current Date") {
       await _cubit.checkPendingOldSchedule();
@@ -74,7 +73,6 @@ class _TaskScreenState extends State<TasksMainScreen>
 
   @override
   void dispose() {
-    _cubit.close();
     _tabController.dispose();
     super.dispose();
   }
@@ -200,7 +198,6 @@ class _TaskScreenState extends State<TasksMainScreen>
   Widget build(BuildContext context) {
     return BlocBuilder<TasksMainCubit, TasksMainState>(
       builder: (context, state) {
-        final salePersonGps = state.salePersonGps;
         return Scaffold(
           appBar: AppBarWidget(
             isBackIcon: false,
@@ -251,36 +248,18 @@ class _TaskScreenState extends State<TasksMainScreen>
               const TeamSchedultScreen(),
             ],
           ),
-          floatingActionButton: salePersonGps.isNotEmpty
-              ? optionView(salePersonGps)
-              : showMapCustomer(),
+          floatingActionButton: optionView(),
         );
       },
     );
   }
 
-  showMapCustomer() {
-    return SizedBox(
-      width: 45.scale,
-      height: 45.scale,
-      child: FloatingActionButton(
-        backgroundColor: mainColor,
-        onPressed: () => Navigator.pushNamed(
-          context,
-          CustomerScheduleMapScreen.routeName,
-          arguments: true,
-        ),
-        child: const Icon(Icons.group_rounded),
-      ),
-    );
-  }
-
-  optionView(List<SalePersonGpsModel> salePersonGps) {
+  optionView() {
     return CustomSpeedDial(
       children: [
         SpeedDialChild(
           icon: Icons.group_rounded,
-          onTap: () => pushToSalePersonMap(salePersonGps),
+          onTap: () => pushToSalePersonMap(),
           label: greeting("SalePersons"),
         ),
         SpeedDialChild(
@@ -300,11 +279,11 @@ class _TaskScreenState extends State<TasksMainScreen>
     );
   }
 
-  Future<Object?> pushToSalePersonMap(List<SalePersonGpsModel> salePersonGps) {
+  Future<Object?> pushToSalePersonMap() {
     return Navigator.pushNamed(
       context,
       SalesPersonMapScreen.routeName,
-      arguments: salePersonGps,
+      arguments: true,
     );
   }
 
