@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 final kAppNavigatorKey = GlobalKey<NavigatorState>();
 final kAppScaffoldMsgKey = GlobalKey<ScaffoldMessengerState>();
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
+
+enum LoadingType { circular, image, imageWithRing, pulse }
 
 const String kStatusNo = "No";
 const String kStatusYes = "Yes";
@@ -37,6 +41,9 @@ const String kActive = "Active";
 const String kInActive = "Inactive";
 const String kInStock = "In stock";
 const String kOutOfStock = "Out of stock";
+const String kAll = "All";
 const String kBalance = "Balance";
 const String kNoOfInvoice = "No of Invoices";
 const String kNoCredit = "No Credit";
+const String kOffline = "Offline";
+const String kOnline = "Online";

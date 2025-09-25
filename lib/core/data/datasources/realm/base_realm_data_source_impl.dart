@@ -579,6 +579,10 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
       realm.deleteMany(realm.all<Organization>().toList());
       realm.deleteMany(realm.all<CompanyInformation>().toList());
       realm.deleteMany(realm.all<ItemLedgerEntry>().toList());
+      realm.deleteMany(realm.all<SalesHeader>().toList());
+      realm.deleteMany(realm.all<SalesLine>().toList());
+      realm.deleteMany(realm.all<Permission>().toList());
+      realm.deleteMany(realm.all<DistributionSetUp>().toList());
 
       return true;
     });

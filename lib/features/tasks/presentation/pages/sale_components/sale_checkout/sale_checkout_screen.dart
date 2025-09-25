@@ -24,6 +24,7 @@ import 'package:salesforce/core/utils/date_input_formatter.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/quantity_input_formatter.dart';
 import 'package:salesforce/core/utils/size_config.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history/sale_order_history_screen.dart';
 import 'package:salesforce/features/tasks/domain/entities/checkout_arg.dart';
 import 'package:salesforce/features/tasks/presentation/pages/customer_address/customer_address_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/distributor/distributor_screen.dart';
@@ -133,9 +134,11 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
       if (mounted && result) {
         showSuccessMessage("Checkout success.");
         int count = 0;
+
         Navigator.popUntil(context, (route) {
-          return count++ == (widget.arg.fromScreen == "task" ? 3 : 4);
+          return count++ == 2;
         });
+        Navigator.of(context).pop(true);
       }
     } on GeneralException catch (e) {
       l.hide();

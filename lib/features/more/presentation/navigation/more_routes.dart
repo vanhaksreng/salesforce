@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/app/route_slide_transaction.dart';
+import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/domain/entities/cart_preview_arg.dart';
 import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/domain/entities/more_model.dart';
 import 'package:salesforce/features/more/presentation/pages/about/about_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/administration/administration_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_page_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/bussiness_unit/bussiness_unit_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/cart_preview_item/cart_preview_item_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/customer_address/customer_address_screen.dart';
@@ -15,6 +19,7 @@ import 'package:salesforce/features/more/presentation/pages/customer_group/custo
 import 'package:salesforce/features/more/presentation/pages/customer_map/customer_map_full_screen_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/customers/customers_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/downloads/download_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/imin_device/printer_test_page.dart';
 import 'package:salesforce/features/more/presentation/pages/invoice_printer/invoice_printer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/items/items_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/profile_form/profile_form_screen.dart';
@@ -211,15 +216,15 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
           return RouteST.st(animation, child, begin: 1, end: 0);
         },
       );
-    case InvoicePrinterScreen.routeName:
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return const InvoicePrinterScreen();
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return RouteST.st(animation, child, begin: 1, end: 0);
-        },
-      );
+    // case InvoicePrinterScreen.routeName:
+    //   return PageRouteBuilder(
+    //     pageBuilder: (context, animation, secondaryAnimation) {
+    //       return const InvoicePrinterScreen();
+    //     },
+    //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
+    //       return RouteST.st(animation, child, begin: 1, end: 0);
+    //     },
+    //   );
 
     case PromotionDetailScreen.routeName:
       return PageRouteBuilder(
@@ -279,7 +284,9 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
     case AddCustomerScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return AddCustomerScreen(documentType: settings.arguments as String);
+          return AddCustomerScreen(
+            addCustomerArg: settings.arguments as AddCustomerArg,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -314,8 +321,37 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
           return RouteST.st(animation, child, begin: 1, end: 0);
         },
       );
+    case BluetoothPageScreen.routeName:
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return BluetoothPageScreen(
+            bluetoothDevice: settings.arguments as BluetoothDevice?,
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return RouteST.st(animation, child, begin: 1, end: 0);
+        },
+      );
+    case AdministrationScreen.routeName:
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return AdministrationScreen();
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return RouteST.st(animation, child, begin: 1, end: 0);
+        },
+      );
+    case PrinterTestScreen.routeName:
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return PrinterTestScreen();
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return RouteST.st(animation, child, begin: 1, end: 0);
+        },
+      );
 
     default:
-      return null; // Let the global router handle unknown routes
+      return null;
   }
 }

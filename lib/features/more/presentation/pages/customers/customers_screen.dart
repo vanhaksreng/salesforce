@@ -315,16 +315,25 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
         bottom: SearchWidget(
           onSubmitted: (value) async => _filter(value),
           showPrefixIcon: true,
-          suffixIcon: BtnIconCircleWidget(
-            isShowBadge: false,
-            onPressed: () => _showModalFiltter(),
-            rounded: 6,
-            icons: SvgWidget(
-              assetName: kAppOptionIcon,
-              colorSvg: white,
-              padding: EdgeInsets.all(4.scale),
-              width: 18,
-              height: 18,
+          suffixIcon: Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: 4.scale,
+              horizontal: 2.scale,
+            ),
+            child: BtnIconCircleWidget(
+              widthIcon: 20,
+              heightIcon: 23,
+              padiingIcon: 2,
+              isShowBadge: false,
+              onPressed: () => _showModalFiltter(),
+              rounded: 6,
+              icons: SvgWidget(
+                assetName: kAppOptionIcon,
+                colorSvg: white,
+                padding: EdgeInsets.all(4.scale),
+                width: 18,
+                height: 18,
+              ),
             ),
           ),
         ),
@@ -390,7 +399,7 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
                     controller: _codeController,
                     isDefaultTextForm: true,
                     suffix: TextBtnWidget(
-                      titleBtn: "clear",
+                      titleBtn: "Clear",
                       colorBtn: textColor50,
                       onTap: () => onclear(),
                     ),

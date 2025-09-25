@@ -11,6 +11,9 @@ class BtnIconCircleWidget extends StatelessWidget {
     this.rounded,
     this.isShowBadge = false,
     this.flipX = true,
+    this.widthIcon = 24,
+    this.heightIcon = 24,
+    this.padiingIcon = 8,
   });
 
   final void Function()? onPressed;
@@ -18,6 +21,9 @@ class BtnIconCircleWidget extends StatelessWidget {
   final Widget icons;
   final bool isShowBadge;
   final double? rounded;
+  final double widthIcon;
+  final double heightIcon;
+  final double padiingIcon;
   final bool flipX;
 
   @override
@@ -30,7 +36,9 @@ class BtnIconCircleWidget extends StatelessWidget {
         constraints: BoxConstraints(maxHeight: 48.scale, maxWidth: 48.scale),
         alignment: Alignment.center,
         style: ButtonStyle(
-          padding: WidgetStatePropertyAll(EdgeInsets.all(scaleFontSize(8))),
+          padding: WidgetStatePropertyAll(
+            EdgeInsets.all(scaleFontSize(padiingIcon)),
+          ),
           backgroundColor: WidgetStatePropertyAll(bgColor),
           shape: rounded == null
               ? null
@@ -45,7 +53,11 @@ class BtnIconCircleWidget extends StatelessWidget {
         iconSize: 20.scale,
         icon: Transform.flip(
           flipX: flipX,
-          child: SizedBox(width: 24.scale, height: 24.scale, child: icons),
+          child: SizedBox(
+            width: scaleFontSize(widthIcon),
+            height: scaleFontSize(heightIcon),
+            child: icons,
+          ),
         ),
         onPressed: onPressed,
       ),

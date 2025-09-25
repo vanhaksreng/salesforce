@@ -8,12 +8,14 @@ import 'package:salesforce/realm/scheme/item_schemas.dart';
 part 'group_screen_filter_item_state.dart';
 
 class GroupScreenFilterItemCubit extends Cubit<GroupScreenFilterItemState> {
-  GroupScreenFilterItemCubit() : super(const GroupScreenFilterItemState(isLoading: true));
+  GroupScreenFilterItemCubit()
+    : super(const GroupScreenFilterItemState(isLoading: true));
   final StockRepository repos = getIt<StockRepository>();
 
   bool hasMorePage = true;
 
   Future<void> selectedGroupCode(String code) async {
+    print("====================> $code");
     try {
       final List<String> currentCodes = List<String>.from(state.grupCode ?? []);
       if (currentCodes.contains(code)) {
@@ -32,7 +34,11 @@ class GroupScreenFilterItemCubit extends Cubit<GroupScreenFilterItemState> {
     emit(state.copyWith(grupCode: [], statusStock: ""));
   }
 
-  Future<void> getItemsGroup({bool isLoading = true, int page = 1, Map<String, dynamic>? param}) async {
+  Future<void> getItemsGroup({
+    bool isLoading = true,
+    int page = 1,
+    Map<String, dynamic>? param,
+  }) async {
     try {
       if (!hasMorePage && page > 1) {
         return;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
@@ -34,7 +35,7 @@ class SaleInvoiceHistoryScreen extends StatefulWidget {
 }
 
 class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
-    with MessageMixin {
+    with MessageMixin, RouteAware {
   final _cubit = SaleInvoiceHistoryCubit();
 
   final ScrollController _scrollController = ScrollController();
@@ -50,7 +51,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     initialToDate = DateTime.now().endDayOfWeek();
     _cubit.getSaleInvoice(
       param: {
-        'document_type': 'Invoice',
+        'document_type': kSaleInvoice,
         "posting_date":
             "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
       },
@@ -181,16 +182,42 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
       Navigator.pushNamed(
         context,
         AddCustomerScreen.routeName,
-        arguments: kSaleInvoice,
-      ).then((value) async {
-        await _cubit.getSaleInvoice(
-          param: {
-            'document_type': 'Invoice',
-            "posting_date":
-                "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
-          },
-        );
+        arguments: AddCustomerArg(documentType: kSaleInvoice, isRefresh: true),
+      ).then((value) {
+        if (value == null) return;
+        if (value as bool) {
+          _getSaleInvoice();
+        }
       });
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    _cubit.close();
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() async {
+    _getSaleInvoice();
+  }
+
+  Future<void> _getSaleInvoice() async {
+    return await _cubit.getSaleInvoice(
+      param: {
+        'document_type': kSaleInvoice,
+        "posting_date":
+            "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -208,31 +235,51 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
         heightBottom: heightBottomSearch,
         bottom: SearchWidget(
           showPrefixIcon: true,
-          suffixIcon: BtnIconCircleWidget(
-            isShowBadge: false,
-            onPressed: () => _showModalFiltter(context),
-            rounded: 6,
-            icons: SvgWidget(
-              assetName: kAppOptionIcon,
-              colorSvg: white,
-              padding: EdgeInsets.all(4.scale),
-              width: 18,
-              height: 18,
+          suffixIcon: Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: 4.scale,
+              horizontal: 2.scale,
+            ),
+            child: BtnIconCircleWidget(
+              widthIcon: 20,
+              heightIcon: 23,
+              padiingIcon: 2,
+              isShowBadge: false,
+              onPressed: () => _showModalFiltter(context),
+              rounded: 6,
+              icons: SvgWidget(
+                assetName: kAppOptionIcon,
+                colorSvg: white,
+                padding: EdgeInsets.all(4.scale),
+                width: 18,
+                height: 18,
+              ),
             ),
           ),
           onSubmitted: (text) => _onSearch(text: text),
           hintText: greeting("Find Sale Invoice..."),
         ),
       ),
-      body: BlocBuilder<SaleInvoiceHistoryCubit, SaleInvoiceHistoryState>(
-        bloc: _cubit,
-        builder: (BuildContext context, SaleInvoiceHistoryState state) {
-          if (state.isLoading) {
-            return const LoadingPageWidget();
-          }
-
-          return _buildBody(state);
-        },
+      body: RefreshIndicator(
+        onRefresh: () => _getSaleInvoice(),
+        child: BlocBuilder<SaleInvoiceHistoryCubit, SaleInvoiceHistoryState>(
+          bloc: _cubit,
+          builder: (BuildContext context, SaleInvoiceHistoryState state) {
+            if (state.isLoading) {
+              return const LoadingPageWidget();
+            }
+            return CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              controller: _scrollController,
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(appSpace),
+                  sliver: _buildBody(state),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -241,17 +288,15 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     final records = state.records;
 
     if (records.isEmpty) {
-      return const EmptyScreen();
+      return SliverFillRemaining(child: const EmptyScreen());
     }
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: records.length,
-      padding: const EdgeInsets.all(appSpace),
+    return SliverList.builder(
       itemBuilder: (context, index) => SaleHistoryCardBox(
         header: records[index],
         onTapShare: () => shareSaleOrder(records[index].no ?? ""),
         onTap: () => navigatorToSaleHistoryList(context, records, index),
       ),
+      itemCount: records.length,
     );
   }
 

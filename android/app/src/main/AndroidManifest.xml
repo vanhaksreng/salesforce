@@ -20,6 +20,26 @@
     <!-- Additional permissions for better reliability -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+     <!-- Scan Bluetooth -->
+
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <!-- For Android 12+ -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" 
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+
+    <!-- For Imin printer access -->
+    <!-- <uses-permission android:name="android.permission.ACCESS_SUPERUSER" />
+    <uses-feature android:name="android.hardware.usb.host" />
+    <uses-permission android:name="android.permission.USB_PERMISSION" /> -->
+    <uses-permission android:name="com.imin.printerservice.permission.PRINTER" />
+
+
+    <uses-feature 
+        android:name="android.hardware.bluetooth" 
+        android:required="true" />
     
     <application
         android:label="Trade B2B"
@@ -48,6 +68,19 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+      
+        <service
+            android:name=".LocationService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+        <receiver android:name=".BootReceiver" android:enabled="true" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        
             
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"

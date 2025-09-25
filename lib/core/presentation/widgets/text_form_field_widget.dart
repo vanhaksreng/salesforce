@@ -55,7 +55,9 @@ class TextFormFieldWidget extends TextFormField {
   }) : super(
          inputFormatters: [NoEmojiTextInputFormatter(), ...?inputFormatters],
          controller: controller,
-         onTapOutside: onTapOutside ?? (event) => FocusManager.instance.primaryFocus?.unfocus(),
+         onTapOutside:
+             onTapOutside ??
+             (event) => FocusManager.instance.primaryFocus?.unfocus(),
          style: TextStyle(
            decoration: decoration,
            decorationColor: decorationColor,
@@ -116,7 +118,10 @@ class TextFormFieldWidget extends TextFormField {
     bool isRequired = false,
   }) {
     final defaultBorder = OutlineInputBorder(
-      borderSide: BorderSide(color: grey, width: scaleFontSize(0.5)),
+      borderSide: BorderSide(
+        color: primary.withValues(alpha: 0.3),
+        width: scaleFontSize(0.5),
+      ),
       borderRadius: BorderRadius.circular(scaleFontSize(8)),
     );
 
@@ -132,25 +137,43 @@ class TextFormFieldWidget extends TextFormField {
     return InputDecoration(
       alignLabelWithHint: true,
       maintainHintSize: true,
-      constraints: BoxConstraints(minWidth: scaleFontSize(45), minHeight: scaleFontSize(45)),
+      constraints: BoxConstraints(
+        minWidth: scaleFontSize(45),
+        minHeight: scaleFontSize(45),
+      ),
       contentPadding: isDefaultTextForm ? defaultPadding : contentPadding,
       border: isDefaultTextForm ? defaultBorder : border,
       enabledBorder: isDefaultTextForm ? defaultBorder : enabledBorder,
       focusedBorder: isDefaultTextForm ? defaultBorder : focusedBorder,
       filled: filled,
-      fillColor: readOnly && !isOption ? grey.withValues(alpha: 0.3) : fillColor,
+      fillColor: readOnly && !isOption
+          ? primary.withValues(alpha: 0.03)
+          : fillColor,
       prefix: prefix,
       suffix: suffix,
       hintText: hintText,
-      hintStyle: TextStyle(fontWeight: hintFontWeight, color: hintColor, fontSize: scaleFontSize(hintFontSize ?? 14)),
+      hintStyle: TextStyle(
+        fontWeight: hintFontWeight,
+        color: hintColor,
+        fontSize: scaleFontSize(hintFontSize ?? 14),
+      ),
       labelText: greeting(label) + star,
       labelStyle: TextStyle(color: textColor50, fontSize: scaleFontSize(12)),
-      floatingLabelStyle: TextStyle(color: primary, fontSize: scaleFontSize(15)),
-      errorStyle: TextStyle(fontFamily: Helpers.getFontFamily(label), color: error, fontSize: 0),
+      floatingLabelStyle: TextStyle(
+        color: primary,
+        fontSize: scaleFontSize(15),
+      ),
+      errorStyle: TextStyle(
+        fontFamily: Helpers.getFontFamily(label),
+        color: error,
+        fontSize: 0,
+      ),
       suffixIcon: suffixIcon,
       prefixIcon: prefixIcon != null
           ? Padding(
-              padding: EdgeInsets.symmetric(horizontal: scaleFontSize(appSpace)),
+              padding: EdgeInsets.symmetric(
+                horizontal: scaleFontSize(appSpace),
+              ),
               child: prefixIcon,
             )
           : null,

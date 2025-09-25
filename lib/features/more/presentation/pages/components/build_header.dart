@@ -27,7 +27,12 @@ class BuildHeader extends StatelessWidget {
             icons: Icon(icon, color: mainColor),
             rounded: appBtnRound,
           ),
-          TextWidget(text: greeting(label), fontWeight: FontWeight.bold, fontSize: 16, color: textColor50),
+          TextWidget(
+            text: greeting(label),
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: textColor50,
+          ),
         ],
       ),
     );
