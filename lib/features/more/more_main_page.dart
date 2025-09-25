@@ -10,6 +10,7 @@ import 'package:salesforce/features/more/domain/entities/more_model.dart';
 import 'package:salesforce/features/more/more_main_page_cubit.dart';
 import 'package:salesforce/features/more/presentation/components/more_shape.dart';
 import 'package:salesforce/features/more/presentation/pages/about/about_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/administration/administration_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/invoice_printer/invoice_printer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/profile_form/profile_form_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/reset_password/reset_password_screen.dart';
@@ -31,15 +32,22 @@ class _MoreMainPageState extends State<MoreMainPage> with PermissionMixin {
       title: greeting("administration"),
       subTitle: greeting("account_management_and_permissions"),
       icon: Icons.admin_panel_settings_outlined,
-      routeName: InvoicePrinterScreen.routeName,
-      arg: Args(titelArg: greeting("administration"), parentTitle: greeting("more")),
+      routeName: AdministrationScreen.routeName,
+      arg: Args(
+        titelArg: greeting("administration"),
+        parentTitle: greeting("more"),
+      ),
     ),
     MoreModel(
       title: greeting("reset_password"),
       subTitle: greeting("change_your_account_password"),
       icon: Icons.password,
-      routeName: ResetPasswordScreen.routeName, // TODO ResetPasswordScreen.routeName,
-      arg: Args(titelArg: greeting("reset_password"), parentTitle: greeting("more")),
+      routeName:
+          ResetPasswordScreen.routeName, // TODO ResetPasswordScreen.routeName,
+      arg: Args(
+        titelArg: greeting("reset_password"),
+        parentTitle: greeting("more"),
+      ),
     ),
   ];
 
@@ -73,7 +81,9 @@ class _MoreMainPageState extends State<MoreMainPage> with PermissionMixin {
   }
 
   _pushToDetail(BuildContext context) {
-    return Navigator.pushNamed(context, ProfileFormScreen.routeName).then((value) {
+    return Navigator.pushNamed(context, ProfileFormScreen.routeName).then((
+      value,
+    ) {
       if (Helpers.shouldReload(value)) {
         _cubit.getInitData();
       }
@@ -91,7 +101,10 @@ class _MoreMainPageState extends State<MoreMainPage> with PermissionMixin {
                 onTap: () => _pushToDetail(context),
                 title: state.auth?.userName ?? "",
                 subtitle: state.auth?.email ?? "",
-                avatar: ImageNetWorkWidget(width: double.infinity, imageUrl: state.auth?.imgPath ?? ""),
+                avatar: ImageNetWorkWidget(
+                  width: double.infinity,
+                  imageUrl: state.auth?.imgPath ?? "",
+                ),
               );
             },
           ),
@@ -112,9 +125,18 @@ class _MoreMainPageState extends State<MoreMainPage> with PermissionMixin {
               spacing: scaleFontSize(appSpace),
               children: [
                 if (state.isLoading) const LoadingPageWidget(),
-                BuildMore(listActionMore: state.listMenus, lable: greeting("operations")),
-                BuildMore(listActionMore: listSettings, lable: greeting("account_&_security")),
-                BuildMore(listActionMore: listSupport, lable: greeting("support")),
+                BuildMore(
+                  listActionMore: state.listMenus,
+                  lable: greeting("operations"),
+                ),
+                BuildMore(
+                  listActionMore: listSettings,
+                  lable: greeting("account_&_security"),
+                ),
+                BuildMore(
+                  listActionMore: listSupport,
+                  lable: greeting("support"),
+                ),
               ],
             ),
           );

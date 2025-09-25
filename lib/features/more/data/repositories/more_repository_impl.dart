@@ -1125,4 +1125,14 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
       return Left(CacheFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, CompanyInformation?>> getCompanyInfo() async {
+    try {
+      final response = await _local.getCompanyInfo();
+      return Right(response);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
 }

@@ -7,13 +7,16 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as https;
 import 'package:http/io_client.dart';
 import 'package:image/image.dart' as img;
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/presentation/widgets/custom_alert_dialog_widget.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/fllutter_html_to_pdf.dart';
+import 'package:salesforce/core/utils/get_message_config.dart';
 import 'package:salesforce/core/utils/logger.dart';
+import 'package:salesforce/core/utils/message_helper.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
 import 'package:salesforce/injection_container.dart';
@@ -125,14 +128,35 @@ class Helpers {
     }
   }
 
-  static int toInt(value) {
-    if (value == null || value == "") {
+  // static int toInt(value) {
+  //   if (value == null || value == "") {
+  //     return 0;
+  //   }
+
+  //   String v = value.toString().replaceAll("\$", "");
+  //   v = v.replaceAll("%", "");
+  //   return int.parse(v);
+  // }
+
+  static int toInt(dynamic value) {
+    if (value == null || value.toString().trim().isEmpty) {
       return 0;
     }
 
-    String v = value.toString().replaceAll("\$", "");
-    v = v.replaceAll("%", "");
-    return int.parse(v);
+    try {
+      String v = value.toString().trim();
+
+      v = v.replaceAll(RegExp(r'[^0-9\.\-]'), '');
+
+      if (v.isEmpty || v == "-" || v == "." || v == "-.") {
+        return 0;
+      }
+
+      double d = double.parse(v);
+      return d.toInt();
+    } catch (e) {
+      return 0;
+    }
   }
 
   static String rmZeroFormat(double n) {
@@ -150,38 +174,75 @@ class Helpers {
   }
 
   //show messgae
+  // static void showMessage({
+  //   required String msg,
+  //   MessageStatus status = MessageStatus.success,
+  //   SnackBarAction? action,
+  //   bool closeIcon = true,
+  // }) {
+  //   final scaffold = kAppScaffoldMsgKey.currentState;
+  //   if (scaffold == null) return;
+
+  //   // Prevent showing same message repeatedly
+  //   if (_lastMessage == msg) return;
+  //   _lastMessage = msg;
+
+  //   Color color = success;
+  //   if (status == MessageStatus.warning) {
+  //     color = warning;
+  //   } else if (status == MessageStatus.errors) {
+  //     color = error;
+  //   }
+  //   scaffold.clearSnackBars(); // Hide previous snackbars
+  //   scaffold.showSnackBar(
+  //     SnackBar(
+  //       backgroundColor: color,
+  //       content: TextWidget(text: msg, color: white),
+  //       showCloseIcon: closeIcon,
+  //       closeIconColor: white,
+  //       behavior: SnackBarBehavior.floating,
+  //       shape: RoundedRectangleBorder(
+  //         borderRadius: BorderRadius.circular(scaleFontSize(8)),
+  //       ),
+  //       action: action,
+  //     ),
+  //   );
+
+  //   // Reset last message after duration
+  //   Future.delayed(const Duration(seconds: 3), () {
+  //     _lastMessage = null;
+  //   });
+  // }
+
   static void showMessage({
     required String msg,
     MessageStatus status = MessageStatus.success,
     SnackBarAction? action,
     bool closeIcon = true,
+    Duration? duration,
   }) {
     final scaffold = kAppScaffoldMsgKey.currentState;
     if (scaffold == null) return;
 
-    // Prevent showing same message repeatedly
     if (_lastMessage == msg) return;
     _lastMessage = msg;
 
-    Color color = success;
-    if (status == MessageStatus.warning) {
-      color = warning;
-    } else if (status == MessageStatus.errors) {
-      color = error;
-    }
-    scaffold.clearSnackBars(); // Hide previous snackbars
+    final messageConfig = MessageHelper.getMessageConfig(status);
+
+    scaffold.clearSnackBars();
     scaffold.showSnackBar(
-      SnackBar(
-        backgroundColor: color,
-        content: TextWidget(text: msg, color: white),
-        showCloseIcon: closeIcon,
-        closeIconColor: primary,
+      MessageHelper.buildBeautifulSnackBar(
+        msg: msg,
+        color: messageConfig.color,
+        icon: messageConfig.icon,
         action: action,
+        closeIcon: closeIcon,
+        duration: duration ?? messageConfig.duration,
       ),
     );
 
     // Reset last message after duration
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(duration ?? messageConfig.duration, () {
       _lastMessage = null;
     });
   }
@@ -841,5 +902,30 @@ class Helpers {
     fileCopy.writeAsBytesSync(File.fromUri(fileOriginal.uri).readAsBytesSync());
     fileOriginal.delete();
     return fileCopy;
+  }
+
+  static String calculateDuration(String start, String end) {
+    final format = DateFormat("HH:mm:ss");
+
+    final startTime = format.parse(start.trim());
+    final endTime = format.parse(end.trim());
+
+    final diff = endTime.difference(startTime);
+
+    final hours = diff.inHours;
+    final minutes = diff.inMinutes % 60;
+    final seconds = diff.inSeconds % 60;
+
+    final parts = <String>[];
+
+    if (hours > 0) {
+      parts.add("${hours.toString().padLeft(2, '0')}h");
+    }
+    if (minutes > 0 || hours > 0) {
+      parts.add("${minutes.toString().padLeft(2, '0')}m");
+    }
+    parts.add("${seconds.toString().padLeft(2, '0')}s");
+
+    return parts.join(" ");
   }
 }

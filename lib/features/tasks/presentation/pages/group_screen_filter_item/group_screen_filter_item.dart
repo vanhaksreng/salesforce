@@ -33,7 +33,7 @@ class _GroupScreenFilterItemState extends State<GroupScreenFilterItem> {
   final ValueNotifier<int> page = ValueNotifier<int>(1);
   final ScrollController _scrollController = ScrollController();
   final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
-  List<String> status = [kInStock, kOutOfStock];
+  List<String> status = [kInStock, kOutOfStock, kAll];
   late String searchString;
 
   @override
@@ -44,6 +44,7 @@ class _GroupScreenFilterItemState extends State<GroupScreenFilterItem> {
 
     checkEmitValue();
     _scrollController.addListener(_handleScrolling);
+    searchString = "";
     super.initState();
   }
 
@@ -54,7 +55,9 @@ class _GroupScreenFilterItemState extends State<GroupScreenFilterItem> {
   }
 
   bool _shouldLoadMore() {
-    return _scrollController.position.pixels == _scrollController.position.maxScrollExtent && !_cubit.state.isFetching;
+    return _scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent &&
+        !_cubit.state.isFetching;
   }
 
   void _loadMoreItems() {
@@ -91,11 +94,14 @@ class _GroupScreenFilterItemState extends State<GroupScreenFilterItem> {
     } else if (widget.args.status == "> 0") {
       return kInStock;
     }
-    return "";
+    return kAll;
   }
 
   void _onCallback() {
-    Navigator.pop(context, {"groupCode": _cubit.state.grupCode, "stock": _cubit.state.statusStock});
+    Navigator.pop(context, {
+      "groupCode": _cubit.state.grupCode,
+      "stock": _cubit.state.statusStock,
+    });
   }
 
   void _resetFilter() {
@@ -104,10 +110,14 @@ class _GroupScreenFilterItemState extends State<GroupScreenFilterItem> {
   }
 
   onSelectedStatus(String statusStock) {
+    print("===================> $statusStock");
     _cubit.selectStatus(statusStock);
   }
 
-  bool isShowResetBtn({required String status, required List<String>? grupCode}) {
+  bool isShowResetBtn({
+    required String status,
+    required List<String>? grupCode,
+  }) {
     return status.isNotEmpty || (grupCode ?? []).isNotEmpty;
   }
 
@@ -156,7 +166,11 @@ class _GroupScreenFilterItemState extends State<GroupScreenFilterItem> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                TextWidget(text: greeting("Status"), fontSize: 16, fontWeight: FontWeight.bold),
+                TextWidget(
+                  text: greeting("Status"),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
                 Wrap(
                   spacing: 8.scale,
                   children: List.generate(
@@ -166,11 +180,16 @@ class _GroupScreenFilterItemState extends State<GroupScreenFilterItem> {
                       vertical: 8,
                       horizontal: 16,
                       borderColor: grey20,
-                      bgColor: state.statusStock == status[index] ? mainColor : grey20,
-                      onPressed: () => onSelectedStatus(status[index].toString()),
+                      bgColor: state.statusStock == status[index]
+                          ? mainColor
+                          : grey20,
+                      onPressed: () =>
+                          onSelectedStatus(status[index].toString()),
                       child: TextWidget(
                         text: status[index].toString(),
-                        color: state.statusStock == status[index] ? white : textColor,
+                        color: state.statusStock == status[index]
+                            ? white
+                            : textColor,
                       ),
                     ),
                   ),
@@ -186,7 +205,11 @@ class _GroupScreenFilterItemState extends State<GroupScreenFilterItem> {
                 children: [
                   Padding(
                     padding: EdgeInsets.all(scaleFontSize(8.scale)),
-                    child: TextWidget(text: greeting("groups"), fontSize: 16, fontWeight: FontWeight.bold),
+                    child: TextWidget(
+                      text: greeting("groups"),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   _buildItemGroups(itemGroup),
                 ],
@@ -197,12 +220,23 @@ class _GroupScreenFilterItemState extends State<GroupScreenFilterItem> {
             child: Row(
               spacing: scaleFontSize(8),
               children: [
-                if (isShowResetBtn(status: state.statusStock, grupCode: state.grupCode))
+                if (isShowResetBtn(
+                  status: state.statusStock,
+                  grupCode: state.grupCode,
+                ))
                   Expanded(
-                    child: BtnWidget(bgColor: red, title: greeting("reset"), onPressed: () => _resetFilter()),
+                    child: BtnWidget(
+                      bgColor: red,
+                      title: greeting("reset"),
+                      onPressed: () => _resetFilter(),
+                    ),
                   ),
                 Expanded(
-                  child: BtnWidget(gradient: linearGradient, title: greeting("apply"), onPressed: () => _onCallback()),
+                  child: BtnWidget(
+                    gradient: linearGradient,
+                    title: greeting("apply"),
+                    onPressed: () => _onCallback(),
+                  ),
                 ),
               ],
             ),
@@ -215,6 +249,7 @@ class _GroupScreenFilterItemState extends State<GroupScreenFilterItem> {
   Widget _buildItemGroups(List<ItemGroup> itemGroup) {
     return Expanded(
       child: ListView.separated(
+        padding: EdgeInsets.zero,
         controller: _scrollController,
         itemCount: itemGroup.length,
         physics: const AlwaysScrollableScrollPhysics(),
@@ -223,7 +258,6 @@ class _GroupScreenFilterItemState extends State<GroupScreenFilterItem> {
           if (index == itemGroup.length) {
             return const LoadingPageWidget();
           }
-
           final group = itemGroup[index];
           return ListTileSelected(
             group: group,

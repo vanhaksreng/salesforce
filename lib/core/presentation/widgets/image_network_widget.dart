@@ -49,7 +49,8 @@ class ImageNetWorkWidget extends StatelessWidget {
 
     return CachedNetworkImage(
       imageUrl: img,
-      imageBuilder: (context, imageProvider) => _buildContainer(_buildImageDecoration(imageProvider)),
+      imageBuilder: (context, imageProvider) =>
+          _buildContainer(_buildImageDecoration(imageProvider)),
       placeholder: (context, url) => _buildContainer(_placeHolderImg()),
       errorWidget: (context, url, error) => _buildContainer(_errorImg()),
     );
@@ -62,10 +63,20 @@ class ImageNetWorkWidget extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
         shape: RoundedRectangleBorder(
-          side: isSide ? BorderSide(width: sideWidth, color: sideColor) : BorderSide.none,
+          side: isSide
+              ? BorderSide(width: sideWidth, color: sideColor)
+              : BorderSide.none,
           borderRadius: _borderRadius(),
         ),
-        shadows: isShadows ? [const BoxShadow(color: grey, blurRadius: 90, offset: Offset(0, 4))] : [],
+        shadows: isShadows
+            ? [
+                const BoxShadow(
+                  color: grey,
+                  blurRadius: 90,
+                  offset: Offset(0, 4),
+                ),
+              ]
+            : [],
       ),
       child: child,
     );

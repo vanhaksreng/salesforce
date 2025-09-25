@@ -52,8 +52,18 @@ class RowBoxTextWidget extends StatelessWidget {
               spacing: 8.scale,
               crossAxisAlignment: crossAxisAlignment1,
               children: [
-                TextWidget(text: lable1, fontWeight: label1FontWeight, color: lable1Color, fontSize: fontSizeLable),
-                TextWidget(fontWeight: value1FontWeight, text: value1, fontSize: fontSizeValue, color: value1Color),
+                TextWidget(
+                  text: lable1,
+                  fontWeight: label1FontWeight,
+                  color: lable1Color,
+                  fontSize: fontSizeLable,
+                ),
+                TextWidget(
+                  fontWeight: value1FontWeight,
+                  text: value1,
+                  fontSize: fontSizeValue,
+                  color: value1Color,
+                ),
               ],
             ),
           ),
@@ -63,8 +73,18 @@ class RowBoxTextWidget extends StatelessWidget {
                 spacing: 8.scale,
                 crossAxisAlignment: crossAxisAlignment2,
                 children: [
-                  TextWidget(text: label2, color: lable2Color, fontWeight: label2FontWeight, fontSize: fontSizeLable),
-                  TextWidget(fontWeight: value2FontWeight, text: value2, color: value2Color, fontSize: fontSizeValue),
+                  TextWidget(
+                    text: label2,
+                    color: lable2Color,
+                    fontWeight: label2FontWeight,
+                    fontSize: fontSizeLable,
+                  ),
+                  TextWidget(
+                    fontWeight: value2FontWeight,
+                    text: value2,
+                    color: value2Color,
+                    fontSize: fontSizeValue,
+                  ),
                 ],
               ),
             ),

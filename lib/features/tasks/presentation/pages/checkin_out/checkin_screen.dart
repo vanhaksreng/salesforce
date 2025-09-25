@@ -72,7 +72,9 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
 
     try {
       if (imgPath == null && _cubit.state.checkInWithPhoto == "Yes") {
-        throw GeneralException(greeting("Please take a picture before checkin"));
+        throw GeneralException(
+          greeting("Please take a picture before checkin"),
+        );
       }
 
       if (isSelectShopClose.value && commentController.text.isEmpty) {
@@ -85,7 +87,9 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
         throw GeneralException("Cannot get Latitude & Longitude");
       }
 
-      final areaByMeters = Helpers.toDouble(await _cubit.getSetting(kCheckedInAreaKey));
+      final areaByMeters = Helpers.toDouble(
+        await _cubit.getSetting(kCheckedInAreaKey),
+      );
       if (areaByMeters > 0) {
         final double distInMeters = _location.getDistanceBetween(
           widget.schedule.latitude ?? 0,
@@ -98,7 +102,12 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
           throw GeneralException(
             greeting(
               "must_within_store_checkin",
-              params: {'value': Helpers.formatNumber(areaByMeters, option: FormatType.quantity)},
+              params: {
+                'value': Helpers.formatNumber(
+                  areaByMeters,
+                  option: FormatType.quantity,
+                ),
+              },
             ),
           );
         }
@@ -134,7 +143,9 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
 
     try {
       if (imgPath == null && _cubit.state.checkOutWithPhoto == kStatusYes) {
-        throw GeneralException(greeting("Please take a picture before checkout"));
+        throw GeneralException(
+          greeting("Please take a picture before checkout"),
+        );
       }
 
       await _cubit.getLatLng();
@@ -143,7 +154,9 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
         throw GeneralException("Cannot get Latitude & Longitude");
       }
 
-      final areaByMeters = Helpers.toDouble(await _cubit.getSetting(kCheckedOutAreaKey));
+      final areaByMeters = Helpers.toDouble(
+        await _cubit.getSetting(kCheckedOutAreaKey),
+      );
       if (areaByMeters > 0) {
         final double distInMeters = _location.getDistanceBetween(
           widget.schedule.latitude ?? 0,
@@ -156,7 +169,12 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
           throw GeneralException(
             greeting(
               "must_within_store_checkout",
-              params: {'value': Helpers.formatNumber(areaByMeters, option: FormatType.quantity)},
+              params: {
+                'value': Helpers.formatNumber(
+                  areaByMeters,
+                  option: FormatType.quantity,
+                ),
+              },
             ),
           );
         }
@@ -200,7 +218,10 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
   Future _pickImage(ImageSource imageSource) async {
     Navigator.pop(context);
     try {
-      final picker = await ImagePicker().pickImage(imageQuality: 100, source: imageSource);
+      final picker = await ImagePicker().pickImage(
+        imageQuality: 100,
+        source: imageSource,
+      );
       if (picker == null) return;
       setState(() {
         imgPath = XFile(picker.path);
@@ -233,10 +254,14 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
             children: [
               Expanded(
                 child: ListView(
-                  padding: EdgeInsets.symmetric(horizontal: scaleFontSize(appSpace)),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: scaleFontSize(appSpace),
+                  ),
                   children: [
-                    if (!_isCheckYet() && state.checkInWithPhoto == kStatusYes) buildImageUpload(),
-                    if (_isCheckYet() && state.checkOutWithPhoto == kStatusYes) buildImageUpload(),
+                    if (!_isCheckYet() && state.checkInWithPhoto == kStatusYes)
+                      buildImageUpload(),
+                    if (_isCheckYet() && state.checkOutWithPhoto == kStatusYes)
+                      buildImageUpload(),
                     SizedBox(height: scaleFontSize(appSpace)),
                     buildInsertComment(),
                     Helpers.gapH(8),
@@ -257,7 +282,10 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
       builder: (context, state) {
         return SafeArea(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: scaleFontSize(appSpace), vertical: scaleFontSize(appSpace8)),
+            padding: EdgeInsets.symmetric(
+              horizontal: scaleFontSize(appSpace),
+              vertical: scaleFontSize(appSpace8),
+            ),
             child: BtnWidget(
               gradient: linearGradient,
               title: greeting(!_isCheckYet() ? "check_in" : "check_out"),
@@ -334,9 +362,17 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
                     bgColor: mainColor50.withValues(alpha: 0.2),
                     vertical: 8,
                     horizontal: 0,
-                    child: Icon(size: 16.scale, Icons.home_work_rounded, color: mainColor),
+                    child: Icon(
+                      size: 16.scale,
+                      Icons.home_work_rounded,
+                      color: mainColor,
+                    ),
                   ),
-                  TextWidget(fontSize: 16, fontWeight: FontWeight.w600, text: greeting("shop_is_close")),
+                  TextWidget(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    text: greeting("shop_is_close"),
+                  ),
                 ],
               ),
               ValueListenableBuilder(
@@ -406,7 +442,13 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
       children: [
         SizedBox(
           height: scaleFontSize(100),
-          child: Center(child: SmoothImageLoader(imageLocal: kSampleImage, width: 60, height: 60)),
+          child: Center(
+            child: SmoothImageLoader(
+              imageLocal: kSampleImage,
+              width: 60,
+              height: 60,
+            ),
+          ),
         ),
         TextWidget(text: greeting("tap_to_upload_picture"), color: textColor50),
       ],

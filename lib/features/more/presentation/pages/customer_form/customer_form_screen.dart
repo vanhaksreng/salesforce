@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:salesforce/core/constants/app_config.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
+import 'package:salesforce/core/presentation/widgets/bottom_sheet_fn.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
+import 'package:salesforce/core/presentation/widgets/header_bottom_sheet.dart';
+import 'package:salesforce/core/presentation/widgets/hr.dart';
+import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
+import 'package:salesforce/core/presentation/widgets/list_tile_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
+import 'package:salesforce/core/presentation/widgets/text_btn_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_form_field_widget.dart';
+import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/presentation/pages/components/build_header.dart';
@@ -56,6 +65,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
   final _cusIdTextEditController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   GoogleMapController? _mapController;
+  XFile? imgPath;
 
   @override
   void initState() {
@@ -70,7 +80,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
     if (customer == null) {
       return;
     }
-
+    imgPath = XFile(customer.avatar128 ?? "");
     _nameTextEditController.text = customer.name ?? "";
     _phoneTextEditController.text = customer.phoneNo ?? "";
     _emailTextEditController.text = customer.email ?? "";
@@ -116,6 +126,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
           address: _addressTextEditController.text,
           latitude: Helpers.toDouble(_latTextEditController.text),
           longitude: Helpers.toDouble(_longTextEditController.text),
+          avatar128: imgPath?.path,
           status: kStatusOpen,
         ),
       );
@@ -185,6 +196,70 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
     });
   }
 
+  showBottomSheetCamera() {
+    modalBottomSheet(
+      context,
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: scaleFontSize(appSpace),
+          children: [
+            HeaderBottomSheet(
+              childWidget: TextWidget(
+                text: greeting("Take a picture"),
+                fontSize: 16,
+                color: white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(scaleFontSize(8)),
+              child: Column(
+                spacing: scaleFontSize(8),
+                children: [
+                  ListTitleWidget(
+                    leading: const Icon(Icons.camera_alt, color: mainColor),
+                    onTap: () => openCamera(context),
+                    label: greeting("Camera"),
+                    subTitle: greeting("Take photo by using camera."),
+                  ),
+
+                  ListTitleWidget(
+                    leading: const Icon(Icons.photo, color: mainColor),
+                    onTap: () => _pickImage(ImageSource.gallery),
+                    label: greeting("gallery"),
+                    subTitle: greeting("Take photo from gallery."),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future _pickImage(ImageSource imageSource) async {
+    Navigator.pop(context);
+    try {
+      final picker = await ImagePicker().pickImage(
+        imageQuality: 100,
+        source: imageSource,
+      );
+      if (picker == null) return;
+      setState(() {
+        imgPath = XFile(picker.path);
+      });
+    } on PlatformException catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  void openCamera(BuildContext context) {
+    _pickImage(ImageSource.camera);
+  }
+
   @override
   void dispose() {
     _latTextEditController.dispose;
@@ -229,6 +304,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
         child: Column(
           spacing: 15.scale,
           children: [
+            // buildImageUpload(),
             BoxWidget(
               padding: EdgeInsets.all(scaleFontSize(appSpace8)),
               child: Form(
@@ -237,9 +313,39 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: scaleFontSize(appSpace),
                   children: [
-                    const BuildHeader(
-                      icon: Icons.person,
-                      label: "customer_info",
+                    Row(
+                      spacing: scaleFontSize(8),
+                      children: [
+                        GestureDetector(
+                          onTap: () => showBottomSheetCamera(),
+                          child: ImageNetWorkWidget(
+                            imageUrl: imgPath?.path ?? "",
+                            height: 60.scale,
+                            width: 60.scale,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextWidget(
+                              text: greeting("Personal Information"),
+                              fontWeight: FontWeight.bold,
+                            ),
+                            TextBtnWidget(
+                              onTap: () => showBottomSheetCamera(),
+                              fontSize: 12,
+                              colorBtn: primary,
+                              textDecoration: TextDecoration.underline,
+                              titleBtn: greeting("Tap to change photo"),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Hr(
+                      width: double.infinity,
+                      color: primary.withValues(alpha: .1),
                     ),
                     TextFormFieldWidget(
                       label: greeting("Customer No"),
@@ -333,6 +439,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
                       child: CustomerMapScreen(
                         isShowPin: true,
                         isGPS: true,
+
                         onMapCreated: (GoogleMapController controller) {
                           _mapController = controller;
                         },
@@ -340,7 +447,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
                           widget.customer.latitude ?? 0.0,
                           widget.customer.longitude ?? 0.0,
                         ),
-                        scrollGesturesEnabled: true,
+                        scrollGesturesEnabled: false,
                         onCameraIdle: (latLng) => _getLatLng(latLng),
                       ),
                     ),

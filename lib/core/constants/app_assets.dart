@@ -36,3 +36,4 @@ const String kInventoryIcon = "assets/icons/inventory_icon.svg";
 const String kReceiptIcon = "assets/icons/receipt.svg";
 const String kCartIcon = "assets/icons/cart.svg";
 const String kCerditIcon = "assets/icons/credit.svg";
+const blueTechnologyImgLoading = "assets/images/blue_logo_English.png";

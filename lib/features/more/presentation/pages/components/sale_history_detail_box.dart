@@ -18,13 +18,16 @@ import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class SaleHistoryDetailBox extends StatelessWidget {
-  const SaleHistoryDetailBox({super.key, required this.header, required this.lines});
-  final PosSalesHeader header;
+  const SaleHistoryDetailBox({super.key, this.header, required this.lines});
+  final PosSalesHeader? header;
   final List<PosSalesLine> lines;
 
   @override
   Widget build(BuildContext context) {
-    return Column(spacing: 16.scale, children: [_buildHeaderBox(), _buildListItem()]);
+    return Column(
+      spacing: 16.scale,
+      children: [_buildHeaderBox(), _buildListItem()],
+    );
   }
 
   Widget _buildHeaderBox() {
@@ -41,36 +44,52 @@ class SaleHistoryDetailBox extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextWidget(fontWeight: FontWeight.bold, text: header.no ?? "", fontSize: 18),
+                  TextWidget(
+                    fontWeight: FontWeight.bold,
+                    text: header?.no ?? "",
+                    fontSize: 18,
+                  ),
                   ChipWidget(
                     ishadowColor: false,
                     fontSize: 12,
                     vertical: 8.scale,
-                    label: header.status?.toUpperCase() ?? "",
-                    colorText: getStatusColor(header.status),
-                    bgColor: getStatusColor(header.status).withValues(alpha: .2),
+                    label: header?.status?.toUpperCase() ?? "",
+                    colorText: getStatusColor(header?.status),
+                    bgColor: getStatusColor(
+                      header?.status,
+                    ).withValues(alpha: .2),
                   ),
                 ],
               ),
-              TextWidget(fontWeight: FontWeight.w500, color: textColor50, text: header.documentDate ?? ""),
+              TextWidget(
+                fontWeight: FontWeight.w500,
+                color: textColor50,
+                text: header?.documentDate ?? "",
+              ),
             ],
           ),
           RowBoxTextWidget(
             lable1: greeting("customer").toUpperCase(),
-            value1: header.customerName ?? "",
+            value1: header?.customerName ?? "",
             label2: greeting("Ship to name").toUpperCase(),
-            value2: header.shipToName ?? "",
+            value2: header?.shipToName ?? "",
           ),
           RowBoxTextWidget(
             lable1: greeting("document_date").toUpperCase(),
-            value1: header.documentDate ?? "",
+            value1: header?.documentDate ?? "",
             label2: greeting("ship_date").toUpperCase(),
-            value2: header.requestShipmentDate ?? "",
+            value2: header?.requestShipmentDate ?? "",
           ),
-          if ((header.shipToAddress ?? "").isNotEmpty)
-            RowBoxTextWidget(lable1: greeting("ship to address").toUpperCase(), value1: header.shipToAddress ?? ""),
-          if ((header.shipToAddress2 ?? "").isNotEmpty)
-            RowBoxTextWidget(lable1: greeting("ship to address").toUpperCase(), value1: header.shipToAddress2 ?? ""),
+          if ((header?.shipToAddress ?? "").isNotEmpty)
+            RowBoxTextWidget(
+              lable1: greeting("ship to address").toUpperCase(),
+              value1: header?.shipToAddress ?? "",
+            ),
+          if ((header?.shipToAddress2 ?? "").isNotEmpty)
+            RowBoxTextWidget(
+              lable1: greeting("ship to address").toUpperCase(),
+              value1: header?.shipToAddress2 ?? "",
+            ),
           BoxWidget(
             color: grey20,
             isBoxShadow: false,
@@ -85,7 +104,12 @@ class SaleHistoryDetailBox extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
                 TextWidget(
-                  text: header.amount != null ? Helpers.formatNumber(header.amount, option: FormatType.amount) : "0.00",
+                  text: header?.amount != null
+                      ? Helpers.formatNumber(
+                          header?.amount,
+                          option: FormatType.amount,
+                        )
+                      : "0.00",
                   fontSize: 20,
                   color: mainColor,
                   fontWeight: FontWeight.bold,
@@ -119,10 +143,15 @@ class SaleHistoryDetailBox extends StatelessWidget {
                   radius: 8,
                   vertical: 6,
                   horizontal: 0,
-                  child: SvgWidget(assetName: kAddCart, colorSvg: white, width: 15, height: 15),
+                  child: SvgWidget(
+                    assetName: kAddCart,
+                    colorSvg: white,
+                    width: 15,
+                    height: 15,
+                  ),
                 ),
                 TextWidget(
-                  text: "${greeting("order_items")} (${lines.length})",
+                  text: "${greeting("order_items")} (${lines?.length})",
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -190,7 +219,10 @@ class SaleHistoryDetailBox extends StatelessWidget {
                       fontSize: 16,
                       color: mainColor,
                       fontWeight: FontWeight.bold,
-                      text: Helpers.formatNumber(record.amount, option: FormatType.amount),
+                      text: Helpers.formatNumber(
+                        record.amount,
+                        option: FormatType.amount,
+                      ),
                     ),
                   ],
                 ),

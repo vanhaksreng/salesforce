@@ -7,10 +7,8 @@ import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/bottom_sheet_fn.dart';
-import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
-import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
 import 'package:salesforce/core/presentation/widgets/header_bottom_sheet.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/list_tile_wiget.dart';
@@ -35,13 +33,18 @@ class ProfileFormScreen extends StatefulWidget {
   ProfileFormScreenState createState() => ProfileFormScreenState();
 }
 
-class ProfileFormScreenState extends State<ProfileFormScreen> with MessageMixin {
+class ProfileFormScreenState extends State<ProfileFormScreen>
+    with MessageMixin {
   final _cubit = ProfileFormCubit();
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
+  final locationController = TextEditingController();
+  final locationCodeController = TextEditingController();
+  final salesPersonCodeController = TextEditingController();
   User? _auth;
+
   String? image;
   late ActionState _action = ActionState.init;
 
@@ -53,17 +56,22 @@ class ProfileFormScreenState extends State<ProfileFormScreen> with MessageMixin 
 
   onInit() async {
     _auth = getAuth();
-
+    await _cubit.getUserSetup();
+    final userSetUp = _cubit.state.user;
     final userName = _auth?.userName ?? "";
     List<String> nameParts = userName.trim().split(" ");
 
     String firstName = nameParts.isNotEmpty ? nameParts.first : "";
-    String lastName = nameParts.length > 1 ? nameParts.sublist(1).join(" ") : "";
+    String lastName = nameParts.length > 1
+        ? nameParts.sublist(1).join(" ")
+        : "";
     firstNameController.text = firstName;
     lastNameController.text = lastName;
     emailController.text = _auth?.email ?? "";
     phoneController.text = _auth?.phoneNo ?? "";
     image = _auth?.imgPath ?? "";
+    locationCodeController.text = userSetUp?.locationCode ?? "";
+    salesPersonCodeController.text = userSetUp?.salespersonCode ?? "";
   }
 
   _saveInfoUser() async {
@@ -91,7 +99,10 @@ class ProfileFormScreenState extends State<ProfileFormScreen> with MessageMixin 
   Future _pickImage(ImageSource imageSource) async {
     Navigator.pop(context);
     try {
-      final picker = await ImagePicker().pickImage(imageQuality: 100, source: imageSource);
+      final picker = await ImagePicker().pickImage(
+        imageQuality: 100,
+        source: imageSource,
+      );
       if (picker == null) return;
       _cubit.getImage(XFile(picker.path));
     } on PlatformException catch (e) {
@@ -149,7 +160,10 @@ class ProfileFormScreenState extends State<ProfileFormScreen> with MessageMixin 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBarWidget(onBack: () => Navigator.of(context).pop(_action), title: greeting("Profile Form")),
+      appBar: AppBarWidget(
+        onBack: () => Navigator.of(context).pop(_action),
+        title: greeting("Profile Form"),
+      ),
       body: BlocBuilder<ProfileFormCubit, ProfileFormState>(
         bloc: _cubit,
         builder: (BuildContext context, ProfileFormState state) {
@@ -174,73 +188,84 @@ class ProfileFormScreenState extends State<ProfileFormScreen> with MessageMixin 
   Widget buildBody(ProfileFormState state) {
     return SingleChildScrollView(
       padding: EdgeInsets.all(scaleFontSize(appSpace)),
-      child: Column(spacing: scaleFontSize(20), children: [_buildEditImageProfile(state), _buildInfoProfile()]),
+      child: Column(
+        spacing: scaleFontSize(20),
+        children: [_buildEditImageProfile(state), _buildInfoProfile()],
+      ),
     );
   }
 
   Widget _buildInfoProfile() {
-    return BoxWidget(
-      isBoxShadow: false,
-      padding: EdgeInsets.all(8.scale),
-      child: Column(
-        spacing: scaleFontSize(appSpace),
-        children: [
-          BoxWidget(
-            padding: EdgeInsets.all(8.scale),
-            color: grey20.withValues(alpha: 0.2),
-            isBoxShadow: false,
-            child: Row(
-              spacing: 8.scale,
-              children: [
-                const ChipWidget(
-                  bgColor: mainColor50,
-                  radius: 6,
-                  horizontal: 0,
-                  child: Icon(Icons.info_outline, color: white),
-                ),
-                TextWidget(text: greeting("User Info"), fontSize: 16, fontWeight: FontWeight.bold),
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: scaleFontSize(appSpace),
+      children: [
+        TextWidget(
+          text: greeting("Personal Information"),
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+
+        Row(
+          spacing: 8.scale,
+          children: [
+            Expanded(
+              child: TextFormFieldWidget(
+                hintColor: textColor50,
+                label: greeting("First Name"),
+                controller: firstNameController,
+                isDefaultTextForm: true,
+              ),
             ),
-          ),
-          Row(
-            spacing: 8.scale,
-            children: [
-              Expanded(
-                child: TextFormFieldWidget(
-                  hintColor: textColor50,
-                  label: greeting("First Name"),
-                  controller: firstNameController,
-                  isDefaultTextForm: true,
-                ),
+            Expanded(
+              child: TextFormFieldWidget(
+                hintColor: textColor50,
+                label: greeting("Last Name"),
+                controller: lastNameController,
+                isDefaultTextForm: true,
               ),
-              Expanded(
-                child: TextFormFieldWidget(
-                  hintColor: textColor50,
-                  label: greeting("Last Name"),
-                  controller: lastNameController,
-                  isDefaultTextForm: true,
-                ),
+            ),
+          ],
+        ),
+        TextFormFieldWidget(
+          readOnly: true,
+          filled: true,
+          label: greeting("Email"),
+          controller: emailController,
+          isDefaultTextForm: true,
+        ),
+        TextFormFieldWidget(
+          label: greeting("Phone Number"),
+          controller: phoneController,
+          isDefaultTextForm: true,
+        ),
+
+        Row(
+          spacing: 8.scale,
+          children: [
+            Expanded(
+              child: TextFormFieldWidget(
+                readOnly: true,
+
+                filled: true,
+                label: greeting("Location Code"),
+                controller: locationCodeController,
+                isDefaultTextForm: true,
               ),
-            ],
-          ),
-          TextFormFieldWidget(
-            readOnly: true,
-            fillColor: grey20,
-            filled: true,
-            label: greeting("Email"),
-            controller: emailController,
-            isDefaultTextForm: true,
-          ),
-          TextFormFieldWidget(
-            // readOnly: true,
-            // fillColor: grey20,
-            // filled: true,
-            label: greeting("Phone Number"),
-            controller: phoneController,
-            isDefaultTextForm: true,
-          ),
-        ],
-      ),
+            ),
+            Expanded(
+              child: TextFormFieldWidget(
+                readOnly: true,
+
+                filled: true,
+                label: greeting("Salesperson Code"),
+                controller: salesPersonCodeController,
+                isDefaultTextForm: true,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -260,10 +285,10 @@ class ProfileFormScreenState extends State<ProfileFormScreen> with MessageMixin 
             bottom: 0,
             right: 0,
             child: BtnIconCircleWidget(
-              bgColor: mainColor50,
+              bgColor: mainColor50.withValues(alpha: .2),
               flipX: false,
               onPressed: () => showBottomSheetCamera(),
-              icons: const Icon(Icons.edit, color: white),
+              icons: const Icon(Icons.edit, color: mainColor50),
             ),
           ),
         ],
