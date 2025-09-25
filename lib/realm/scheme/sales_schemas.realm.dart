@@ -3101,8 +3101,8 @@ class SalesLine extends _SalesLine
     String? customerGroupCode,
     String? returnReasonCode,
     String? reasonCode,
-    String? sourceNo,
     int? headerId,
+    String? sourceNo,
     String? documentDate,
     String? isManualEdit = "No",
     String? isSync = "Yes",
@@ -3204,8 +3204,8 @@ class SalesLine extends _SalesLine
     RealmObjectBase.set(this, 'customer_group_code', customerGroupCode);
     RealmObjectBase.set(this, 'return_reason_code', returnReasonCode);
     RealmObjectBase.set(this, 'reason_code', reasonCode);
-    RealmObjectBase.set(this, 'header_id', sourceNo);
-    RealmObjectBase.set(this, 'source_no', headerId);
+    RealmObjectBase.set(this, 'header_id', headerId);
+    RealmObjectBase.set(this, 'source_no', sourceNo);
     RealmObjectBase.set(this, 'document_date', documentDate);
     RealmObjectBase.set(this, 'is_manual_edit', isManualEdit);
     RealmObjectBase.set(this, 'is_sync', isSync);
@@ -3666,15 +3666,15 @@ class SalesLine extends _SalesLine
       RealmObjectBase.set(this, 'reason_code', value);
 
   @override
-  String? get sourceNo =>
-      RealmObjectBase.get<String>(this, 'header_id') as String?;
+  int? get headerId => RealmObjectBase.get<int>(this, 'header_id') as int?;
   @override
-  set sourceNo(String? value) => RealmObjectBase.set(this, 'header_id', value);
+  set headerId(int? value) => RealmObjectBase.set(this, 'header_id', value);
 
   @override
-  int? get headerId => RealmObjectBase.get<int>(this, 'source_no') as int?;
+  String? get sourceNo =>
+      RealmObjectBase.get<String>(this, 'source_no') as String?;
   @override
-  set headerId(int? value) => RealmObjectBase.set(this, 'source_no', value);
+  set sourceNo(String? value) => RealmObjectBase.set(this, 'source_no', value);
 
   @override
   String? get documentDate =>
@@ -3774,8 +3774,8 @@ class SalesLine extends _SalesLine
       'customer_group_code': customerGroupCode.toEJson(),
       'return_reason_code': returnReasonCode.toEJson(),
       'reason_code': reasonCode.toEJson(),
-      'header_id': sourceNo.toEJson(),
-      'source_no': headerId.toEJson(),
+      'header_id': headerId.toEJson(),
+      'source_no': sourceNo.toEJson(),
       'document_date': documentDate.toEJson(),
       'is_manual_edit': isManualEdit.toEJson(),
       'is_sync': isSync.toEJson(),
@@ -3860,8 +3860,8 @@ class SalesLine extends _SalesLine
         customerGroupCode: fromEJson(ejson['customer_group_code']),
         returnReasonCode: fromEJson(ejson['return_reason_code']),
         reasonCode: fromEJson(ejson['reason_code']),
-        sourceNo: fromEJson(ejson['header_id']),
-        headerId: fromEJson(ejson['source_no']),
+        headerId: fromEJson(ejson['header_id']),
+        sourceNo: fromEJson(ejson['source_no']),
         documentDate: fromEJson(ejson['document_date']),
         isManualEdit: fromEJson(ejson['is_manual_edit'], defaultValue: "No"),
         isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
@@ -4241,14 +4241,14 @@ class SalesLine extends _SalesLine
         optional: true,
       ),
       SchemaProperty(
-        'sourceNo',
-        RealmPropertyType.string,
+        'headerId',
+        RealmPropertyType.int,
         mapTo: 'header_id',
         optional: true,
       ),
       SchemaProperty(
-        'headerId',
-        RealmPropertyType.int,
+        'sourceNo',
+        RealmPropertyType.string,
         mapTo: 'source_no',
         optional: true,
       ),
