@@ -4,7 +4,7 @@ import 'package:salesforce/features/tasks/domain/entities/sale_person_gps_model.
 class SalesPersonMapState {
   final bool isLoading;
   final String? error;
-  // final List<SalePersonGpsModel> salePersonGps;
+  final List<SalePersonGpsModel> salePersonGps;
   final Set<Marker> markers;
   final CameraPosition? kGooglePostition;
   final GoogleMapController? mapController;
@@ -13,7 +13,7 @@ class SalesPersonMapState {
   const SalesPersonMapState({
     this.isLoading = false,
     this.error,
-    // this.salePersonGps = const [],
+    this.salePersonGps = const [],
     this.markers = const {},
     this.kGooglePostition,
     this.mapController,
@@ -23,7 +23,7 @@ class SalesPersonMapState {
   SalesPersonMapState copyWith({
     bool? isLoading,
     String? error,
-    // List<SalePersonGpsModel>? salePersonGps,
+    List<SalePersonGpsModel>? salePersonGps,
     Set<Marker>? markers,
     CameraPosition? kGooglePostition,
     GoogleMapController? mapController,
@@ -32,7 +32,7 @@ class SalesPersonMapState {
     return SalesPersonMapState(
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
-      // salePersonGps: salePersonGps ?? this.salePersonGps,
+      salePersonGps: salePersonGps ?? this.salePersonGps,
       markers: markers ?? this.markers,
       kGooglePostition: kGooglePostition ?? this.kGooglePostition,
       mapController: mapController ?? this.mapController,
