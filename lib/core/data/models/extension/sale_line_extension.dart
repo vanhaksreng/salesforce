@@ -66,6 +66,7 @@ extension SalesLineExtension on SalesLine {
       vatProdPostingGroupCode: json["vat_prod_posting_group_code"] ?? "",
       vatBusPostingGroupCode: json["vat_bus_posting_group_code"] ?? "",
       vatCalculationType: json["vat_calculation_type"] ?? "",
+      sourceNo: json["source_no"],
       isManualEdit: json["is_manual_edit"] ?? "",
       isSync: "Yes",
       headerId: Helpers.toInt(json["header_id"] ?? 0),
@@ -131,6 +132,7 @@ extension SalesLineExtension on SalesLine {
       'manual_unit_price': manualUnitPrice,
       'is_manual_edit': isManualEdit,
       'document_date': documentDate,
+      'source_no': sourceNo,
     };
   }
 }

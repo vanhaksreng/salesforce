@@ -116,15 +116,21 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       if (await _networkInfo.isConnected) {
         statusInternet = kOnline;
       }
+      
       final newArg = CheckInArg(
         latitude: args.latitude,
         longitude: args.latitude,
         comment: args.comment,
         imagePath: args.imagePath,
         isCloseShop: args.isCloseShop,
-        statusInternet: statusInternet,
       );
-      final result = await _local.checkIn(schedule: schedule, args: newArg);
+
+      final result = await _local.checkIn(
+        schedule: schedule,
+        args: newArg,
+        internetStatus: statusInternet,
+      );
+
       if (await _networkInfo.isConnected && await _remote.isValidApiSession()) {
         _remote.updateSchedule(result, type: result.status ?? kStatusCheckIn);
 
@@ -149,16 +155,21 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       if (await _networkInfo.isConnected) {
         statusInternet = kOnline;
       }
+
       final newArg = CheckInArg(
         latitude: args.latitude,
         longitude: args.latitude,
         comment: args.comment,
         imagePath: args.imagePath,
         isCloseShop: args.isCloseShop,
-        statusInternet: statusInternet,
       );
 
-      final result = await _local.checkout(schedule: schedule, args: newArg);
+      final result = await _local.checkout(
+        schedule: schedule,
+        args: newArg,
+        internetStatus: statusInternet,
+      );
+
       if (await _networkInfo.isConnected && await _remote.isValidApiSession()) {
         _remote.updateSchedule(result, type: result.status ?? kStatusCheckOut);
 
@@ -525,7 +536,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       final item = saleArg.item;
       final schedule = saleArg.schedule;
 
-      final customer = await _getCustomer(no: schedule?.customerNo ?? "");
+      final customer = await _getCustomer(no: schedule.customerNo ?? "");
       if (customer == null) {
         throw GeneralException('Customer not found');
       }
@@ -536,7 +547,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       }
 
       final String saleNo = Helpers.getSaleDocumentNo(
-        scheduleId: schedule?.id ?? "",
+        scheduleId: schedule.id,
         documentType: saleArg.documentType,
       );
 
@@ -546,7 +557,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       );
 
       saleHeader ??= await _generateNewSaleHeader(
-        schedule: schedule!,
+        schedule: schedule,
         documentNo: saleNo,
         customer: customer,
         documentType: saleArg.documentType,
@@ -690,6 +701,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
               saleArg.itemUnitPrice,
               option: FormatType.price,
             ),
+            serialNo: schedule.id,
           );
 
           saleLines.add(saleLine);
@@ -855,6 +867,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
             isSync: kStatusNo,
             documentDate: DateTime.now().toDateString(),
             unitPriceOri: line.unitPriceOri,
+            serialNo: line.sourceNo,
           ),
         );
       }

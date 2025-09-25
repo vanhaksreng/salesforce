@@ -66,6 +66,9 @@ extension SalespersonScheduleExtension on SalespersonSchedule {
       'planned': planned,
       'shop_is_closed': shopIsClosed,
       'schedule_date_move_from': scheduleDateMoveFrom,
+      'status_internet_check_in': statusInternetCheckIn,
+      'status_internet_check_out': statusInternetCheckOut,
+      'duration': duration,
     };
   }
 }

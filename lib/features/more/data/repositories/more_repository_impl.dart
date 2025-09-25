@@ -9,7 +9,6 @@ import 'package:salesforce/core/data/models/extension/competitor_item_ledger_ent
 import 'package:salesforce/core/data/models/extension/customer_address_extension.dart';
 import 'package:salesforce/core/data/models/extension/customer_extension.dart';
 import 'package:salesforce/core/data/models/extension/customer_item_ledger_entry_extension.dart';
-import 'package:salesforce/core/data/models/extension/gps_tracking_entry_extension.dart';
 import 'package:salesforce/core/data/models/extension/item_prize_redemption_line_entry_extension.dart';
 import 'package:salesforce/core/data/models/extension/sale_header_extension.dart';
 import 'package:salesforce/core/data/models/extension/sale_line_extension.dart';

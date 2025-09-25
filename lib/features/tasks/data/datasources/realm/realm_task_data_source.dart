@@ -10,11 +10,13 @@ abstract class RealmTaskDataSource extends BaseRealmDataSource {
   Future<SalespersonSchedule> checkIn({
     required SalespersonSchedule schedule,
     required CheckInArg args,
+    required String internetStatus,
   });
 
   Future<SalespersonSchedule> checkout({
     required SalespersonSchedule schedule,
     required CheckInArg args,
+    required String internetStatus,
   });
 
   Future<List<CustomerItemLedgerEntry>> getCustomerItemLedgerEntries({

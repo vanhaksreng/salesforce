@@ -13,7 +13,6 @@ class CheckInArg {
   final String comment;
   final XFile? imagePath;
   final bool isCloseShop;
-  final String? statusInternet;
   final String? startingTime;
 
   CheckInArg({
@@ -22,7 +21,6 @@ class CheckInArg {
     required this.comment,
     this.isCloseShop = false,
     this.imagePath,
-    this.statusInternet,
     this.startingTime,
   });
 }

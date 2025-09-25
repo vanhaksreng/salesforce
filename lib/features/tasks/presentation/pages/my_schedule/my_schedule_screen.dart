@@ -358,10 +358,11 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     return (checkedOut / totalTodaySchedule) * 100;
   }
 
-  double culculateTotalSaleByCustomer(String customerNo) {
+  double culculateTotalSaleByCustomer(String customerNo, String visitNo) {
     double totalSaleInv = _cubit.state.saleLines
         .where((e) {
           return e.customerNo == customerNo &&
+              e.sourceNo == visitNo &&
               [kSaleInvoice, kSaleOrder].contains(e.documentType);
         })
         .fold(
@@ -373,6 +374,7 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     double totalSaleCr = _cubit.state.saleLines
         .where((e) {
           return e.customerNo == customerNo &&
+              e.sourceNo == visitNo &&
               e.documentType == kSaleCreditMemo;
         })
         .fold(
@@ -556,7 +558,7 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
         final record = records[index];
 
         double totalSalesBySchedule = culculateTotalSaleByCustomer(
-          record.customerNo ?? "",
+          record.customerNo ?? "", record.id
         );
 
         return Padding(

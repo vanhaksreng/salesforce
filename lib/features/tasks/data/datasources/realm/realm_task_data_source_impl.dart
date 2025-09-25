@@ -142,6 +142,7 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
   Future<SalespersonSchedule> checkIn({
     required SalespersonSchedule schedule,
     required CheckInArg args,
+    required String internetStatus,
   }) async {
     try {
       final saleperson = await _storage.getFirst<Salesperson>(
@@ -168,7 +169,7 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
           ..actualLongitude = args.longitude
           ..status = args.isCloseShop ? kStatusCheckOut : kStatusCheckIn
           ..startingTime = formattedTime
-          ..statusInternetCheckIn = args.statusInternet;
+          ..statusInternetCheckIn = internetStatus;
 
         if (args.comment.isNotEmpty) {
           schedule.checkInRemark = args.comment;
@@ -185,7 +186,7 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
         if (args.isCloseShop) {
           schedule.shopIsClosed = kStatusYes;
           schedule.endingTime = formattedTime;
-          schedule.statusInternetCheckOut = args.statusInternet;
+          schedule.statusInternetCheckOut = internetStatus;
           schedule.duration = Helpers.calculateDuration(
             schedule.startingTime ?? "00.00.00",
             formattedTime,
@@ -255,6 +256,7 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
   Future<SalespersonSchedule> checkout({
     required SalespersonSchedule schedule,
     required CheckInArg args,
+    required String internetStatus,
   }) async {
     try {
       final auth = getAuth();
@@ -280,7 +282,7 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
           ..status = kStatusCheckOut
           ..endingTime = formattedTime
           ..checkOutRemark = args.comment
-          ..statusInternetCheckOut = args.statusInternet
+          ..statusInternetCheckOut = internetStatus
           ..duration = Helpers.calculateDuration(
             schedule.startingTime ?? "00.00.00",
             formattedTime,
@@ -299,7 +301,7 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
             trackingDate: now.toDateString(),
             trackingDatetime: now.toDateTimeString(),
             type: "Sales",
-            documentType: args.isCloseShop ? kStatusCheckOut : kStatusCheckIn,
+            documentType: kStatusCheckOut,
             documentNo: schedule.id,
             customerNo: schedule.customerNo,
             customerName: schedule.name,
