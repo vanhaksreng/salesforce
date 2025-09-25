@@ -292,7 +292,7 @@ class MainActivity : FlutterActivity(){
                                 IminPrintUtils.getInstance(this@MainActivity).initPrinter(type)
 
                                 // For Android 8.1, give more time for initialization
-                                Thread.sleep(2000)
+                                Thread.sleep(3000)
 
                                 // Try to reset printer state for better reliability
                                 try {
