@@ -8,6 +8,7 @@ import 'package:salesforce/core/data/datasources/api/base_api_data_source.dart';
 import 'package:salesforce/core/data/datasources/handlers/table_handler_factory.dart';
 import 'package:salesforce/core/data/datasources/realm/base_realm_data_source.dart';
 import 'package:salesforce/core/data/models/extension/company_info_extension.dart';
+import 'package:salesforce/core/data/models/extension/gps_tracking_entry_extension.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/errors/failures.dart';
@@ -337,7 +338,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
       return const Right(true);
     }
 
-    final routeTrackings = await _local.getGPSTracking(
+    final routeTrackings = await _local.getGPSRouteTracking(
       param: {"is_sync": "No"},
     );
 
@@ -474,6 +475,39 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
       return Right(companyInfo);
     } catch (e) {
       Logger.log("getRemoteCompanyInfo $e");
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> processUploadGpsTracking() async {
+    try {
+      final records = await _local.getGPSTrackingEntries(
+        param: {'is_sync': kStatusNo},
+      );
+
+      List<Map<String, dynamic>> jsonData = [];
+      for (var record in records) {
+        jsonData.add(record.toJson());
+      }
+
+      if (jsonData.isEmpty) {
+        return const Left(CacheFailure("Nothing to upload"));
+      }
+
+      await _remote.processUpload(
+        data: {
+          'table_name': 'gps_tracking_entry',
+          'data': jsonEncode(jsonData),
+        },
+      );
+
+      await _local.updateStatusGPSTrackingEntries(records: records);
+
+      return Right(true);
+    } on GeneralException catch (e) {
+      return Left(CacheFailure(e.message));
+    } on Exception catch (e) {
       return Left(CacheFailure(e.toString()));
     }
   }

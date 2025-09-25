@@ -26,6 +26,9 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
       if (state.merchandiseSchedules.isNotEmpty) _processUploadMerchandiseAndPosm(),
       if (state.redemptions.isNotEmpty) _processUploadRedemptions(),
       if (state.salespersonSchedules.isNotEmpty) _processUploadSchedules(),
+
+      _gpsTracking(),
+      _gpsRouteTracking(),
     ];
 
     //TODO : competitor promotion
@@ -106,6 +109,16 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
     );
   }
 
+  Future<void> _gpsTracking() async {
+    final response = await _moreRepo.processUploadGpsTracking();
+
+    response.fold((failure) => showErrorMessage(failure.message), (_) {});
+  }
+
+  Future<void> _gpsRouteTracking() async {
+    final response = await _moreRepo.syncOfflineLocationToBackend();
+    response.fold((failure) => showErrorMessage(failure.message), (_) {});
+  }
   // Private Data Loading Methods
   Future<void> _loadRedeptionEntries() async {
     await _handleResponse(

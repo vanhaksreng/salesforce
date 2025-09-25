@@ -132,8 +132,16 @@ abstract class BaseRealmDataSource {
 
   Future<void> storeLocationOffline(GpsRouteTracking cusOffline);
 
-  Future<List<GpsRouteTracking>> getGPSTracking({
+  Future<List<GpsRouteTracking>> getGPSRouteTracking({
     required Map<String, dynamic> param,
+  });
+
+  Future<List<GpsTrackingEntry>> getGPSTrackingEntries({
+    required Map<String, dynamic> param,
+  });
+
+  Future<bool> updateStatusGPSTrackingEntries({
+    required List<GpsTrackingEntry> records,
   });
 
   Future<void> updateTrackingByCreatedDate(List<GpsRouteTracking> records);
