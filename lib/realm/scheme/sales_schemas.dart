@@ -241,6 +241,8 @@ class _PosSalesLine {
   String? returnReasonCode;
   @MapTo('reason_code')
   String? reasonCode;
+  String? sourceNo;
+  @MapTo('source_no')
   String? imgUrl;
   @MapTo('header_id')
   int? headerId;
@@ -495,6 +497,8 @@ class _SalesLine {
   @MapTo('reason_code')
   String? reasonCode;
   @MapTo('header_id')
+  String? sourceNo;
+  @MapTo('source_no')
   int? headerId;
   @MapTo('document_date')
   String? documentDate;
