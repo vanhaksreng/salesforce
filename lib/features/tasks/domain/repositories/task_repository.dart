@@ -4,6 +4,7 @@ import 'package:salesforce/core/errors/failures.dart';
 import 'package:salesforce/features/tasks/domain/entities/app_version.dart';
 import 'package:salesforce/features/tasks/domain/entities/checkout_arg.dart';
 import 'package:salesforce/features/tasks/domain/entities/promotion_line_entity.dart';
+import 'package:salesforce/features/tasks/domain/entities/sale_person_gps_model.dart';
 import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
@@ -260,4 +261,5 @@ abstract class TaskRepository extends BaseAppRepository {
   Future<Either<Failure, bool>> moveOldScheduleToCurrentDate(
     List<SalespersonSchedule> oldSchedules,
   );
+  Future<Either<Failure, List<SalePersonGpsModel>>> getSalepersonGps();
 }

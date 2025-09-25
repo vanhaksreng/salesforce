@@ -20,6 +20,7 @@ import 'package:salesforce/features/tasks/domain/entities/task_dtos.dart';
 import 'package:salesforce/features/tasks/presentation/pages/add_schedule/add_schedule_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/customer_schedule_map/customer_schedule_map_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/my_schedule/my_schedule_screen.dart';
+import 'package:salesforce/features/tasks/presentation/pages/sales_person_map/sales_person_map_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/schedule_history/schedule_history_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/task_component/build_options.dart';
 import 'package:salesforce/features/tasks/presentation/pages/team_schedult/team_schedult_screen.dart';
@@ -258,12 +259,7 @@ class _TaskScreenState extends State<TasksMainScreen>
       children: [
         SpeedDialChild(
           icon: Icons.group_rounded,
-          onTap: () {
-            Helpers.showMessage(
-              msg: "This feature comming soon!",
-              status: MessageStatus.warning,
-            );
-          },
+          onTap: () => pushToSalePersonMap(),
           label: greeting("SalePersons"),
         ),
         SpeedDialChild(
@@ -279,6 +275,14 @@ class _TaskScreenState extends State<TasksMainScreen>
     return Navigator.pushNamed(
       context,
       CustomerScheduleMapScreen.routeName,
+      arguments: true,
+    );
+  }
+
+  Future<Object?> pushToSalePersonMap() {
+    return Navigator.pushNamed(
+      context,
+      SalesPersonMapScreen.routeName,
       arguments: true,
     );
   }

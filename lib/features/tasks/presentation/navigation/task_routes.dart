@@ -29,6 +29,7 @@ import 'package:salesforce/features/tasks/presentation/pages/sale_components/add
 import 'package:salesforce/features/tasks/presentation/pages/sale_components/item_promotion_form/item_promotion_form_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/sale_components/sale_checkout/sale_checkout_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/sale_components/sale_form/sale_form_screen.dart';
+import 'package:salesforce/features/tasks/presentation/pages/sales_person_map/sales_person_map_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/schedule_history/schedule_history_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/tabbar_items/check_stock_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/tabbar_items/sales_item_screen.dart';
@@ -107,7 +108,9 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case PosmAndMerchandingCompetitorScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return PosmAndMerchandingCompetitorScreen(args: settings.arguments as PosmAndMerchandingCompetitorArg);
+          return PosmAndMerchandingCompetitorScreen(
+            args: settings.arguments as PosmAndMerchandingCompetitorArg,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child);
@@ -153,7 +156,9 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case ItemPosmScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return ItemPosmScreen(arg: settings.arguments as ItemPosmAndMerchandiseArg);
+          return ItemPosmScreen(
+            arg: settings.arguments as ItemPosmAndMerchandiseArg,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child);
@@ -162,7 +167,9 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case ItemMerchandisingScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return ItemMerchandisingScreen(args: settings.arguments as ItemPosmAndMerchandiseArg);
+          return ItemMerchandisingScreen(
+            args: settings.arguments as ItemPosmAndMerchandiseArg,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child);
@@ -194,7 +201,9 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case GroupScreenFilterItem.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return GroupScreenFilterItem(args: settings.arguments as GroupFilterArgs);
+          return GroupScreenFilterItem(
+            args: settings.arguments as GroupFilterArgs,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -218,7 +227,9 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case CheckItemCompetitorStockForm.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return CheckItemCompetitorStockForm(arg: settings.arguments as CheckCompititorItemStockArg);
+          return CheckItemCompetitorStockForm(
+            arg: settings.arguments as CheckCompititorItemStockArg,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -239,7 +250,9 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case CompetitorPromotionScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return CompetitorPromotionScreen(arg: settings.arguments as ItemPosmAndMerchandiseArg);
+          return CompetitorPromotionScreen(
+            arg: settings.arguments as ItemPosmAndMerchandiseArg,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -262,7 +275,8 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
         pageBuilder: (context, animation, secondaryAnimation) {
           return DetailCollectionsScreen(
             schedule: args?["schedule"] as SalespersonSchedule,
-            customerLedgerEntry: args?["customerLedgerEntry"] as CustomerLedgerEntry,
+            customerLedgerEntry:
+                args?["customerLedgerEntry"] as CustomerLedgerEntry,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -290,7 +304,9 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case CustomerAddressScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return CustomerAddressScreen(customerNo: settings.arguments as String);
+          return CustomerAddressScreen(
+            customerNo: settings.arguments as String,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -317,7 +333,9 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case CompetitorPromotionLineScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return CompetitorPromotionLineScreen(header: settings.arguments as CompetitorPromtionHeader);
+          return CompetitorPromotionLineScreen(
+            header: settings.arguments as CompetitorPromtionHeader,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -327,7 +345,9 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case ItemPromotionFormScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return ItemPromotionFormScreen(arg: settings.arguments as ItemPromotionFormArg);
+          return ItemPromotionFormScreen(
+            arg: settings.arguments as ItemPromotionFormArg,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -337,7 +357,9 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case ItemPrizeRedemptionScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return ItemPrizeRedemptionScreen(arg: settings.arguments as DefaultProcessArgs);
+          return ItemPrizeRedemptionScreen(
+            arg: settings.arguments as DefaultProcessArgs,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -346,7 +368,9 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case PosmMerchandingPreviewScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return PosmMerchandingPreviewScreen(arg: settings.arguments as ItemPosmAndMerchandiseArg);
+          return PosmMerchandingPreviewScreen(
+            arg: settings.arguments as ItemPosmAndMerchandiseArg,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -357,6 +381,15 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
           return const BarcodeScannerPage();
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return RouteST.st(animation, child, begin: 1, end: 0);
+        },
+      );
+    case SalesPersonMapScreen.routeName:
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return const SalesPersonMapScreen();
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
