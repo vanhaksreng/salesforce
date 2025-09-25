@@ -3,4 +3,5 @@ import 'package:salesforce/features/tasks/domain/entities/app_version.dart';
 
 abstract class ApiTaskDataSource extends BaseApiDataSource {
   Future<AppVersion> checkAppVersion({Map<String, dynamic>? data});
+  Future<Map<String, dynamic>> getSalepersonGps();
 }

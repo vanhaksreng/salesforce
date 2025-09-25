@@ -35,9 +35,14 @@ class CustomerMapScreen extends StatefulWidget {
 class CustomerMapScreenState extends State<CustomerMapScreen> {
   final _cubit = CustomerMapCubit();
 
-  late final CameraPosition initialCameraPosition = CameraPosition(target: widget.latLng, zoom: 14);
+  late final CameraPosition initialCameraPosition = CameraPosition(
+    target: widget.latLng,
+    zoom: 14,
+  );
 
-  late final Set<Marker> markers = {Marker(markerId: const MarkerId('selected'), position: widget.latLng)};
+  late final Set<Marker> markers = {
+    Marker(markerId: const MarkerId('selected'), position: widget.latLng),
+  };
 
   late LatLng currentLatLng = widget.latLng;
 
@@ -52,7 +57,9 @@ class CustomerMapScreenState extends State<CustomerMapScreen> {
               borderRadius: BorderRadius.circular(widget.radius),
               child: GoogleMap(
                 gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-                  Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
+                  Factory<OneSequenceGestureRecognizer>(
+                    () => EagerGestureRecognizer(),
+                  ),
                 }.toSet(),
                 scrollGesturesEnabled: widget.scrollGesturesEnabled,
                 initialCameraPosition: initialCameraPosition,
@@ -61,9 +68,12 @@ class CustomerMapScreenState extends State<CustomerMapScreen> {
                 myLocationButtonEnabled: widget.isGPS,
                 zoomControlsEnabled: true,
                 // markers: markers,
-                onCameraMove: (position) async => await _cubit.emitPosition(position.target),
+                onCameraMove: (position) async =>
+                    await _cubit.emitPosition(position.target),
                 onCameraIdle: () {
-                  widget.onCameraIdle?.call(state.currentLatLng ?? currentLatLng);
+                  widget.onCameraIdle?.call(
+                    state.currentLatLng ?? currentLatLng,
+                  );
                 },
                 onMapCreated: widget.onMapCreated,
               ),

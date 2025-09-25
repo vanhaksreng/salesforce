@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
-import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/theme/app_colors.dart';
 

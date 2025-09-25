@@ -20,6 +20,7 @@ import 'package:salesforce/features/tasks/data/datasources/realm/realm_task_data
 import 'package:salesforce/features/tasks/domain/entities/app_version.dart';
 import 'package:salesforce/features/tasks/domain/entities/checkout_arg.dart';
 import 'package:salesforce/features/tasks/domain/entities/promotion_line_entity.dart';
+import 'package:salesforce/features/tasks/domain/entities/sale_person_gps_model.dart';
 import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
 import 'package:salesforce/features/tasks/domain/repositories/task_repository.dart';
 import 'package:salesforce/infrastructure/network/network_info.dart';
@@ -116,7 +117,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       if (await _networkInfo.isConnected) {
         statusInternet = kOnline;
       }
-      
+
       final newArg = CheckInArg(
         latitude: args.latitude,
         longitude: args.latitude,
@@ -2123,6 +2124,25 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       }
       final result = await _local.moveOldScheduleToCurrentDate(oldSchedules);
       return Right(result);
+    } on GeneralException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<SalePersonGpsModel>>> getSalepersonGps() async {
+    try {
+      if (await _networkInfo.isConnected && await _remote.isValidApiSession()) {
+        final result = await _remote.getSalepersonGps();
+        List<SalePersonGpsModel> salePersonGps = [];
+        for (var r in result["records"]) {
+          salePersonGps.add(SalePersonGpsModel.fromJson(r));
+        }
+        return Right(salePersonGps);
+      }
+      return Right([]);
     } on GeneralException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
