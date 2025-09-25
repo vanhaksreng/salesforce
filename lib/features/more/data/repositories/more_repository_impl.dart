@@ -1060,6 +1060,7 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
             specialTypeNo: "",
             type: kTypeItem,
             lineNo: lineNo,
+            sourceNo: "",
             referLineNo: referentLineNo,
             customerNo: customer.no,
             no: item.no,
