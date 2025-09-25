@@ -9,7 +9,6 @@ import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
-import 'package:salesforce/core/utils/logger.dart' show Logger;
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/env.dart';
 import 'package:salesforce/features/tasks/domain/entities/sale_person_gps_model.dart';
@@ -21,7 +20,8 @@ import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class SalesPersonMapScreen extends StatefulWidget {
-  const SalesPersonMapScreen({super.key});
+  const SalesPersonMapScreen({super.key, required this.salePersonGps});
+  final List<SalePersonGpsModel> salePersonGps;
   static const String routeName = "salePersonMapScreen";
 
   @override
@@ -54,8 +54,8 @@ class SalesPersonMapScreenState extends State<SalesPersonMapScreen> {
   }
 
   Future<void> getMarkerSale() async {
-    await _cubit.getSalePersonGps();
-    final salePersonGps = _cubit.state.salePersonGps;
+    // await _cubit.getSalePersonGps();
+    final salePersonGps = widget.salePersonGps;
     await onGetCurrentLocation(salePersonGps);
     for (var salesPerson in salePersonGps) {
       final lat = Helpers.toDouble(salesPerson.latitude);
@@ -231,11 +231,11 @@ class SalesPersonMapScreenState extends State<SalesPersonMapScreen> {
             height: scaleFontSize(120),
             child: ListView.builder(
               padding: EdgeInsets.zero,
-              itemCount: state.salePersonGps.length,
+              itemCount: widget.salePersonGps.length,
               shrinkWrap: true,
               scrollDirection: Axis.horizontal,
               itemBuilder: (context, index) {
-                final salePerson = state.salePersonGps;
+                final salePerson = widget.salePersonGps;
 
                 bool isSelected = state.salePerson == salePerson[index];
                 return GestureDetector(
