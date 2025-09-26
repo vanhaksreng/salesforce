@@ -9,7 +9,6 @@ import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
-import 'package:salesforce/core/utils/logger.dart' show Logger;
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/env.dart';
 import 'package:salesforce/features/tasks/domain/entities/sale_person_gps_model.dart';

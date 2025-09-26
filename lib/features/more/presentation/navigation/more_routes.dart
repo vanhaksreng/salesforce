@@ -20,7 +20,6 @@ import 'package:salesforce/features/more/presentation/pages/customer_map/custome
 import 'package:salesforce/features/more/presentation/pages/customers/customers_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/downloads/download_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/imin_device/printer_test_page.dart';
-import 'package:salesforce/features/more/presentation/pages/invoice_printer/invoice_printer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/items/items_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/profile_form/profile_form_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/promotion/promotion_screen.dart';

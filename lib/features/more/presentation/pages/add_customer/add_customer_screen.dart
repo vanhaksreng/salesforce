@@ -39,6 +39,7 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
   @override
   void initState() {
     _cubit.loadCustomers(page: 1);
+    _cubit.getSalePosSaleHeader();
     _scrollController.addListener(_handleScrolling);
     super.initState();
   }
@@ -107,29 +108,21 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
     Helpers.showMessage(msg: msg, status: MessageStatus.errors);
   }
 
-  void showMessageSelect(Customer customer) {
-    Helpers.showDialogAction(
+  void showCustomerSelect(Customer customer) {
+    _cubit.selectCustomer(customer);
+
+    Navigator.pushNamed(
       context,
-      labelAction: greeting("confirm"),
-      subtitle: greeting("Are you sure to selected ${customer.name}"),
-      confirmText: "Yes , Confirm",
-      confirm: () {
-        _cubit.selectCustomer(customer);
-        Navigator.pop(context);
-        Navigator.pushNamed(
-          context,
-          ItemsScreen.routeName,
-          arguments: ItemSaleArg(
-            isRefreshing: false,
-            customer: customer,
-            documentType: widget.addCustomerArg.documentType,
-          ),
-        ).then((value) async {
-          if (!mounted) return;
-          Navigator.pop(context, true);
-        });
-      },
-    );
+      ItemsScreen.routeName,
+      arguments: ItemSaleArg(
+        isRefreshing: false,
+        customer: customer,
+        documentType: widget.addCustomerArg.documentType,
+      ),
+    ).then((value) async {
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    });
   }
 
   @override
@@ -185,12 +178,17 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
         }
 
         final customer = customers[index];
-
+        bool isShowRed = state.posSaleHeader.any(
+          (e) =>
+              e.customerNo == customer.no &&
+              e.documentType == widget.addCustomerArg.documentType,
+        );
         return BuildSelectCustomer(
           key: ValueKey(customer.no),
           isSelected: state.customer == customer,
+          isRed: isShowRed,
           customer: customer,
-          onTap: () => showMessageSelect(customer),
+          onTap: () => showCustomerSelect(customer),
         );
       },
     );

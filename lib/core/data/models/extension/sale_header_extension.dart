@@ -25,7 +25,9 @@ extension SalesHeaderExtension on SalesHeader {
       shipToPhoneNo2: json['ship_to_phone_no_2'] as String? ?? '',
       documentDate: DateTimeExt.parse(json['document_date']).toDateString(),
       postingDate: DateTimeExt.parse(json['posting_date']).toDateString(),
-      requestShipmentDate: DateTimeExt.parse(json['request_shipment_date']).toDateString(),
+      requestShipmentDate: DateTimeExt.parse(
+        json['request_shipment_date'],
+      ).toDateString(),
       postingDescription: json['posting_description'] as String? ?? '',
       paymentTermCode: json['payment_term_code'] as String? ?? '',
       paymentMethodCode: json['payment_method_code'] as String? ?? '',
@@ -42,7 +44,10 @@ extension SalesHeaderExtension on SalesHeader {
       sourceType: json['source_type'] as String? ?? '',
       sourceNo: json['source_no'] as String? ?? '',
       status: json['status'] as String? ?? '',
-      amount: Helpers.formatNumberDb(json['payment_amount'], option: FormatType.amount),
+      amount: Helpers.formatNumberDb(
+        json['total_amount'],
+        option: FormatType.amount,
+      ),
       orderDate: DateTimeExt.parse(json["order_date"]).toDateString(),
       remark: json["remark"] ?? "",
       appId: json["app_id"] ?? "",

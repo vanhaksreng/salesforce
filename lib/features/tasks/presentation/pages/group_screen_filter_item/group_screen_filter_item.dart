@@ -110,7 +110,6 @@ class _GroupScreenFilterItemState extends State<GroupScreenFilterItem> {
   }
 
   onSelectedStatus(String statusStock) {
-    print("===================> $statusStock");
     _cubit.selectStatus(statusStock);
   }
 

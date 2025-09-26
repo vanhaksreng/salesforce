@@ -151,7 +151,7 @@ class SaleHistoryDetailBox extends StatelessWidget {
                   ),
                 ),
                 TextWidget(
-                  text: "${greeting("order_items")} (${lines?.length})",
+                  text: "${greeting("order_items")} (${lines.length})",
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
