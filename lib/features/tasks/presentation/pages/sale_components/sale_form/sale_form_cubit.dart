@@ -84,6 +84,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
 
       final String itemNo = arg.item.no;
       double manualPrice = 0;
+      String salesUomCode = arg.item.salesUomCode ?? "";
 
       final updatedForms = state.saleForm.map((form) {
         int rIndex = lines.indexWhere((e) {
@@ -133,6 +134,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
           saleLines: lines,
           saleForm: updatedForms,
           manualPrice: manualPrice,
+          saleUomCode: salesUomCode,
         ),
       );
     } catch (error) {
@@ -198,6 +200,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
           discountAmt: disAmt,
           discountPercentage: disPercent,
           manualPrice: manualPrice,
+          // saleUomCode: uomCode,
         ),
       );
 
@@ -226,6 +229,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
         discountAmt: disAmt,
         discountPercentage: disPercent,
         manualPrice: manualPrice,
+        // saleUomCode: uomCode,
       ),
     );
   }
@@ -239,6 +243,8 @@ class SaleFormCubit extends Cubit<SaleFormState>
             uomCode: form.uomCode,
             orderQty: Helpers.toStrings(quantity),
           );
+
+          // emit(state.copyWith(saleUomCode: code));
         }
 
         return form.copyWith(quantity: quantity);
@@ -253,6 +259,13 @@ class SaleFormCubit extends Cubit<SaleFormState>
   void updateSaleUom(String code, String uomCode) {
     final updatedForms = state.saleForm.map((form) {
       if (form.code == code) {
+        if (code == kPromotionTypeStd) {
+          _updateItemPrice(
+            uomCode: form.uomCode,
+            orderQty: Helpers.toStrings(form.quantity),
+          );
+        }
+
         return form.copyWith(uomCode: uomCode);
       }
 
@@ -260,6 +273,10 @@ class SaleFormCubit extends Cubit<SaleFormState>
     }).toList();
 
     emit(state.copyWith(saleForm: updatedForms));
+
+    if (code == kPromotionTypeStd) {
+      emit(state.copyWith(saleUomCode: uomCode));
+    }
   }
 
   Future<ItemSalesLinePrices?> _getItemSalelinePrice({
