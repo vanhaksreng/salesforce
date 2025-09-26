@@ -120,7 +120,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
 
       final newArg = CheckInArg(
         latitude: args.latitude,
-        longitude: args.latitude,
+        longitude: args.longitude,
         comment: args.comment,
         imagePath: args.imagePath,
         isCloseShop: args.isCloseShop,
@@ -159,7 +159,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
 
       final newArg = CheckInArg(
         latitude: args.latitude,
-        longitude: args.latitude,
+        longitude: args.longitude,
         comment: args.comment,
         imagePath: args.imagePath,
         isCloseShop: args.isCloseShop,
