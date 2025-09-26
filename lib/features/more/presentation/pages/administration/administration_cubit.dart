@@ -35,7 +35,7 @@ class AdministrationCubit extends Cubit<AdministrationState> {
     if (!Platform.isAndroid) return;
 
     AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-    final model = (androidInfo.model ?? "").toLowerCase();
+    final model = (androidInfo.model).toLowerCase();
 
     if (model.contains("m2-202") ||
         model.contains("m2-203") ||

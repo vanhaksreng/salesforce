@@ -79,7 +79,7 @@ class MessageHelper {
             Container(
               padding: EdgeInsets.all(scaleFontSize(8)),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: .2),
                 borderRadius: BorderRadius.circular(scaleFontSize(8)),
               ),
               child: Icon(icon, color: white, size: scaleFontSize(20)),

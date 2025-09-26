@@ -146,6 +146,19 @@ class _TaskScreenState extends State<TasksMainScreen>
       ),
     ),
     ScheduleOptionData(
+      label: "Team Schedule History",
+      icon: Icons.group_add_sharp,
+      onTap: () {
+        Navigator.pop(context);
+        Helpers.showMessage(msg: "Feature will coming soon!");
+      },
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: scaleFontSize(14),
+        color: grey,
+      ),
+    ),
+    ScheduleOptionData(
       label: "Add New Schedule",
       icon: Icons.add,
       onTap: _navigateToAddSchedule,

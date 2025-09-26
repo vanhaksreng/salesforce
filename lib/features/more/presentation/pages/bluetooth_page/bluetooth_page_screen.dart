@@ -154,7 +154,7 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
   }
 
   Future<void> _refreshDeviceList() async {
-    final currentDevices = _cubit.state.devices ?? [];
+    final currentDevices = _cubit.state.devices;
     if (currentDevices.isNotEmpty) {
       final sortedDevices = await _sortDevicesByConnection(currentDevices);
       _cubit.setListBluetoothDevice(sortedDevices);
@@ -179,7 +179,7 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
   Future<void> _addBondedDevices() async {
     try {
       final bondedDevices = await FlutterBluePlus.bondedDevices;
-      final currentDevices = _cubit.state.devices ?? [];
+      final currentDevices = _cubit.state.devices;
 
       final newDevices = bondedDevices
           .where(
@@ -311,7 +311,7 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
   }
 
   void _clearDevices() {
-    _cubit.state.devices?.clear();
+    _cubit.state.devices.clear();
     _cubit.setBluetoothDevice(null);
     _connectionManager.clearAll();
   }
@@ -382,7 +382,7 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
   }
 
   Widget _buildContent(BluetoothPageState state) {
-    if ((state.devices?.isEmpty ?? true) && !state.isScanning) {
+    if ((state.devices.isEmpty) && !state.isScanning) {
       return _buildNoDevicesMessage();
     }
     return _buildDeviceList(state);
@@ -450,9 +450,9 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
         await _refreshDeviceList(); // Also refresh the sorting
       },
       child: ListView.builder(
-        itemCount: state.devices?.length ?? 0,
+        itemCount: state.devices.length,
         itemBuilder: (context, index) =>
-            _buildDeviceListItem(state.devices![index]),
+            _buildDeviceListItem(state.devices[index]),
       ),
     );
   }

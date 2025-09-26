@@ -146,6 +146,11 @@ class _SaleOrderHistoryDetailScreenState
 
     try {
       l.show();
+      if (bluetoothDevice == null) {
+        l.hide();
+        showErrorMessage("Bluetooth no found!");
+        return;
+      }
 
       final segments = await ReceiptHelpers.buildReceiptSegmentsForPreview(
         detail: state.record,

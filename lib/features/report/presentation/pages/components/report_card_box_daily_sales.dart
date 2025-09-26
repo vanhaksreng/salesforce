@@ -35,14 +35,29 @@ class ReportCardBoxDailySales extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              TextWidget(text: report.name, fontSize: 18, fontWeight: FontWeight.bold),
+              Expanded(
+                child: TextWidget(
+                  text: report.name,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               Column(
                 spacing: 8.scale,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextWidget(text: report.collectionAmount, fontSize: 18, fontWeight: FontWeight.bold, color: success),
-                  TextWidget(text: greeting("Collection"), fontSize: 12, color: textColor),
+                  TextWidget(
+                    text: report.collectionAmount,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: success,
+                  ),
+                  TextWidget(
+                    text: greeting("Collection"),
+                    fontSize: 12,
+                    color: textColor,
+                  ),
                 ],
               ),
             ],
@@ -61,12 +76,20 @@ class ReportCardBoxDailySales extends StatelessWidget {
             minHeight: scaleFontSize(8),
             borderRadius: BorderRadius.circular(scaleFontSize(8)),
           ),
-          Hr(width: double.infinity, vertical: scaleFontSize(appSpace), height: 0.3),
+          Hr(
+            width: double.infinity,
+            vertical: scaleFontSize(appSpace),
+            height: 0.3,
+          ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: scaleFontSize(8),
             children: [
-              TextWidget(text: greeting("Sales Documents"), fontWeight: FontWeight.w600, fontSize: 16),
+              TextWidget(
+                text: greeting("Sales Documents"),
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -114,8 +137,17 @@ class ReportCardBoxDailySales extends StatelessWidget {
           Row(
             spacing: 8.scale,
             children: [
-              SvgWidget(width: 18, height: 18, colorSvg: colorIcon, assetName: iconName),
-              TextWidget(text: greeting(title), color: textColor50, fontWeight: FontWeight.w500),
+              SvgWidget(
+                width: 18,
+                height: 18,
+                colorSvg: colorIcon,
+                assetName: iconName,
+              ),
+              TextWidget(
+                text: greeting(title),
+                color: textColor50,
+                fontWeight: FontWeight.w500,
+              ),
             ],
           ),
           TextWidget(
@@ -123,7 +155,11 @@ class ReportCardBoxDailySales extends StatelessWidget {
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
-          TextWidget(text: value, color: textColor50, fontWeight: FontWeight.w500),
+          TextWidget(
+            text: value,
+            color: textColor50,
+            fontWeight: FontWeight.w500,
+          ),
         ],
       ),
     );
@@ -135,8 +171,17 @@ class ReportCardBoxDailySales extends StatelessWidget {
         spacing: 8.scale,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextWidget(fontWeight: FontWeight.w600, color: textColor50, text: label),
-          TextWidget(text: value, fontSize: 20, color: textColor, fontWeight: FontWeight.bold),
+          TextWidget(
+            fontWeight: FontWeight.w600,
+            color: textColor50,
+            text: label,
+          ),
+          TextWidget(
+            text: value,
+            fontSize: 20,
+            color: textColor,
+            fontWeight: FontWeight.bold,
+          ),
         ],
       ),
     );
