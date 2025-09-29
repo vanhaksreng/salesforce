@@ -80,6 +80,7 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
 
       final String itemNo = arg.item?.no ?? "";
       double manualPrice = 0;
+      String salesUomCode = arg.item?.salesUomCode ?? "";
 
       final updatedForms = state.saleForm.map((form) {
         int rIndex = lines.indexWhere((e) {
@@ -129,6 +130,7 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
           saleLines: lines,
           saleForm: updatedForms,
           manualPrice: manualPrice,
+          saleUomCode: salesUomCode,
         ),
       );
     } catch (error) {
@@ -249,6 +251,12 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
   void updateSaleUom(String code, String uomCode) {
     final updatedForms = state.saleForm.map((form) {
       if (form.code == code) {
+        if (code == kPromotionTypeStd) {
+          _updateItemPrice(
+            uomCode: form.uomCode,
+            orderQty: Helpers.toStrings(form.quantity),
+          );
+        }
         return form.copyWith(uomCode: uomCode);
       }
 
@@ -256,6 +264,10 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
     }).toList();
 
     emit(state.copyWith(saleForm: updatedForms));
+
+    if (code == kPromotionTypeStd) {
+      emit(state.copyWith(saleUomCode: uomCode));
+    }
   }
 
   Future<ItemSalesLinePrices?> _getItemSalelinePrice({

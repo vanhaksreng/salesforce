@@ -230,7 +230,7 @@ class SaleFormItemScreenState extends State<SaleFormItemScreen> {
                       children: [
                         TextWidget(
                           text:
-                              "${Helpers.formatNumber(state.itemUnitPrice, option: FormatType.amount)} / ${_item?.salesUomCode}",
+                              "${Helpers.formatNumber(state.itemUnitPrice, option: FormatType.amount)} / ${state.saleUomCode}",
                           fontWeight: FontWeight.bold,
                           color: primary,
                           fontSize: 16,

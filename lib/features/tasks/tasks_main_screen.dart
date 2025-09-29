@@ -23,6 +23,7 @@ import 'package:salesforce/features/tasks/presentation/pages/my_schedule/my_sche
 import 'package:salesforce/features/tasks/presentation/pages/sales_person_map/sales_person_map_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/schedule_history/schedule_history_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/task_component/build_options.dart';
+import 'package:salesforce/features/tasks/presentation/pages/team_schedule_history/team_schedule_history_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/team_schedult/team_schedult_screen.dart';
 import 'package:salesforce/features/tasks/tasks_main_cubit.dart';
 import 'package:salesforce/features/tasks/tasks_main_state.dart';
@@ -148,10 +149,8 @@ class _TaskScreenState extends State<TasksMainScreen>
     ScheduleOptionData(
       label: "Team Schedule History",
       icon: Icons.group_add_sharp,
-      onTap: () {
-        Navigator.pop(context);
-        Helpers.showMessage(msg: "Feature will coming soon!");
-      },
+      onTap: () =>
+          Navigator.pushNamed(context, TeamScheduleHistoryScreen.routeName),
       trailing: Icon(
         Icons.arrow_forward_ios,
         size: scaleFontSize(14),
