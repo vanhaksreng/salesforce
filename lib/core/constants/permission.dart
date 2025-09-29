@@ -16,6 +16,7 @@ const String kUseMerchandising = "use_merchandising";
 const String kUseCollection = "use_collections";
 const String kUseItemPriceRedeption = "use_item_prize_redemption";
 const String kUseCompletitorPromotion = "use_competitor_promotion";
+const String kUseSalesInvoiceWithoutVisit = "use_sales_invoice_without_visit";
 
 //
 

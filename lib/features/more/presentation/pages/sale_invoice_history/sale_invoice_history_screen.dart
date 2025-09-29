@@ -44,6 +44,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
   DateTime? initialFromDate;
   String selectedDate = "This Week";
   String status = "All";
+  String isShowAddCustomer = kStatusYes;
 
   @override
   void initState() {
@@ -58,6 +59,10 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     );
     _scrollController.addListener(_handleScrolling);
     super.initState();
+  }
+
+  getShowAddCustomer() async {
+    isShowAddCustomer = await _cubit.isShowAccCustomer();
   }
 
   void _handleScrolling() {
@@ -225,12 +230,14 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
       appBar: AppBarWidget(
         title: greeting("sale_invoice"),
         actions: [
-          BtnIconCircleWidget(
-            onPressed: () => pushToAddCustomer(),
-            icons: Icon(Icons.add, color: white),
-            rounded: appBtnRound,
-          ),
-          Helpers.gapW(appSpace),
+          if (isShowAddCustomer == kStatusYes) ...[
+            BtnIconCircleWidget(
+              onPressed: () => pushToAddCustomer(),
+              icons: Icon(Icons.add, color: white),
+              rounded: appBtnRound,
+            ),
+            Helpers.gapW(appSpace),
+          ],
         ],
         heightBottom: heightBottomSearch,
         bottom: SearchWidget(
