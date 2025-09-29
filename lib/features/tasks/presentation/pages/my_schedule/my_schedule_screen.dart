@@ -558,7 +558,8 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
         final record = records[index];
 
         double totalSalesBySchedule = culculateTotalSaleByCustomer(
-          record.customerNo ?? "", record.id
+          record.customerNo ?? "",
+          record.id,
         );
 
         return Padding(

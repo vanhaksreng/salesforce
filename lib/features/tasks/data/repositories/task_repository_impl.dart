@@ -2149,4 +2149,30 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, List<SalespersonSchedule>>> getTeamSchedules(
+    String visitDate, {
+    Map<String, dynamic>? param,
+  }) async {
+    if (!await _networkInfo.isConnected) {
+      return const Left(CacheFailure(errorInternetMessage));
+    }
+
+    List<SalespersonSchedule> teamSchedules = [];
+
+    final schedules = await _remote.getTeamSchedule(visitDate, param: param);
+
+    try {
+      for (var a in schedules["records"]) {
+        teamSchedules.add(SalespersonScheduleExtension.fromMap(a));
+      }
+
+      return Right(teamSchedules);
+    } on GeneralException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

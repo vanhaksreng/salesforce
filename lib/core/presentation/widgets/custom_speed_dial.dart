@@ -124,6 +124,7 @@ class _CustomSpeedDialState extends State<CustomSpeedDial>
           children: [
             if (label.isNotEmpty)
               ChipWidget(
+                radius: 6,
                 bgColor: mainColor50,
                 ishadowColor: true,
                 label: label,
