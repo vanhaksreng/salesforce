@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:salesforce/core/domain/entities/init_app_stage.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
+import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/features/main_tap_screen.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/splash/splash_cubit.dart';
@@ -34,7 +35,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
       await setInitAppStage(const InitAppStage(isSyncSetting: true));
       if (mounted) {
-        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => MainTapScreen()), (route) => false);
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => MainTapScreen()),
+          (route) => false,
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -53,7 +58,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
       final filter = tables.map((table) => '"$table"').toList();
 
-      final appSyncLogs = await _cubit.getAppSyncLogs({'tableName': 'IN {${filter.join(",")}}'});
+      final appSyncLogs = await _cubit.getAppSyncLogs({
+        'tableName': 'IN {${filter.join(",")}}',
+      });
 
       if (tables.isEmpty) {
         throw GeneralException("Cannot find any table related");
@@ -72,7 +79,10 @@ class _SplashScreenState extends State<SplashScreen> {
         title: const Text('Sync Failed'),
         content: const Text('Failed to sync app settings. Continue anyway?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Retry')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Retry'),
+          ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
@@ -92,12 +102,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Syncing app settings...')],
-        ),
-      ),
+      body: LoadingPageWidget(label: "Syncing app settings..."),
     );
   }
 }

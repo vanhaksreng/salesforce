@@ -5,6 +5,7 @@ import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
+import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
@@ -42,7 +43,6 @@ class SalesPersonMapScreenState extends State<SalesPersonMapScreen> {
   void initState() {
     super.initState();
     getMarkerSale();
-    // onGetCurrentLocation();
     _cubit.getCamPosition(_phnomPenhLatlong());
   }
 
@@ -201,6 +201,9 @@ class SalesPersonMapScreenState extends State<SalesPersonMapScreen> {
   }
 
   Widget buildBody(SalesPersonMapState state) {
+    if (state.salePersonGps.isEmpty) {
+      return EmptyScreen();
+    }
     return Stack(
       children: [
         if (state.kGooglePostition == null) ...[

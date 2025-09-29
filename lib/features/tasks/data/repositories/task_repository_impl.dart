@@ -2151,8 +2151,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
   }
 
   @override
-  Future<Either<Failure, List<SalespersonSchedule>>> getTeamSchedules(
-    String visitDate, {
+  Future<Either<Failure, List<SalespersonSchedule>>> getTeamSchedules({
     Map<String, dynamic>? param,
   }) async {
     if (!await _networkInfo.isConnected) {
@@ -2161,7 +2160,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
 
     List<SalespersonSchedule> teamSchedules = [];
 
-    final schedules = await _remote.getTeamSchedule(visitDate, param: param);
+    final schedules = await _remote.getTeamSchedule(param: param);
 
     try {
       for (var a in schedules["records"]) {

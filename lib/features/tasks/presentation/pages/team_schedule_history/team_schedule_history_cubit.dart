@@ -8,27 +8,36 @@ import 'package:salesforce/injection_container.dart';
 
 class TeamScheduleHistoryCubit extends Cubit<TeamScheduleHistoryState>
     with MessageMixin {
-  TeamScheduleHistoryCubit() : super(TeamScheduleHistoryState(isLoading: true));
+  TeamScheduleHistoryCubit()
+    : super(
+        TeamScheduleHistoryState(isLoading: true, scheduleDate: DateTime.now()),
+      );
 
   final _repos = getIt<TaskRepository>();
 
-  Future<void> getTeamSchedules(
-    String visiteDate, {
+  Future<void> getTeamSchedules({
     Map<String, dynamic>? param,
+    bool isLoadingSchedule = true,
   }) async {
     try {
-      final response = await _repos.getTeamSchedules(visiteDate, param: param);
-
+      final response = await _repos.getTeamSchedules(param: param);
+      emit(
+        state.copyWith(isLoading: true, isLoadingSchedule: isLoadingSchedule),
+      );
       response.fold(
         (failure) => throw GeneralException(failure.message),
         (items) => emit(
-          state.copyWith(teamScheduleSalePersons: items, isLoading: false),
+          state.copyWith(
+            teamScheduleSalePersons: items,
+            isLoading: false,
+            isLoadingSchedule: false,
+          ),
         ),
       );
     } on GeneralException catch (e) {
       showWarningMessage(e.message);
     } catch (error) {
-      emit(state.copyWith(isLoading: false));
+      emit(state.copyWith(isLoading: false, isLoadingSchedule: false));
       showErrorMessage();
     }
   }
@@ -44,7 +53,7 @@ class TeamScheduleHistoryCubit extends Cubit<TeamScheduleHistoryState>
       trackingDate: '',
     );
     try {
-      emit(state.copyWith(isLoading: true));
+      emit(state.copyWith(isLoading: true, isLoadingSchedule: true));
 
       final response = await _repos.getSalepersonGps();
       response.fold(
@@ -60,7 +69,13 @@ class TeamScheduleHistoryCubit extends Cubit<TeamScheduleHistoryState>
     }
   }
 
-  void selectDownline(SalePersonGpsModel downLine) {
-    emit(state.copyWith(downLine: downLine));
+  void selectDownline(String? downLineCode) {
+    emit(state.copyWith(isLoadingSchedule: true));
+    emit(state.copyWith(downLineCode: downLineCode));
+  }
+
+  void selectDateTime(DateTime? scheduleDate) {
+    emit(state.copyWith(isLoadingSchedule: true));
+    emit(state.copyWith(scheduleDate: scheduleDate));
   }
 }
