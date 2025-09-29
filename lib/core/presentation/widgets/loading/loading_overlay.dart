@@ -23,7 +23,9 @@ class LoadingOverlay {
       context: _context,
       barrierDismissible: false,
       builder: (ctx) => AnnotatedRegion<SystemUiOverlayStyle>(
-        value: const SystemUiOverlayStyle(statusBarColor: Color.fromARGB(0, 0, 0, 0)),
+        value: const SystemUiOverlayStyle(
+          statusBarColor: Color.fromARGB(0, 0, 0, 0),
+        ),
         sized: false,
         child: ValueListenableBuilder<double>(
           valueListenable: _progress,

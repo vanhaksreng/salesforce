@@ -34,8 +34,7 @@ class ApiTaskDataSourceImpl extends BaseApiDataSourceImpl
   }
 
   @override
-  Future<Map<String, dynamic>> getTeamSchedule(
-    String visitDate, {
+  Future<Map<String, dynamic>> getTeamSchedule({
     Map<String, dynamic>? param,
   }) async {
     try {

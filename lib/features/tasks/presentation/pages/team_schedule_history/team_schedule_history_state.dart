@@ -3,17 +3,21 @@ import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 
 class TeamScheduleHistoryState {
   final bool isLoading;
+  final bool isLoadingSchedule;
   final String? error;
   final List<SalespersonSchedule> teamScheduleSalePersons;
   final List<SalePersonGpsModel> downLines;
-  final SalePersonGpsModel? downLine;
+  final String downLineCode;
+  final DateTime? scheduleDate;
 
   const TeamScheduleHistoryState({
     this.isLoading = false,
+    this.isLoadingSchedule = false,
     this.error,
     this.teamScheduleSalePersons = const [],
     this.downLines = const [],
-    this.downLine,
+    this.downLineCode = "",
+    this.scheduleDate,
   });
 
   TeamScheduleHistoryState copyWith({
@@ -21,13 +25,17 @@ class TeamScheduleHistoryState {
     String? error,
     List<SalespersonSchedule>? teamScheduleSalePersons,
     List<SalePersonGpsModel>? downLines,
-    SalePersonGpsModel? downLine,
+    String? downLineCode,
+    bool? isLoadingSchedule,
+    DateTime? scheduleDate,
   }) {
     return TeamScheduleHistoryState(
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
       downLines: downLines ?? this.downLines,
-      downLine: downLine ?? this.downLine,
+      downLineCode: downLineCode ?? this.downLineCode,
+      scheduleDate: scheduleDate ?? this.scheduleDate,
+      isLoadingSchedule: isLoadingSchedule ?? this.isLoadingSchedule,
       teamScheduleSalePersons:
           teamScheduleSalePersons ?? this.teamScheduleSalePersons,
     );
