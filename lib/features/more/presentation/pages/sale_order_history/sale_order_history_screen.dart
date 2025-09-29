@@ -44,12 +44,14 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
   DateTime? initialFromDate;
   String selectedDate = "This Week";
   String status = "All";
+  String isShowAddCustomer = kStatusYes;
 
   @override
   void initState() {
     super.initState();
     initialFromDate = DateTime.now().firstDayOfWeek();
     initialToDate = DateTime.now().endDayOfWeek();
+    getShowAddCustomer();
     _cubit.getSaleOrders(
       param: {
         'document_type': kSaleOrder,
@@ -58,6 +60,10 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
       },
     );
     _scrollController.addListener(_handleScrolling);
+  }
+
+  getShowAddCustomer() async {
+    isShowAddCustomer = await _cubit.isShowAccCustomer();
   }
 
   void _handleScrolling() {
@@ -226,12 +232,14 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
       appBar: AppBarWidget(
         title: greeting("sale_orders"),
         actions: [
-          BtnIconCircleWidget(
-            onPressed: () => pushToAddCustomer(),
-            icons: Icon(Icons.add, color: white),
-            rounded: appBtnRound,
-          ),
-          Helpers.gapW(appSpace),
+          if (isShowAddCustomer == kStatusYes) ...[
+            BtnIconCircleWidget(
+              onPressed: () => pushToAddCustomer(),
+              icons: Icon(Icons.add, color: white),
+              rounded: appBtnRound,
+            ),
+            Helpers.gapW(appSpace),
+          ],
         ],
         heightBottom: heightBottomSearch,
         bottom: SearchWidget(

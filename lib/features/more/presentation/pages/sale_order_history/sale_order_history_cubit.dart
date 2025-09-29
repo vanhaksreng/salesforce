@@ -1,12 +1,15 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/core/constants/permission.dart';
 import 'package:salesforce/core/mixins/generate_pdf_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
+import 'package:salesforce/core/mixins/permission_mixin.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history/sale_order_history_state.dart';
 import 'package:salesforce/injection_container.dart';
 
 class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
-    with MessageMixin, GeneratePdfMixin {
+    with MessageMixin, GeneratePdfMixin, PermissionMixin {
   SaleOrderHistoryCubit() : super(const SaleOrderHistoryState(isLoading: true));
   final MoreRepository appRepos = getIt<MoreRepository>();
 
@@ -89,6 +92,12 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
             : state.selectedStatus,
       ),
     );
+  }
+
+  Future<String> isShowAccCustomer() async {
+    return await hasPermission(kUseSalesInvoiceWithoutVisit)
+        ? kStatusYes
+        : kStatusNo;
   }
 
   // Future<void> getInvoiceHtml({
