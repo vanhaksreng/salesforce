@@ -16,7 +16,8 @@ import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
-class AuthRepositoryImpl extends BaseAppRepositoryImpl implements AuthRepository {
+class AuthRepositoryImpl extends BaseAppRepositoryImpl
+    implements AuthRepository {
   final ApiAuthDataSource _remote;
   final RealmAuthDataSource _local;
   final NetworkInfo _networkInfo;
@@ -92,7 +93,10 @@ class AuthRepositoryImpl extends BaseAppRepositoryImpl implements AuthRepository
 
       setAuthInjection(userLogin);
 
-      await _local.storeAppSetting([AppSetting(kUserId, userLogin.id), AppSetting(kConnectionKey, arg.server.id)]);
+      await _local.storeAppSetting([
+        AppSetting(kUserId, userLogin.id),
+        AppSetting(kConnectionKey, arg.server.id),
+      ]);
 
       await _local.storeLoginSession(userLogin);
       await _local.storeUserSetup(UserSetupExtension.fromMap(result));
@@ -110,20 +114,48 @@ class AuthRepositoryImpl extends BaseAppRepositoryImpl implements AuthRepository
         notifications.add(NotificationModel.fromJson(data));
       }
 
-      return Right(NotificationArg(notifications: notifications, countNotification: record["count"]));
+      return Right(
+        NotificationArg(
+          notifications: notifications,
+          countNotification: record["count"],
+        ),
+      );
     } catch (e) {
       rethrow;
     }
   }
 
   @override
-  Future<bool> offlineLogin({required String username, required String token}) async {
+  Future<bool> offlineLogin({
+    required String username,
+    required String token,
+  }) async {
     try {
       final auth = await _local.login(username, token);
       setAuthInjection(auth);
 
       return true;
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> verifyResetPassword({
+    Map? arg,
+  }) async {
+    if (!await _networkInfo.isConnected) {
+      throw GeneralException(errorInternetMessage);
+    }
+    final record = await _remote.verifyResetPassword(arg: arg);
+    try {
+      if (record["status"] != "success") {
+        return Left(CacheFailure(record["message"]));
+      }
+      return Right(record);
+    } on GeneralException catch (e) {
+      return Left(CacheFailure(e.message));
+    } catch (_) {
       rethrow;
     }
   }

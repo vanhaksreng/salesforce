@@ -13,9 +13,11 @@ import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/auth/domain/entities/login_arg.dart';
 import 'package:salesforce/features/auth/presentation/pages/first_download/first_download_screen.dart';
+import 'package:salesforce/features/auth/presentation/pages/forget_password/forget_password_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/login/login_cubit.dart';
 import 'package:salesforce/features/auth/presentation/pages/login/login_state.dart';
 import 'package:salesforce/features/auth/presentation/pages/starter_screen/starter_screen.dart';
+import 'package:salesforce/features/auth/presentation/pages/verify_phone_number/verify_phone_number_screen.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/text_form_field_widget.dart';
@@ -111,9 +113,8 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
     );
   }
 
-  void buildPushNamedToForgetPassWord(BuildContext context) {
-    //TODO
-    // return Navigator.pushNamed(context, "");
+  void buildPushNamedToForgetPassWord() {
+    Navigator.pushNamed(context, VerifyPhoneNumberScreen.routeName);
   }
 
   @override
@@ -204,21 +205,23 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
             labelIcon: Icons.lock,
             obscureText: true,
           ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: TextButton(
-              onPressed: () => buildPushNamedToForgetPassWord(context),
-              child: TextWidget(
-                text: greeting("forget_pass"),
-                decoration: TextDecoration.underline,
-                textAlign: TextAlign.right,
-                softWrap: true,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                color: primary,
-              ),
-            ),
-          ),
+          Helpers.gapH(16),
+          // Align(
+          //   alignment: Alignment.bottomRight,
+          //   child: TextButton(
+          //     onPressed: () =>
+          //     buildPushNamedToForgetPassWord(),
+          //     child: TextWidget(
+          //       text: greeting("forget_pass"),
+          //       decoration: TextDecoration.underline,
+          //       textAlign: TextAlign.right,
+          //       softWrap: true,
+          //       fontWeight: FontWeight.bold,
+          //       fontSize: 12,
+          //       color: primary,
+          //     ),
+          //   ),
+          // ),
           BtnWidget(
             title: greeting("login"),
             onPressed: () => login(),

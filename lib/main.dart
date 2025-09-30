@@ -15,7 +15,7 @@ import 'injection_container.dart' as di;
 void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
-    // HttpOverrides.global = MyHttpOverrides();
+    HttpOverrides.global = MyHttpOverrides();
     await _initializeApp();
 
     await di.getItInit();
@@ -89,11 +89,11 @@ class _TradeB2bState extends State<TradeB2b> {
   }
 }
 
-// class MyHttpOverrides extends HttpOverrides {
-//   @override
-//   HttpClient createHttpClient(SecurityContext? context) {
-//     return super.createHttpClient(context)
-//       ..badCertificateCallback =
-//           (X509Certificate cert, String host, int port) => true;
-//   }
-// }
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}

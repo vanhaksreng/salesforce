@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -75,6 +76,29 @@ class _SaleOrderHistoryDetailScreenState
     }
   }
 
+  // Future<void> _printReceipt() async {
+  //   if (_writeCharacteristic == null ||
+  //       bluetoothDevice!.remoteId.str.isEmpty ||
+  //       bluetoothDevice!.isDisconnected) {
+  //     showErrorMessage(
+  //       'Not connected to a printer or no writable characteristic found',
+  //     );
+  //     return;
+  //   }
+
+  //   try {
+  //     final bytes = await ReceiptMm80.generateCustomReceiptBytes(
+  //       detail: _cubit.state.record,
+  //       companyInfo: _cubit.state.comPanyInfo,
+  //     );
+
+  //     await _sendDataInChunks(_writeCharacteristic!, bytes);
+  //     showSuccessMessage('Receipt printed successfully!');
+  //   } catch (e) {
+  //     showErrorMessage('Printing failed: $e');
+  //   }
+  // }
+
   Future<void> _printReceipt() async {
     if (_writeCharacteristic == null ||
         bluetoothDevice!.remoteId.str.isEmpty ||
@@ -86,6 +110,17 @@ class _SaleOrderHistoryDetailScreenState
     }
 
     try {
+      // ← ADD: Clear printer first
+      final profile = await CapabilityProfile.load();
+      final generator = Generator(PaperSize.mm80, profile);
+      List<int> clearBytes = [];
+      clearBytes += generator.reset();
+      await _sendDataInChunks(_writeCharacteristic!, clearBytes);
+
+      // Small delay to let printer reset
+      await Future.delayed(Duration(milliseconds: 100));
+
+      // Now print the receipt
       final bytes = await ReceiptMm80.generateCustomReceiptBytes(
         detail: _cubit.state.record,
         companyInfo: _cubit.state.comPanyInfo,
