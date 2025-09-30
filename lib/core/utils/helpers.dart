@@ -569,17 +569,17 @@ class Helpers {
   static Future<BitmapDescriptor> createPinMarkerWithImageAndTitle(
     String imageUrl, {
     required String title,
-    int size = 150,
-    Color pinColor = Colors.red,
-    Color borderColor = Colors.white,
-    double borderWidth = 4.0,
-    Color shadowColor = Colors.black38,
-    double shadowBlurRadius = 4.0,
-    Offset shadowOffset = const Offset(1, 1),
-    double fontSize = 46,
-    Color textColor = Colors.red,
-    double maxTextWidth = 400,
-    double finalMarkerHeight = 42,
+    int size = 140,
+    Color pinColor = primary,
+    Color borderColor = white,
+    double borderWidth = 3.5,
+    Color shadowColor = borderClr,
+    double shadowBlurRadius = 8.0,
+    Offset shadowOffset = const Offset(0, 3),
+    double fontSize = 30,
+    Color textColor = white,
+    double maxTextWidth = 350,
+    double finalMarkerHeight = 55,
   }) async {
     Uint8List? resizedBytes;
     ui.Image? userImage;
@@ -601,16 +601,17 @@ class Helpers {
       }
     }
 
-    // Pre-calculate text dimensions for auto-width
+    // Pre-calculate text dimensions
     final textStyle = ui.TextStyle(
       color: textColor,
       fontSize: fontSize,
-      fontWeight: FontWeight.w400,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.3,
     );
 
     final tempParagraphStyle = ui.ParagraphStyle(
-      textAlign: TextAlign.left,
-      maxLines: 1,
+      textAlign: TextAlign.center,
+      maxLines: 2,
       ellipsis: '...',
     );
 
@@ -620,22 +621,26 @@ class Helpers {
     final tempParagraph = tempParagraphBuilder.build()
       ..layout(ui.ParagraphConstraints(width: maxTextWidth));
 
-    // Calculate actual text width (auto-width)
     final double actualTextWidth = math.min(
       tempParagraph.maxIntrinsicWidth,
       maxTextWidth,
     );
-    const double textPadding = 20.0;
-    const double spacing = 10.0;
 
-    // Calculate dynamic canvas dimensions based on text width
-    final double markerWidth = size.toDouble();
-    final double canvasWidth =
-        markerWidth + spacing + actualTextWidth + textPadding;
-    final double canvasHeight = math.max(
-      size.toDouble(),
-      tempParagraph.height + 40,
+    const double textPaddingH = 18.0;
+    const double textPaddingV = 16.0;
+    const double imageCircleSize = 70.0; // Size of the circular image at top
+    const double pinTipHeight = 35.0; // Height of bottom pointed part
+
+    final double labelWidth = math.max(
+      actualTextWidth + textPaddingH * 2,
+      imageCircleSize + 30,
     );
+    final double labelHeight = tempParagraph.height + textPaddingV * 2;
+
+    // Canvas dimensions
+    final double canvasWidth = labelWidth;
+    final double canvasHeight =
+        imageCircleSize / 2 + labelHeight + pinTipHeight + 5;
 
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
@@ -644,46 +649,68 @@ class Helpers {
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high;
 
-    final double circleRadius = markerWidth * 0.3;
-    final double centerX = markerWidth / 2;
-    final double circleCenterY = circleRadius + borderWidth;
+    // Create the full marker path: circle at top + rounded rectangle + triangle at bottom
+    final Path fullMarkerPath = Path();
 
-    // Pin shape
-    final Path pinPath = Path();
-    pinPath.addOval(
+    final double centerX = canvasWidth / 2;
+    final double circleRadius = imageCircleSize / 2;
+    final double circleCenterY = circleRadius + 2;
+
+    // Top circle
+    fullMarkerPath.addOval(
       Rect.fromCircle(
         center: Offset(centerX, circleCenterY),
         radius: circleRadius,
       ),
     );
-    pinPath.moveTo(centerX - circleRadius, circleCenterY);
-    pinPath.lineTo(centerX, size.toDouble());
-    pinPath.lineTo(centerX + circleRadius, circleCenterY);
-    pinPath.close();
 
-    // Shadow
+    // Rounded rectangle body
+    final double rectTop = circleCenterY + circleRadius * 0.6;
+    final double rectHeight = labelHeight;
+    final RRect bodyRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, rectTop, labelWidth, rectHeight),
+      const Radius.circular(12),
+    );
+    fullMarkerPath.addRRect(bodyRect);
+
+    // Bottom triangle pointer
+    final double triangleTop = rectTop + rectHeight;
+    final double triangleWidth = 28.0;
+
+    fullMarkerPath.moveTo(centerX - triangleWidth / 2, triangleTop);
+    fullMarkerPath.lineTo(centerX, triangleTop + pinTipHeight);
+    fullMarkerPath.lineTo(centerX + triangleWidth / 2, triangleTop);
+    fullMarkerPath.close();
+
+    // Draw shadow
     final Paint shadowPaint = Paint()
       ..color = shadowColor
       ..isAntiAlias = true
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, shadowBlurRadius);
-    canvas.drawPath(pinPath.shift(shadowOffset), shadowPaint);
+    canvas.drawPath(fullMarkerPath.shift(shadowOffset), shadowPaint);
 
-    // Pin fill
+    // Draw main pin color
     paint.color = pinColor;
     paint.style = PaintingStyle.fill;
-    canvas.drawPath(pinPath, paint);
+    canvas.drawPath(fullMarkerPath, paint);
 
-    // Border
-    paint.color = borderColor;
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = borderWidth;
-    canvas.drawPath(pinPath, paint);
+    // Subtle gradient overlay for depth
+    final Paint gradientOverlay = Paint()
+      ..shader = ui.Gradient.linear(
+        Offset(centerX, circleCenterY),
+        Offset(centerX, triangleTop + pinTipHeight),
+        [white.withValues(alpha: .15), Colors.transparent],
+        [0.0, 0.6],
+      )
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+    canvas.drawPath(fullMarkerPath, gradientOverlay);
 
-    // User image or person icon with proper background
+    // Draw user image or icon in the circle
     final double imageRadius = circleRadius - borderWidth;
 
     if (userImage != null) {
-      // Draw user image
+      // Clip and draw user image
       canvas.save();
       final Path clipPath = Path()
         ..addOval(
@@ -692,7 +719,6 @@ class Helpers {
             radius: imageRadius,
           ),
         );
-
       canvas.clipPath(clipPath, doAntiAlias: true);
 
       final double imageDiameter = imageRadius * 2;
@@ -702,14 +728,12 @@ class Helpers {
 
       final double imageWidth = userImage.width.toDouble();
       final double imageHeight = userImage.height.toDouble();
-
       final double imgOffsetX = centerX - (imageWidth * scale) / 2;
       final double imgOffsetY = circleCenterY - (imageHeight * scale) / 2;
 
       final Paint imagePaint = Paint()
         ..isAntiAlias = true
-        ..filterQuality = FilterQuality.high
-        ..blendMode = ui.BlendMode.srcOver;
+        ..filterQuality = FilterQuality.high;
 
       canvas.drawImageRect(
         userImage,
@@ -722,65 +746,86 @@ class Helpers {
         ),
         imagePaint,
       );
-
       canvas.restore();
-    } else {
-      // Draw background circle first for no-image case
-      final Paint backgroundPaint = Paint()
-        ..color =
-            Colors.grey[200]! // Light grey background
-        ..style = PaintingStyle.fill
-        ..isAntiAlias = true;
 
+      // White border around image
+      final Paint imageBorderPaint = Paint()
+        ..color = borderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = borderWidth
+        ..isAntiAlias = true;
       canvas.drawCircle(
         Offset(centerX, circleCenterY),
         imageRadius,
-        backgroundPaint,
+        imageBorderPaint,
+      );
+    } else {
+      // White circle background
+      final Paint whiteBgPaint = Paint()
+        ..color = white
+        ..style = PaintingStyle.fill
+        ..isAntiAlias = true;
+      canvas.drawCircle(
+        Offset(centerX, circleCenterY),
+        imageRadius,
+        whiteBgPaint,
       );
 
-      // Draw person icon when no image is available
+      // Draw simple person icon
       final Paint iconPaint = Paint()
-        ..color =
-            Colors.grey[600]! // Darker grey for the icon
+        ..color = pinColor.withValues(alpha: .8)
         ..style = PaintingStyle.fill
         ..isAntiAlias = true;
 
-      final double iconScale = imageRadius * 0.7; // Scale icon to fit nicely
-
-      // Person head (circle)
-      final double headRadius = iconScale * 0.25;
+      final double iconScale = imageRadius * 0.65;
+      final double headRadius = iconScale * 0.32;
       final double headCenterY = circleCenterY - iconScale * 0.25;
+
+      // Head
       canvas.drawCircle(Offset(centerX, headCenterY), headRadius, iconPaint);
 
-      // Person body/shoulders (more realistic shape)
+      // Body
       final Path bodyPath = Path();
-      final double shoulderWidth = iconScale * 0.5;
-      final double bodyHeight = iconScale * 0.45;
-      final double bodyTop = headCenterY + headRadius + iconScale * 0.05;
+      final double shoulderWidth = iconScale * 0.6;
+      final double bodyHeight = iconScale * 0.55;
+      final double bodyTop = headCenterY + headRadius + iconScale * 0.08;
 
-      // Create a more person-like silhouette
-      bodyPath.moveTo(centerX - shoulderWidth / 2, bodyTop); // Left shoulder
-      bodyPath.lineTo(centerX + shoulderWidth / 2, bodyTop); // Right shoulder
-      bodyPath.lineTo(
-        centerX + shoulderWidth / 3,
+      bodyPath.moveTo(centerX - shoulderWidth / 2, bodyTop);
+      bodyPath.quadraticBezierTo(
+        centerX - shoulderWidth / 2.5,
+        bodyTop + bodyHeight * 0.5,
+        centerX - shoulderWidth / 3.2,
         bodyTop + bodyHeight,
-      ); // Right side
-      bodyPath.lineTo(
-        centerX - shoulderWidth / 3,
-        bodyTop + bodyHeight,
-      ); // Left side
+      );
+      bodyPath.lineTo(centerX + shoulderWidth / 3.2, bodyTop + bodyHeight);
+      bodyPath.quadraticBezierTo(
+        centerX + shoulderWidth / 2.5,
+        bodyTop + bodyHeight * 0.5,
+        centerX + shoulderWidth / 2,
+        bodyTop,
+      );
       bodyPath.close();
 
       canvas.drawPath(bodyPath, iconPaint);
+
+      // Border around white circle
+      final Paint iconBorderPaint = Paint()
+        ..color = borderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = borderWidth
+        ..isAntiAlias = true;
+      canvas.drawCircle(
+        Offset(centerX, circleCenterY),
+        imageRadius,
+        iconBorderPaint,
+      );
     }
 
-    // Title text with auto-width (using actual text dimensions)
-    final double textOffsetX = markerWidth + spacing;
-
+    // Draw text in the middle section
     final paragraphStyle = ui.ParagraphStyle(
-      textAlign: TextAlign.left,
-      maxLines: 1,
-      ellipsis: '...', // Handle text overflow
+      textAlign: TextAlign.center,
+      maxLines: 2,
+      ellipsis: '...',
     );
 
     final paragraphBuilder = ui.ParagraphBuilder(paragraphStyle)
@@ -788,12 +833,13 @@ class Helpers {
       ..addText(title);
 
     final ui.Paragraph paragraph = paragraphBuilder.build()
-      ..layout(ui.ParagraphConstraints(width: actualTextWidth + textPadding));
+      ..layout(ui.ParagraphConstraints(width: labelWidth - textPaddingH * 2));
 
-    final double textOffsetY = circleCenterY - (paragraph.height / 2);
+    final double textOffsetX = textPaddingH;
+    final double textOffsetY = rectTop + (rectHeight - paragraph.height) / 2;
     canvas.drawParagraph(paragraph, Offset(textOffsetX, textOffsetY));
 
-    // Create image with dynamic dimensions
+    // Create final image
     final ui.Image markerAsImage = await pictureRecorder.endRecording().toImage(
       canvasWidth.toInt(),
       canvasHeight.toInt(),
@@ -803,7 +849,6 @@ class Helpers {
     );
     final Uint8List bytes = byteData!.buffer.asUint8List();
 
-    // Calculate proportional final width based on canvas width
     final double aspectRatio = canvasWidth / canvasHeight;
     final double finalMarkerWidth = finalMarkerHeight * aspectRatio;
 
