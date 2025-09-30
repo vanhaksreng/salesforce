@@ -25,15 +25,25 @@ class ReceiptMm80 {
     Uint8List? logoBytes;
     if (companyInfo?.logo128 != null && includeImage) {
       try {
-        final response = await http.get(Uri.parse(companyInfo!.logo128!));
+        final response = await http.get(Uri.parse(companyInfo?.logo128 ?? ""));
+
         if (response.statusCode == 200) {
           final decodedImage = img.decodeImage(response.bodyBytes);
           if (decodedImage != null) {
-            final resizedImage = img.copyResize(decodedImage, width: 384);
+            // final resizedImage = img.copyResize(decodedImage, width: 384);
+            final newHeight = (decodedImage.height * 384 / decodedImage.width)
+                .round();
+            final resizedImage = img.copyResize(
+              decodedImage,
+              width: 384,
+              height: newHeight > 0 ? newHeight : 1,
+            );
             logoBytes = img.encodePng(resizedImage);
+
             segments.add(
               StyledTextSegment(
-                text: '',
+                text: "",
+                isRow: false,
                 image: logoBytes,
                 imageWidth: 120,
                 imageHeight: 120,
@@ -143,12 +153,12 @@ class ReceiptMm80 {
     final disPer = ReceiptHelpers.composeReceiptLine(
       'Discount (%) :',
       disPercStr,
-      numberSign - 30,
+      numberSign,
     );
     segments.add(
       StyledTextSegment(
         text: disPer,
-        fontSize: KhmerFontSize.large,
+        fontSize: KhmerFontSize.normal,
         isRow: false,
       ),
     );
@@ -157,14 +167,14 @@ class ReceiptMm80 {
     final total = ReceiptHelpers.composeReceiptLine(
       'Total Amount :',
       totalStr,
-      numberSign - 30,
+      numberSign,
     );
 
     segments.add(
       StyledTextSegment(
         text: total,
         style: KhmerTextStyle.bold,
-        fontSize: KhmerFontSize.large,
+        fontSize: KhmerFontSize.normal,
         isRow: false,
         rowHeight: 20,
       ),
@@ -176,7 +186,7 @@ class ReceiptMm80 {
         textAlign: TextAlign.center,
         rowHeight: 20,
         text:
-            "Thank you for shopping with us. We look forward to serving you again! \u{1F64F}\u2764",
+            "Thank you for shopping with us. We look forward to serving you again!❤️❤️",
       ),
     );
 
@@ -263,11 +273,17 @@ class ReceiptMm80 {
     final profile = await CapabilityProfile.load();
     final generator = Generator(paper, profile);
     List<int> bytes = [];
-
-    final segments = await buildReceiptSegments(
-      detail: detail,
-      companyInfo: companyInfo,
-    );
+    bytes += generator.reset();
+    bytes += generator.text('');
+    final segments =
+        (await buildReceiptSegments(
+          detail: detail,
+          companyInfo: companyInfo,
+          includeImage: true,
+        )).where((segment) {
+          if (segment.image != null) return true; // ← Keep image segments!
+          return segment.text.trim().isNotEmpty && segment.text.trim() != "0";
+        }).toList();
 
     final khmerBytes = await printRichKhmerTextFor80mm(segments);
     bytes.addAll(khmerBytes);

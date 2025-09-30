@@ -70,7 +70,7 @@ class XP323BConfig {
   static const PaperSize paperSize = PaperSize.mm80;
   static const int paperWidthPixels = 576;
   static const int leftMargin = 20;
-  static const int topMargin = 30;
+  static const int topMargin = 0;
 }
 
 class StyledTextSegment {
