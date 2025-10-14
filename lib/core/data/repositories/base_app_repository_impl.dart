@@ -471,7 +471,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
         response["records"],
       );
       await _local.storeCompanyInfo(companyInfo);
-      print("===========hiii==========${companyInfo}");
+
       return Right(companyInfo);
     } catch (e) {
       Logger.log("getRemoteCompanyInfo $e");
