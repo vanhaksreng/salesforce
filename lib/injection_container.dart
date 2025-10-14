@@ -148,6 +148,34 @@ Future<void> setAuthInjection(LoginSession? auth) async {
   getIt.registerSingleton<User>(user);
 }
 
+Future<void> setCompanyInjection(CompanyInformation? company) async {
+  if (company == null) return;
+
+  if (getIt.isRegistered<CompanyInformation>()) {
+    getIt.unregister<CompanyInformation>();
+  }
+
+  final com = CompanyInformation(
+    company.id,
+    name2: company.name2,
+    name: company.name,
+    address: company.address,
+    address2: company.address2,
+    logo128: company.logo128,
+    email: company.email,
+  );
+
+  getIt.registerSingleton<CompanyInformation>(com);
+}
+
+CompanyInformation? getCompany() {
+  if (getIt.isRegistered<CompanyInformation>()) {
+    return getIt<CompanyInformation>();
+  }
+
+  return null;
+}
+
 User? getAuth() {
   if (getIt.isRegistered<User>()) {
     return getIt<User>();

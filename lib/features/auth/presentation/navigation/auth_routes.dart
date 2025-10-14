@@ -11,7 +11,7 @@ Route<dynamic>? authOnGenerateRoute(RouteSettings settings) {
       return PageRouteBuilder(
         fullscreenDialog: true,
         pageBuilder: (context, animation, secondaryAnimation) {
-          return const LoginScreen();
+          return LoginScreen();
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);

@@ -12,7 +12,11 @@ import 'package:salesforce/features/more/more_main_page_cubit.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class BuildMore extends StatelessWidget {
-  const BuildMore({super.key, required this.listActionMore, required this.lable});
+  const BuildMore({
+    super.key,
+    required this.listActionMore,
+    required this.lable,
+  });
 
   final List<MoreModel> listActionMore;
   final String lable;
@@ -25,7 +29,11 @@ class BuildMore extends StatelessWidget {
       return;
     }
 
-    Navigator.pushNamed(context, routeName, arguments: listActionMore[index].arg);
+    Navigator.pushNamed(
+      context,
+      routeName,
+      arguments: listActionMore[index].arg,
+    );
   }
 
   void _confrimLogout(BuildContext context) {
@@ -41,7 +49,7 @@ class BuildMore extends StatelessWidget {
     final l = LoadingOverlay.of(context);
     l.show();
     await context.read<MoreMainPageCubit>().logout();
-    //TODO : Stop background service
+
     l.hide();
 
     if (!context.mounted) return;
@@ -72,7 +80,11 @@ class BuildMore extends StatelessWidget {
             child: ListTitleWidget(
               onTap: () => _navigatorToScreen(context, index),
               label: listActionMore[index].title,
-              leading: Icon(listActionMore[index].icon, size: 24.scale, color: mainColor),
+              leading: Icon(
+                listActionMore[index].icon,
+                size: 24.scale,
+                color: mainColor,
+              ),
               subTitle: listActionMore[index].subTitle,
             ),
           );

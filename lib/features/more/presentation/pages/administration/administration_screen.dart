@@ -318,7 +318,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
   }
 
   void _showComingSoonMessage() {
-    Navigator.pushNamed(context, PrinterTestScreen.routeName);
-    // showErrorMessage("APK deployment feature coming soon!");
+    // Navigator.pushNamed(context, PrinterTestScreen.routeName);
+    showErrorMessage("APK deployment feature coming soon!");
   }
 }

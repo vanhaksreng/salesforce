@@ -43,11 +43,17 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
       return;
     }
 
-    Navigator.push(context, MaterialPageRoute(builder: (context) => MainTapScreen()));
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => MainTapScreen()),
+    );
   }
 
   void _loginOtherAccount() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+    );
   }
 
   @override
@@ -109,9 +115,15 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
                     margin: const EdgeInsets.all(3),
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: LinearGradient(colors: [Color(0xFFFF6B6B), Color(0xFFEE5A24)]),
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFF6B6B), Color(0xFFEE5A24)],
+                      ),
                     ),
-                    child: const Icon(Icons.person_outline, size: 60, color: Colors.white),
+                    child: const Icon(
+                      Icons.person_outline,
+                      size: 60,
+                      color: Colors.white,
+                    ),
                   );
                 }
 
@@ -119,7 +131,9 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
                   margin: const EdgeInsets.all(2),
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(colors: [Color(0xFFFF6B6B), Color(0xFFEE5A24)]),
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFFF6B6B), Color(0xFFEE5A24)],
+                    ),
                   ),
                   child: ImageNetWorkWidget(
                     round: 100,
@@ -177,7 +191,11 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFF1F5F9), width: 1),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 10)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
         ],
       ),
       child: Column(
@@ -188,9 +206,15 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
             // height: 60.scale,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(colors: [Color(0xFFFEF3C7), Color(0xFFFBBF24)]),
+              gradient: LinearGradient(
+                colors: [Color(0xFFFEF3C7), Color(0xFFFBBF24)],
+              ),
             ),
-            child: const Icon(Icons.warning_rounded, size: 32, color: Color(0xFFD97706)),
+            child: const Icon(
+              Icons.warning_rounded,
+              size: 32,
+              color: Color(0xFFD97706),
+            ),
           ),
 
           SizedBox(height: 20.scale),
@@ -207,7 +231,8 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
 
           // Warning description
           const TextWidget(
-            text: "Switching accounts will remove all locally stored data. This action cannot be undone.",
+            text:
+                "Switching accounts will remove all locally stored data. This action cannot be undone.",
             fontSize: 16,
             color: Color(0xFF64748B),
             textAlign: TextAlign.center,
@@ -228,7 +253,9 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
             width: double.infinity,
             height: 56,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF667EEA), Color(0xFF764BA2)]),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+              ),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -241,7 +268,12 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
             child: const Center(
               child: Text(
                 'Continue to Login',
-                style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
           ),
@@ -263,7 +295,11 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
             child: const Center(
               child: Text(
                 'Login with other account',
-                style: TextStyle(color: Color(0xFF667EEA), fontSize: 17, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Color(0xFF667EEA),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
