@@ -879,7 +879,7 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
       final header = PosSalesHeader(
         headerId,
         no: documentNo,
-        salespersonCode: customer.salespersonCode,
+        salespersonCode: userSetup.salespersonCode,
         locationCode: userSetup.locationCode,
         documentType: documentType,
         customerNo: customer.no,

@@ -590,6 +590,7 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
       realm.deleteMany(realm.all<SalesLine>().toList());
       realm.deleteMany(realm.all<Permission>().toList());
       realm.deleteMany(realm.all<DistributionSetUp>().toList());
+      realm.deleteMany(realm.all<CompetitorItemLedgerEntry>().toList());
 
       return true;
     });
@@ -613,11 +614,12 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
       return true;
     });
   }
-  
+
   @override
-  Future<bool> updateStatusGPSTrackingEntries({required List<GpsTrackingEntry> records}) async {
+  Future<bool> updateStatusGPSTrackingEntries({
+    required List<GpsTrackingEntry> records,
+  }) async {
     return _storage.writeTransaction((realm) {
-      
       for (var record in records) {
         record.isSync = kStatusYes;
         realm.add(record, update: true);
