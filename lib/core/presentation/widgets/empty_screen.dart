@@ -82,26 +82,26 @@ class _EmptyScreenState extends State<EmptyScreen>
                       height: 1.7,
                     ),
                   ),
-                  Helpers.gapH(32.scale),
+                  // Helpers.gapH(32.scale),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      5,
-                      (index) => AnimatedContainer(
-                        duration: Duration(milliseconds: 300 + (index * 100)),
-                        margin: EdgeInsets.symmetric(horizontal: 3.scale),
-                        width: index == 2 ? 10.scale : 6.scale,
-                        height: index == 2 ? 10.scale : 6.scale,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: mainColor50.withValues(
-                            alpha: index == 2 ? 0.4 : 0.2,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.center,
+                  //   children: List.generate(
+                  //     5,
+                  //     (index) => AnimatedContainer(
+                  //       duration: Duration(milliseconds: 300 + (index * 100)),
+                  //       margin: EdgeInsets.symmetric(horizontal: 3.scale),
+                  //       width: index == 2 ? 10.scale : 6.scale,
+                  //       height: index == 2 ? 10.scale : 6.scale,
+                  //       decoration: BoxDecoration(
+                  //         shape: BoxShape.circle,
+                  //         color: mainColor50.withValues(
+                  //           alpha: index == 2 ? 0.4 : 0.2,
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),
