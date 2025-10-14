@@ -7,7 +7,8 @@ import 'package:salesforce/features/auth/domain/repositories/auth_repository.dar
 import 'package:salesforce/features/auth/presentation/pages/server_option/server_option_state.dart';
 import 'package:salesforce/injection_container.dart';
 
-class ServerOptionCubit extends Cubit<ServerOptionState> with MessageMixin, AppMixin {
+class ServerOptionCubit extends Cubit<ServerOptionState>
+    with MessageMixin, AppMixin {
   ServerOptionCubit() : super(const ServerOptionState(isLoading: true));
 
   final _appRepos = getIt<AuthRepository>();
@@ -37,7 +38,43 @@ class ServerOptionCubit extends Cubit<ServerOptionState> with MessageMixin, AppM
     state.servers[index];
   }
 
+  // Future<void> updateAppServer(String orgId) async {
+  //   _baseRepo.getRemoteCompanyInfo(params: {'org_id': orgId});
+  // }
+
   Future<void> updateAppServer(String orgId) async {
-    _baseRepo.getRemoteCompanyInfo(params: {'org_id': orgId});
+    try {
+      await _baseRepo.getRemoteCompanyInfo(params: {'org_id': orgId}).then((
+        respose,
+      ) {
+        respose.fold((l) => throw GeneralException(l.message), (r) {
+          emit(state.copyWith(isLoading: false, companyInfo: r));
+        });
+      });
+    } on GeneralException catch (e) {
+      showWarningMessage(e.message);
+    } on Exception {
+      showErrorMessage();
+    } finally {
+      emit(state.copyWith(isLoading: false));
+    }
   }
+
+  // Future<void> getCompanyInfo() async {
+  //   try {
+  //     emit(state.copyWith(isLoading: true));
+  //     final companyInfo = await _baseRepo.getRemoteCompanyInfo();
+  //     companyInfo.fold((failure) => showErrorMessage(failure.message), (
+  //       companyInfo,
+  //     ) {
+  //       emit(state.copyWith(companyInfo: companyInfo, isLoading: false));
+  //     });
+  //   } on GeneralException catch (e) {
+  //     showWarningMessage(e.message);
+  //   } on Exception {
+  //     showErrorMessage();
+  //   } finally {
+  //     emit(state.copyWith(isLoading: false));
+  //   }
+  // }
 }

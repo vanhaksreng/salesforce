@@ -15,6 +15,10 @@ mixin MessageMixin {
   }
 
   void showWarningMessage(String msg, {SnackBarAction? action}) {
-    Helpers.showMessage(msg: msg, status: MessageStatus.warning, action: action);
+    Helpers.showMessage(
+      msg: msg,
+      status: MessageStatus.warning,
+      action: action,
+    );
   }
 }
