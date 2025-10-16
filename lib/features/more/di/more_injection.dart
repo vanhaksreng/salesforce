@@ -12,9 +12,13 @@ Future<void> initMoreInjection() async {
   final networkInfo = getIt<NetworkInfo>();
 
   // Datasources
-  getIt.registerLazySingleton<ApiMoreDataSource>(() => ApiMoreDataSourceImpl(network: networkInfo));
+  getIt.registerLazySingleton<ApiMoreDataSource>(
+    () => ApiMoreDataSourceImpl(network: networkInfo),
+  );
 
-  getIt.registerLazySingleton<RealmMoreDataSource>(() => RealmMoreDataSourceImpl(ils: getIt<ILocalStorage>()));
+  getIt.registerLazySingleton<RealmMoreDataSource>(
+    () => RealmMoreDataSourceImpl(ils: getIt<ILocalStorage>()),
+  );
   // Repository
   getIt.registerLazySingleton<MoreRepository>(
     () => MoreRepositoryImpl(

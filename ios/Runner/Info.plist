@@ -52,8 +52,13 @@
 	<array>
 		<string>location</string>
 		<string>fetch</string>
+		 <string>processing</string>
 		<string>remote-notification</string>
 		<string>bluetooth-central</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.clearviewerp.salesforce.autoUploadTask</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
