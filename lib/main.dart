@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:salesforce/features/worker_manager/auto_upload_manager.dart';
 import 'package:salesforce/data/services/onesignal_notification.dart';
 import 'package:salesforce/app/app_router.dart';
 import 'package:salesforce/core/utils/size_config.dart';
@@ -10,14 +11,32 @@ import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/localization/locals_delegate.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_themes.dart';
+import 'package:workmanager/workmanager.dart';
 import 'injection_container.dart' as di;
+
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((taskName, inputData) async {
+    try {
+      WidgetsFlutterBinding.ensureInitialized();
+
+      await di.getItInit();
+
+      return await AutoUploadManager.handleTask(taskName, inputData);
+    } catch (e) {
+      return Future.value(false);
+    }
+  });
+}
 
 void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
-    // HttpOverrides.global = MyHttpOverrides();
-    await _initializeApp();
 
+    await Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+    // HttpOverrides.global = MyHttpOverrides();
+    await AutoUploadManager.initialize();
+    await _initializeApp();
     await di.getItInit();
 
     runApp(const TradeB2b());

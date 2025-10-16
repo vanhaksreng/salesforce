@@ -21,9 +21,12 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
     final uploadTasks = [
       if (state.salesHeaders.isNotEmpty) _processUploadSale(),
       if (state.cashReceiptJournals.isNotEmpty) _processUploadCollection(),
-      if (state.customerItemLedgerEntries.isNotEmpty) _processUploadCheckStock(),
-      if (state.competitorItemLedgerEntries.isNotEmpty) _processUploadCompetitorCheckStock(),
-      if (state.merchandiseSchedules.isNotEmpty) _processUploadMerchandiseAndPosm(),
+      if (state.customerItemLedgerEntries.isNotEmpty)
+        _processUploadCheckStock(),
+      if (state.competitorItemLedgerEntries.isNotEmpty)
+        _processUploadCompetitorCheckStock(),
+      if (state.merchandiseSchedules.isNotEmpty)
+        _processUploadMerchandiseAndPosm(),
       if (state.redemptions.isNotEmpty) _processUploadRedemptions(),
       if (state.salespersonSchedules.isNotEmpty) _processUploadSchedules(),
 
@@ -39,6 +42,7 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
 
   Future<void> loadInitialData(DateTime date) async {
     try {
+      print("======init=======fasdasdf}");
       emit(state.copyWith(isLoading: true));
 
       await _loadCustomerItemLedgerEntries();
@@ -49,6 +53,8 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
       await _loadCompetitorItemLedgerEntries();
       await _loadMerchandiseSchedules();
       await _loadRedeptionEntries();
+    } catch (e) {
+      print("=====================${e.toString()}");
     } finally {
       emit(state.copyWith(isLoading: false));
     }
@@ -56,25 +62,43 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
 
   // Private Upload Methods
   Future<void> _processUploadRedemptions() async {
-    final response = await _moreRepo.processUploadRedemptions(records: state.redemptions);
+    final response = await _moreRepo.processUploadRedemptions(
+      records: state.redemptions,
+    );
 
-    response.fold((failure) => showErrorMessage(failure.message), (_) => emit(state.copyWith(redemptions: [])));
+    response.fold(
+      (failure) => showErrorMessage(failure.message),
+      (_) => emit(state.copyWith(redemptions: [])),
+    );
   }
 
   Future<void> _processUploadSale() async {
-    final response = await _moreRepo.processUploadSale(salesHeaders: state.salesHeaders, salesLines: state.salesLines);
+    final response = await _moreRepo.processUploadSale(
+      salesHeaders: state.salesHeaders,
+      salesLines: state.salesLines,
+    );
 
-    response.fold((failure) => showErrorMessage(failure.message), (_) => emit(state.copyWith(salesHeaders: [])));
+    response.fold(
+      (failure) => showErrorMessage(failure.message),
+      (_) => emit(state.copyWith(salesHeaders: [])),
+    );
   }
 
   Future<void> _processUploadCollection() async {
-    final response = await _moreRepo.processUploadCollection(records: state.cashReceiptJournals);
+    final response = await _moreRepo.processUploadCollection(
+      records: state.cashReceiptJournals,
+    );
 
-    response.fold((failure) => showErrorMessage(failure.message), (_) => emit(state.copyWith(cashReceiptJournals: [])));
+    response.fold(
+      (failure) => showErrorMessage(failure.message),
+      (_) => emit(state.copyWith(cashReceiptJournals: [])),
+    );
   }
 
   Future<void> _processUploadCheckStock() async {
-    final response = await _moreRepo.processUploadCheckStock(records: state.customerItemLedgerEntries);
+    final response = await _moreRepo.processUploadCheckStock(
+      records: state.customerItemLedgerEntries,
+    );
 
     response.fold(
       (failure) => showErrorMessage(failure.message),
@@ -83,7 +107,9 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
   }
 
   Future<void> _processUploadCompetitorCheckStock() async {
-    final response = await _moreRepo.processUploadCompetitorCheckStock(records: state.competitorItemLedgerEntries);
+    final response = await _moreRepo.processUploadCompetitorCheckStock(
+      records: state.competitorItemLedgerEntries,
+    );
 
     response.fold(
       (failure) => showErrorMessage(failure.message),
@@ -92,7 +118,9 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
   }
 
   Future<void> _processUploadMerchandiseAndPosm() async {
-    final response = await _moreRepo.processUploadMerchandiseAndPosm(records: state.merchandiseSchedules);
+    final response = await _moreRepo.processUploadMerchandiseAndPosm(
+      records: state.merchandiseSchedules,
+    );
 
     response.fold(
       (failure) => showErrorMessage(failure.message),
@@ -101,7 +129,9 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
   }
 
   Future<void> _processUploadSchedules() async {
-    final response = await _moreRepo.processUploadSchedule(records: state.salespersonSchedules);
+    final response = await _moreRepo.processUploadSchedule(
+      records: state.salespersonSchedules,
+    );
 
     response.fold(
       (failure) => showErrorMessage(failure.message),
@@ -119,10 +149,13 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
     final response = await _moreRepo.syncOfflineLocationToBackend();
     response.fold((failure) => showErrorMessage(failure.message), (_) {});
   }
+
   // Private Data Loading Methods
   Future<void> _loadRedeptionEntries() async {
     await _handleResponse(
-      () => _taskRepo.getItemPrizeRedemptionEntries(param: {'status': kStatusSubmit, 'is_sync': kStatusNo}),
+      () => _taskRepo.getItemPrizeRedemptionEntries(
+        param: {'status': kStatusSubmit, 'is_sync': kStatusNo},
+      ),
       (List<ItemPrizeRedemptionLineEntry> data) {
         return state.copyWith(redemptions: data);
       },
@@ -131,7 +164,9 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
 
   Future<void> _loadCustomerItemLedgerEntries() async {
     await _handleResponse(
-      () => _taskRepo.getCustomerItemLegerEntries(param: {'status': kStatusSubmit, 'is_sync': kStatusNo}),
+      () => _taskRepo.getCustomerItemLegerEntries(
+        param: {'status': kStatusSubmit, 'is_sync': kStatusNo},
+      ),
       (List<CustomerItemLedgerEntry> data) {
         return state.copyWith(customerItemLedgerEntries: data);
       },
@@ -139,11 +174,14 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
   }
 
   Future<void> _loadSalesData() async {
-    await _handleResponse(() => _taskRepo.getSaleHeaders(params: {'is_sync': kStatusNo, 'status': kStatusApprove}), (
-      List<SalesHeader> data,
-    ) {
-      return state.copyWith(salesHeaders: data);
-    });
+    await _handleResponse(
+      () => _taskRepo.getSaleHeaders(
+        params: {'is_sync': kStatusNo, 'status': kStatusApprove},
+      ),
+      (List<SalesHeader> data) {
+        return state.copyWith(salesHeaders: data);
+      },
+    );
   }
 
   Future<void> _loadSalesLines() async {
@@ -152,7 +190,12 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
     final headerNumbers = state.salesHeaders.map((h) => '"${h.no}"').toList();
 
     await _handleResponse(
-      () => _taskRepo.getSaleLines(params: {'document_no': 'IN {${headerNumbers.join(",")}}', 'is_sync': kStatusNo}),
+      () => _taskRepo.getSaleLines(
+        params: {
+          'document_no': 'IN {${headerNumbers.join(",")}}',
+          'is_sync': kStatusNo,
+        },
+      ),
       (List<SalesLine> data) {
         return state.copyWith(salesLines: data);
       },
@@ -161,7 +204,9 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
 
   Future<void> _loadCashReceiptJournals() async {
     await _handleResponse(
-      () => _taskRepo.getCashReceiptJournals(param: {'status': kStatusSubmit, 'is_sync': kStatusNo}),
+      () => _taskRepo.getCashReceiptJournals(
+        param: {'status': kStatusSubmit, 'is_sync': kStatusNo},
+      ),
       (List<CashReceiptJournals> data) {
         return state.copyWith(cashReceiptJournals: data);
       },
@@ -169,22 +214,29 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
   }
 
   Future<void> _loadSalespersonSchedules(DateTime date) async {
-    await _handleResponse(() => _taskRepo.getLocalSchedules(param: {'schedule_date': date.toDateString()}), (
-      List<SalespersonSchedule> data,
-    ) {
-      return state.copyWith(salespersonSchedules: data);
-    });
+    await _handleResponse(
+      () => _taskRepo.getLocalSchedules(
+        param: {'schedule_date': date.toDateString()},
+      ),
+      (List<SalespersonSchedule> data) {
+        return state.copyWith(salespersonSchedules: data);
+      },
+    );
   }
 
   Future<void> _loadCompetitorItemLedgerEntries() async {
-    await _handleResponse(() => _taskRepo.getCompetitorItemLedgetEntry(), (List<CompetitorItemLedgerEntry> data) {
+    await _handleResponse(() => _taskRepo.getCompetitorItemLedgetEntry(), (
+      List<CompetitorItemLedgerEntry> data,
+    ) {
       return state.copyWith(competitorItemLedgerEntries: data);
     });
   }
 
   Future<void> _loadMerchandiseSchedules() async {
     await _handleResponse(
-      () => _taskRepo.getSalesPersonScheduleMerchandises(param: {'status': kStatusSubmit, 'is_sync': kStatusNo}),
+      () => _taskRepo.getSalesPersonScheduleMerchandises(
+        param: {'status': kStatusSubmit, 'is_sync': kStatusNo},
+      ),
       (List<SalesPersonScheduleMerchandise> data) {
         return state.copyWith(merchandiseSchedules: data);
       },
@@ -192,7 +244,10 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
   }
 
   // Generic Response Handler
-  Future<void> _handleResponse<T>(Future<dynamic> Function() request, UploadState Function(T data) onSuccess) async {
+  Future<void> _handleResponse<T>(
+    Future<dynamic> Function() request,
+    UploadState Function(T data) onSuccess,
+  ) async {
     final response = await request();
     response.fold((l) => showErrorMessage(), (data) => emit(onSuccess(data)));
   }
