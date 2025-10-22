@@ -52,6 +52,7 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
   }
 
   void _initLoad() async {
+    _cubit.getCompanyInfo();
     if (kDebugMode) {
       if (server.id == "local") {
         nameController.text = "012222222";
@@ -144,7 +145,8 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
               children: [
                 Center(
                   child: ImageNetWorkWidget(
-                    imageUrl: getCompany()?.logo128 ?? "",
+                    imageUrl: state.company?.logo128 ?? '',
+                    // imageUrl: getCompany()?.logo128 ?? "",
                     height: 200,
                     width: 250,
                     isSide: true,
@@ -152,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
                   ),
                 ),
                 Helpers.gapH(30),
-                buildForm(),
+                buildForm(state.company),
               ],
             );
           },
@@ -161,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
     );
   }
 
-  Widget buildForm() {
+  Widget buildForm(CompanyInformation? info) {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: scaleFontSize(appSpace),
@@ -181,7 +183,8 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
                   style: TextStyle(fontSize: 15.scale, color: textColor50),
                 ),
                 TextSpan(
-                  text: "${getCompany()?.name}",
+                  text: info?.name,
+                  // text: "${getCompany()?.name}",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: primary,
