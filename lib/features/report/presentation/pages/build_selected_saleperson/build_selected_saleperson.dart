@@ -14,7 +14,11 @@ class BuildSelectedSalepersonArg {
   final Function(String personCode)? onChanged;
   final VoidCallback? onClose;
 
-  BuildSelectedSalepersonArg({required this.salePersonCode, this.onChanged, this.onClose});
+  BuildSelectedSalepersonArg({
+    required this.salePersonCode,
+    this.onChanged,
+    this.onClose,
+  });
 }
 
 class BuildSelectedSaleperson extends StatefulWidget {
@@ -23,7 +27,8 @@ class BuildSelectedSaleperson extends StatefulWidget {
   static const routeName = "buildSalePersonScreen";
 
   @override
-  State<BuildSelectedSaleperson> createState() => _BuildSelectedSalepersonState();
+  State<BuildSelectedSaleperson> createState() =>
+      _BuildSelectedSalepersonState();
 }
 
 class _BuildSelectedSalepersonState extends State<BuildSelectedSaleperson> {
@@ -49,31 +54,37 @@ class _BuildSelectedSalepersonState extends State<BuildSelectedSaleperson> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBarWidget(title: greeting("sales_person")),
-      body: BlocBuilder<BuildSelectedSalepersonCubit, BuildSelectedSalepersonState>(
-        bloc: _cubit,
-        builder: (context, state) {
-          final salepersons = state.salespersons ?? [];
-          return ListView.separated(
-            itemCount: salepersons.length,
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            itemBuilder: (context, index) {
-              final salePerson = salepersons[index];
-              return ListTitleWidget(
-                onTap: () => _onSelectedSalePersonCode(salePerson),
-                label: salePerson.name ?? '',
-                borderRadius: 0,
-                leading: ImageNetWorkWidget(imageUrl: salePerson.avatar ?? ""),
-                subTitleFontSize: 12,
-                subTitle: salePerson.code,
-                isSelected: state.salePersonCode == salePerson.code,
-                type: ListTileType.trailingSelect,
+      body:
+          BlocBuilder<
+            BuildSelectedSalepersonCubit,
+            BuildSelectedSalepersonState
+          >(
+            bloc: _cubit,
+            builder: (context, state) {
+              final salepersons = state.salespersons ?? [];
+              return ListView.separated(
+                itemCount: salepersons.length,
+                shrinkWrap: true,
+                itemBuilder: (context, index) {
+                  final salePerson = salepersons[index];
+                  return ListTitleWidget(
+                    onTap: () => _onSelectedSalePersonCode(salePerson),
+                    label: salePerson.name ?? '',
+                    borderRadius: 0,
+                    leading: ImageNetWorkWidget(
+                      imageUrl: salePerson.avatar ?? "",
+                    ),
+                    subTitleFontSize: 12,
+                    subTitle: salePerson.code,
+                    isSelected: state.salePersonCode == salePerson.code,
+                    type: ListTileType.trailingSelect,
+                  );
+                },
+                separatorBuilder: (context, index) =>
+                    const Hr(width: double.infinity),
               );
             },
-            separatorBuilder: (context, index) => const Hr(width: double.infinity),
-          );
-        },
-      ),
+          ),
     );
   }
 }
