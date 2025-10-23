@@ -26,10 +26,13 @@ class CustomerBalanceReportScreen extends StatefulWidget {
   static const String routeName = "customerBalanceReportScreen";
 
   @override
-  State<CustomerBalanceReportScreen> createState() => _CustomerBalanceReportScreenState();
+  State<CustomerBalanceReportScreen> createState() =>
+      _CustomerBalanceReportScreenState();
 }
 
-class _CustomerBalanceReportScreenState extends State<CustomerBalanceReportScreen> with DefaultSalePersonMixin {
+class _CustomerBalanceReportScreenState
+    extends State<CustomerBalanceReportScreen>
+    with DefaultSalePersonMixin {
   final _cubit = CustomerBalanceReportCubit();
   DateTime? initialToDate;
   DateTime? initialFromDate;
@@ -46,7 +49,10 @@ class _CustomerBalanceReportScreenState extends State<CustomerBalanceReportScree
     initialFromDate = DateTime.now().firstDayOfMonth();
     initialToDate = DateTime.now().endDayOfMonth();
     _cubit.getCustomerBalanceReport(
-      param: {"from_date": initialFromDate.toString(), "to_date": initialToDate.toString()},
+      param: {
+        "from_date": initialFromDate.toString(),
+        "to_date": initialToDate.toString(),
+      },
     );
   }
 
@@ -66,8 +72,12 @@ class _CustomerBalanceReportScreenState extends State<CustomerBalanceReportScree
     } else {
       selectedDate = "";
     }
-    final String fromDate = initialFromDate != null ? DateTimeExt.parse(initialFromDate.toString()).toDateString() : "";
-    final String toDate = initialToDate != null ? DateTimeExt.parse(initialToDate.toString()).toDateString() : "";
+    final String fromDate = initialFromDate != null
+        ? DateTimeExt.parse(initialFromDate.toString()).toDateString()
+        : "";
+    final String toDate = initialToDate != null
+        ? DateTimeExt.parse(initialToDate.toString()).toDateString()
+        : "";
 
     if (fromDate.isNotEmpty && toDate.isNotEmpty) {
       param["from_date"] = fromDate;
@@ -79,7 +89,10 @@ class _CustomerBalanceReportScreenState extends State<CustomerBalanceReportScree
 
     param["salesperson_code"] = salesperson?.code;
 
-    param.removeWhere((key, value) => ['date', 'isFilter', 'salesperson', 'status'].contains(key));
+    param.removeWhere(
+      (key, value) =>
+          ['date', 'isFilter', 'salesperson', 'status'].contains(key),
+    );
 
     _cubit.getCustomerBalanceReport(param: param, page: 1);
 
