@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/core/data/models/extension/sale_line_extension.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
@@ -582,6 +583,13 @@ class _UploadScreenState extends State<UploadScreen> {
               itemCount: salesHeaders.length,
               itemBuilder: (context, index) {
                 final salesHeader = salesHeaders[index];
+                final totalSaleAmt = _cubit.state.salesLines
+                    .where((line) => line.documentNo == salesHeader.no)
+                    .fold<double>(
+                      0,
+                      (sum, line) =>
+                          sum + Helpers.toDouble(line.amountIncludingVatLcy),
+                    );
                 return Container(
                   key: ValueKey(salesHeader.id),
                   padding: EdgeInsets.all(8.scale),
@@ -599,7 +607,7 @@ class _UploadScreenState extends State<UploadScreen> {
                         children: [
                           TextWidget(
                             text: Helpers.formatNumberLink(
-                              salesHeader.amount,
+                              totalSaleAmt,
                               option: FormatType.amount,
                             ),
                             fontSize: 14,

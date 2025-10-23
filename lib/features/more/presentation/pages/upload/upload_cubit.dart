@@ -42,7 +42,6 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
 
   Future<void> loadInitialData(DateTime date) async {
     try {
-      print("======init=======fasdasdf}");
       emit(state.copyWith(isLoading: true));
 
       await _loadCustomerItemLedgerEntries();
@@ -54,7 +53,7 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
       await _loadMerchandiseSchedules();
       await _loadRedeptionEntries();
     } catch (e) {
-      print("=====================${e.toString()}");
+      rethrow;
     } finally {
       emit(state.copyWith(isLoading: false));
     }
@@ -140,14 +139,14 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
   }
 
   Future<void> _gpsTracking() async {
-    final response = await _moreRepo.processUploadGpsTracking();
+    await _moreRepo.processUploadGpsTracking();
 
-    response.fold((failure) => showErrorMessage(failure.message), (_) {});
+    // response.fold((failure) => showErrorMessage(failure.message), (_) {});
   }
 
   Future<void> _gpsRouteTracking() async {
-    final response = await _moreRepo.syncOfflineLocationToBackend();
-    response.fold((failure) => showErrorMessage(failure.message), (_) {});
+    await _moreRepo.syncOfflineLocationToBackend();
+    // response.fold((failure) => showErrorMessage(failure.message), (_) {});
   }
 
   // Private Data Loading Methods
