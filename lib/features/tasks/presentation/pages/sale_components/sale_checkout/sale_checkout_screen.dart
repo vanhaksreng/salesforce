@@ -222,11 +222,14 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
     // over Aging : Allow to credit up to 30 days
   }
 
-  void _navigateToCustomerAddress() {
+  void _navigateToCustomerAddress(String addressCode) {
     Navigator.pushNamed(
       context,
       CustomerAddressScreen.routeName,
-      arguments: widget.arg.salesHeader.customerNo,
+      arguments: {
+        "customer_no": widget.arg.salesHeader.customerNo,
+        "address_no": addressCode,
+      },
     ).then((value) => _handleCustomerAddress(value));
   }
 
@@ -634,7 +637,7 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
               },
             ),
           TextFormFieldWidget(
-            onTap: () => _navigateToCustomerAddress(),
+            onTap: () => _navigateToCustomerAddress(shipment.code ?? ""),
             readOnly: true,
             textColor: textColor50,
             controller: _shipmentCodeCtr,

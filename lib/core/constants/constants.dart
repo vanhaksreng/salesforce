@@ -47,3 +47,5 @@ const String kNoOfInvoice = "No of Invoices";
 const String kNoCredit = "No Credit";
 const String kOffline = "Offline";
 const String kOnline = "Online";
+//==============Report=======
+final String rSoOutStanding = "So Outstanding";

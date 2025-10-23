@@ -26,7 +26,8 @@ class CustomerAddressScreen extends StatefulWidget {
   State<CustomerAddressScreen> createState() => _CustomerAddressScreenState();
 }
 
-class _CustomerAddressScreenState extends State<CustomerAddressScreen> with MessageMixin {
+class _CustomerAddressScreenState extends State<CustomerAddressScreen>
+    with MessageMixin {
   final _cubit = CustomerAddressCubit();
 
   @override
@@ -63,7 +64,7 @@ class _CustomerAddressScreenState extends State<CustomerAddressScreen> with Mess
     Navigator.pushNamed(
       context,
       CustomerAddressFormScreen.routeName,
-      arguments: {'address': address, 'customer': widget.customer},
+      arguments: {'address': address, 'customer': widget.customer?.no},
     ).then((value) {
       if (Helpers.shouldReload(value)) {
         _cubit.getCustomerAddress(param: {"customer_no": widget.customer?.no});
@@ -79,7 +80,10 @@ class _CustomerAddressScreenState extends State<CustomerAddressScreen> with Mess
         builder: (context, state) {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(appSpace),
-            child: Column(spacing: 8.scale, children: [_buildBttnAddNew(), _buildListView(state)]),
+            child: Column(
+              spacing: 8.scale,
+              children: [_buildBttnAddNew(), _buildListView(state)],
+            ),
           );
         },
       ),
@@ -97,7 +101,10 @@ class _CustomerAddressScreenState extends State<CustomerAddressScreen> with Mess
       padding: EdgeInsets.all(scaleFontSize(8.scale)),
       child: Column(
         children: [
-          const BuildHeader(icon: Icons.home_rounded, label: "currently_address"),
+          const BuildHeader(
+            icon: Icons.home_rounded,
+            label: "currently_address",
+          ),
           ListView.builder(
             shrinkWrap: true,
             padding: EdgeInsets.symmetric(vertical: 8.scale),
