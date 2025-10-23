@@ -170,7 +170,8 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
         "date": _selectDateNotifier.value,
         "from_date": _selectedFromDate,
         "to_date": _selectedToDate,
-        "ending_date": _selectedEndingDate,
+        if (widget.typeReport == rSoOutStanding)
+          "ending_date": _selectedEndingDate,
         "status": status,
         "salesperson": _salePersonCodeNotifier.value,
         "isFilter": isFilter,
