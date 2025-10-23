@@ -693,6 +693,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
             vatAmount: calculated.vatAmount,
             vatBaseAmount: calculated.vatBaseAmount,
             amount: calculated.amount,
+            amountLcy: calculated.amount,
             amountIncludingVat: calculated.amountIncludeVat,
             amountIncludingVatLcy: calculated.amountIncludeVat,
             manualUnitPrice: manualPrice,
@@ -801,6 +802,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
           option: FormatType.amount,
         ),
       );
+
+      // print(saleHeader.amount);
+      // print(arg.paymentAmount);
 
       int lineNo = 0;
       for (var line in posLines) {

@@ -48,4 +48,4 @@ const String kNoCredit = "No Credit";
 const String kOffline = "Offline";
 const String kOnline = "Online";
 //==============Report=======
-final String rSoOutStanding = "So Outstanding";
+final String rCustomerBanlance = "Customer Balance";

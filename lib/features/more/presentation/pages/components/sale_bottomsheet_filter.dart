@@ -170,7 +170,7 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
         "date": _selectDateNotifier.value,
         "from_date": _selectedFromDate,
         "to_date": _selectedToDate,
-        if (widget.typeReport == rSoOutStanding)
+        if (widget.typeReport == rCustomerBanlance)
           "ending_date": _selectedEndingDate,
         "status": status,
         "salesperson": _salePersonCodeNotifier.value,
@@ -181,12 +181,12 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
         spacing: 8.scale,
         children: [
           _buildDate(),
-          if (widget.typeReport != rSoOutStanding)
+          if (widget.typeReport != rCustomerBanlance)
             const Hr(width: double.infinity),
           _buildStatusDropdown(),
           _buildSalePerson(),
           Helpers.gapH(scaleFontSize(8)),
-          if (widget.typeReport == rSoOutStanding) ...[
+          if (widget.typeReport == rCustomerBanlance) ...[
             _buildDatePickerSingleDate(),
           ] else ...[
             _buildDatePickerSection(),
@@ -197,7 +197,7 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
   }
 
   Widget _buildDate() {
-    if (widget.typeReport == "So Outstanding") {
+    if (widget.typeReport == rCustomerBanlance) {
       return SizedBox.shrink();
     }
     return Padding(
