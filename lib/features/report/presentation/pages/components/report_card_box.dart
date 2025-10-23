@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
-import 'package:salesforce/core/presentation/widgets/dot_line_widget.dart';
 import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -26,7 +25,7 @@ class ReportCardBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return BoxWidget(
       border: Border(
-        top: BorderSide(color: getStatusColor(report.status), width: 1),
+        top: BorderSide(color: getStatusColor(report.status), width: 2.scale),
       ),
       margin: EdgeInsets.only(bottom: 8.scale),
       child: Column(
