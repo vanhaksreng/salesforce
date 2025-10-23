@@ -14,18 +14,11 @@ class ReportCardBox extends StatelessWidget {
   const ReportCardBox({super.key, required this.report});
   final SoOutstandingReportModel report;
 
-  double valueProcess() {
-    final totalQTY = Helpers.toDouble(report.totalQty);
-    final shipQTY = Helpers.toDouble(report.shipQty);
-    if (totalQTY == 0) return 0.0;
-    return (shipQTY / totalQTY).clamp(0.0, 1.0);
-  }
-
   @override
   Widget build(BuildContext context) {
     return BoxWidget(
       border: Border(
-        top: BorderSide(color: getStatusColor(report.status), width: 2.scale),
+        top: BorderSide(color: mainColor.withValues(alpha: .5), width: 2.scale),
       ),
       margin: EdgeInsets.only(bottom: 8.scale),
       child: Column(
@@ -130,7 +123,7 @@ class ReportCardBox extends StatelessWidget {
                               ),
                             ],
                           ),
-                          Hr(width: double.infinity),
+                          Hr(width: double.infinity, color: grey20),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -155,27 +148,6 @@ class ReportCardBox extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
-
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: ShaderMask(
-                    shaderCallback: (Rect bounds) {
-                      return const LinearGradient(
-                        colors: [mainColor, mainColor50],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ).createShader(bounds);
-                    },
-                    child: LinearProgressIndicator(
-                      value: valueProcess(),
-                      backgroundColor: mainColor.withAlpha(50),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Colors.white,
-                      ),
-                      minHeight: 6,
-                    ),
-                  ),
                 ),
               ],
             ),
