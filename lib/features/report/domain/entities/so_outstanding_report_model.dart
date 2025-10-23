@@ -11,6 +11,8 @@ class SoOutstandingReportModel {
   final String? uom;
   final double? totalQty;
   final double? shipQty;
+  final double? outstandingInvQuantity;
+  final double? quantityInvoice;
 
   SoOutstandingReportModel({
     this.documentNo,
@@ -23,6 +25,8 @@ class SoOutstandingReportModel {
     this.totalQty,
     this.uom,
     this.shipQty,
+    this.outstandingInvQuantity,
+    this.quantityInvoice,
   });
 
   static SoOutstandingReportModel fromMap(Map<String, dynamic> json) {
@@ -37,6 +41,10 @@ class SoOutstandingReportModel {
       uom: json["unit_of_measure"],
       totalQty: Helpers.toDouble(json["quantity"]),
       shipQty: Helpers.toDouble(json["quantity_shipped"]),
+      outstandingInvQuantity: Helpers.toDouble(
+        json["outstanding_inv_quantity"],
+      ),
+      quantityInvoice: Helpers.toDouble(json["quantity_invoiced"]),
     );
   }
 }
