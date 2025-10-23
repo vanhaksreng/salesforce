@@ -305,8 +305,10 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case CustomerAddressScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
+          final data = settings.arguments as Map<String, dynamic>;
           return CustomerAddressScreen(
-            customerNo: settings.arguments as String,
+            customerNo: data["customer_no"] as String,
+            addressCode: data["address_no"] as String,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

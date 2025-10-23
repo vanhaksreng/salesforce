@@ -7,7 +7,8 @@ import 'package:salesforce/features/more/presentation/pages/customer_address/cus
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
-class CustomerAddressCubit extends Cubit<CustomerAddressState> with MessageMixin, AppMixin {
+class CustomerAddressCubit extends Cubit<CustomerAddressState>
+    with MessageMixin, AppMixin {
   CustomerAddressCubit() : super(CustomerAddressState());
 
   final _repos = getIt<MoreRepository>();

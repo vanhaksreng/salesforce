@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_text_widget.dart';
 import 'package:salesforce/core/presentation/widgets/buttom_sheet_filter_widget.dart';
@@ -20,11 +21,13 @@ class SaleBottomsheetFilter extends StatefulWidget {
     this.status = "All",
     this.fromDate,
     this.toDate,
+    this.endDate,
     this.onApply,
     this.hasSalePeron = false,
     this.hasStatus = true,
     this.salePersons,
     this.selectDate = "This Week",
+    this.typeReport = "",
   });
 
   final String status;
@@ -32,8 +35,10 @@ class SaleBottomsheetFilter extends StatefulWidget {
   final Salesperson? salePersons;
   final DateTime? fromDate;
   final DateTime? toDate;
+  final DateTime? endDate;
   final bool hasSalePeron;
   final bool hasStatus;
+  final String typeReport;
 
   final Function(Map<String, dynamic>)? onApply;
 
@@ -59,6 +64,7 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
 
   DateTime? _selectedFromDate;
   DateTime? _selectedToDate;
+  DateTime? _selectedEndingDate;
   final now = DateTime.now();
   String status = "All";
   bool isFilter = true;
@@ -70,6 +76,7 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
     _selectDateNotifier = ValueNotifier<String>(widget.selectDate);
     _selectedFromDate = widget.fromDate ?? now.firstDayOfWeek();
     _selectedToDate = widget.toDate ?? now.endDayOfWeek();
+    _selectedEndingDate = widget.endDate ?? now;
     status = widget.status;
   }
 
@@ -91,6 +98,15 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
       status = value;
     }
     setState(() {});
+  }
+
+  void _onPickSingleDate(DateTime? date) {
+    if (date != null) {
+      setState(() {
+        _selectedEndingDate = date;
+        _selectDateNotifier.value = "";
+      });
+    }
   }
 
   void _onPickFrmDate(DateTime? date) {
@@ -154,6 +170,7 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
         "date": _selectDateNotifier.value,
         "from_date": _selectedFromDate,
         "to_date": _selectedToDate,
+        "ending_date": _selectedEndingDate,
         "status": status,
         "salesperson": _salePersonCodeNotifier.value,
         "isFilter": isFilter,
@@ -163,17 +180,25 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
         spacing: 8.scale,
         children: [
           _buildDate(),
-          const Hr(width: double.infinity),
+          if (widget.typeReport != rSoOutStanding)
+            const Hr(width: double.infinity),
           _buildStatusDropdown(),
           _buildSalePerson(),
           Helpers.gapH(scaleFontSize(8)),
-          _buildDatePickerSection(),
+          if (widget.typeReport == rSoOutStanding) ...[
+            _buildDatePickerSingleDate(),
+          ] else ...[
+            _buildDatePickerSection(),
+          ],
         ],
       ),
     );
   }
 
   Widget _buildDate() {
+    if (widget.typeReport == "So Outstanding") {
+      return SizedBox.shrink();
+    }
     return Padding(
       padding: EdgeInsets.all(scaleFontSize(8)),
       child: ValueListenableBuilder(
@@ -356,6 +381,34 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
             onDateSelected: (date) => _onPickToDate(date),
             child: _buildDateDisplay(date: _selectedToDate, label: "to"),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDatePickerSingleDate() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: scaleFontSize(appSpace)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 8.scale,
+        children: [
+          TextWidget(
+            text: greeting("Ending Date"),
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          DatePcikerWidget(
+            initialDate: _selectedEndingDate ?? DateTime.now(),
+            onDateSelected: (date) => _onPickSingleDate(date),
+            child: _buildDateDisplay(date: _selectedEndingDate, label: ""),
+          ),
+          // TextWidget(text: greeting("to"), fontSize: 14, color: textColor50),
+          // DatePcikerWidget(
+          //   initialDate: _selectedToDate ?? DateTime.now(),
+          //   onDateSelected: (date) => _onPickToDate(date),
+          //   child: _buildDateDisplay(date: _selectedToDate, label: "to"),
+          // ),
         ],
       ),
     );

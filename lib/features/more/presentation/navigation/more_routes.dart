@@ -243,7 +243,7 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
         pageBuilder: (context, animation, secondaryAnimation) {
           return CustomerAddressFormScreen(
             address: args['address'] ?? null as CustomerAddress?,
-            customer: args['customer'] as Customer,
+            customerNo: args['customer'] as String,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

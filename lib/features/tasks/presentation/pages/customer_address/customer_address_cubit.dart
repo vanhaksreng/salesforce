@@ -7,7 +7,8 @@ import 'package:salesforce/features/tasks/domain/repositories/task_repository.da
 import 'package:salesforce/features/tasks/presentation/pages/customer_address/customer_address_state.dart';
 import 'package:salesforce/injection_container.dart';
 
-class CustomerAddressCubit extends Cubit<CustomerAddressState> with MessageMixin, DownloadMixin, AppMixin {
+class CustomerAddressCubit extends Cubit<CustomerAddressState>
+    with MessageMixin, DownloadMixin, AppMixin {
   CustomerAddressCubit() : super(const CustomerAddressState(isLoading: true));
 
   final _repo = getIt<TaskRepository>();
@@ -15,12 +16,14 @@ class CustomerAddressCubit extends Cubit<CustomerAddressState> with MessageMixin
   Future<void> getCustomerAddress(String customerNo) async {
     try {
       emit(state.copyWith(isLoading: true));
-      await _repo.getCustomerAddresses(params: {'customer_no': customerNo}).then((response) {
-        response.fold(
-          (l) => throw GeneralException(l.message),
-          (r) => emit(state.copyWith(records: r, isLoading: false)),
-        );
-      });
+      await _repo
+          .getCustomerAddresses(params: {'customer_no': customerNo})
+          .then((response) {
+            response.fold(
+              (l) => throw GeneralException(l.message),
+              (r) => emit(state.copyWith(records: r, isLoading: false)),
+            );
+          });
     } on GeneralException catch (e) {
       showWarningMessage(e.message);
     } catch (e) {
@@ -28,5 +31,9 @@ class CustomerAddressCubit extends Cubit<CustomerAddressState> with MessageMixin
     } finally {
       emit(state.copyWith(isLoading: false));
     }
+  }
+
+  void selectAddress(String code) {
+    emit(state.copyWith(addressCode: code));
   }
 }

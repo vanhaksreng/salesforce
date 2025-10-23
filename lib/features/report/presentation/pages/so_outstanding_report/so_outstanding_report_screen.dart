@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/mixins/default_sale_person_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/bottom_sheet_fn.dart';
@@ -26,16 +27,18 @@ class SoOutstandingReportScreen extends StatefulWidget {
   static const routeName = "soOutstandingReport";
 
   @override
-  State<SoOutstandingReportScreen> createState() => _SoOutstandingReportScreenState();
+  State<SoOutstandingReportScreen> createState() =>
+      _SoOutstandingReportScreenState();
 }
 
-class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen> with DefaultSalePersonMixin {
+class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen>
+    with DefaultSalePersonMixin {
   final _cubit = SoOutstandingReportCubit();
   final ScrollController _scrollController = ScrollController();
 
   DateTime? initialToDate;
   DateTime? initialFromDate;
-  String selectedDate = "This Month";
+  String selectedDate = "Today";
   Salesperson? salesperson;
 
   @override
@@ -52,7 +55,9 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen> w
   }
 
   bool _shouldLoadMore() {
-    return _scrollController.position.pixels == _scrollController.position.maxScrollExtent && !_cubit.state.isFetching;
+    return _scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent &&
+        !_cubit.state.isFetching;
   }
 
   void _loadMoreItems() async {
@@ -61,21 +66,24 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen> w
   }
 
   _onInit() async {
-    initialFromDate = DateTime.now().firstDayOfMonth();
-    initialToDate = DateTime.now().endDayOfMonth();
+    initialFromDate = DateTime.now();
+    initialToDate = DateTime.now();
     await _cubit.getSoOutstandingReport(
-      param: {"from_date": initialFromDate.toString(), "to_date": initialToDate.toString()},
+      param: {
+        "from_date": initialFromDate.toString(),
+        "to_date": initialToDate.toString(),
+      },
     );
   }
 
   void _onApplyFilter(Map<String, dynamic> param, BuildContext context) {
-    if (param["from_date"] != null) {
-      initialFromDate = param["from_date"];
+    if (param["ending_date"] != null) {
+      initialFromDate = param["ending_date"];
     } else {
       initialFromDate = null;
     }
-    if (param["to_date"] != null) {
-      initialToDate = param["to_date"];
+    if (param["ending_date"] != null) {
+      initialToDate = param["ending_date"];
     } else {
       initialToDate = null;
     }
@@ -84,8 +92,12 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen> w
     } else {
       selectedDate = "";
     }
-    final String fromDate = initialFromDate != null ? DateTimeExt.parse(initialFromDate.toString()).toDateString() : "";
-    final String toDate = initialToDate != null ? DateTimeExt.parse(initialToDate.toString()).toDateString() : "";
+    final String fromDate = initialFromDate != null
+        ? DateTimeExt.parse(initialFromDate.toString()).toDateString()
+        : "";
+    final String toDate = initialToDate != null
+        ? DateTimeExt.parse(initialToDate.toString()).toDateString()
+        : "";
 
     if (fromDate.isNotEmpty && toDate.isNotEmpty) {
       param["from_date"] = fromDate;
@@ -97,8 +109,15 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen> w
 
     param["salesperson_code"] = salesperson?.code;
 
-    param.removeWhere((key, value) => ['date', 'isFilter', 'salesperson', 'status'].contains(key));
-
+    param.removeWhere(
+      (key, value) => [
+        'date',
+        'ending_date',
+        'isFilter',
+        'salesperson',
+        'status',
+      ].contains(key),
+    );
     _cubit.getSoOutstandingReport(param: param, page: 1);
 
     Navigator.of(context).pop();
@@ -167,9 +186,11 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen> w
         return SaleBottomsheetFilter(
           fromDate: initialFromDate,
           toDate: initialToDate,
+          endDate: initialToDate,
           salePersons: salesperson,
           hasSalePeron: true,
           hasStatus: false,
+          typeReport: rSoOutStanding,
           selectDate: selectedDate,
           onApply: (value) => _onApplyFilter(value, context),
         );
