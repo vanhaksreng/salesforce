@@ -17,7 +17,12 @@ class MoreMainPageCubit extends Cubit<MoreMainPageState> with MessageMixin {
   final MenuData menus = MenuData();
 
   Future<void> getMenus(bool isLoading) async {
-    emit(state.copyWith(listMenus: await menus.getListMenus(), isLoading: isLoading));
+    emit(
+      state.copyWith(
+        listMenus: await menus.getListMenus(),
+        isLoading: isLoading,
+      ),
+    );
   }
 
   void getInitData() {
