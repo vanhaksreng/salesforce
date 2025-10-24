@@ -46,3 +46,4 @@ app.*.map.json
 /android/key.properties
 
 lib/env.dart
+auto_take_commit_range_date.py

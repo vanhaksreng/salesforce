@@ -4,6 +4,7 @@ import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 class CollectionsState {
   final bool isLoading;
   final String? error;
+
   final List<CustomerLedgerEntry> cusLedgerEntry;
   final List<CashReceiptJournals> casReJounals;
   final List<PaymentMethod> paymentMethods;
@@ -11,6 +12,7 @@ class CollectionsState {
   const CollectionsState({
     this.isLoading = false,
     this.error,
+
     this.casReJounals = const [],
     this.cusLedgerEntry = const [],
     this.paymentMethods = const [],
@@ -22,6 +24,7 @@ class CollectionsState {
     List<CustomerLedgerEntry>? cusLedgerEntry,
     List<CashReceiptJournals>? casReJounals,
     List<PaymentMethod>? paymentMethods,
+    double? totalReceiveAmt,
   }) {
     return CollectionsState(
       isLoading: isLoading ?? this.isLoading,

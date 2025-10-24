@@ -203,6 +203,10 @@ class CollectionsScreenState extends State<CollectionsScreen>
 
         final matchingJournals = _getMatchingCashReceiptJournals(record);
 
+        final totalAmt = matchingJournals.fold(0.0, (sum, journal) {
+          return sum + Helpers.toDouble(journal.amountLcy);
+        });
+        final remainingAmt = Helpers.toDouble(record.amountLcy) - totalAmt;
         return BoxWidget(
           key: ValueKey(record.entryNo),
           blurRadius: 15,
@@ -264,7 +268,7 @@ class CollectionsScreenState extends State<CollectionsScreen>
                 valueColor: success,
                 key2: "REMAINING",
                 value2: Helpers.formatNumber(
-                  record.remainingAmountLcy,
+                  remainingAmt,
                   option: FormatType.amount,
                 ),
                 value2Color: error,
