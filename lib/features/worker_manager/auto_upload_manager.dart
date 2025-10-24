@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/features/more/presentation/pages/upload/upload_cubit.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter/foundation.dart';
@@ -46,7 +47,7 @@ class AutoUploadManager with MessageMixin {
         await uploadCubit.loadInitialData(DateTime.now());
 
         await uploadCubit.processUpload();
-
+        Logger.log("====================================Upload Successfully!");
         return true;
       }
 

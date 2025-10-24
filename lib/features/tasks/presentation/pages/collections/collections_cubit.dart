@@ -4,12 +4,14 @@ import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/mixins/download_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
+import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/features/tasks/domain/repositories/task_repository.dart';
 import 'package:salesforce/features/tasks/presentation/pages/collections/collections_state.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
-class CollectionsCubit extends Cubit<CollectionsState> with MessageMixin, DownloadMixin, AppMixin {
+class CollectionsCubit extends Cubit<CollectionsState>
+    with MessageMixin, DownloadMixin, AppMixin {
   CollectionsCubit() : super(const CollectionsState(isLoading: true));
   final _taskRepos = getIt<TaskRepository>();
 
@@ -55,7 +57,9 @@ class CollectionsCubit extends Cubit<CollectionsState> with MessageMixin, Downlo
       }
 
       final response = await _taskRepos.processCashReceiptJournals(journals);
-      return response.fold((l) => throw GeneralException(l.message), (journals) {
+      return response.fold((l) => throw GeneralException(l.message), (
+        journals,
+      ) {
         emit(state.copyWith(casReJounals: journals, isLoading: false));
       });
     } on GeneralException catch (e) {
