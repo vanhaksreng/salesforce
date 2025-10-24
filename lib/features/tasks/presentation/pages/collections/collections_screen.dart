@@ -27,6 +27,8 @@ import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
+//Check On Moday
+
 class CollectionsScreen extends StatefulWidget {
   const CollectionsScreen({super.key, required this.arg});
   static const String routeName = "collectionScreen";
