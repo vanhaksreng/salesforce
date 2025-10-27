@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/constants/app_config.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
@@ -9,6 +10,7 @@ import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
 import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
+import 'package:salesforce/core/presentation/widgets/no_internet_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/size_config.dart';
@@ -115,6 +117,8 @@ class TeamScheduleHistoryScreenState extends State<TeamScheduleHistoryScreen> {
         Hr(width: double.infinity, color: grey20),
         if (state.isLoadingSchedule) ...[
           Expanded(child: LoadingPageWidget()),
+        ] else if (state.error == errorInternetMessage) ...[
+          Expanded(child: NoInternetScreen()),
         ] else if (state.teamScheduleSalePersons.isEmpty) ...[
           Expanded(child: EmptyScreen()),
         ] else ...[

@@ -17,7 +17,9 @@ class SalesPersonMapCubit extends Cubit<SalesPersonMapState> {
 
       final response = await repos.getSalepersonGps();
       response.fold(
-        (failure) => throw Exception(failure.message),
+        (failure) {
+          emit(state.copyWith(error: failure.message, isLoading: false));
+        },
         (items) => emit(state.copyWith(isLoading: false, salePersonGps: items)),
       );
     } catch (error) {

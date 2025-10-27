@@ -6,20 +6,34 @@ import 'package:salesforce/features/report/domain/repositories/report_repository
 import 'package:salesforce/features/report/presentation/pages/item_inventory_report/item_inventory_report_state.dart';
 import 'package:salesforce/injection_container.dart';
 
-class ItemInventoryReportCubit extends Cubit<ItemInventoryReportState> with MessageMixin {
-  ItemInventoryReportCubit() : super(const ItemInventoryReportState(isLoading: true));
+class ItemInventoryReportCubit extends Cubit<ItemInventoryReportState>
+    with MessageMixin {
+  ItemInventoryReportCubit()
+    : super(const ItemInventoryReportState(isLoading: true));
 
   final ReportRepository _reportRepo = getIt<ReportRepository>();
 
-  Future<void> getItemInventoryReport({required Map<String, dynamic> param, int page = 1}) async {
+  Future<void> getItemInventoryReport({
+    required Map<String, dynamic> param,
+    int page = 1,
+  }) async {
     try {
-      final response = await _reportRepo.getItemInventoryReport(param: param, page: page);
+      final response = await _reportRepo.getItemInventoryReport(
+        param: param,
+        page: page,
+      );
       response.fold(
         (l) {
-          throw GeneralException(l.message);
+          emit(state.copyWith(isLoading: false, error: l.message));
         },
         (records) {
-          emit(state.copyWith(records: records["data"], isLoading: false, filterNote: records["filter_note"] ?? ''));
+          emit(
+            state.copyWith(
+              records: records["data"],
+              isLoading: false,
+              filterNote: records["filter_note"] ?? '',
+            ),
+          );
         },
       );
     } on GeneralException catch (e) {

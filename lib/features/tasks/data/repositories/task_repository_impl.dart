@@ -2149,7 +2149,8 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         }
         return Right(salePersonGps);
       }
-      return Right([]);
+
+      return Left(ServerFailure(errorInternetMessage));
     } on GeneralException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
@@ -2161,20 +2162,17 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
   Future<Either<Failure, List<SalespersonSchedule>>> getTeamSchedules({
     Map<String, dynamic>? param,
   }) async {
-    if (!await _networkInfo.isConnected) {
-      return const Left(CacheFailure(errorInternetMessage));
-    }
-
-    List<SalespersonSchedule> teamSchedules = [];
-
-    final schedules = await _remote.getTeamSchedule(param: param);
-
     try {
-      for (var a in schedules["records"]) {
-        teamSchedules.add(SalespersonScheduleExtension.fromMap(a));
-      }
+      if (await _networkInfo.isConnected) {
+        final schedules = await _remote.getTeamSchedule(param: param);
+        List<SalespersonSchedule> teamSchedules = [];
+        for (var a in schedules["records"]) {
+          teamSchedules.add(SalespersonScheduleExtension.fromMap(a));
+        }
 
-      return Right(teamSchedules);
+        return Right(teamSchedules);
+      }
+      return const Left(CacheFailure(errorInternetMessage));
     } on GeneralException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {

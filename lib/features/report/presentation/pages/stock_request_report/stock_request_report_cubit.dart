@@ -8,11 +8,19 @@ class StockRequestReportCubit extends Cubit<StockRequestReportState> {
   StockRequestReportCubit() : super(StockRequestReportState());
   final ReportRepository _appRepos = getIt<ReportRepository>();
 
-  Future<void> getStockRequestReport({Map<String, dynamic>? param, int page = 1}) async {
+  Future<void> getStockRequestReport({
+    Map<String, dynamic>? param,
+    int page = 1,
+  }) async {
     try {
       emit(state.copyWith(isLoading: true));
-      final result = await _appRepos.getStockRequestReport(param: param, page: page);
-      result.fold((l) => throw Exception(), (records) => emit(state.copyWith(isLoading: false, records: records)));
+      final result = await _appRepos.getStockRequestReport(
+        param: param,
+        page: page,
+      );
+      result.fold((l) {
+        emit(state.copyWith(isLoading: false, error: l.message));
+      }, (records) => emit(state.copyWith(isLoading: false, records: records)));
     } catch (error) {
       emit(state.copyWith(error: error.toString(), isLoading: false));
     }

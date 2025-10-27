@@ -25,7 +25,16 @@ class TeamScheduleHistoryCubit extends Cubit<TeamScheduleHistoryState>
         state.copyWith(isLoading: true, isLoadingSchedule: isLoadingSchedule),
       );
       response.fold(
-        (failure) => throw GeneralException(failure.message),
+        (failure) {
+          print("================${failure.message}");
+          emit(
+            state.copyWith(
+              isLoading: false,
+              error: failure.message,
+              isLoadingSchedule: false,
+            ),
+          );
+        },
         (items) => emit(
           state.copyWith(
             teamScheduleSalePersons: items,
@@ -57,7 +66,15 @@ class TeamScheduleHistoryCubit extends Cubit<TeamScheduleHistoryState>
 
       final response = await _repos.getSalepersonGps();
       response.fold(
-        (failure) => throw Exception(failure.message),
+        (failure) {
+          emit(
+            state.copyWith(
+              isLoading: false,
+              isLoadingSchedule: false,
+              error: failure.message,
+            ),
+          );
+        },
         (items) => emit(
           state.copyWith(isLoading: false, downLines: [allOption, ...items]),
         ),

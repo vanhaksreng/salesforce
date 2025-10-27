@@ -108,18 +108,21 @@ class AuthRepositoryImpl extends BaseAppRepositoryImpl
   @override
   Future<Either<Failure, NotificationArg>> getNotification({Map? arg}) async {
     try {
-      final record = await _remote.getNotification(arg: arg);
-      final List<NotificationModel> notifications = [];
-      for (var data in record["records"]) {
-        notifications.add(NotificationModel.fromJson(data));
-      }
+      if (await _networkInfo.isConnected) {
+        final record = await _remote.getNotification(arg: arg);
+        final List<NotificationModel> notifications = [];
+        for (var data in record["records"]) {
+          notifications.add(NotificationModel.fromJson(data));
+        }
 
-      return Right(
-        NotificationArg(
-          notifications: notifications,
-          countNotification: record["count"],
-        ),
-      );
+        return Right(
+          NotificationArg(
+            notifications: notifications,
+            countNotification: record["count"],
+          ),
+        );
+      }
+      return Left(CacheFailure(errorInternetMessage));
     } catch (e) {
       rethrow;
     }
