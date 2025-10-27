@@ -4,7 +4,6 @@ import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/mixins/download_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
-import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/features/tasks/domain/repositories/task_repository.dart';
 import 'package:salesforce/features/tasks/presentation/pages/collections/collections_state.dart';
 import 'package:salesforce/injection_container.dart';
@@ -17,6 +16,7 @@ class CollectionsCubit extends Cubit<CollectionsState>
 
   Future<void> getCustomerLedgerEntry({Map<String, dynamic>? param}) async {
     try {
+      emit(state.copyWith(isLoading: true));
       final response = await _taskRepos.getCustomerLedgerEntry(param: param);
       return response.fold((l) => throw GeneralException(l.message), (items) {
         emit(state.copyWith(cusLedgerEntry: items, isLoading: false));

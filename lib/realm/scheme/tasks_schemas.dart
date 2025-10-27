@@ -33,6 +33,10 @@ class _SalespersonSchedule {
   late String? statusInternetCheckIn;
   @MapTo("status_internet_check_out")
   late String? statusInternetCheckOut;
+  @MapTo("check_in_position")
+  late String? checkInPosition;
+  @MapTo("check_out_position")
+  late String? checkOutPosition;
   @MapTo("name")
   late String? name;
   @MapTo("name_2")
@@ -97,6 +101,8 @@ class _SalespersonSchedule {
   late String? checkinDescription;
   @MapTo("checkin_image")
   late String? checkInImage;
+  @MapTo("checkout_image")
+  late String? checkOutImage;
   @MapTo("checkin_remark")
   late String? checkInRemark;
   @MapTo("checkout_remark")

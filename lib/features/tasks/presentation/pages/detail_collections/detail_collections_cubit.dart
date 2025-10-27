@@ -8,20 +8,31 @@ import 'package:salesforce/features/tasks/presentation/pages/detail_collections/
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
-class DetailCollectionsCubit extends Cubit<DetailCollectionsState> with MessageMixin {
-  DetailCollectionsCubit() : super(const DetailCollectionsState(isLoading: true));
+class DetailCollectionsCubit extends Cubit<DetailCollectionsState>
+    with MessageMixin {
+  DetailCollectionsCubit()
+    : super(const DetailCollectionsState(isLoading: true));
 
   final _taskRepos = getIt<TaskRepository>();
 
   Future<void> getCashReceiptJournals({Map<String, dynamic>? param}) async {
     try {
+      emit(state.copyWith(isLoading: true));
       final response = await _taskRepos.getCashReceiptJournals(param: param);
-      return response.fold((l) => throw GeneralException(l.message), (journals) {
+      return response.fold((l) => throw GeneralException(l.message), (
+        journals,
+      ) {
         final totalAmt = journals.fold(0.0, (sum, journal) {
           return sum + Helpers.toDouble(journal.amountLcy);
         });
 
-        emit(state.copyWith(cashReceiptJournals: journals, totalReceiveAmt: totalAmt, isLoading: false));
+        emit(
+          state.copyWith(
+            cashReceiptJournals: journals,
+            totalReceiveAmt: totalAmt,
+            isLoading: false,
+          ),
+        );
       });
     } on GeneralException catch (e) {
       showWarningMessage(e.message);
@@ -45,8 +56,13 @@ class DetailCollectionsCubit extends Cubit<DetailCollectionsState> with MessageM
     });
   }
 
-  Future<void> deletedPayment(CashReceiptJournals journal, CustomerLedgerEntry cEntry) async {
-    final oldJournal = List<CashReceiptJournals>.from(state.cashReceiptJournals);
+  Future<void> deletedPayment(
+    CashReceiptJournals journal,
+    CustomerLedgerEntry cEntry,
+  ) async {
+    final oldJournal = List<CashReceiptJournals>.from(
+      state.cashReceiptJournals,
+    );
     try {
       final List<CashReceiptJournals> newJouranl = oldJournal;
       newJouranl.removeWhere((e) => e.id == journal.id);
@@ -57,7 +73,12 @@ class DetailCollectionsCubit extends Cubit<DetailCollectionsState> with MessageM
           return sum + Helpers.toDouble(journal.amountLcy);
         });
 
-        emit(state.copyWith(cashReceiptJournals: newJouranl, totalReceiveAmt: totalAmt));
+        emit(
+          state.copyWith(
+            cashReceiptJournals: newJouranl,
+            totalReceiveAmt: totalAmt,
+          ),
+        );
         showSuccessMessage("Payment line have been removed");
       });
     } on GeneralException catch (e) {

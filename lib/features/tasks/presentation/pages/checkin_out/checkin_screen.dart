@@ -90,27 +90,25 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
       final areaByMeters = Helpers.toDouble(
         await _cubit.getSetting(kCheckedInAreaKey),
       );
-      if (areaByMeters > 0) {
-        final double distInMeters = _location.getDistanceBetween(
-          widget.schedule.latitude ?? 0,
-          widget.schedule.longitude ?? 0,
-          _cubit.state.latLng?.latitude ?? 0,
-          _cubit.state.latLng?.longitude ?? 0,
-        );
+      final double distInMeters = _location.getDistanceBetween(
+        widget.schedule.latitude ?? 0,
+        widget.schedule.longitude ?? 0,
+        _cubit.state.latLng?.latitude ?? 0,
+        _cubit.state.latLng?.longitude ?? 0,
+      );
 
-        if (areaByMeters < distInMeters) {
-          throw GeneralException(
-            greeting(
-              "must_within_store_checkin",
-              params: {
-                'value': Helpers.formatNumber(
-                  areaByMeters,
-                  option: FormatType.quantity,
-                ),
-              },
-            ),
-          );
-        }
+      if (areaByMeters > 0 && distInMeters > areaByMeters) {
+        throw GeneralException(
+          greeting(
+            "must_within_store_checkin",
+            params: {
+              'value': Helpers.formatNumber(
+                areaByMeters,
+                option: FormatType.quantity,
+              ),
+            },
+          ),
+        );
       }
 
       bool result = await _cubit.processCheckIn(
@@ -118,6 +116,7 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
         args: CheckInArg(
           latitude: location.latitude,
           longitude: location.longitude,
+          checkInPosition: distanceDisplay(distInMeters),
           comment: commentController.text,
           imagePath: imgPath,
           isCloseShop: isSelectShopClose.value,
@@ -157,33 +156,54 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
       final areaByMeters = Helpers.toDouble(
         await _cubit.getSetting(kCheckedOutAreaKey),
       );
-      if (areaByMeters > 0) {
-        final double distInMeters = _location.getDistanceBetween(
-          widget.schedule.latitude ?? 0,
-          widget.schedule.longitude ?? 0,
-          _cubit.state.latLng?.latitude ?? 0,
-          _cubit.state.latLng?.longitude ?? 0,
-        );
+      final double distInMeters = _location.getDistanceBetween(
+        widget.schedule.latitude ?? 0,
+        widget.schedule.longitude ?? 0,
+        _cubit.state.latLng?.latitude ?? 0,
+        _cubit.state.latLng?.longitude ?? 0,
+      );
+      // if (areaByMeters > 0) {
+      //   // final double distInMeters = _location.getDistanceBetween(
+      //   //   widget.schedule.latitude ?? 0,
+      //   //   widget.schedule.longitude ?? 0,
+      //   //   _cubit.state.latLng?.latitude ?? 0,
+      //   //   _cubit.state.latLng?.longitude ?? 0,
+      //   // );
 
-        if (areaByMeters < distInMeters) {
-          throw GeneralException(
-            greeting(
-              "must_within_store_checkout",
-              params: {
-                'value': Helpers.formatNumber(
-                  areaByMeters,
-                  option: FormatType.quantity,
-                ),
-              },
-            ),
-          );
-        }
+      //   if (areaByMeters < distInMeters) {
+      //     throw GeneralException(
+      //       greeting(
+      //         "must_within_store_checkout",
+      //         params: {
+      //           'value': Helpers.formatNumber(
+      //             areaByMeters,
+      //             option: FormatType.quantity,
+      //           ),
+      //         },
+      //       ),
+      //     );
+      //   }
+      // }
+      if (areaByMeters > 0 && distInMeters > areaByMeters) {
+        throw GeneralException(
+          greeting(
+            "must_within_store_checkout",
+            params: {
+              'value': Helpers.formatNumber(
+                areaByMeters,
+                option: FormatType.quantity,
+              ),
+            },
+          ),
+        );
       }
 
       bool result = await _cubit.processCheckout(
         schedule: widget.schedule,
         args: CheckInArg(
+          checkOutPosition: distanceDisplay(distInMeters),
           latitude: location.latitude,
+          imagePath: imgPath,
           longitude: location.longitude,
           comment: commentController.text,
           isCloseShop: isSelectShopClose.value,
@@ -201,6 +221,16 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
       l.hide();
       showErrorMessage();
     }
+  }
+
+  String distanceDisplay(double distInMeters) {
+    final double distInKm = distInMeters / 1000;
+
+    if (distInKm > 1) {
+      return "${Helpers.formatNumberLink(distInKm, option: FormatType.quantity)}km";
+    }
+
+    return "${Helpers.formatNumberLink(distInMeters, option: FormatType.quantity)}m";
   }
 
   String screenTitle() {

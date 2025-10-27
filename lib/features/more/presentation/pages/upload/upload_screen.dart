@@ -821,21 +821,23 @@ class _UploadScreenState extends State<UploadScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TextWidget(
-                            text: schedule.customerNo ?? "",
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          SizedBox(height: 5.scale),
-                          TextWidget(
-                            text: schedule.name ?? "",
-                            fontSize: 14,
-                            color: Colors.black54,
-                          ),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextWidget(
+                              text: schedule.customerNo ?? "",
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            SizedBox(height: 5.scale),
+                            TextWidget(
+                              text: schedule.name ?? "",
+                              fontSize: 14,
+                              color: Colors.black54,
+                            ),
+                          ],
+                        ),
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,

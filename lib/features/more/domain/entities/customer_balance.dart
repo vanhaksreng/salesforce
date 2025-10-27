@@ -4,7 +4,10 @@ class CustomerBalance {
   final List<CashReceiptJournals> cashReceiptJournals;
   final List<CustomerLedgerEntry> cusLegerEntries;
 
-  CustomerBalance({required this.cashReceiptJournals, required this.cusLegerEntries});
+  CustomerBalance({
+    required this.cashReceiptJournals,
+    required this.cusLegerEntries,
+  });
 
   // @override
   // String toString() => 'SaleDetail(header: $header, lines: $lines)';
