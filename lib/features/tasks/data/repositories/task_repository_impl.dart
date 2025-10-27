@@ -123,6 +123,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         longitude: args.longitude,
         comment: args.comment,
         imagePath: args.imagePath,
+        checkInPosition: args.checkInPosition,
         isCloseShop: args.isCloseShop,
       );
 
@@ -162,6 +163,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         longitude: args.longitude,
         comment: args.comment,
         imagePath: args.imagePath,
+        checkOutPosition: args.checkOutPosition,
         isCloseShop: args.isCloseShop,
       );
 
@@ -1762,6 +1764,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
   }
 
   void _updateRemainingAmount(CustomerLedgerEntry cEntry) async {
+    print("===============dd=======${cEntry.documentNo}");
     final journal = await _local.getCashReceiptJournals({
       "apply_to_doc_no": cEntry.documentNo,
     });

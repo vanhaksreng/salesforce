@@ -28,6 +28,8 @@ class SalespersonSchedule extends _SalespersonSchedule
     String? duration,
     String? statusInternetCheckIn,
     String? statusInternetCheckOut,
+    String? checkInPosition,
+    String? checkOutPosition,
     String? name,
     String? name2,
     String? shipToCode,
@@ -60,6 +62,7 @@ class SalespersonSchedule extends _SalespersonSchedule
     String? externalDocumentNo,
     String? checkinDescription,
     String? checkInImage,
+    String? checkOutImage,
     String? checkInRemark,
     String? checkOutRemark,
     String? shopIsClosed = "Yes",
@@ -96,6 +99,8 @@ class SalespersonSchedule extends _SalespersonSchedule
       'status_internet_check_out',
       statusInternetCheckOut,
     );
+    RealmObjectBase.set(this, 'check_in_position', checkInPosition);
+    RealmObjectBase.set(this, 'check_out_position', checkOutPosition);
     RealmObjectBase.set(this, 'name', name);
     RealmObjectBase.set(this, 'name_2', name2);
     RealmObjectBase.set(this, 'ship_to_code', shipToCode);
@@ -128,6 +133,7 @@ class SalespersonSchedule extends _SalespersonSchedule
     RealmObjectBase.set(this, 'external_document_no', externalDocumentNo);
     RealmObjectBase.set(this, 'checkin_description', checkinDescription);
     RealmObjectBase.set(this, 'checkin_image', checkInImage);
+    RealmObjectBase.set(this, 'checkout_image', checkOutImage);
     RealmObjectBase.set(this, 'checkin_remark', checkInRemark);
     RealmObjectBase.set(this, 'checkout_remark', checkOutRemark);
     RealmObjectBase.set(this, 'shop_is_closed', shopIsClosed);
@@ -232,6 +238,20 @@ class SalespersonSchedule extends _SalespersonSchedule
   @override
   set statusInternetCheckOut(String? value) =>
       RealmObjectBase.set(this, 'status_internet_check_out', value);
+
+  @override
+  String? get checkInPosition =>
+      RealmObjectBase.get<String>(this, 'check_in_position') as String?;
+  @override
+  set checkInPosition(String? value) =>
+      RealmObjectBase.set(this, 'check_in_position', value);
+
+  @override
+  String? get checkOutPosition =>
+      RealmObjectBase.get<String>(this, 'check_out_position') as String?;
+  @override
+  set checkOutPosition(String? value) =>
+      RealmObjectBase.set(this, 'check_out_position', value);
 
   @override
   String? get name => RealmObjectBase.get<String>(this, 'name') as String?;
@@ -439,6 +459,13 @@ class SalespersonSchedule extends _SalespersonSchedule
       RealmObjectBase.set(this, 'checkin_image', value);
 
   @override
+  String? get checkOutImage =>
+      RealmObjectBase.get<String>(this, 'checkout_image') as String?;
+  @override
+  set checkOutImage(String? value) =>
+      RealmObjectBase.set(this, 'checkout_image', value);
+
+  @override
   String? get checkInRemark =>
       RealmObjectBase.get<String>(this, 'checkin_remark') as String?;
   @override
@@ -507,6 +534,8 @@ class SalespersonSchedule extends _SalespersonSchedule
       'duration': duration.toEJson(),
       'status_internet_check_in': statusInternetCheckIn.toEJson(),
       'status_internet_check_out': statusInternetCheckOut.toEJson(),
+      'check_in_position': checkInPosition.toEJson(),
+      'check_out_position': checkOutPosition.toEJson(),
       'name': name.toEJson(),
       'name_2': name2.toEJson(),
       'ship_to_code': shipToCode.toEJson(),
@@ -539,6 +568,7 @@ class SalespersonSchedule extends _SalespersonSchedule
       'external_document_no': externalDocumentNo.toEJson(),
       'checkin_description': checkinDescription.toEJson(),
       'checkin_image': checkInImage.toEJson(),
+      'checkout_image': checkOutImage.toEJson(),
       'checkin_remark': checkInRemark.toEJson(),
       'checkout_remark': checkOutRemark.toEJson(),
       'shop_is_closed': shopIsClosed.toEJson(),
@@ -567,6 +597,8 @@ class SalespersonSchedule extends _SalespersonSchedule
         duration: fromEJson(ejson['duration']),
         statusInternetCheckIn: fromEJson(ejson['status_internet_check_in']),
         statusInternetCheckOut: fromEJson(ejson['status_internet_check_out']),
+        checkInPosition: fromEJson(ejson['check_in_position']),
+        checkOutPosition: fromEJson(ejson['check_out_position']),
         name: fromEJson(ejson['name']),
         name2: fromEJson(ejson['name_2']),
         shipToCode: fromEJson(ejson['ship_to_code']),
@@ -599,6 +631,7 @@ class SalespersonSchedule extends _SalespersonSchedule
         externalDocumentNo: fromEJson(ejson['external_document_no']),
         checkinDescription: fromEJson(ejson['checkin_description']),
         checkInImage: fromEJson(ejson['checkin_image']),
+        checkOutImage: fromEJson(ejson['checkout_image']),
         checkInRemark: fromEJson(ejson['checkin_remark']),
         checkOutRemark: fromEJson(ejson['checkout_remark']),
         shopIsClosed: fromEJson(ejson['shop_is_closed'], defaultValue: "Yes"),
@@ -685,6 +718,18 @@ class SalespersonSchedule extends _SalespersonSchedule
           'statusInternetCheckOut',
           RealmPropertyType.string,
           mapTo: 'status_internet_check_out',
+          optional: true,
+        ),
+        SchemaProperty(
+          'checkInPosition',
+          RealmPropertyType.string,
+          mapTo: 'check_in_position',
+          optional: true,
+        ),
+        SchemaProperty(
+          'checkOutPosition',
+          RealmPropertyType.string,
+          mapTo: 'check_out_position',
           optional: true,
         ),
         SchemaProperty('name', RealmPropertyType.string, optional: true),
@@ -822,6 +867,12 @@ class SalespersonSchedule extends _SalespersonSchedule
           'checkInImage',
           RealmPropertyType.string,
           mapTo: 'checkin_image',
+          optional: true,
+        ),
+        SchemaProperty(
+          'checkOutImage',
+          RealmPropertyType.string,
+          mapTo: 'checkout_image',
           optional: true,
         ),
         SchemaProperty(
