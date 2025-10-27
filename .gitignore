@@ -47,3 +47,4 @@ app.*.map.json
 
 lib/env.dart
 auto_take_commit_range_date.py
+commit_notes.md
