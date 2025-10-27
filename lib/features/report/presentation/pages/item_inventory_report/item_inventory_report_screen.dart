@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/app/app_state_handler.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/default_sale_person_mixin.dart';
@@ -149,19 +150,18 @@ class _ItemInventoryReportScreenState extends State<ItemInventoryReportScreen>
       body: BlocBuilder<ItemInventoryReportCubit, ItemInventoryReportState>(
         bloc: _cubit,
         builder: (context, state) {
-          if (state.isLoading) {
-            return const LoadingPageWidget();
-          }
           final records = state.records;
-          if (records.isEmpty) {
-            return const EmptyScreen();
-          }
-          return ListView.builder(
-            itemCount: records.length,
-            padding: const EdgeInsets.all(appSpace),
-            itemBuilder: (context, index) {
-              return ModernReportCardBoxInventory(report: records[index]);
-            },
+          return AppStateHandler(
+            isLoading: state.isLoading,
+            error: state.error,
+            records: records,
+            onData: () => ListView.builder(
+              itemCount: records.length,
+              padding: const EdgeInsets.all(appSpace),
+              itemBuilder: (context, index) {
+                return ModernReportCardBoxInventory(report: records[index]);
+              },
+            ),
           );
         },
       ),

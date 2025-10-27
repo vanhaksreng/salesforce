@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/app/app_state_handler.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/default_sale_person_mixin.dart';
@@ -132,18 +133,17 @@ class _DailySaleSummaryReportScreenState
             bloc: _cubit,
             builder: (context, state) {
               final records = state.records ?? [];
-              if (state.isLoading) {
-                return LoadingPageWidget();
-              }
-              if (records.isEmpty) {
-                return const EmptyScreen();
-              }
-              return ListView.builder(
-                itemCount: records.length,
-                padding: const EdgeInsets.all(appSpace),
-                itemBuilder: (context, index) {
-                  return ReportCardBoxDailySales(report: records[index]);
-                },
+              return AppStateHandler(
+                isLoading: state.isLoading,
+                error: state.error,
+                records: records,
+                onData: () => ListView.builder(
+                  itemCount: records.length,
+                  padding: const EdgeInsets.all(appSpace),
+                  itemBuilder: (context, index) {
+                    return ReportCardBoxDailySales(report: records[index]);
+                  },
+                ),
               );
             },
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/app/app_state_handler.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
@@ -36,10 +37,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
       body: BlocBuilder<NotificationCubit, NotificationState>(
         bloc: _cubit,
         builder: (context, state) {
-          if (state.isLoading) {
-            return const LoadingPageWidget();
-          }
-          return buildBody(state);
+          final records = state.notifications;
+          return AppStateHandler(
+            isLoading: state.isLoading,
+            error: state.error,
+            records: records,
+            onData: () => buildBody(state),
+          );
         },
       ),
     );
@@ -72,7 +76,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
       child: Row(
         spacing: 8.scale,
         children: [
-          ImageNetWorkWidget(width: 60.scale, height: 60.scale, imageUrl: notification.imgUrl),
+          ImageNetWorkWidget(
+            width: 60.scale,
+            height: 60.scale,
+            imageUrl: notification.imgUrl,
+          ),
           _buildContent(notification),
         ],
       ),
@@ -93,7 +101,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 spacing: 8.scale,
                 children: [
-                  TextWidget(text: notification.date, color: textColor50, fontWeight: FontWeight.w600),
+                  TextWidget(
+                    text: notification.date,
+                    color: textColor50,
+                    fontWeight: FontWeight.w600,
+                  ),
                   // Container(
                   //     width: 8.scale,
                   //     height: 8.scale,

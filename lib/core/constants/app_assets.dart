@@ -37,3 +37,4 @@ const String kReceiptIcon = "assets/icons/receipt.svg";
 const String kCartIcon = "assets/icons/cart.svg";
 const String kCerditIcon = "assets/icons/credit.svg";
 const blueTechnologyImgLoading = "assets/images/blue_logo_English.png";
+const blueNoInternet = "assets/icons/No connection-amico.svg";

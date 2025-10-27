@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/app/app_state_handler.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/constants/constants.dart';
@@ -158,20 +159,18 @@ class _CustomerBalanceReportScreenState
       body: BlocBuilder<CustomerBalanceReportCubit, CustomerBalanceReportState>(
         bloc: _cubit,
         builder: (context, state) {
-          if (state.isLoading) {
-            return const LoadingPageWidget();
-          }
-
           final records = state.records ?? [];
-          if (records.isEmpty) {
-            return const EmptyScreen();
-          }
-          return ListView.builder(
-            itemCount: records.length,
-            padding: const EdgeInsets.all(appSpace),
-            itemBuilder: (context, index) {
-              return ReportCardBoxCustomerBalance(report: records[index]);
-            },
+          return AppStateHandler(
+            isLoading: state.isLoading,
+            error: state.error,
+            records: records,
+            onData: () => ListView.builder(
+              itemCount: records.length,
+              padding: const EdgeInsets.all(appSpace),
+              itemBuilder: (context, index) {
+                return ReportCardBoxCustomerBalance(report: records[index]);
+              },
+            ),
           );
         },
       ),

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/features/report/domain/repositories/report_repository.dart';
@@ -5,7 +7,8 @@ import 'package:salesforce/features/report/presentation/pages/so_outstanding_rep
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
-class SoOutstandingReportCubit extends Cubit<SoOutstandingReportState> with MessageMixin {
+class SoOutstandingReportCubit extends Cubit<SoOutstandingReportState>
+    with MessageMixin {
   SoOutstandingReportCubit() : super(SoOutstandingReportState());
   final ReportRepository _appRepos = getIt<ReportRepository>();
 
@@ -51,14 +54,31 @@ class SoOutstandingReportCubit extends Cubit<SoOutstandingReportState> with Mess
   //   }
   // }
 
-  Future<void> getSoOutstandingReport({Map<String, dynamic>? param, int page = 1}) async {
+  Future<void> getSoOutstandingReport({
+    Map<String, dynamic>? param,
+    int page = 1,
+  }) async {
     try {
       emit(state.copyWith(isLoading: true));
 
-      final result = await _appRepos.getSoOutstandingReport(page: page, param: param);
-      result.fold((l) => throw Exception(), (records) {
-        emit(state.copyWith(isLoading: false, records: records, isFilter: param?["isFilter"]));
-      });
+      final result = await _appRepos.getSoOutstandingReport(
+        page: page,
+        param: param,
+      );
+      result.fold(
+        (l) {
+          emit(state.copyWith(isLoading: false, error: l.message));
+        },
+        (records) {
+          emit(
+            state.copyWith(
+              isLoading: false,
+              records: records,
+              isFilter: param?["isFilter"],
+            ),
+          );
+        },
+      );
     } catch (error) {
       emit(state.copyWith(error: error.toString(), isLoading: false));
     }
