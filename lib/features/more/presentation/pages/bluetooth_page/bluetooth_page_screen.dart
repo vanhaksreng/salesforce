@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -61,7 +60,7 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
     _streamManager = BluetoothStreamManager(
       onAdapterStateChange: _handleAdapterStateChange,
       onScanStateChange: _cubit.scaningBluetooth,
-      onScanResults: _cubit.handleScanResults,
+      onScanResults: _handleScanResultsWithDedup,
       onError: showErrorMessage,
     );
   }
@@ -118,47 +117,55 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
     }
   }
 
-  // MARK: - Device Sorting and Connection Updates
-  Future<List<BluetoothDevice>> _sortDevicesByConnection(
-    List<BluetoothDevice> devices,
-  ) async {
-    final List<BluetoothDevice> connectedDevices = [];
-    final List<BluetoothDevice> disconnectedDevices = [];
+  // MARK: - Deduplication Logic
+  bool _isDuplicateDevice(
+    BluetoothDevice newDevice,
+    List<BluetoothDevice> existingDevices,
+  ) {
+    final newName = _getDeviceName(newDevice).trim();
+    final newId = newDevice.remoteId.toString().toUpperCase();
 
-    for (final device in devices) {
-      try {
-        final connectionState = await device.connectionState.first.timeout(
-          const Duration(milliseconds: 500),
-        );
+    for (final existing in existingDevices) {
+      final existingName = _getDeviceName(existing).trim();
+      final existingId = existing.remoteId.toString().toUpperCase();
 
-        if (connectionState == BluetoothConnectionState.connected) {
-          connectedDevices.add(device);
-        } else {
-          disconnectedDevices.add(device);
-        }
-      } catch (e) {
-        // If we can't get connection state, assume disconnected
-        disconnectedDevices.add(device);
+      if (newId == existingId) return true;
+
+      if (newName == existingName &&
+          (_isSimilarMacAddress(existingId, newId) ||
+              _isMacAddressAlmostSame(existingId, newId))) {
+        return true;
       }
     }
-
-    // Sort connected devices by name, then disconnected devices by name
-    connectedDevices.sort(
-      (a, b) => _getDeviceName(a).compareTo(_getDeviceName(b)),
-    );
-    disconnectedDevices.sort(
-      (a, b) => _getDeviceName(a).compareTo(_getDeviceName(b)),
-    );
-
-    return [...connectedDevices, ...disconnectedDevices];
+    return false;
   }
 
-  Future<void> _refreshDeviceList() async {
-    final currentDevices = _cubit.state.devices;
-    if (currentDevices.isNotEmpty) {
-      final sortedDevices = await _sortDevicesByConnection(currentDevices);
-      _cubit.setListBluetoothDevice(sortedDevices);
+  bool _isSimilarMacAddress(String mac1, String mac2) {
+    final clean1 = mac1.replaceAll(':', '').toUpperCase();
+    final clean2 = mac2.replaceAll(':', '').toUpperCase();
+    if (clean1.length < 6 || clean2.length < 6) return false;
+    return clean1.substring(0, 6) == clean2.substring(0, 6);
+  }
+
+  bool _isMacAddressAlmostSame(String mac1, String mac2) {
+    final m1 = mac1.replaceAll(':', '').toUpperCase();
+    final m2 = mac2.replaceAll(':', '').toUpperCase();
+    if (m1.length != m2.length) return false;
+    int diff = 0;
+    for (int i = 0; i < m1.length; i++) {
+      if (m1[i] != m2[i]) diff++;
     }
+    return diff < 3;
+  }
+
+  List<BluetoothDevice> _removeDuplicateDevices(List<BluetoothDevice> devices) {
+    final List<BluetoothDevice> uniqueDevices = [];
+    for (final d in devices) {
+      if (!_isDuplicateDevice(d, uniqueDevices)) {
+        uniqueDevices.add(d);
+      }
+    }
+    return uniqueDevices;
   }
 
   // MARK: - Bluetooth Operations
@@ -182,72 +189,69 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
       final currentDevices = _cubit.state.devices;
 
       final newDevices = bondedDevices
-          .where(
-            (device) =>
-                device.platformName.isNotEmpty &&
-                !_isDuplicateDevice(device, currentDevices),
-          )
+          .where((d) => !_isDuplicateDevice(d, currentDevices))
           .toList();
 
       if (newDevices.isNotEmpty) {
         final devices = List<BluetoothDevice>.from(currentDevices)
           ..addAll(newDevices);
-        final sortedDevices = await _sortDevicesByConnection(devices);
-        _cubit.setListBluetoothDevice(sortedDevices);
+        final unique = _removeDuplicateDevices(devices);
+        final sorted = await _sortDevicesByConnection(unique);
+        _cubit.setListBluetoothDevice(sorted);
       }
     } catch (e) {
       debugPrint('Failed to add bonded devices: $e');
     }
   }
 
-  // Check for duplicate devices based on name similarity and recent IDs
-  bool _isDuplicateDevice(
-    BluetoothDevice newDevice,
-    List<BluetoothDevice> existingDevices,
-  ) {
-    final newDeviceName = _getDeviceName(newDevice);
-    final newDeviceId = newDevice.remoteId.toString();
+  Future<void> _handleScanResultsWithDedup(List<ScanResult> results) async {
+    final List<BluetoothDevice> newDevices = results
+        .map((r) => r.device)
+        .where((d) => d.platformName.isNotEmpty)
+        .toList();
 
-    for (final existingDevice in existingDevices) {
-      final existingName = _getDeviceName(existingDevice);
-      final existingId = existingDevice.remoteId.toString();
+    final merged = List<BluetoothDevice>.from(_cubit.state.devices)
+      ..addAll(newDevices);
 
-      // Same device ID - definitely duplicate
-      if (newDeviceId == existingId) {
-        return true;
-      }
-
-      // Same name and similar MAC address pattern (likely randomized MAC)
-      if (newDeviceName == existingName &&
-          _isSimilarMacAddress(newDeviceId, existingId)) {
-        debugPrint(
-          'Potential duplicate device detected: $newDeviceName ($newDeviceId vs $existingId)',
-        );
-        return true;
-      }
-    }
-
-    return false;
+    final uniqueDevices = _removeDuplicateDevices(merged);
+    final sortedDevices = await _sortDevicesByConnection(uniqueDevices);
+    _cubit.setListBluetoothDevice(sortedDevices);
   }
 
-  // Check if MAC addresses are similar (same vendor prefix or pattern)
-  bool _isSimilarMacAddress(String mac1, String mac2) {
-    // Remove colons and convert to uppercase
-    final cleanMac1 = mac1.replaceAll(':', '').toUpperCase();
-    final cleanMac2 = mac2.replaceAll(':', '').toUpperCase();
+  Future<List<BluetoothDevice>> _sortDevicesByConnection(
+    List<BluetoothDevice> devices,
+  ) async {
+    final List<BluetoothDevice> connected = [];
+    final List<BluetoothDevice> disconnected = [];
 
-    // Check if first 6 characters (vendor prefix) are the same
-    if (cleanMac1.length >= 6 && cleanMac2.length >= 6) {
-      final vendor1 = cleanMac1.substring(0, 6);
-      final vendor2 = cleanMac2.substring(0, 6);
-
-      // Same vendor and similar pattern might indicate randomized MAC
-      if (vendor1 == vendor2) {
-        return true;
+    for (final d in devices) {
+      try {
+        final state = await d.connectionState.first.timeout(
+          const Duration(milliseconds: 400),
+        );
+        if (state == BluetoothConnectionState.connected) {
+          connected.add(d);
+        } else {
+          disconnected.add(d);
+        }
+      } catch (_) {
+        disconnected.add(d);
       }
     }
 
-    return false;
+    connected.sort((a, b) => _getDeviceName(a).compareTo(_getDeviceName(b)));
+    disconnected.sort((a, b) => _getDeviceName(a).compareTo(_getDeviceName(b)));
+
+    return [...connected, ...disconnected];
+  }
+
+  Future<void> _refreshDeviceList() async {
+    final current = _cubit.state.devices;
+    if (current.isNotEmpty) {
+      final sorted = await _sortDevicesByConnection(current);
+      final unique = _removeDuplicateDevices(sorted);
+      _cubit.setListBluetoothDevice(unique);
+    }
   }
 
   Future<void> _connectToDevice(BluetoothDevice device) async {
@@ -258,13 +262,10 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
           _cubit.setBluetoothActionState(state);
           if (state == BluetoothConnectionState.connected) {
             _cubit.setBluetoothDevice(device);
-            // Refresh the device list to move connected device to top
-            _refreshDeviceList();
           } else {
             _cubit.setBluetoothDevice(null);
-            // Refresh the device list to move disconnected device down
-            _refreshDeviceList();
           }
+          _refreshDeviceList();
         },
         onConnectingUpdate: _cubit.setConnectingBluetooth,
         onMessage: (message, isError) {
@@ -285,7 +286,7 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
       if (await FlutterBluePlus.isSupported) {
         await FlutterBluePlus.turnOn();
       }
-    } catch (e) {
+    } catch (_) {
       showWarningMessage('Please enable Bluetooth manually from settings');
     }
   }
@@ -332,25 +333,19 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
   Color _getTextColor(bool isConnected) => isConnected ? white : textColor;
 
   IconData _getConnectionIcon(BluetoothConnectionState state) =>
-      switch (state) {
-        BluetoothConnectionState.connected => Icons.link,
-        _ => Icons.link_off,
-      };
+      state == BluetoothConnectionState.connected ? Icons.link : Icons.link_off;
 
-  Color _getConnectionColor(BluetoothConnectionState state) => switch (state) {
-    BluetoothConnectionState.connected => white,
-    _ => textColor50,
-  };
+  Color _getConnectionColor(BluetoothConnectionState state) =>
+      state == BluetoothConnectionState.connected ? white : textColor50;
 
   String _getConnectionText(BluetoothConnectionState state, bool isConnecting) {
     if (isConnecting) return 'Connecting...';
-    return switch (state) {
-      BluetoothConnectionState.connected => 'Connected',
-      _ => 'Tap to connect',
-    };
+    return state == BluetoothConnectionState.connected
+        ? 'Connected'
+        : 'Tap to connect';
   }
 
-  // MARK: - Build Methods
+  // MARK: - Build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -447,12 +442,11 @@ class BluetoothPageScreenState extends State<BluetoothPageScreen>
     return RefreshIndicator(
       onRefresh: () async {
         await _startScan();
-        await _refreshDeviceList(); // Also refresh the sorting
+        await _refreshDeviceList();
       },
       child: ListView.builder(
         itemCount: state.devices.length,
-        itemBuilder: (context, index) =>
-            _buildDeviceListItem(state.devices[index]),
+        itemBuilder: (context, i) => _buildDeviceListItem(state.devices[i]),
       ),
     );
   }
