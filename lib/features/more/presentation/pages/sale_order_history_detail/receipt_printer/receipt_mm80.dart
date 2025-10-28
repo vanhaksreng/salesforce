@@ -20,7 +20,7 @@ class ReceiptMm80 {
     bool includeImage = false,
   }) async {
     List<StyledTextSegment> segments = [];
-    int numberSign = 88;
+    int numberSign = 56;
 
     Uint8List? logoBytes;
     if (companyInfo?.logo128 != null && includeImage) {
@@ -70,7 +70,9 @@ class ReceiptMm80 {
       segments.add(
         StyledTextSegment(
           text: companyInfo?.address ?? "",
+          style: KhmerTextStyle.bold,
           textAlign: TextAlign.center,
+          rowHeight: 30,
         ),
       );
     }
@@ -79,7 +81,7 @@ class ReceiptMm80 {
         StyledTextSegment(
           text: "Email : ${companyInfo?.email}",
           textAlign: TextAlign.center,
-          rowHeight: 20,
+          rowHeight: 24,
         ),
       );
     }
@@ -89,7 +91,7 @@ class ReceiptMm80 {
         text: ReceiptHelpers.composeReceiptLine(
           "Customer :",
           detail?.header.customerName ?? '',
-          20,
+          24,
         ),
       ),
     );
@@ -98,7 +100,7 @@ class ReceiptMm80 {
         text: ReceiptHelpers.composeReceiptLine(
           "Date :",
           detail?.header.documentDate ?? '',
-          20,
+          24,
         ),
       ),
     );
@@ -107,26 +109,36 @@ class ReceiptMm80 {
         text: ReceiptHelpers.composeReceiptLine(
           "Invoice No :",
           detail?.header.no ?? '',
-          20,
+          24,
         ),
+        rowHeight: 20,
       ),
     );
 
-    segments.add(StyledTextSegment(text: "-" * numberSign));
+    segments.add(
+      StyledTextSegment(text: "-" * numberSign, style: KhmerTextStyle.bold),
+    );
     segments.add(
       StyledTextSegment(
         text: "#|Description|Qty|Price|Disc|Amount",
         style: KhmerTextStyle.bold,
+        fontSize: KhmerFontSize.normal,
         isRow: true,
+        rowHeight: 40,
       ),
     );
 
-    segments.add(StyledTextSegment(text: "-" * numberSign));
+    segments.add(
+      StyledTextSegment(text: "-" * numberSign, style: KhmerTextStyle.bold),
+    );
     int itemNumber = 1;
     for (PosSalesLine item in (detail?.lines ?? [])) {
       try {
         segments.add(
           StyledTextSegment(
+            fontSize: KhmerFontSize.normal,
+            // style: KhmerTextStyle.bold,
+            rowHeight: 26,
             text: _formatItemLine(
               itemNumber: itemNumber,
               description: item.description ?? '',
@@ -144,7 +156,14 @@ class ReceiptMm80 {
       itemNumber++;
     }
 
-    segments.add(StyledTextSegment(text: "=" * (numberSign - 38)));
+    segments.add(
+      StyledTextSegment(
+        text: "=" * (numberSign - 13),
+        rowHeight: 10,
+        style: KhmerTextStyle.bold,
+        fontSize: KhmerFontSize.normal,
+      ),
+    );
 
     final disPercStr = Helpers.formatNumberLink(
       detail?.header.priceIncludeVat ?? '',
@@ -153,10 +172,12 @@ class ReceiptMm80 {
     final disPer = ReceiptHelpers.composeReceiptLine(
       'Discount (%) :',
       disPercStr,
-      numberSign,
+      numberSign + 20,
     );
     segments.add(
       StyledTextSegment(
+        rowHeight: 10,
+        style: KhmerTextStyle.bold,
         text: disPer,
         fontSize: KhmerFontSize.normal,
         isRow: false,
@@ -167,7 +188,7 @@ class ReceiptMm80 {
     final total = ReceiptHelpers.composeReceiptLine(
       'Total Amount :',
       totalStr,
-      numberSign,
+      numberSign + 20,
     );
 
     segments.add(
@@ -176,15 +197,14 @@ class ReceiptMm80 {
         style: KhmerTextStyle.bold,
         fontSize: KhmerFontSize.normal,
         isRow: false,
-        rowHeight: 20,
+        rowHeight: 24,
       ),
     );
 
     segments.add(
       StyledTextSegment(
-        style: KhmerTextStyle.normal,
         textAlign: TextAlign.center,
-        rowHeight: 20,
+        rowHeight: 28,
         text:
             "Thank you for shopping with us. We look forward to serving you again!❤️❤️",
       ),
@@ -192,8 +212,8 @@ class ReceiptMm80 {
 
     segments.add(
       StyledTextSegment(
+        // style: KhmerTextStyle.bold,
         fontSize: KhmerFontSize.small,
-        style: KhmerTextStyle.normal,
         textAlign: TextAlign.center,
         text: "Powered by Blue Technology Co., Ltd.",
       ),
@@ -222,7 +242,7 @@ class ReceiptMm80 {
     List<String> descLines = _wrapText(description, maxDescLength);
 
     if (descLines.length == 1) {
-      return "$itemNumber|${descLines[0]}|$quantity|${p.toStringAsFixed(2)}|${d > 0 ? d.toStringAsFixed(2) : '_'}|${a.toStringAsFixed(2)}";
+      return "$itemNumber|${descLines[0]}|${quantity.toString().padLeft(4)}|${p.toStringAsFixed(2)}|${d > 0 ? d.toStringAsFixed(2) : '_'}|${a.toStringAsFixed(2)}";
     } else {
       List<String> lines = [];
       lines.add(
@@ -236,6 +256,10 @@ class ReceiptMm80 {
       return lines.join('\n');
     }
   }
+
+  // # Description           QTY    Price    Disc   Amount
+  // 1|Long Product Name  |   2|   15.50|      _|    31.00
+  // 2|Short Name         |   1|  100.00|  10.00|    90.00
 
   // Helper function for smart text wrapping
   static List<String> _wrapText(String text, int maxLength) {

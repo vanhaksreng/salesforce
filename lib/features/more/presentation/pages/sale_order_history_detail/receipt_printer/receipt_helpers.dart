@@ -10,9 +10,29 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 
 class ReceiptHelpers {
   static img.Image convertTo1BitDithered(img.Image input) {
+    // Convert to grayscale
     final gray = img.grayscale(input);
-    final dithered = img.ditherImage(gray);
-    return dithered;
+
+    // Invert the image first (swap black and white)
+    final inverted = img.invert(gray);
+    final enhanced = img.adjustColor(inverted, contrast: 4.0, brightness: 1.5);
+
+    // Invert back
+    final corrected = img.invert(enhanced);
+    const threshold = 180; // Very aggressive
+
+    for (var y = 0; y < corrected.height; y++) {
+      for (var x = 0; x < corrected.width; x++) {
+        final pixel = corrected.getPixel(x, y);
+        final luminance = pixel.r.toInt();
+
+        // Pure black or white only
+        final newColor = luminance < threshold ? 0 : 255;
+        corrected.setPixelRgba(x, y, newColor, newColor, newColor, 255);
+      }
+    }
+
+    return corrected;
   }
 
   static Future<List<StyledTextSegment>> buildReceiptSegmentsForPreview({
@@ -81,10 +101,10 @@ class StyledTextSegment {
   final int maxline;
   final bool isRow;
   final double? rowHeight;
-  final Uint8List? image; // new field for image bytes
-  final double? imageWidth; // optional custom width
-  final double? imageHeight; // optional custom height
-  final TextAlign? textAlign; // optional custom height
+  final Uint8List? image;
+  final double? imageWidth;
+  final double? imageHeight;
+  final TextAlign? textAlign;
 
   StyledTextSegment({
     required this.text,
