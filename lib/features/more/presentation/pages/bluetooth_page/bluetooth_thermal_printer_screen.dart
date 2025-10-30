@@ -109,11 +109,10 @@ class BluetoothThermalPrinterScreenState
 
   // MARK: - Connect
   Future<void> connect(String mac) async {
-    // prevent multiple connect attempts
     if (connectingMac != null) return;
 
     setState(() {
-      connectingMac = mac; // remember which printer is connecting
+      connectingMac = mac;
       statusMessage = "Connecting...";
     });
 
@@ -167,24 +166,6 @@ class BluetoothThermalPrinterScreenState
       });
     } catch (e) {
       debugPrint("Disconnect error: $e");
-    }
-  }
-
-  // MARK: - Test Print
-  Future<void> testPrint(String mac) async {
-    try {
-      final profile = await CapabilityProfile.load();
-      final generator = Generator(PaperSize.mm80, profile);
-      List<int> bytes = [];
-      bytes += generator.text(
-        'Test Print Successful!',
-        styles: const PosStyles(bold: true, align: PosAlign.center),
-      );
-      bytes += generator.cut();
-      await PrintBluetoothThermal.writeBytes(bytes);
-      showSuccessMessage("Test print sent successfully.");
-    } catch (e) {
-      showErrorMessage("Failed to print: $e");
     }
   }
 

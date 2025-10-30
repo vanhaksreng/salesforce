@@ -1,11 +1,12 @@
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:salesforce/features/more/domain/entities/device_info.dart';
 
 class AdministrationState {
   final bool isLoading;
   final String? error;
   final DeviceInfo? deviceInfo;
-  final BluetoothDevice? bluetoothDevice;
+  final BluetoothInfo? bluetoothDevice;
   final bool isIminDevice;
 
   const AdministrationState({
@@ -20,7 +21,7 @@ class AdministrationState {
     bool? isLoading,
     String? error,
     DeviceInfo? deviceInfo,
-    BluetoothDevice? bluetoothDevice,
+    BluetoothInfo? bluetoothDevice,
     bool? isIminDevice,
   }) {
     return AdministrationState(
