@@ -62,7 +62,7 @@ class SaleOrderHistoryDetailCubit extends Cubit<SaleOrderHistoryDetailState> {
     }
   }
 
-  void getPreviewReceipt(ReceiptPreview? generated) {
-    emit(state.copyWith(preview: generated));
-  }
+  // void getPreviewReceipt(ReceiptPreview? generated) {
+  //   emit(state.copyWith(preview: generated));
+  // }
 }

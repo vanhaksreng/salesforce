@@ -42,6 +42,8 @@
 	<string>We need your location to track check-ins and show your position on the map while using the app.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>We need access to your microphone for video recording.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Bluetooth is needed to connect to thermal printers.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photo library to select images.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
