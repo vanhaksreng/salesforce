@@ -34,7 +34,7 @@ void main() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     await Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
-    // HttpOverrides.global = MyHttpOverrides();
+    HttpOverrides.global = MyHttpOverrides();
     await AutoUploadManager.initialize();
     await _initializeApp();
     await di.getItInit();
@@ -108,11 +108,11 @@ class _TradeB2bState extends State<TradeB2b> {
   }
 }
 
-// class MyHttpOverrides extends HttpOverrides {
-//   @override
-//   HttpClient createHttpClient(SecurityContext? context) {
-//     return super.createHttpClient(context)
-//       ..badCertificateCallback =
-//           (X509Certificate cert, String host, int port) => true;
-//   }
-// }
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}

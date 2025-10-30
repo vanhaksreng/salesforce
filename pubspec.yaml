@@ -43,6 +43,7 @@ dependencies:
   pinput: ^5.0.2
   country_code_picker: ^3.4.0
   workmanager: ^0.9.0+3
+  print_bluetooth_thermal: ^1.1.7
   # imin_printer: ^0.6.14
   # characters: ^1.4.0
 
@@ -66,3 +67,7 @@ flutter:
     - family: Siemreap
       fonts:
         - asset: assets/fonts/Siemreap-Regular.ttf
+
+    - family: NotoSansKhmer
+      fonts:
+        - asset: assets/fonts/NotoSansKhmer-Regular.ttf      
