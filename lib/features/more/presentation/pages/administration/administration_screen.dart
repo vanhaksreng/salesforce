@@ -1,7 +1,8 @@
-import 'package:device_info_plus/device_info_plus.dart';
+import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/row_box_text_widget.dart';
@@ -9,17 +10,16 @@ import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/header_widget.dart';
-import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/domain/entities/device_info.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_state.dart';
-import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_page_screen.dart';
-import 'package:salesforce/features/more/presentation/pages/imin_device/printer_test_page.dart';
+import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_thermal_printer_screen.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AdministrationScreen extends StatefulWidget {
   const AdministrationScreen({super.key});
@@ -32,12 +32,17 @@ class AdministrationScreen extends StatefulWidget {
 class AdministrationScreenState extends State<AdministrationScreen>
     with MessageMixin {
   late final AdministrationCubit _cubit;
+  List<BluetoothInfo> devices = [];
+  bool connected = false;
+  bool isConnecting = false;
+  String statusMessage = "";
+  String? connectedMac;
 
   @override
   void initState() {
     super.initState();
     _cubit = AdministrationCubit();
-    _initializeScreen();
+    _initializePrinter();
   }
 
   @override
@@ -46,34 +51,304 @@ class AdministrationScreenState extends State<AdministrationScreen>
     super.dispose();
   }
 
-  Future<void> _initializeScreen() async {
-    await _cubit.checkInforDevice();
-    await checkIminDevice();
-    _refreshBluetoothDevices();
+  Future<void> _initializePrinter() async {
+    try {
+      debugPrint("Initializing printer...");
+
+      await checkExistingConnection();
+      await scanDevices();
+
+      if (!connected && devices.isNotEmpty) {
+        final storedMac = await _getStoredConnectedMac();
+
+        if (storedMac != null && devices.any((d) => d.macAdress == storedMac)) {
+          debugPrint("Found stored MAC, attempting to reconnect: $storedMac");
+          await connect(storedMac);
+        } else {
+          debugPrint("No stored MAC, connecting to first device");
+          await connect(devices[0].macAdress);
+        }
+      }
+
+      // ✅ Always check and display connection status at the end
+      await _checkAndDisplayConnectedPrinter();
+    } catch (e) {
+      debugPrint("Initialization error: $e");
+      setState(() {
+        statusMessage = "Failed to initialize: $e";
+      });
+    }
   }
 
-  Future<void> checkIminDevice() async {
-    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-    await _cubit.checkIminDevice(deviceInfo);
+  // MARK: - Connection Check
+  Future<void> checkExistingConnection() async {
+    try {
+      debugPrint("Checking for existing connection...");
+
+      // Check if already connected
+      final bool isConnected = await PrintBluetoothThermal.connectionStatus;
+
+      debugPrint("Connection status: $isConnected");
+
+      if (isConnected) {
+        // Try to get stored MAC
+        final storedMac = await _getStoredConnectedMac();
+
+        if (storedMac != null) {
+          setState(() {
+            connected = true;
+            connectedMac = storedMac;
+            statusMessage = "Already connected to printer ";
+          });
+
+          debugPrint(" Already connected to: $storedMac");
+          return;
+        } else {
+          debugPrint("Connected but no stored MAC, will reconnect");
+          // Disconnect and reconnect properly
+          await PrintBluetoothThermal.disconnect;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      } else {
+        debugPrint(" No existing connection");
+      }
+    } catch (e) {
+      debugPrint(" Error checking connection: $e");
+    }
   }
 
-  void _refreshBluetoothDevices() {
-    final connectedDevices = FlutterBluePlus.connectedDevices;
-    _cubit.checkBluetoothDevie(connectedDevices);
+  // MARK: - Scan Devices
+  Future<void> scanDevices() async {
+    try {
+      debugPrint(" Scanning for paired devices...");
+
+      final result = await PrintBluetoothThermal.pairedBluetooths;
+
+      setState(() => devices = result);
+
+      debugPrint(" Found ${devices.length} paired devices:");
+      for (var device in devices) {
+        debugPrint("  - ${device.name} (${device.macAdress})");
+      }
+
+      if (devices.isEmpty) {
+        setState(() {
+          statusMessage =
+              "No paired devices found. Please pair your printer first.";
+        });
+      }
+    } catch (e) {
+      debugPrint(" Scan error: $e");
+      setState(() {
+        statusMessage = "Failed to scan devices: $e";
+      });
+    }
+  }
+
+  // MARK: - Connect
+  Future<void> connect(String mac) async {
+    if (isConnecting) {
+      debugPrint(" Already attempting to connect");
+      return;
+    }
+
+    // Check if already connected to this device
+    if (connected && connectedMac == mac) {
+      final bool isStillConnected =
+          await PrintBluetoothThermal.connectionStatus;
+      if (isStillConnected) {
+        debugPrint("Already connected to this device");
+        setState(() {
+          statusMessage = "Already connected ";
+        });
+        return;
+      } else {
+        // Was connected but lost connection
+        setState(() {
+          connected = false;
+          connectedMac = null;
+        });
+      }
+    }
+
+    setState(() {
+      isConnecting = true;
+      statusMessage = "Connecting...";
+    });
+
+    try {
+      debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      debugPrint("Attempting to connect to: $mac");
+      debugPrint("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+      // Disconnect any existing connection first
+      if (connected) {
+        debugPrint("🔌 Disconnecting previous connection...");
+        await PrintBluetoothThermal.disconnect;
+        await Future.delayed(const Duration(milliseconds: 800));
+      }
+
+      final bool result =
+          await PrintBluetoothThermal.connect(macPrinterAddress: mac).timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              debugPrint(" Connection timeout");
+              return false;
+            },
+          );
+
+      debugPrint(" Connection result: $result");
+
+      if (result) {
+        // Verify connection is stable
+        await Future.delayed(const Duration(milliseconds: 1000));
+        final bool isStillConnected =
+            await PrintBluetoothThermal.connectionStatus;
+
+        debugPrint("Connection status verified: $isStillConnected");
+
+        if (isStillConnected) {
+          setState(() {
+            connected = true;
+            connectedMac = mac;
+            isConnecting = false;
+            statusMessage = "Connected ";
+          });
+
+          // Store the connected MAC for later retrieval
+          await _saveConnectedMac(mac);
+
+          debugPrint("Successfully connected to: $mac");
+
+          // Send a test command to verify printer is responsive
+          try {
+            final profile = await CapabilityProfile.load();
+            final generator = Generator(PaperSize.mm80, profile);
+            List<int> bytes = [];
+            bytes += generator.reset();
+            await PrintBluetoothThermal.writeBytes(bytes);
+            debugPrint("Printer is responsive");
+          } catch (e) {
+            debugPrint("Test command failed: $e");
+          }
+        } else {
+          throw Exception("Connection lost immediately");
+        }
+      } else {
+        throw Exception("Connection failed");
+      }
+    } catch (e) {
+      debugPrint("Connection error: $e");
+      setState(() {
+        connected = false;
+        connectedMac = null;
+        isConnecting = false;
+        statusMessage = "Connection failed";
+      });
+    }
+  }
+
+  // MARK: - Disconnect
+  Future<void> disconnect() async {
+    try {
+      debugPrint("🔌 Disconnecting...");
+      await PrintBluetoothThermal.disconnect;
+
+      setState(() {
+        connected = false;
+        connectedMac = null;
+        statusMessage = "Disconnected";
+      });
+
+      await _clearConnectedMac();
+
+      debugPrint(" Disconnected successfully");
+    } catch (e) {
+      debugPrint("Disconnect error: $e");
+      setState(() {
+        connected = false;
+        connectedMac = null;
+      });
+    }
+  }
+
+  // MARK: - SharedPreferences Methods
+  Future<void> _saveConnectedMac(String mac) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('connected_printer_mac', mac);
+      debugPrint("Saved connected MAC: $mac");
+    } catch (e) {
+      debugPrint("Failed to save MAC: $e");
+    }
+  }
+
+  Future<String?> _getStoredConnectedMac() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final mac = prefs.getString('connected_printer_mac');
+      debugPrint("📖 Retrieved stored MAC: $mac");
+      return mac;
+    } catch (e) {
+      debugPrint("❌ Failed to retrieve MAC: $e");
+      return null;
+    }
+  }
+
+  Future<void> _clearConnectedMac() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('connected_printer_mac');
+      debugPrint("🗑️ Cleared stored MAC");
+    } catch (e) {
+      debugPrint("❌ Failed to clear MAC: $e");
+    }
+  }
+
+  Future<void> _checkAndDisplayConnectedPrinter() async {
+    try {
+      final bool isConnected = await PrintBluetoothThermal.connectionStatus;
+      if (isConnected) {
+        final storedMac = await _getStoredConnectedMac();
+        if (storedMac != null) {
+          final pairedDevices = await PrintBluetoothThermal.pairedBluetooths;
+          final connectedDevice = pairedDevices.firstWhere(
+            (d) => d.macAdress == storedMac,
+            orElse: () => BluetoothInfo(name: "Unknown", macAdress: storedMac),
+          );
+
+          setState(() {
+            connected = true;
+            connectedMac = connectedDevice.macAdress;
+            statusMessage = "Connected to ${connectedDevice.name}";
+          });
+
+          debugPrint("✅ Connected printer: ${connectedDevice.name}");
+        } else {
+          setState(() {
+            connected = true;
+            statusMessage = "Connected printer (no stored name)";
+          });
+        }
+      } else {
+        setState(() {
+          connected = false;
+          connectedMac = null;
+          statusMessage = "No printer connected";
+        });
+        debugPrint("⚠️ No connected printer");
+      }
+    } catch (e) {
+      debugPrint("❌ Error checking printer: $e");
+    }
   }
 
   Future<void> _navigateToBluetoothPage(BluetoothDevice? currentDevice) async {
-    final result = await Navigator.pushNamed(
+    await Navigator.pushNamed(
       context,
-      BluetoothPageScreen.routeName,
-      arguments: currentDevice,
+      BluetoothThermalPrinterScreen.routeName,
+      // arguments: currentDevice,
     );
-
-    _refreshBluetoothDevices();
-
-    if (result != null && mounted) {
-      setState(() {});
-    }
   }
 
   @override
@@ -82,8 +357,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
       appBar: AppBarWidget(title: greeting("Administration")),
       body: BlocBuilder<AdministrationCubit, AdministrationState>(
         bloc: _cubit,
-        builder: (context, state) =>
-            state.isLoading ? const LoadingPageWidget() : _buildBody(state),
+        builder: (context, state) => _buildBody(state),
       ),
     );
   }

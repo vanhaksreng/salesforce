@@ -220,7 +220,7 @@ double _getFontSizeFor80mm(KhmerFontSize fontSize) {
     case KhmerFontSize.small:
       return 16.0;
     case KhmerFontSize.normal:
-      return 20.0;
+      return 24.0;
     case KhmerFontSize.large:
       return 28.0;
     case KhmerFontSize.extraLarge:
