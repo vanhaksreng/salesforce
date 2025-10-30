@@ -34,7 +34,7 @@ void main() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     await Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
-    HttpOverrides.global = MyHttpOverrides();
+    // HttpOverrides.global = MyHttpOverrides();
     await AutoUploadManager.initialize();
     await _initializeApp();
     await di.getItInit();
