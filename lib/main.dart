@@ -34,7 +34,7 @@ void main() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     await Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
-    // HttpOverrides.global = MyHttpOverrides();
+    HttpOverrides.global = MyHttpOverrides();
     await AutoUploadManager.initialize();
     await _initializeApp();
     await di.getItInit();
@@ -98,7 +98,7 @@ class _TradeB2bState extends State<TradeB2b> {
       onGenerateRoute: appRouter,
       builder: (context, child) {
         Trans().init(context);
-        SizeConfig().init(context);
+        // SizeConfig().init(context);
 
         return child ?? const SizedBox.shrink();
       },
