@@ -413,7 +413,7 @@ class _SaleOrderHistoryDetailScreenState
           final lineImage = await KhmerPrinter.renderKhmerText(
             fullLineText,
             width: 384,
-            fontSize: 12,
+            fontSize: 24,
             maxLines: 1,
           );
           final lineESCPOS = _imageToESCPOS(lineImage, width: 384);
@@ -426,7 +426,7 @@ class _SaleOrderHistoryDetailScreenState
             final fullDescImage = await KhmerPrinter.renderKhmerText(
               description,
               width: 340,
-              fontSize: 12,
+              fontSize: 24,
               maxLines: 2,
             );
             final descESCPOS = _imageToESCPOS(fullDescImage, width: 340);
@@ -1148,8 +1148,19 @@ class ReceiptPreviewScreen extends StatelessWidget {
   }
 
   List<Widget> _buildItemRows() {
+    const baseTextStyle = TextStyle(
+      fontFamily: 'NotoSansKhmer',
+      fontSize: 11,
+      height: 1.3,
+    );
+
     final List<Widget> rows = [];
     int itemNumber = 1;
+
+    bool _hasKhmer(String text) {
+      final khmerRegex = RegExp(r'[\u1780-\u17FF]');
+      return khmerRegex.hasMatch(text);
+    }
 
     for (final line in detail?.lines ?? []) {
       final description = line.description ?? '';
@@ -1163,88 +1174,83 @@ class ReceiptPreviewScreen extends StatelessWidget {
         option: FormatType.amount,
       );
 
-      // Check if description fits on one line with number
-      final descriptionFitsOneLine = description.length <= 15;
+      final isKhmer = _hasKhmer(description);
+
+      final effectiveTextStyle = baseTextStyle.copyWith(
+        fontSize: isKhmer
+            ? 12.5
+            : 11, // Khmer slightly larger for visual balance
+      );
 
       rows.add(
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Column(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Main row with numbers (and short description if it fits)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  // Item number
-                  SizedBox(
-                    width: 15,
-                    child: Text(
-                      '$itemNumber',
-                      style: const TextStyle(fontSize: 10),
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  // Description column (only if short enough)
-                  if (descriptionFitsOneLine)
-                    SizedBox(
-                      width: 100,
-                      child: Text(
-                        description,
-                        style: const TextStyle(fontSize: 10),
-                      ),
-                    )
-                  else
-                    const SizedBox(width: 100), // Empty space if long desc
-                  // Quantity
-                  SizedBox(
-                    width: 35,
-                    child: Text(
-                      qty,
-                      style: const TextStyle(fontSize: 10),
-                      textAlign: TextAlign.right,
-                    ),
-                  ),
-                  // Price
-                  SizedBox(
-                    width: 60,
-                    child: Text(
-                      price,
-                      style: const TextStyle(fontSize: 10),
-                      textAlign: TextAlign.right,
-                    ),
-                  ),
-                  // Disc
-                  SizedBox(
-                    width: 40,
-                    child: Text(
-                      '—',
-                      style: const TextStyle(fontSize: 10),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  // Amount
-                  Expanded(
-                    child: Text(
-                      amount,
-                      style: const TextStyle(fontSize: 10),
-                      textAlign: TextAlign.right,
-                    ),
-                  ),
-                ],
-              ),
-              // Long description on next line(s) if needed
-              if (!descriptionFitsOneLine)
-                Padding(
-                  padding: const EdgeInsets.only(left: 2, top: 1),
-                  child: Text(
-                    description,
-                    style: const TextStyle(fontSize: 10, height: 1.2),
-                    maxLines: 3,
-                    overflow: TextOverflow.visible,
-                  ),
+              // Item number
+              SizedBox(
+                width: 22,
+                child: Text(
+                  '$itemNumber',
+                  style: effectiveTextStyle,
+                  textAlign: TextAlign.left,
                 ),
+              ),
+
+              const SizedBox(width: 4),
+
+              // Description
+              Expanded(
+                flex: 3,
+                child: Text(
+                  description,
+                  style: effectiveTextStyle,
+                  maxLines: 3,
+                  softWrap: true,
+                  overflow: TextOverflow.visible, // wrap instead of cut
+                ),
+              ),
+
+              // Quantity
+              SizedBox(
+                width: 35,
+                child: Text(
+                  qty,
+                  style: effectiveTextStyle,
+                  textAlign: TextAlign.right,
+                ),
+              ),
+
+              // Price
+              SizedBox(
+                width: 55,
+                child: Text(
+                  price,
+                  style: effectiveTextStyle,
+                  textAlign: TextAlign.right,
+                ),
+              ),
+
+              // Discount
+              SizedBox(
+                width: 35,
+                child: Text(
+                  '—',
+                  style: effectiveTextStyle,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+
+              // Amount
+              SizedBox(
+                width: 55,
+                child: Text(
+                  amount,
+                  style: effectiveTextStyle,
+                  textAlign: TextAlign.right,
+                ),
+              ),
             ],
           ),
         ),
