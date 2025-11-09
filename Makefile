@@ -7,3 +7,10 @@ git-push:
 	git add .
 	git commit -m "Commited : $(DATE)"
 	git push origin main
+
+run: 
+	flutter run
+
+clean:
+	flutter clean
+	flutter pub get
