@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/app/app_state_handler.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/default_sale_person_mixin.dart';
@@ -25,10 +26,12 @@ class StockRequestReportScreen extends StatefulWidget {
   static const routeName = 'stockRequestReportScreen';
 
   @override
-  State<StockRequestReportScreen> createState() => _StockRequestReportScreenState();
+  State<StockRequestReportScreen> createState() =>
+      _StockRequestReportScreenState();
 }
 
-class _StockRequestReportScreenState extends State<StockRequestReportScreen> with DefaultSalePersonMixin {
+class _StockRequestReportScreenState extends State<StockRequestReportScreen>
+    with DefaultSalePersonMixin {
   final _cubit = StockRequestReportCubit();
   DateTime? initialToDate;
   DateTime? initialFromDate;
@@ -44,7 +47,12 @@ class _StockRequestReportScreenState extends State<StockRequestReportScreen> wit
   _onInit() async {
     initialFromDate = DateTime.now().firstDayOfMonth();
     initialToDate = DateTime.now().endDayOfMonth();
-    _cubit.getStockRequestReport(param: {"from_date": initialFromDate.toString(), "to_date": initialToDate.toString()});
+    _cubit.getStockRequestReport(
+      param: {
+        "from_date": initialFromDate.toString(),
+        "to_date": initialToDate.toString(),
+      },
+    );
   }
 
   void _showModalFilter(BuildContext context) {
@@ -67,8 +75,12 @@ class _StockRequestReportScreenState extends State<StockRequestReportScreen> wit
     } else {
       selectedDate = "";
     }
-    final String fromDate = initialFromDate != null ? DateTimeExt.parse(initialFromDate.toString()).toDateString() : "";
-    final String toDate = initialToDate != null ? DateTimeExt.parse(initialToDate.toString()).toDateString() : "";
+    final String fromDate = initialFromDate != null
+        ? DateTimeExt.parse(initialFromDate.toString()).toDateString()
+        : "";
+    final String toDate = initialToDate != null
+        ? DateTimeExt.parse(initialToDate.toString()).toDateString()
+        : "";
 
     if (fromDate.isNotEmpty && toDate.isNotEmpty) {
       param["from_date"] = fromDate;
@@ -80,7 +92,10 @@ class _StockRequestReportScreenState extends State<StockRequestReportScreen> wit
 
     param["salesperson_code"] = salesperson?.code;
 
-    param.removeWhere((key, value) => ['date', 'isFilter', 'salesperson', "status"].contains(key));
+    param.removeWhere(
+      (key, value) =>
+          ['date', 'isFilter', 'salesperson', "status"].contains(key),
+    );
 
     _cubit.getStockRequestReport(param: param, page: 1);
 
@@ -133,20 +148,18 @@ class _StockRequestReportScreenState extends State<StockRequestReportScreen> wit
       body: BlocBuilder<StockRequestReportCubit, StockRequestReportState>(
         bloc: _cubit,
         builder: (context, state) {
-          if (state.isLoading) {
-            return const LoadingPageWidget();
-          }
-
           final records = state.records ?? [];
-          if (records.isEmpty) {
-            return const EmptyScreen();
-          }
-          return ListView.builder(
-            itemCount: records.length,
-            padding: const EdgeInsets.all(appSpace),
-            itemBuilder: (context, index) {
-              return ReportCardBoxStockRequest(report: records[index]);
-            },
+          return AppStateHandler(
+            isLoading: state.isLoading,
+            error: state.error,
+            records: records,
+            onData: () => ListView.builder(
+              itemCount: records.length,
+              padding: const EdgeInsets.all(appSpace),
+              itemBuilder: (context, index) {
+                return ReportCardBoxStockRequest(report: records[index]);
+              },
+            ),
           );
         },
       ),

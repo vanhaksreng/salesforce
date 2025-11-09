@@ -4,7 +4,8 @@ import 'package:salesforce/features/report/presentation/pages/customer_balance_r
 import 'package:salesforce/injection_container.dart';
 
 class CustomerBalanceReportCubit extends Cubit<CustomerBalanceReportState> {
-  CustomerBalanceReportCubit() : super(const CustomerBalanceReportState(isLoading: true));
+  CustomerBalanceReportCubit()
+    : super(const CustomerBalanceReportState(isLoading: true));
 
   final ReportRepository _appRepos = getIt<ReportRepository>();
 
@@ -20,10 +21,18 @@ class CustomerBalanceReportCubit extends Cubit<CustomerBalanceReportState> {
     emit(state.copyWith(isSelectedSalesperson: name));
   }
 
-  Future<void> getCustomerBalanceReport({Map<String, dynamic>? param, int page = 1}) async {
+  Future<void> getCustomerBalanceReport({
+    Map<String, dynamic>? param,
+    int page = 1,
+  }) async {
     try {
-      final result = await _appRepos.getCustomerBalanceReport(param: param, page: page);
-      result.fold((l) => throw Exception(), (records) => emit(state.copyWith(isLoading: false, records: records)));
+      final result = await _appRepos.getCustomerBalanceReport(
+        param: param,
+        page: page,
+      );
+      result.fold((l) {
+        emit(state.copyWith(error: l.message, isLoading: false));
+      }, (records) => emit(state.copyWith(isLoading: false, records: records)));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
     }

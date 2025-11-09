@@ -35,7 +35,10 @@ class ApiClient {
   }) async {
     await _checkNetworkConnection();
 
-    final defaultHeaders = {'Accept': 'application/json', 'Content-Type': 'application/json'};
+    final defaultHeaders = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
 
     try {
       final r = await client.post(
@@ -83,7 +86,10 @@ class ApiClient {
   }) async {
     await _checkNetworkConnection();
 
-    final defaultHeaders = {'Accept': 'application/json', 'Content-Type': 'application/json'};
+    final defaultHeaders = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
 
     try {
       final r = await client.post(
@@ -127,7 +133,9 @@ class ApiClient {
 
       if (files != null && files.isNotEmpty) {
         for (int i = 0; i < files.length; i++) {
-          request.files.add(await http.MultipartFile.fromPath('files[]', files[i].path));
+          request.files.add(
+            await http.MultipartFile.fromPath('files[]', files[i].path),
+          );
         }
       }
 

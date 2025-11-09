@@ -5,11 +5,11 @@ import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
+import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
-import 'package:salesforce/core/utils/logger.dart' show Logger;
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/env.dart';
 import 'package:salesforce/features/tasks/domain/entities/sale_person_gps_model.dart';
@@ -43,7 +43,6 @@ class SalesPersonMapScreenState extends State<SalesPersonMapScreen> {
   void initState() {
     super.initState();
     getMarkerSale();
-    // onGetCurrentLocation();
     _cubit.getCamPosition(_phnomPenhLatlong());
   }
 
@@ -137,7 +136,7 @@ class SalesPersonMapScreenState extends State<SalesPersonMapScreen> {
       title: customerName,
       imageUrl ?? "",
       size: 150,
-      borderColor: error,
+      borderColor: primary,
       borderWidth: 4,
     );
   }
@@ -202,6 +201,9 @@ class SalesPersonMapScreenState extends State<SalesPersonMapScreen> {
   }
 
   Widget buildBody(SalesPersonMapState state) {
+    if (state.salePersonGps.isEmpty) {
+      return EmptyScreen();
+    }
     return Stack(
       children: [
         if (state.kGooglePostition == null) ...[
@@ -226,7 +228,8 @@ class SalesPersonMapScreenState extends State<SalesPersonMapScreen> {
           child: BoxWidget(
             rounding: 0,
             isBoxShadow: false,
-            color: white.withValues(alpha: 0.8),
+            color: white,
+
             padding: EdgeInsets.symmetric(vertical: scaleFontSize(8)),
             height: scaleFontSize(120),
             child: ListView.builder(
@@ -246,14 +249,14 @@ class SalesPersonMapScreenState extends State<SalesPersonMapScreen> {
                       children: [
                         CircleAvatar(
                           backgroundColor: isSelected ? primary : grey,
-                          radius: scaleFontSize(30),
+                          radius: scaleFontSize(25),
                           child: Padding(
                             padding: EdgeInsets.all(scaleFontSize(2)),
                             child: ImageNetWorkWidget(
-                              round: scaleFontSize(60),
+                              round: scaleFontSize(55),
                               imageUrl: salePerson[index].avatar,
-                              width: scaleFontSize(60),
-                              height: scaleFontSize(60),
+                              width: scaleFontSize(55),
+                              height: scaleFontSize(55),
                             ),
                           ),
                         ),
@@ -261,14 +264,18 @@ class SalesPersonMapScreenState extends State<SalesPersonMapScreen> {
                           child: SizedBox(
                             width: scaleFontSize(60),
                             child: ChipWidget(
-                              borderColor: isSelected ? primary : primary20,
-                              bgColor: isSelected ? primary : primary20,
-                              horizontal: scaleFontSize(2),
-                              vertical: scaleFontSize(2),
+                              borderColor: isSelected
+                                  ? primary
+                                  : Colors.transparent,
+                              bgColor: isSelected
+                                  ? primary
+                                  : Colors.transparent,
+                              horizontal: scaleFontSize(1),
+                              vertical: scaleFontSize(0),
                               child: TextWidget(
                                 text: salePerson[index].name,
-                                fontSize: 10,
-                                color: isSelected ? white : primary,
+                                fontSize: 12,
+                                color: isSelected ? white : textColor,
                                 fontWeight: FontWeight.w500,
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 1,

@@ -88,8 +88,13 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
       spacing: 10.scale,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextWidget(text: title, fontWeight: fontWeight, fontSize: fontSizeTitle, color: white),
-        subtitle ?? const SizedBox.shrink(),
+        TextWidget(
+          text: title,
+          fontWeight: fontWeight,
+          fontSize: fontSizeTitle,
+          color: white,
+        ),
+        if (subtitle != null) subtitle ?? const SizedBox.shrink(),
       ],
     );
   }
@@ -130,7 +135,12 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     }
 
     return BoxDecoration(
-      gradient: LinearGradient(colors: colors, stops: stops, begin: gradientBegin, end: gradientEnd),
+      gradient: LinearGradient(
+        colors: colors,
+        stops: stops,
+        begin: gradientBegin,
+        end: gradientEnd,
+      ),
     );
   }
 
@@ -146,13 +156,20 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
       actions: actions,
       backgroundColor: enableGradient ? Colors.transparent : null,
       elevation: enableGradient ? 0 : null,
-      bottom: PreferredSize(preferredSize: Size.fromHeight(heightBottom), child: bottom ?? const SizedBox.shrink()),
-      flexibleSpace: _getGradientDecoration() != null ? Container(decoration: _getGradientDecoration()) : null,
+      bottom: PreferredSize(
+        preferredSize: Size.fromHeight(heightBottom),
+        child: bottom ?? const SizedBox.shrink(),
+      ),
+      flexibleSpace: _getGradientDecoration() != null
+          ? Container(decoration: _getGradientDecoration())
+          : null,
     );
   }
 
   @override
   Size get preferredSize {
-    return Size.fromHeight(scaleFontSize(kToolbarHeight) + scaleFontSize(heightBottom));
+    return Size.fromHeight(
+      scaleFontSize(kToolbarHeight) + scaleFontSize(heightBottom),
+    );
   }
 }

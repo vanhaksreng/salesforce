@@ -17,7 +17,12 @@ class SaleHistoryCardBox extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onTapShare;
 
-  const SaleHistoryCardBox({super.key, required this.header, this.onTap, this.onTapShare});
+  const SaleHistoryCardBox({
+    super.key,
+    required this.header,
+    this.onTap,
+    this.onTapShare,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -41,14 +46,20 @@ class SaleHistoryCardBox extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    TextWidget(text: header.no ?? "", fontSize: 18, fontWeight: FontWeight.bold),
+                    TextWidget(
+                      text: header.no ?? "",
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                     ChipWidget(
                       ishadowColor: false,
                       fontSize: 12,
                       vertical: 8.scale,
                       label: header.status?.toUpperCase() ?? "",
                       colorText: getStatusColor(header.status),
-                      bgColor: getStatusColor(header.status).withValues(alpha: .2),
+                      bgColor: getStatusColor(
+                        header.status,
+                      ).withValues(alpha: .2),
                     ),
                   ],
                 ),
@@ -68,7 +79,11 @@ class SaleHistoryCardBox extends StatelessWidget {
                         padding: EdgeInsets.all(scale(8)),
                         color: grey20.withValues(alpha: 0.1),
                         isBoxShadow: false,
-                        child: TextWidget(text: header.shipToAddress ?? "", color: textColor, fontSize: 12),
+                        child: TextWidget(
+                          text: header.shipToAddress ?? "",
+                          color: textColor,
+                          fontSize: 12,
+                        ),
                       ),
                   ],
                 ),
@@ -86,15 +101,21 @@ class SaleHistoryCardBox extends StatelessWidget {
                   children: [
                     Icon(Icons.date_range, size: 16.scale, color: textColor50),
                     TextWidget(
-                      text: DateTimeExt.parse(header.postingDate).toDateNameString(),
+                      text: DateTimeExt.parse(
+                        header.postingDate,
+                      ).toDateNameString(),
                       color: textColor50,
                       fontWeight: FontWeight.w500,
                     ),
                   ],
                 ),
                 TextWidget(
-                  text: Helpers.formatNumber(header.amount ?? 0.0, option: FormatType.amount),
+                  text: Helpers.formatNumber(
+                    header.amount ?? 0.0,
+                    option: FormatType.amount,
+                  ),
                   fontSize: 20,
+                  color: mainColor,
                   fontWeight: FontWeight.bold,
                   textAlign: TextAlign.right,
                 ),
@@ -104,7 +125,11 @@ class SaleHistoryCardBox extends StatelessWidget {
                     spacing: 4.scale,
                     children: [
                       Icon(Icons.share, color: mainColor, size: 14.scale),
-                      TextWidget(fontWeight: FontWeight.w400, text: greeting("Share"), color: mainColor),
+                      TextWidget(
+                        fontWeight: FontWeight.w400,
+                        text: greeting("Share"),
+                        color: mainColor,
+                      ),
                     ],
                   ),
                 ),

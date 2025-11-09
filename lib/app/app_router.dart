@@ -30,7 +30,7 @@ Route<dynamic>? appRouter(RouteSettings settings) {
   }
 
   if (settings.name == LoginScreen.routeName) {
-    return MaterialPageRoute(builder: (_) => const LoginScreen());
+    return MaterialPageRoute(builder: (_) => LoginScreen());
   }
 
   if (settings.name == StarterScreen.routeName) {
@@ -41,7 +41,9 @@ Route<dynamic>? appRouter(RouteSettings settings) {
     return MaterialPageRoute(builder: (_) => const ScannerScreen());
   }
 
-  if (auth != null && auth.expired == kStatusYes && settings.name == LoginScreen.routeName) {
+  if (auth != null &&
+      auth.expired == kStatusYes &&
+      settings.name == LoginScreen.routeName) {
     return MaterialPageRoute(builder: (_) => const LoginScreen());
   }
 
@@ -77,6 +79,8 @@ Route<dynamic>? appRouter(RouteSettings settings) {
   }
 
   return MaterialPageRoute(
-    builder: (_) => Scaffold(body: Center(child: Text('No route defined for ${settings.name}'))),
+    builder: (_) => Scaffold(
+      body: Center(child: Text('No route defined for ${settings.name}')),
+    ),
   );
 }

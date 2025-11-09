@@ -23,14 +23,19 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class CustomerAddressFormScreen extends StatefulWidget {
-  const CustomerAddressFormScreen({super.key, required this.address, required this.customer});
+  const CustomerAddressFormScreen({
+    super.key,
+    required this.address,
+    required this.customerNo,
+  });
 
   static const String routeName = "customerFormscreen";
   final CustomerAddress? address;
-  final Customer customer;
+  final String customerNo;
 
   @override
-  State<CustomerAddressFormScreen> createState() => CustomerAddressFormScreenState();
+  State<CustomerAddressFormScreen> createState() =>
+      CustomerAddressFormScreenState();
 }
 
 class CustomerAddressFormScreenState extends State<CustomerAddressFormScreen>
@@ -90,7 +95,7 @@ class CustomerAddressFormScreenState extends State<CustomerAddressFormScreen>
 
     final address = CustomerAddress(
       Helpers.generateUniqueNumber().toString(),
-      customerNo: widget.customer.no,
+      customerNo: widget.customerNo,
       code: _codeController.text,
       name: _nameAddController.text,
       contactName: _contactNameController.text,
@@ -151,14 +156,19 @@ class CustomerAddressFormScreenState extends State<CustomerAddressFormScreen>
   Future<void> getCurrentAddress() async {
     final locationData = await _location.getCurrentLocation();
 
-    _onUpdateMapController(LatLng(locationData.latitude, locationData.longitude));
+    _onUpdateMapController(
+      LatLng(locationData.latitude, locationData.longitude),
+    );
   }
 
   _onNvigatorToOpenMap() {
     Navigator.pushNamed(
       context,
       CustomerMapFullScreenScreen.routeName,
-      arguments: LatLng(Helpers.toDouble(_latController.text), Helpers.toDouble(_lngController.text)),
+      arguments: LatLng(
+        Helpers.toDouble(_latController.text),
+        Helpers.toDouble(_lngController.text),
+      ),
     ).then((value) async {
       if (value == null) return;
       final data = value as LatLng;
@@ -167,7 +177,9 @@ class CustomerAddressFormScreenState extends State<CustomerAddressFormScreen>
   }
 
   Future<void> _onUpdateMapController(LatLng data) async {
-    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(LatLng(data.latitude, data.longitude), 14));
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(LatLng(data.latitude, data.longitude), 14),
+    );
     await _onCameraIdle(LatLng(data.latitude, data.longitude));
   }
 
@@ -177,7 +189,11 @@ class CustomerAddressFormScreenState extends State<CustomerAddressFormScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: AppBarWidget(title: greeting(widget.address == null ? "create_address" : "update_address")),
+      appBar: AppBarWidget(
+        title: greeting(
+          widget.address == null ? "create_address" : "update_address",
+        ),
+      ),
       body: BlocBuilder<CustomerAddressFormCubit, CustomerAddressFormState>(
         bloc: _cubit,
         builder: (BuildContext context, CustomerAddressFormState state) {
@@ -190,7 +206,9 @@ class CustomerAddressFormScreenState extends State<CustomerAddressFormScreen>
           size: BtnSize.medium,
           onPressed: () => _onSaveAddress(),
           gradient: linearGradient,
-          title: greeting(widget.address == null ? "save_address" : "update_address"),
+          title: greeting(
+            widget.address == null ? "save_address" : "update_address",
+          ),
         ),
       ],
     );
@@ -198,7 +216,10 @@ class CustomerAddressFormScreenState extends State<CustomerAddressFormScreen>
 
   Widget buildBody(CustomerAddressFormState state) {
     return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: scaleFontSize(appSpace), vertical: 8.scale),
+      padding: EdgeInsets.symmetric(
+        horizontal: scaleFontSize(appSpace),
+        vertical: 8.scale,
+      ),
       child: Column(
         spacing: 8.scale,
         children: [
@@ -210,7 +231,10 @@ class CustomerAddressFormScreenState extends State<CustomerAddressFormScreen>
             isBorder: true,
             height: 150.scale,
             child: CustomerMapScreen(
-              latLng: LatLng(widget.address?.latitude ?? 0, widget.address?.longitude ?? 0),
+              latLng: LatLng(
+                widget.address?.latitude ?? 0,
+                widget.address?.longitude ?? 0,
+              ),
               radius: 8,
               onMapCreated: (GoogleMapController controller) {
                 _mapController = controller;

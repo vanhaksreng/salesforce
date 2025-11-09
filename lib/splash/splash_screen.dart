@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/core/domain/entities/init_app_stage.dart';
+import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
+import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/features/main_tap_screen.dart';
+import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
+import 'package:salesforce/infrastructure/external_services/location/i_location_service.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/splash/splash_cubit.dart';
+import 'package:salesforce/injection_container.dart' as di;
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,6 +22,8 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   final _cubit = SplashCubit();
+  final appRepo = di.getIt<BaseAppRepository>();
+  final ILocationService _location = GeolocatorLocationService();
 
   @override
   void initState() {
@@ -31,10 +39,18 @@ class _SplashScreenState extends State<SplashScreen> {
         await _handleDownload();
         await _cubit.getSchedules();
       }
+      final position = await _location.getCurrentLocation();
+      await appRepo.storeLocationOffline(
+        LatLng(position.latitude, position.longitude),
+      );
 
       await setInitAppStage(const InitAppStage(isSyncSetting: true));
       if (mounted) {
-        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => MainTapScreen()), (route) => false);
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => MainTapScreen()),
+          (route) => false,
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -53,7 +69,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
       final filter = tables.map((table) => '"$table"').toList();
 
-      final appSyncLogs = await _cubit.getAppSyncLogs({'tableName': 'IN {${filter.join(",")}}'});
+      final appSyncLogs = await _cubit.getAppSyncLogs({
+        'tableName': 'IN {${filter.join(",")}}',
+      });
 
       if (tables.isEmpty) {
         throw GeneralException("Cannot find any table related");
@@ -72,7 +90,10 @@ class _SplashScreenState extends State<SplashScreen> {
         title: const Text('Sync Failed'),
         content: const Text('Failed to sync app settings. Continue anyway?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Retry')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Retry'),
+          ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
@@ -92,12 +113,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Syncing app settings...')],
-        ),
-      ),
+      body: LoadingPageWidget(label: "Syncing app settings..."),
     );
   }
 }

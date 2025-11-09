@@ -8,7 +8,6 @@ import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
-import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/auth/domain/entities/login_arg.dart';
@@ -16,6 +15,7 @@ import 'package:salesforce/features/auth/presentation/pages/first_download/first
 import 'package:salesforce/features/auth/presentation/pages/login/login_cubit.dart';
 import 'package:salesforce/features/auth/presentation/pages/login/login_state.dart';
 import 'package:salesforce/features/auth/presentation/pages/starter_screen/starter_screen.dart';
+import 'package:salesforce/features/auth/presentation/pages/verify_phone_number/verify_phone_number_screen.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/text_form_field_widget.dart';
@@ -47,11 +47,11 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
   @override
   void initState() {
     super.initState();
-    _cubit.getCompanyInfo();
     _initLoad();
   }
 
   void _initLoad() async {
+    _cubit.getCompanyInfo();
     if (kDebugMode) {
       if (server.id == "local") {
         nameController.text = "012222222";
@@ -111,9 +111,8 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
     );
   }
 
-  void buildPushNamedToForgetPassWord(BuildContext context) {
-    //TODO
-    // return Navigator.pushNamed(context, "");
+  void buildPushNamedToForgetPassWord() {
+    Navigator.pushNamed(context, VerifyPhoneNumberScreen.routeName);
   }
 
   @override
@@ -136,16 +135,17 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
         body: BlocBuilder<LoginCubit, LoginState>(
           bloc: _cubit,
           builder: (context, state) {
-            if (state.isLoading) {
-              return LoadingPageWidget();
-            }
+            // if (state.isLoading) {
+            //   return LoadingPageWidget();
+            // }
 
             return ListView(
               shrinkWrap: true,
               children: [
                 Center(
                   child: ImageNetWorkWidget(
-                    imageUrl: state.company?.logo128 ?? "",
+                    imageUrl: state.company?.logo128 ?? '',
+                    // imageUrl: getCompany()?.logo128 ?? "",
                     height: 200,
                     width: 250,
                     isSide: true,
@@ -153,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
                   ),
                 ),
                 Helpers.gapH(30),
-                buildForm(state),
+                buildForm(state.company),
               ],
             );
           },
@@ -162,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
     );
   }
 
-  Widget buildForm(LoginState state) {
+  Widget buildForm(CompanyInformation? info) {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: scaleFontSize(appSpace),
@@ -182,7 +182,8 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
                   style: TextStyle(fontSize: 15.scale, color: textColor50),
                 ),
                 TextSpan(
-                  text: " ${state.company?.name}",
+                  text: info?.name,
+                  // text: "${getCompany()?.name}",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: primary,
@@ -204,21 +205,23 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
             labelIcon: Icons.lock,
             obscureText: true,
           ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: TextButton(
-              onPressed: () => buildPushNamedToForgetPassWord(context),
-              child: TextWidget(
-                text: greeting("forget_pass"),
-                decoration: TextDecoration.underline,
-                textAlign: TextAlign.right,
-                softWrap: true,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                color: primary,
-              ),
-            ),
-          ),
+          Helpers.gapH(16),
+          // Align(
+          //   alignment: Alignment.bottomRight,
+          //   child: TextButton(
+          //     onPressed: () =>
+          //     buildPushNamedToForgetPassWord(),
+          //     child: TextWidget(
+          //       text: greeting("forget_pass"),
+          //       decoration: TextDecoration.underline,
+          //       textAlign: TextAlign.right,
+          //       softWrap: true,
+          //       fontWeight: FontWeight.bold,
+          //       fontSize: 12,
+          //       color: primary,
+          //     ),
+          //   ),
+          // ),
           BtnWidget(
             title: greeting("login"),
             onPressed: () => login(),

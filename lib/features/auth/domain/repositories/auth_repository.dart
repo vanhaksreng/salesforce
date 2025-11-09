@@ -14,4 +14,5 @@ abstract class AuthRepository extends BaseAppRepository {
 
   Future<Either<Failure, List<AppServer>>> getServerLists();
   Future<Either<Failure, NotificationArg>> getNotification({Map? arg});
+  Future<Either<Failure, Map<String, dynamic>>> verifyResetPassword({Map? arg});
 }

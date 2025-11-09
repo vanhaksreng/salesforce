@@ -120,9 +120,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
 
       final newArg = CheckInArg(
         latitude: args.latitude,
-        longitude: args.latitude,
+        longitude: args.longitude,
         comment: args.comment,
         imagePath: args.imagePath,
+        checkInPosition: args.checkInPosition,
         isCloseShop: args.isCloseShop,
       );
 
@@ -159,9 +160,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
 
       final newArg = CheckInArg(
         latitude: args.latitude,
-        longitude: args.latitude,
+        longitude: args.longitude,
         comment: args.comment,
         imagePath: args.imagePath,
+        checkOutPosition: args.checkOutPosition,
         isCloseShop: args.isCloseShop,
       );
 
@@ -693,6 +695,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
             vatAmount: calculated.vatAmount,
             vatBaseAmount: calculated.vatBaseAmount,
             amount: calculated.amount,
+            amountLcy: calculated.amount,
             amountIncludingVat: calculated.amountIncludeVat,
             amountIncludingVatLcy: calculated.amountIncludeVat,
             manualUnitPrice: manualPrice,
@@ -801,6 +804,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
           option: FormatType.amount,
         ),
       );
+
+      // print(saleHeader.amount);
+      // print(arg.paymentAmount);
 
       int lineNo = 0;
       for (var line in posLines) {
@@ -1758,6 +1764,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
   }
 
   void _updateRemainingAmount(CustomerLedgerEntry cEntry) async {
+    print("===============dd=======${cEntry.documentNo}");
     final journal = await _local.getCashReceiptJournals({
       "apply_to_doc_no": cEntry.documentNo,
     });
@@ -2142,7 +2149,30 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         }
         return Right(salePersonGps);
       }
-      return Right([]);
+
+      return Left(ServerFailure(errorInternetMessage));
+    } on GeneralException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<SalespersonSchedule>>> getTeamSchedules({
+    Map<String, dynamic>? param,
+  }) async {
+    try {
+      if (await _networkInfo.isConnected) {
+        final schedules = await _remote.getTeamSchedule(param: param);
+        List<SalespersonSchedule> teamSchedules = [];
+        for (var a in schedules["records"]) {
+          teamSchedules.add(SalespersonScheduleExtension.fromMap(a));
+        }
+
+        return Right(teamSchedules);
+      }
+      return const Left(CacheFailure(errorInternetMessage));
     } on GeneralException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {

@@ -8,4 +8,5 @@ abstract class ApiAuthDataSource extends BaseApiDataSource {
 
   Future<List<AppServer>> getServerLists();
   Future<Map<String, dynamic>> getNotification({Map? arg});
+  Future<Map<String, dynamic>> verifyResetPassword({Map? arg});
 }

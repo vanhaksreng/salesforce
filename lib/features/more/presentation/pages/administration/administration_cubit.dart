@@ -4,6 +4,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:salesforce/features/more/domain/entities/device_info.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_state.dart';
 
@@ -25,17 +26,17 @@ class AdministrationCubit extends Cubit<AdministrationState> {
     );
   }
 
-  void checkBluetoothDevie(List<BluetoothDevice> devices) {
-    if (devices.isEmpty) return;
+  void checkBluetoothDevie(BluetoothInfo? devices) {
+    if (devices == null) return;
 
-    emit(state.copyWith(bluetoothDevice: devices.first));
+    emit(state.copyWith(bluetoothDevice: devices));
   }
 
   Future<void> checkIminDevice(DeviceInfoPlugin deviceInfo) async {
     if (!Platform.isAndroid) return;
 
     AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-    final model = (androidInfo.model ?? "").toLowerCase();
+    final model = (androidInfo.model).toLowerCase();
 
     if (model.contains("m2-202") ||
         model.contains("m2-203") ||

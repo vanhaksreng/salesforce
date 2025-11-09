@@ -42,15 +42,25 @@
 	<string>We need your location to track check-ins and show your position on the map while using the app.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>We need access to your microphone for video recording.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Bluetooth is needed to connect to thermal printers.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photo library to select images.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Bluetooth access to connect 58mm or 80mm thermal printers</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
 		<string>fetch</string>
+		 <string>processing</string>
 		<string>remote-notification</string>
+		<string>bluetooth-central</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.clearviewerp.salesforce.autoUploadTask</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -68,6 +78,10 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIAppFonts</key>
+	<array>
+		<string>NotoSansKhmer-Regular.ttf</string>
 	</array>
 </dict>
 </plist>

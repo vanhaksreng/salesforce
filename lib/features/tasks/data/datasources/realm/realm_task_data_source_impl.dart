@@ -169,7 +169,8 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
           ..actualLongitude = args.longitude
           ..status = args.isCloseShop ? kStatusCheckOut : kStatusCheckIn
           ..startingTime = formattedTime
-          ..statusInternetCheckIn = internetStatus;
+          ..statusInternetCheckIn = internetStatus
+          ..checkInPosition = args.checkInPosition;
 
         if (args.comment.isNotEmpty) {
           schedule.checkInRemark = args.comment;
@@ -191,6 +192,7 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
             schedule.startingTime ?? "00.00.00",
             formattedTime,
           );
+          schedule.checkInPosition = args.checkInPosition;
         }
 
         // STORE GPS ENTRY
@@ -286,7 +288,12 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
           ..duration = Helpers.calculateDuration(
             schedule.startingTime ?? "00.00.00",
             formattedTime,
-          );
+          )
+          ..checkOutPosition = args.checkOutPosition;
+        final imagePath = args.imagePath?.path ?? "";
+        if (imagePath.isNotEmpty) {
+          schedule.checkOutImage = imagePath;
+        }
 
         // STORE GPS ENTRY
         if (args.latitude != 0.0 && args.latitude != 0.0) {

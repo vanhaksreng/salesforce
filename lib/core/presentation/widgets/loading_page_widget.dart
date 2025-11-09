@@ -19,7 +19,7 @@ class LoadingPageWidget extends StatelessWidget {
 
   const LoadingPageWidget({
     super.key,
-    this.label = "loading",
+    this.label = "Loading",
     this.color = mainColor,
     this.size = 45.0,
     this.showLabel = true,

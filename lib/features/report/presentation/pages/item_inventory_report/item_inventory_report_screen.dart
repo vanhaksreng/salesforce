@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/app/app_state_handler.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/default_sale_person_mixin.dart';
@@ -25,10 +26,12 @@ class ItemInventoryReportScreen extends StatefulWidget {
   static const routeName = "itemInventoryReport";
 
   @override
-  State<ItemInventoryReportScreen> createState() => _ItemInventoryReportScreenState();
+  State<ItemInventoryReportScreen> createState() =>
+      _ItemInventoryReportScreenState();
 }
 
-class _ItemInventoryReportScreenState extends State<ItemInventoryReportScreen> with DefaultSalePersonMixin {
+class _ItemInventoryReportScreenState extends State<ItemInventoryReportScreen>
+    with DefaultSalePersonMixin {
   final _cubit = ItemInventoryReportCubit();
   String salePersonCode = "";
 
@@ -47,7 +50,10 @@ class _ItemInventoryReportScreenState extends State<ItemInventoryReportScreen> w
     initialFromDate = DateTime.now().firstDayOfMonth();
     initialToDate = DateTime.now().endDayOfMonth();
     _cubit.getItemInventoryReport(
-      param: {"from_date": initialFromDate.toString(), "to_date": initialToDate.toString()},
+      param: {
+        "from_date": initialFromDate.toString(),
+        "to_date": initialToDate.toString(),
+      },
     );
   }
 
@@ -84,8 +90,12 @@ class _ItemInventoryReportScreenState extends State<ItemInventoryReportScreen> w
     } else {
       selectedDate = "";
     }
-    final String fromDate = initialFromDate != null ? DateTimeExt.parse(initialFromDate.toString()).toDateString() : "";
-    final String toDate = initialToDate != null ? DateTimeExt.parse(initialToDate.toString()).toDateString() : "";
+    final String fromDate = initialFromDate != null
+        ? DateTimeExt.parse(initialFromDate.toString()).toDateString()
+        : "";
+    final String toDate = initialToDate != null
+        ? DateTimeExt.parse(initialToDate.toString()).toDateString()
+        : "";
 
     if (fromDate.isNotEmpty && toDate.isNotEmpty) {
       param["from_date"] = fromDate;
@@ -97,7 +107,9 @@ class _ItemInventoryReportScreenState extends State<ItemInventoryReportScreen> w
 
     param["salesperson_code"] = salesperson?.code;
 
-    param.removeWhere((key, value) => ['date', 'isFilter', 'salesperson'].contains(key));
+    param.removeWhere(
+      (key, value) => ['date', 'isFilter', 'salesperson'].contains(key),
+    );
 
     _cubit.getItemInventoryReport(param: param, page: 1);
 
@@ -138,19 +150,18 @@ class _ItemInventoryReportScreenState extends State<ItemInventoryReportScreen> w
       body: BlocBuilder<ItemInventoryReportCubit, ItemInventoryReportState>(
         bloc: _cubit,
         builder: (context, state) {
-          if (state.isLoading) {
-            return const LoadingPageWidget();
-          }
           final records = state.records;
-          if (records.isEmpty) {
-            return const EmptyScreen();
-          }
-          return ListView.builder(
-            itemCount: records.length,
-            padding: const EdgeInsets.all(appSpace),
-            itemBuilder: (context, index) {
-              return ReportCardBoxInventory(report: records[index]);
-            },
+          return AppStateHandler(
+            isLoading: state.isLoading,
+            error: state.error,
+            records: records,
+            onData: () => ListView.builder(
+              itemCount: records.length,
+              padding: const EdgeInsets.all(appSpace),
+              itemBuilder: (context, index) {
+                return ModernReportCardBoxInventory(report: records[index]);
+              },
+            ),
           );
         },
       ),

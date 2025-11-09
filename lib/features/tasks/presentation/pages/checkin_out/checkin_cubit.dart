@@ -18,7 +18,10 @@ class CheckinCubit extends Cubit<CheckinState> with MessageMixin, AppMixin {
 
   final ILocationService _location = GeolocatorLocationService();
 
-  Future<bool> processCheckIn({required SalespersonSchedule schedule, required CheckInArg args}) async {
+  Future<bool> processCheckIn({
+    required SalespersonSchedule schedule,
+    required CheckInArg args,
+  }) async {
     try {
       final response = await _repos.checkIn(schedule: schedule, args: args);
       response.fold(
@@ -40,7 +43,10 @@ class CheckinCubit extends Cubit<CheckinState> with MessageMixin, AppMixin {
     }
   }
 
-  Future<bool> processCheckout({required SalespersonSchedule schedule, required CheckInArg args}) async {
+  Future<bool> processCheckout({
+    required SalespersonSchedule schedule,
+    required CheckInArg args,
+  }) async {
     try {
       final response = await _repos.checkout(schedule: schedule, args: args);
       response.fold(
@@ -65,7 +71,9 @@ class CheckinCubit extends Cubit<CheckinState> with MessageMixin, AppMixin {
   Future<void> getLatLng() async {
     try {
       final getLatLng = await _location.getCurrentLocation();
-      emit(state.copyWith(latLng: LatLng(getLatLng.latitude, getLatLng.longitude)));
+      emit(
+        state.copyWith(latLng: LatLng(getLatLng.latitude, getLatLng.longitude)),
+      );
     } on GeneralException catch (e) {
       showWarningMessage(e.message);
     } catch (error) {
@@ -77,6 +85,11 @@ class CheckinCubit extends Cubit<CheckinState> with MessageMixin, AppMixin {
     final kcheckInWithPhoto = await getSetting(kCheckInVisitWithPhoto);
     final kcheckOutWithPhoto = await getSetting(kCheckOutWithPhoto);
 
-    emit(state.copyWith(checkInWithPhoto: kcheckInWithPhoto, checkOutWithPhoto: kcheckOutWithPhoto));
+    emit(
+      state.copyWith(
+        checkInWithPhoto: kcheckInWithPhoto,
+        checkOutWithPhoto: kcheckOutWithPhoto,
+      ),
+    );
   }
 }

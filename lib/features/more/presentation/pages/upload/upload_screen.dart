@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/core/data/models/extension/sale_line_extension.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
@@ -34,7 +35,10 @@ class UploadScreen extends StatefulWidget {
 class _UploadScreenState extends State<UploadScreen> {
   final _cubit = UploadCubit();
 
-  final boxPadding = EdgeInsets.symmetric(horizontal: 15.scale, vertical: 10.scale);
+  final boxPadding = EdgeInsets.symmetric(
+    horizontal: 15.scale,
+    vertical: 10.scale,
+  );
 
   final boxContentPadding = EdgeInsets.symmetric(vertical: 10.scale);
 
@@ -113,20 +117,30 @@ class _UploadScreenState extends State<UploadScreen> {
   }
 
   Widget buildBody(UploadState state) {
-    final merchanise = state.merchandiseSchedules.where((e) => e.merchandiseOption == kMerchandize).toList();
-    final posm = state.merchandiseSchedules.where((e) => e.merchandiseOption == kPOSM).toList();
+    final merchanise = state.merchandiseSchedules
+        .where((e) => e.merchandiseOption == kMerchandize)
+        .toList();
+    final posm = state.merchandiseSchedules
+        .where((e) => e.merchandiseOption == kPOSM)
+        .toList();
 
     return ListView(
       padding: EdgeInsets.symmetric(horizontal: 15.scale, vertical: 10.scale),
       children: [
         _buildBox(
           title: 'Check Stock',
-          child: _buildCheckStockBox(state.customerItemLedgerEntries, state.salespersonSchedules),
+          child: _buildCheckStockBox(
+            state.customerItemLedgerEntries,
+            state.salespersonSchedules,
+          ),
           totalRecords: state.customerItemLedgerEntries.length,
         ),
         _buildBox(
           title: 'Competitor Check Stock',
-          child: _buildCompetitorCheckStockBox(state.competitorItemLedgerEntries, state.salespersonSchedules),
+          child: _buildCompetitorCheckStockBox(
+            state.competitorItemLedgerEntries,
+            state.salespersonSchedules,
+          ),
           totalRecords: state.competitorItemLedgerEntries.length,
         ),
         _buildBox(
@@ -141,17 +155,26 @@ class _UploadScreenState extends State<UploadScreen> {
         // ),
         _buildBox(
           title: 'Merchandising',
-          child: _buildCheckPosmAndMerchandisingBox(merchanise, state.salespersonSchedules),
+          child: _buildCheckPosmAndMerchandisingBox(
+            merchanise,
+            state.salespersonSchedules,
+          ),
           totalRecords: merchanise.length,
         ),
         _buildBox(
           title: 'POSM',
-          child: _buildCheckPosmAndMerchandisingBox(posm, state.salespersonSchedules),
+          child: _buildCheckPosmAndMerchandisingBox(
+            posm,
+            state.salespersonSchedules,
+          ),
           totalRecords: posm.length,
         ),
         _buildBox(
           title: 'Redemption',
-          child: _buildRedemptionBox(state.redemptions, state.salespersonSchedules),
+          child: _buildRedemptionBox(
+            state.redemptions,
+            state.salespersonSchedules,
+          ),
           totalRecords: state.redemptions.length,
         ),
         _buildBox(
@@ -226,13 +249,19 @@ class _UploadScreenState extends State<UploadScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildRightAlignedText("#${record.applyToDocNo}", record.description ?? ""),
+                      _buildRightAlignedText(
+                        "#${record.applyToDocNo}",
+                        record.description ?? "",
+                      ),
                       Column(
                         key: ValueKey(record.id),
                         children: [
                           TextWidget(
                             key: ValueKey(record.id),
-                            text: Helpers.formatNumberLink(record.amountLcy, option: FormatType.amount),
+                            text: Helpers.formatNumberLink(
+                              record.amountLcy,
+                              option: FormatType.amount,
+                            ),
                             color: success,
                             fontSize: headerFontSize - 2,
                             fontWeight: FontWeight.bold,
@@ -256,7 +285,10 @@ class _UploadScreenState extends State<UploadScreen> {
     );
   }
 
-  Widget _buildCheckStockBox(List<CustomerItemLedgerEntry> entries, List<SalespersonSchedule> schedules) {
+  Widget _buildCheckStockBox(
+    List<CustomerItemLedgerEntry> entries,
+    List<SalespersonSchedule> schedules,
+  ) {
     if (entries.isEmpty) {
       return _buildEmptyBox();
     }
@@ -270,7 +302,9 @@ class _UploadScreenState extends State<UploadScreen> {
         if (index + 1 >= schedules.length) return const SizedBox.shrink();
 
         final nextSchedule = schedules[index + 1];
-        final nextStockRecords = entries.where((e) => e.scheduleId == nextSchedule.id).toList();
+        final nextStockRecords = entries
+            .where((e) => e.scheduleId == nextSchedule.id)
+            .toList();
         if (nextStockRecords.isEmpty) {
           return const SizedBox.shrink();
         }
@@ -283,7 +317,9 @@ class _UploadScreenState extends State<UploadScreen> {
       itemBuilder: (BuildContext context, int index) {
         final schedule = schedules[index];
 
-        final stockRecords = entries.where((e) => e.scheduleId == schedule.id).toList();
+        final stockRecords = entries
+            .where((e) => e.scheduleId == schedule.id)
+            .toList();
 
         if (stockRecords.isEmpty) {
           return const SizedBox.shrink();
@@ -332,14 +368,21 @@ class _UploadScreenState extends State<UploadScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildRightAlignedText(entry.itemDescription ?? "", entry.itemNo ?? ""),
+                      _buildRightAlignedText(
+                        entry.itemDescription ?? "",
+                        entry.itemNo ?? "",
+                      ),
                       ChipWidget(
                         bgColor: success.withValues(alpha: 0.08),
                         colorText: success,
                         radius: 8.scale,
                         vertical: 6.scale,
                         horizontal: 0,
-                        label: Helpers.formatNumber(entry.quantity, option: FormatType.quantity).isEmpty
+                        label:
+                            Helpers.formatNumber(
+                              entry.quantity,
+                              option: FormatType.quantity,
+                            ).isEmpty
                             ? "Out of stock"
                             : "${Helpers.formatNumberLink(entry.quantity, option: FormatType.quantity)} ${entry.unitOfMeasureCode ?? ""}",
                       ),
@@ -354,7 +397,10 @@ class _UploadScreenState extends State<UploadScreen> {
     );
   }
 
-  Widget _buildCompetitorCheckStockBox(List<CompetitorItemLedgerEntry> entries, List<SalespersonSchedule> schedules) {
+  Widget _buildCompetitorCheckStockBox(
+    List<CompetitorItemLedgerEntry> entries,
+    List<SalespersonSchedule> schedules,
+  ) {
     if (entries.isEmpty) {
       return _buildEmptyBox();
     }
@@ -367,7 +413,9 @@ class _UploadScreenState extends State<UploadScreen> {
         if (index + 1 >= schedules.length) return const SizedBox.shrink();
 
         final nextSchedule = schedules[index + 1];
-        final nextStockRecords = entries.where((e) => e.scheduleId == nextSchedule.id).toList();
+        final nextStockRecords = entries
+            .where((e) => e.scheduleId == nextSchedule.id)
+            .toList();
         if (nextStockRecords.isEmpty) {
           return const SizedBox.shrink();
         }
@@ -387,7 +435,9 @@ class _UploadScreenState extends State<UploadScreen> {
       itemBuilder: (context, index) {
         final schedule = schedules[index];
 
-        final stockRecords = entries.where((e) => e.scheduleId == schedule.id).toList();
+        final stockRecords = entries
+            .where((e) => e.scheduleId == schedule.id)
+            .toList();
 
         if (stockRecords.isEmpty) {
           return const SizedBox.shrink();
@@ -435,14 +485,20 @@ class _UploadScreenState extends State<UploadScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildRightAlignedText(entry.itemDescription ?? "", entry.itemNo ?? ""),
+                      _buildRightAlignedText(
+                        entry.itemDescription ?? "",
+                        entry.itemNo ?? "",
+                      ),
                       ChipWidget(
                         bgColor: success.withValues(alpha: 0.2),
                         colorText: success,
                         radius: 8.scale,
                         vertical: 6.scale,
                         horizontal: 0,
-                        label: Helpers.formatNumberLink(entry.quantity, option: FormatType.quantity),
+                        label: Helpers.formatNumberLink(
+                          entry.quantity,
+                          option: FormatType.quantity,
+                        ),
                       ),
                     ],
                   ),
@@ -455,7 +511,10 @@ class _UploadScreenState extends State<UploadScreen> {
     );
   }
 
-  Widget _buildSalekBox(List<SalesHeader> salesHeaders, List<SalespersonSchedule> schedules) {
+  Widget _buildSalekBox(
+    List<SalesHeader> salesHeaders,
+    List<SalespersonSchedule> schedules,
+  ) {
     if (salesHeaders.isEmpty) {
       return _buildEmptyBox();
     }
@@ -468,7 +527,9 @@ class _UploadScreenState extends State<UploadScreen> {
         if (index + 1 >= schedules.length) return const SizedBox.shrink();
 
         final nextSchedule = schedules[index + 1];
-        final nextStockRecords = salesHeaders.where((e) => e.sourceNo == nextSchedule.id).toList();
+        final nextStockRecords = salesHeaders
+            .where((e) => e.sourceNo == nextSchedule.id)
+            .toList();
         if (nextStockRecords.isEmpty) {
           return const SizedBox.shrink();
         }
@@ -488,7 +549,9 @@ class _UploadScreenState extends State<UploadScreen> {
       itemBuilder: (context, index) {
         final schedule = schedules[index];
 
-        final saleRecords = salesHeaders.where((e) => e.sourceNo == schedule.id).toList();
+        final saleRecords = salesHeaders
+            .where((e) => e.sourceNo == schedule.id)
+            .toList();
         if (saleRecords.isEmpty) {
           return const SizedBox.shrink();
         }
@@ -502,7 +565,9 @@ class _UploadScreenState extends State<UploadScreen> {
               children: [
                 ChipWidget(
                   key: ValueKey("text${schedule.id}"),
-                  bgColor: getScheduleColor(schedule.status ?? "").withValues(alpha: 0.08),
+                  bgColor: getScheduleColor(
+                    schedule.status ?? "",
+                  ).withValues(alpha: 0.08),
                   colorText: getScheduleColor(schedule.status ?? ""),
                   radius: 8.scale,
                   label: _getScheduleText(schedule),
@@ -518,6 +583,13 @@ class _UploadScreenState extends State<UploadScreen> {
               itemCount: salesHeaders.length,
               itemBuilder: (context, index) {
                 final salesHeader = salesHeaders[index];
+                final totalSaleAmt = _cubit.state.salesLines
+                    .where((line) => line.documentNo == salesHeader.no)
+                    .fold<double>(
+                      0,
+                      (sum, line) =>
+                          sum + Helpers.toDouble(line.amountIncludingVatLcy),
+                    );
                 return Container(
                   key: ValueKey(salesHeader.id),
                   padding: EdgeInsets.all(8.scale),
@@ -534,17 +606,28 @@ class _UploadScreenState extends State<UploadScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           TextWidget(
-                            text: Helpers.formatNumberLink(salesHeader.amount, option: FormatType.amount),
+                            text: Helpers.formatNumberLink(
+                              totalSaleAmt,
+                              option: FormatType.amount,
+                            ),
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
                           SizedBox(height: 5.scale),
-                          TextWidget(text: "#${salesHeader.no}", fontSize: 14, color: textColor),
+                          TextWidget(
+                            text: "#${salesHeader.no}",
+                            fontSize: 14,
+                            color: textColor,
+                          ),
                         ],
                       ),
                       ChipWidget(
-                        bgColor: getStatusColor(salesHeader.documentType ?? "").withValues(alpha: 0.1),
-                        colorText: getStatusColor(salesHeader.documentType ?? ""),
+                        bgColor: getStatusColor(
+                          salesHeader.documentType ?? "",
+                        ).withValues(alpha: 0.1),
+                        colorText: getStatusColor(
+                          salesHeader.documentType ?? "",
+                        ),
                         radius: 8.scale,
                         vertical: 6.scale,
                         horizontal: 0,
@@ -589,7 +672,9 @@ class _UploadScreenState extends State<UploadScreen> {
         if (index + 1 >= schedules.length) return const SizedBox.shrink();
 
         final nextSchedule = schedules[index + 1];
-        final nextRecords = merchandise.where((e) => "${e.visitNo}" == nextSchedule.id).toList();
+        final nextRecords = merchandise
+            .where((e) => "${e.visitNo}" == nextSchedule.id)
+            .toList();
         if (nextRecords.isEmpty) {
           return const SizedBox.shrink();
         }
@@ -602,7 +687,9 @@ class _UploadScreenState extends State<UploadScreen> {
       itemBuilder: (BuildContext context, int index) {
         final schedule = schedules[index];
 
-        final newRecords = merchandise.where((e) => "${e.visitNo}" == schedule.id).toList();
+        final newRecords = merchandise
+            .where((e) => "${e.visitNo}" == schedule.id)
+            .toList();
         if (newRecords.isEmpty) {
           return const SizedBox.shrink();
         }
@@ -633,7 +720,8 @@ class _UploadScreenState extends State<UploadScreen> {
                     ),
                   ),
                 ),
-                if ((schedule.scheduleDate ?? "").isNotEmpty) _getDateBox(schedule.scheduleDate ?? ""),
+                if ((schedule.scheduleDate ?? "").isNotEmpty)
+                  _getDateBox(schedule.scheduleDate ?? ""),
               ],
             ),
             ListView.builder(
@@ -655,16 +743,26 @@ class _UploadScreenState extends State<UploadScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildRightAlignedText(entry.description ?? "", entry.competitorNo ?? ""),
+                      _buildRightAlignedText(
+                        entry.description ?? "",
+                        entry.competitorNo ?? "",
+                      ),
                       ChipWidget(
                         bgColor: success.withValues(alpha: 0.08),
                         colorText: success,
                         radius: 8.scale,
                         vertical: 6.scale,
                         horizontal: 0,
-                        label: Helpers.formatNumber(entry.quantity, option: FormatType.quantity).isEmpty
+                        label:
+                            Helpers.formatNumber(
+                              entry.quantity,
+                              option: FormatType.quantity,
+                            ).isEmpty
                             ? "Out of stock"
-                            : Helpers.formatNumberLink(entry.quantity, option: FormatType.quantity),
+                            : Helpers.formatNumberLink(
+                                entry.quantity,
+                                option: FormatType.quantity,
+                              ),
                       ),
                     ],
                   ),
@@ -701,7 +799,9 @@ class _UploadScreenState extends State<UploadScreen> {
       itemCount: grouped.length,
       itemBuilder: (context, index) {
         final date = grouped[index];
-        final newRecords = schedules.where((e) => e.scheduleDate == date).toList();
+        final newRecords = schedules
+            .where((e) => e.scheduleDate == date)
+            .toList();
 
         return Column(
           key: ValueKey(date),
@@ -721,20 +821,32 @@ class _UploadScreenState extends State<UploadScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TextWidget(text: schedule.customerNo ?? "", fontSize: 14, fontWeight: FontWeight.bold),
-                          SizedBox(height: 5.scale),
-                          TextWidget(text: schedule.name ?? "", fontSize: 14, color: Colors.black54),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextWidget(
+                              text: schedule.customerNo ?? "",
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            SizedBox(height: 5.scale),
+                            TextWidget(
+                              text: schedule.name ?? "",
+                              fontSize: 14,
+                              color: Colors.black54,
+                            ),
+                          ],
+                        ),
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         spacing: 3.scale,
                         children: [
                           ChipWidget(
-                            bgColor: getScheduleColor(schedule.status ?? "").withValues(alpha: 0.1),
+                            bgColor: getScheduleColor(
+                              schedule.status ?? "",
+                            ).withValues(alpha: 0.1),
                             radius: 8.scale,
                             vertical: 6.scale,
                             horizontal: 0,
@@ -743,7 +855,8 @@ class _UploadScreenState extends State<UploadScreen> {
                           ),
                           if (schedule.updatedAt != null)
                             TextWidget(
-                              text: "Last sync : ${DateTimeExt.parse(schedule.updatedAt).toTimeString()}",
+                              text:
+                                  "Last sync : ${DateTimeExt.parse(schedule.updatedAt).toTimeString()}",
                               fontSize: 10,
                               color: Colors.black54,
                             ),
@@ -768,7 +881,10 @@ class _UploadScreenState extends State<UploadScreen> {
     return _buildEmptyBox(); //TODO
   }
 
-  Widget _buildRedemptionBox(List<ItemPrizeRedemptionLineEntry> entries, List<SalespersonSchedule> schedules) {
+  Widget _buildRedemptionBox(
+    List<ItemPrizeRedemptionLineEntry> entries,
+    List<SalespersonSchedule> schedules,
+  ) {
     if (entries.isEmpty) {
       return _buildEmptyBox();
     }
@@ -789,7 +905,9 @@ class _UploadScreenState extends State<UploadScreen> {
         if (index + 1 >= schedules.length) return const SizedBox.shrink();
 
         final nextSchedule = schedules[index + 1];
-        final nextStockRecords = entries.where((e) => e.scheduleId == nextSchedule.id).toList();
+        final nextStockRecords = entries
+            .where((e) => e.scheduleId == nextSchedule.id)
+            .toList();
         if (nextStockRecords.isEmpty) {
           return const SizedBox.shrink();
         }
@@ -809,7 +927,9 @@ class _UploadScreenState extends State<UploadScreen> {
       itemBuilder: (context, index) {
         final schedule = schedules[index];
 
-        final stockRecords = entries.where((e) => e.scheduleId == schedule.id).toList();
+        final stockRecords = entries
+            .where((e) => e.scheduleId == schedule.id)
+            .toList();
 
         if (stockRecords.isEmpty) {
           return const SizedBox.shrink();
@@ -863,7 +983,10 @@ class _UploadScreenState extends State<UploadScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildRightAlignedText(entry.description ?? "", "${entry.itemNo} . ${entry.promotionNo}"),
+                      _buildRightAlignedText(
+                        entry.description ?? "",
+                        "${entry.itemNo} . ${entry.promotionNo}",
+                      ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
@@ -873,7 +996,10 @@ class _UploadScreenState extends State<UploadScreen> {
                             radius: 8.scale,
                             vertical: 6.scale,
                             horizontal: 0,
-                            label: Helpers.formatNumberLink(entry.quantity, option: FormatType.quantity),
+                            label: Helpers.formatNumberLink(
+                              entry.quantity,
+                              option: FormatType.quantity,
+                            ),
                           ),
                           TextWidget(
                             text: (entry.redemptionType ?? "").toUpperCase(),
@@ -897,14 +1023,26 @@ class _UploadScreenState extends State<UploadScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextWidget(text: value1, fontSize: headerFontSize - 3, fontWeight: FontWeight.bold),
+        TextWidget(
+          text: value1,
+          fontSize: headerFontSize - 3,
+          fontWeight: FontWeight.bold,
+        ),
         SizedBox(height: 5.scale),
-        TextWidget(text: value2, fontSize: headerFontSize - 4, color: Colors.black54),
+        TextWidget(
+          text: value2,
+          fontSize: headerFontSize - 4,
+          color: Colors.black54,
+        ),
       ],
     );
   }
 
-  BoxWidget _buildBox({required String title, int totalRecords = 0, required Widget child}) {
+  BoxWidget _buildBox({
+    required String title,
+    int totalRecords = 0,
+    required Widget child,
+  }) {
     return BoxWidget(
       color: white,
       margin: EdgeInsets.only(bottom: 10.scale),
@@ -920,7 +1058,11 @@ class _UploadScreenState extends State<UploadScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                TextWidget(text: title, fontSize: headerFontSize, fontWeight: FontWeight.bold),
+                TextWidget(
+                  text: title,
+                  fontSize: headerFontSize,
+                  fontWeight: FontWeight.bold,
+                ),
                 if (totalRecords > 0)
                   ChipWidget(
                     bgColor: red,
@@ -955,7 +1097,11 @@ class _UploadScreenState extends State<UploadScreen> {
       child: Row(
         spacing: 4.scale,
         children: [
-          Icon(Icons.date_range_rounded, size: 14.scale, color: _dateColor(date)),
+          Icon(
+            Icons.date_range_rounded,
+            size: 14.scale,
+            color: _dateColor(date),
+          ),
           TextWidget(
             fontSize: 12,
             key: ValueKey("date$date"),

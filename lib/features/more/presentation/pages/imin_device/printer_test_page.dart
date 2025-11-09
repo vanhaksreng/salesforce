@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:image/image.dart' as img;
 import 'package:salesforce/features/more/presentation/pages/imin_device/imin_printer_service.dart';
 
@@ -9,10 +8,10 @@ class PrinterTestScreen extends StatefulWidget {
   static const String routeName = "PrinterTestScreen";
 
   @override
-  _PrinterTestScreenState createState() => _PrinterTestScreenState();
+  PrinterTestScreenState createState() => PrinterTestScreenState();
 }
 
-class _PrinterTestScreenState extends State<PrinterTestScreen> {
+class PrinterTestScreenState extends State<PrinterTestScreen> {
   String _status = 'Not initialized';
   final TextEditingController _textController = TextEditingController();
   // final IminPrinter _printer = IminPrinter();

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/app/app_state_handler.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
+import 'package:salesforce/core/constants/app_config.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/default_sale_person_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
@@ -8,6 +10,7 @@ import 'package:salesforce/core/presentation/widgets/bottom_sheet_fn.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
+import 'package:salesforce/core/presentation/widgets/no_internet_widget.dart';
 import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -26,10 +29,12 @@ class SoOutstandingReportScreen extends StatefulWidget {
   static const routeName = "soOutstandingReport";
 
   @override
-  State<SoOutstandingReportScreen> createState() => _SoOutstandingReportScreenState();
+  State<SoOutstandingReportScreen> createState() =>
+      _SoOutstandingReportScreenState();
 }
 
-class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen> with DefaultSalePersonMixin {
+class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen>
+    with DefaultSalePersonMixin {
   final _cubit = SoOutstandingReportCubit();
   final ScrollController _scrollController = ScrollController();
 
@@ -52,7 +57,9 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen> w
   }
 
   bool _shouldLoadMore() {
-    return _scrollController.position.pixels == _scrollController.position.maxScrollExtent && !_cubit.state.isFetching;
+    return _scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent &&
+        !_cubit.state.isFetching;
   }
 
   void _loadMoreItems() async {
@@ -64,7 +71,10 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen> w
     initialFromDate = DateTime.now().firstDayOfMonth();
     initialToDate = DateTime.now().endDayOfMonth();
     await _cubit.getSoOutstandingReport(
-      param: {"from_date": initialFromDate.toString(), "to_date": initialToDate.toString()},
+      param: {
+        "from_date": initialFromDate.toString(),
+        "to_date": initialToDate.toString(),
+      },
     );
   }
 
@@ -84,8 +94,12 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen> w
     } else {
       selectedDate = "";
     }
-    final String fromDate = initialFromDate != null ? DateTimeExt.parse(initialFromDate.toString()).toDateString() : "";
-    final String toDate = initialToDate != null ? DateTimeExt.parse(initialToDate.toString()).toDateString() : "";
+    final String fromDate = initialFromDate != null
+        ? DateTimeExt.parse(initialFromDate.toString()).toDateString()
+        : "";
+    final String toDate = initialToDate != null
+        ? DateTimeExt.parse(initialToDate.toString()).toDateString()
+        : "";
 
     if (fromDate.isNotEmpty && toDate.isNotEmpty) {
       param["from_date"] = fromDate;
@@ -97,8 +111,10 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen> w
 
     param["salesperson_code"] = salesperson?.code;
 
-    param.removeWhere((key, value) => ['date', 'isFilter', 'salesperson', 'status'].contains(key));
-
+    param.removeWhere(
+      (key, value) =>
+          ['date', 'isFilter', 'salesperson', 'status'].contains(key),
+    );
     _cubit.getSoOutstandingReport(param: param, page: 1);
 
     Navigator.of(context).pop();
@@ -142,19 +158,18 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen> w
     return BlocBuilder<SoOutstandingReportCubit, SoOutstandingReportState>(
       bloc: _cubit,
       builder: (context, state) {
-        if (state.isLoading) {
-          return const LoadingPageWidget();
-        }
         final records = state.records ?? [];
-        if (records.isEmpty) {
-          return const EmptyScreen();
-        }
-        return ListView.builder(
-          itemCount: records.length,
-          padding: const EdgeInsets.all(appSpace),
-          itemBuilder: (context, index) {
-            return ReportCardBox(report: records[index]);
-          },
+        return AppStateHandler(
+          isLoading: state.isLoading,
+          error: state.error,
+          records: records,
+          onData: () => ListView.builder(
+            itemCount: records.length,
+            padding: const EdgeInsets.all(appSpace),
+            itemBuilder: (context, index) {
+              return ModernReportCardBox(report: records[index]);
+            },
+          ),
         );
       },
     );
@@ -167,9 +182,11 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen> w
         return SaleBottomsheetFilter(
           fromDate: initialFromDate,
           toDate: initialToDate,
+
           salePersons: salesperson,
           hasSalePeron: true,
           hasStatus: false,
+
           selectDate: selectedDate,
           onApply: (value) => _onApplyFilter(value, context),
         );

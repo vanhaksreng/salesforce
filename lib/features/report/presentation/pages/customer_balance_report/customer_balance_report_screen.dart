@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/app/app_state_handler.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/mixins/default_sale_person_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/bottom_sheet_fn.dart';
@@ -26,14 +28,18 @@ class CustomerBalanceReportScreen extends StatefulWidget {
   static const String routeName = "customerBalanceReportScreen";
 
   @override
-  State<CustomerBalanceReportScreen> createState() => _CustomerBalanceReportScreenState();
+  State<CustomerBalanceReportScreen> createState() =>
+      _CustomerBalanceReportScreenState();
 }
 
-class _CustomerBalanceReportScreenState extends State<CustomerBalanceReportScreen> with DefaultSalePersonMixin {
+class _CustomerBalanceReportScreenState
+    extends State<CustomerBalanceReportScreen>
+    with DefaultSalePersonMixin {
   final _cubit = CustomerBalanceReportCubit();
   DateTime? initialToDate;
   DateTime? initialFromDate;
-  String selectedDate = "This Month";
+  String selectedDate = "Today";
+
   Salesperson? salesperson;
 
   @override
@@ -43,21 +49,24 @@ class _CustomerBalanceReportScreenState extends State<CustomerBalanceReportScree
   }
 
   _onInit() async {
-    initialFromDate = DateTime.now().firstDayOfMonth();
-    initialToDate = DateTime.now().endDayOfMonth();
+    initialFromDate = DateTime.now();
+    initialToDate = DateTime.now();
     _cubit.getCustomerBalanceReport(
-      param: {"from_date": initialFromDate.toString(), "to_date": initialToDate.toString()},
+      param: {
+        "from_date": initialFromDate.toString(),
+        "to_date": initialToDate.toString(),
+      },
     );
   }
 
   void _onApplyFilter(Map<String, dynamic> param, BuildContext context) {
-    if (param["from_date"] != null) {
-      initialFromDate = param["from_date"];
+    if (param["ending_date"] != null) {
+      initialFromDate = param["ending_date"];
     } else {
       initialFromDate = null;
     }
-    if (param["to_date"] != null) {
-      initialToDate = param["to_date"];
+    if (param["ending_date"] != null) {
+      initialToDate = param["ending_date"];
     } else {
       initialToDate = null;
     }
@@ -66,8 +75,12 @@ class _CustomerBalanceReportScreenState extends State<CustomerBalanceReportScree
     } else {
       selectedDate = "";
     }
-    final String fromDate = initialFromDate != null ? DateTimeExt.parse(initialFromDate.toString()).toDateString() : "";
-    final String toDate = initialToDate != null ? DateTimeExt.parse(initialToDate.toString()).toDateString() : "";
+    final String fromDate = initialFromDate != null
+        ? DateTimeExt.parse(initialFromDate.toString()).toDateString()
+        : "";
+    final String toDate = initialToDate != null
+        ? DateTimeExt.parse(initialToDate.toString()).toDateString()
+        : "";
 
     if (fromDate.isNotEmpty && toDate.isNotEmpty) {
       param["from_date"] = fromDate;
@@ -79,7 +92,15 @@ class _CustomerBalanceReportScreenState extends State<CustomerBalanceReportScree
 
     param["salesperson_code"] = salesperson?.code;
 
-    param.removeWhere((key, value) => ['date', 'isFilter', 'salesperson', 'status'].contains(key));
+    param.removeWhere(
+      (key, value) => [
+        'date',
+        'ending_date',
+        'isFilter',
+        'salesperson',
+        'status',
+      ].contains(key),
+    );
 
     _cubit.getCustomerBalanceReport(param: param, page: 1);
 
@@ -99,7 +120,9 @@ class _CustomerBalanceReportScreenState extends State<CustomerBalanceReportScree
           toDate: initialToDate,
           salePersons: salesperson,
           hasSalePeron: true,
+          endDate: initialToDate,
           hasStatus: false,
+          typeReport: rCustomerBanlance,
           selectDate: selectedDate,
           onApply: (value) => _onApplyFilter(value, context),
         );
@@ -136,20 +159,18 @@ class _CustomerBalanceReportScreenState extends State<CustomerBalanceReportScree
       body: BlocBuilder<CustomerBalanceReportCubit, CustomerBalanceReportState>(
         bloc: _cubit,
         builder: (context, state) {
-          if (state.isLoading) {
-            return const LoadingPageWidget();
-          }
-
           final records = state.records ?? [];
-          if (records.isEmpty) {
-            return const EmptyScreen();
-          }
-          return ListView.builder(
-            itemCount: records.length,
-            padding: const EdgeInsets.all(appSpace),
-            itemBuilder: (context, index) {
-              return ReportCardBoxCustomerBalance(report: records[index]);
-            },
+          return AppStateHandler(
+            isLoading: state.isLoading,
+            error: state.error,
+            records: records,
+            onData: () => ListView.builder(
+              itemCount: records.length,
+              padding: const EdgeInsets.all(appSpace),
+              itemBuilder: (context, index) {
+                return ReportCardBoxCustomerBalance(report: records[index]);
+              },
+            ),
           );
         },
       ),

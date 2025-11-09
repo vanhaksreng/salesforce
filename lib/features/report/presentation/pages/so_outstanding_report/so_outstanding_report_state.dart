@@ -63,7 +63,8 @@ class SoOutstandingReportState {
       records: records ?? this.records,
       recordSalespersons: recordSalespersons ?? this.recordSalespersons,
       salesperson: salesperson ?? this.salesperson,
-      isSelectedSalesperson: isSelectedSalesperson ?? this.isSelectedSalesperson,
+      isSelectedSalesperson:
+          isSelectedSalesperson ?? this.isSelectedSalesperson,
       selectedStatus: selectedStatus ?? this.selectedStatus,
       selectedDate: selectedDate ?? this.selectedDate,
       isFetching: isFetching ?? this.isFetching,

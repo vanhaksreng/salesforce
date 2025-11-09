@@ -4,13 +4,18 @@ import 'package:salesforce/features/auth/data/datasources/api/api_auth_data_sour
 import 'package:salesforce/features/auth/domain/entities/login_arg.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
-class ApiAuthDataSourceImpl extends BaseApiDataSourceImpl implements ApiAuthDataSource {
+class ApiAuthDataSourceImpl extends BaseApiDataSourceImpl
+    implements ApiAuthDataSource {
   ApiAuthDataSourceImpl({required super.network});
 
   @override
   Future<List<AppServer>> getServerLists() async {
     try {
-      final response = await apiClient.post('v2/server-lists', customUrl: kDomain, body: await getParams());
+      final response = await apiClient.post(
+        'v2/server-lists',
+        customUrl: kDomain,
+        body: await getParams(),
+      );
 
       final List<AppServer> records = [];
       for (var item in response["records"]) {
@@ -50,7 +55,10 @@ class ApiAuthDataSourceImpl extends BaseApiDataSourceImpl implements ApiAuthData
   @override
   Future<String> logout() async {
     try {
-      final response = await apiClient.post('v2/logout', body: await getParams());
+      final response = await apiClient.post(
+        'v2/logout',
+        body: await getParams(),
+      );
 
       return response["message"] as String;
     } catch (e) {
@@ -61,7 +69,22 @@ class ApiAuthDataSourceImpl extends BaseApiDataSourceImpl implements ApiAuthData
   @override
   Future<Map<String, dynamic>> getNotification({Map? arg}) async {
     try {
-      return await apiClient.post('v2/get-notification', body: await getParams(params: arg));
+      return await apiClient.post(
+        'v2/get-notification',
+        body: await getParams(params: arg),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> verifyResetPassword({Map? arg}) async {
+    try {
+      return apiClient.post(
+        'v2/verify-reset-password',
+        body: await getParams(params: arg),
+      );
     } catch (e) {
       rethrow;
     }

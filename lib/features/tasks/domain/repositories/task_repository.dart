@@ -262,4 +262,7 @@ abstract class TaskRepository extends BaseAppRepository {
     List<SalespersonSchedule> oldSchedules,
   );
   Future<Either<Failure, List<SalePersonGpsModel>>> getSalepersonGps();
+  Future<Either<Failure, List<SalespersonSchedule>>> getTeamSchedules({
+    Map<String, dynamic>? param,
+  });
 }

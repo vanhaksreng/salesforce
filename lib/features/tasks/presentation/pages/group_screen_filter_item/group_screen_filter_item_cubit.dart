@@ -15,7 +15,6 @@ class GroupScreenFilterItemCubit extends Cubit<GroupScreenFilterItemState> {
   bool hasMorePage = true;
 
   Future<void> selectedGroupCode(String code) async {
-    print("====================> $code");
     try {
       final List<String> currentCodes = List<String>.from(state.grupCode ?? []);
       if (currentCodes.contains(code)) {

@@ -4,16 +4,26 @@ import 'package:salesforce/features/report/domain/repositories/report_repository
 import 'package:salesforce/features/report/presentation/pages/daily_sale_summary_report/daily_sale_summary_report_state.dart';
 import 'package:salesforce/injection_container.dart';
 
-class DailySaleSummaryReportCubit extends Cubit<DailySaleSummaryReportState> with MessageMixin {
-  DailySaleSummaryReportCubit() : super(const DailySaleSummaryReportState(isLoading: true));
+class DailySaleSummaryReportCubit extends Cubit<DailySaleSummaryReportState>
+    with MessageMixin {
+  DailySaleSummaryReportCubit()
+    : super(const DailySaleSummaryReportState(isLoading: true));
 
   final ReportRepository _appRepos = getIt<ReportRepository>();
 
-  Future<void> getDailySalesSummaryReport({Map<String, dynamic>? param, int page = 1}) async {
+  Future<void> getDailySalesSummaryReport({
+    Map<String, dynamic>? param,
+    int page = 1,
+  }) async {
     try {
       emit(state.copyWith(isLoading: true));
-      final result = await _appRepos.getDailySalesSummaryReport(page: page, param: param);
-      result.fold((l) => throw Exception(), (records) => emit(state.copyWith(isLoading: false, records: records)));
+      final result = await _appRepos.getDailySalesSummaryReport(
+        page: page,
+        param: param,
+      );
+      result.fold((l) {
+        emit(state.copyWith(isLoading: false, error: l.message));
+      }, (records) => emit(state.copyWith(isLoading: false, records: records)));
     } catch (error) {
       emit(state.copyWith(error: error.toString(), isLoading: false));
     }
@@ -37,7 +47,8 @@ class DailySaleSummaryReportCubit extends Cubit<DailySaleSummaryReportState> wit
       final result = await _appRepos.getSalespersons(param: param);
       result.fold(
         (l) => throw Exception(),
-        (records) => emit(state.copyWith(isLoading: false, recordSalespersons: records)),
+        (records) =>
+            emit(state.copyWith(isLoading: false, recordSalespersons: records)),
       );
     } catch (error) {
       emit(state.copyWith(error: error.toString(), isLoading: false));

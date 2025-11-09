@@ -33,6 +33,7 @@ import 'package:salesforce/features/tasks/presentation/pages/sales_person_map/sa
 import 'package:salesforce/features/tasks/presentation/pages/schedule_history/schedule_history_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/tabbar_items/check_stock_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/tabbar_items/sales_item_screen.dart';
+import 'package:salesforce/features/tasks/presentation/pages/team_schedule_history/team_schedule_history_screen.dart';
 import 'package:salesforce/features/tasks/tasks_main_screen.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/tasks_schemas.dart';
@@ -304,8 +305,10 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case CustomerAddressScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
+          final data = settings.arguments as Map<String, dynamic>;
           return CustomerAddressScreen(
-            customerNo: settings.arguments as String,
+            customerNo: data["customer_no"] as String,
+            addressCode: data["address_no"] as String,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -389,7 +392,16 @@ Route<dynamic>? tasksOnGenerateRoute(RouteSettings settings) {
     case SalesPersonMapScreen.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return const SalesPersonMapScreen();
+          return SalesPersonMapScreen();
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return RouteST.st(animation, child, begin: 1, end: 0);
+        },
+      );
+    case TeamScheduleHistoryScreen.routeName:
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return TeamScheduleHistoryScreen();
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
