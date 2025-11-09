@@ -119,12 +119,21 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
               : [],
         );
       } else {
-        await apiClient.post(
+        await apiClient.postUploadFiles(
           'v2/update-schedule',
           body: await getParams(
             params: {'schedule': jsonEncode(schedule.toJson()), 'type': type},
           ),
+          files: schedule.checkOutImage != null
+              ? [XFile(schedule.checkOutImage!)]
+              : [],
         );
+
+        // await apiClient.post(
+        //   'v2/update-schedule',
+        //   body: await getParams(
+        //     params: {'schedule': jsonEncode(schedule.toJson()), 'type': type},
+        //   ),
       }
     } catch (e) {
       rethrow;

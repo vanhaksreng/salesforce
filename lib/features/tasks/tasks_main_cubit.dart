@@ -19,7 +19,10 @@ class TasksMainCubit extends Cubit<TasksMainState> with MessageMixin, AppMixin {
 
   Future<void> getUserSetup() async {
     final userSetupRes = await _repos.getUserSetup();
-    userSetupRes.fold((l) => throw GeneralException(l.message), (user) => emit(state.copyWith(user: user)));
+    userSetupRes.fold(
+      (l) => throw GeneralException(l.message),
+      (user) => emit(state.copyWith(user: user)),
+    );
   }
 
   void setText(String text) {
@@ -32,11 +35,18 @@ class TasksMainCubit extends Cubit<TasksMainState> with MessageMixin, AppMixin {
 
   Future<void> refreshSchedules() async {
     try {
-      final response = await _repos.getSchedules(DateTime.now().toDateString(), requestApi: true);
+      final response = await _repos.getSchedules(
+        DateTime.now().toDateString(),
+        requestApi: true,
+      );
 
-      response.fold((failure) => throw GeneralException(failure.message), (items) {
+      response.fold((failure) => throw GeneralException(failure.message), (
+        items,
+      ) {
         showSuccessMessage("Your schedule is up to date.");
-        emit(state.copyWith(isLoading: false, refreshChild: !state.refreshChild));
+        emit(
+          state.copyWith(isLoading: false, refreshChild: !state.refreshChild),
+        );
       });
     } on GeneralException catch (e) {
       showWarningMessage(e.message);
@@ -60,9 +70,17 @@ class TasksMainCubit extends Cubit<TasksMainState> with MessageMixin, AppMixin {
       },
     );
 
-    response.fold((failure) => emit(state.copyWith(hasPendingOldSchedule: false)), (schedules) {
-      emit(state.copyWith(hasPendingOldSchedule: schedules.isNotEmpty, oldSchedules: schedules));
-    });
+    response.fold(
+      (failure) => emit(state.copyWith(hasPendingOldSchedule: false)),
+      (schedules) {
+        emit(
+          state.copyWith(
+            hasPendingOldSchedule: schedules.isNotEmpty,
+            oldSchedules: schedules,
+          ),
+        );
+      },
+    );
   }
 
   Future<void> moveOldScheduleToCurrentDate() async {
@@ -77,6 +95,21 @@ class TasksMainCubit extends Cubit<TasksMainState> with MessageMixin, AppMixin {
       response.fold(
         (l) => throw GeneralException(l.message),
         (appVersion) => emit(state.copyWith(appVersion: appVersion)),
+      );
+    } on GeneralException catch (e) {
+      showWarningMessage(e.message);
+    } catch (error) {
+      showErrorMessage();
+    }
+  }
+
+  Future<void> getSalePersonGps() async {
+    try {
+      emit(state.copyWith(refreshChild: false, isLoading: false));
+      final response = await _repos.getSalepersonGps();
+      response.fold(
+        (failure) => throw GeneralException(failure.message),
+        (items) => emit(state.copyWith(salePersonGps: items)),
       );
     } on GeneralException catch (e) {
       showWarningMessage(e.message);

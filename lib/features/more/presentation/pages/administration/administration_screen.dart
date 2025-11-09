@@ -1,7 +1,7 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/row_box_text_widget.dart';
@@ -16,10 +16,11 @@ import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/domain/entities/device_info.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_state.dart';
-import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_page_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_thermal_printer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/imin_device/printer_test_page.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AdministrationScreen extends StatefulWidget {
   const AdministrationScreen({super.key});
@@ -49,31 +50,43 @@ class AdministrationScreenState extends State<AdministrationScreen>
   Future<void> _initializeScreen() async {
     await _cubit.checkInforDevice();
     await checkIminDevice();
-    _refreshBluetoothDevices();
+    await _refreshBluetoothDevices();
   }
 
   Future<void> checkIminDevice() async {
-    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    final deviceInfo = DeviceInfoPlugin();
     await _cubit.checkIminDevice(deviceInfo);
   }
 
-  void _refreshBluetoothDevices() {
-    final connectedDevices = FlutterBluePlus.connectedDevices;
-    _cubit.checkBluetoothDevie(connectedDevices);
+  Future<String?> _getStoredConnectedMac() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('connected_printer_mac');
   }
 
-  Future<void> _navigateToBluetoothPage(BluetoothDevice? currentDevice) async {
+  Future<void> _refreshBluetoothDevices() async {
+    String? storedMac = await _getStoredConnectedMac();
+    print('storedMac=============${storedMac}');
+    if ((storedMac ?? "").isEmpty) {
+      return;
+    }
+    final connectedDevices = await PrintBluetoothThermal.pairedBluetooths;
+
+    final device = connectedDevices
+        .where((e) => e.macAdress == storedMac)
+        .first;
+
+    _cubit.checkBluetoothDevie(device);
+  }
+
+  Future<void> _navigateToBluetoothPage(BluetoothInfo? currentDevice) async {
     final result = await Navigator.pushNamed(
       context,
-      BluetoothPageScreen.routeName,
+      BluetoothThermalPrinterScreen.routeName,
       arguments: currentDevice,
     );
+    if (result == null) return;
 
-    _refreshBluetoothDevices();
-
-    if (result != null && mounted) {
-      setState(() {});
-    }
+    await _refreshBluetoothDevices();
   }
 
   @override
@@ -82,8 +95,10 @@ class AdministrationScreenState extends State<AdministrationScreen>
       appBar: AppBarWidget(title: greeting("Administration")),
       body: BlocBuilder<AdministrationCubit, AdministrationState>(
         bloc: _cubit,
-        builder: (context, state) =>
-            state.isLoading ? const LoadingPageWidget() : _buildBody(state),
+        builder: (context, state) {
+          if (state.isLoading) return const LoadingPageWidget();
+          return _buildBody(state);
+        },
       ),
     );
   }
@@ -116,7 +131,6 @@ class AdministrationScreenState extends State<AdministrationScreen>
 
   Widget _buildQuickStats(AdministrationState state) {
     return Row(
-      spacing: 16,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _buildStatCard(
@@ -124,7 +138,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
           label: "Connected Devices",
           color: success,
         ),
-        _buildStatCard(value: "0", label: "Print job today", color: mainColor),
+        // _buildStatCard(value: "0", label: "Print job today", color: mainColor),
       ],
     );
   }
@@ -156,14 +170,11 @@ class AdministrationScreenState extends State<AdministrationScreen>
 
   Widget _buildAdminOptions(AdministrationState state) {
     return Column(
-      spacing: 16,
       children: [
-        if (!state.isIminDevice) ...[
-          _buildBluetoothPrintingSection(state),
-        ] else ...[
+        if (!state.isIminDevice)
+          _buildBluetoothPrintingSection(state)
+        else
           _buildAPKDeploymentSection(state),
-        ],
-        // _buildAPKDeploymentSection(state),
       ],
     );
   }
@@ -175,9 +186,10 @@ class AdministrationScreenState extends State<AdministrationScreen>
       bgIcon: primary,
       icon: Icon(Icons.bluetooth, color: white),
       child: Column(
-        spacing: scaleFontSize(16),
+        spacing: scaleFontSize(appSpace),
         children: [
           _buildBluetoothConnectionStatus(state.bluetoothDevice),
+
           BtnWidget(
             onPressed: () => _navigateToBluetoothPage(state.bluetoothDevice),
             title: "Manage Bluetooth Printing",
@@ -196,13 +208,10 @@ class AdministrationScreenState extends State<AdministrationScreen>
       bgIcon: warning,
       icon: Icon(Icons.mobile_friendly, color: white),
       child: Column(
-        spacing: scaleFontSize(16),
         children: [
           _buildDeviceInfo(state.deviceInfo),
           BtnWidget(
-            onPressed: () {
-              _showComingSoonMessage();
-            },
+            onPressed: _showComingSoonMessage,
             title: "Running on iMin",
             gradient: linearGradient,
             suffixIcon: const Icon(Icons.upload),
@@ -212,7 +221,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
     );
   }
 
-  Widget _buildBluetoothConnectionStatus(BluetoothDevice? bluetoothDevice) {
+  Widget _buildBluetoothConnectionStatus(BluetoothInfo? bluetoothDevice) {
     if (!_isDeviceConnected(bluetoothDevice)) {
       return _buildDisconnectedStatus();
     }
@@ -223,7 +232,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: textColor50.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
@@ -233,7 +242,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.bluetooth_disabled, size: 18, color: textColor50),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             TextWidget(
               text: "No device connected",
               fontSize: 14,
@@ -246,13 +255,13 @@ class AdministrationScreenState extends State<AdministrationScreen>
     );
   }
 
-  Widget _buildConnectedDeviceInfo(BluetoothDevice bluetoothDevice) {
+  Widget _buildConnectedDeviceInfo(BluetoothInfo bluetoothDevice) {
     return _buildInfoCard(
       title: "Connected Printers",
-      deviceName: bluetoothDevice.platformName.isNotEmpty
-          ? bluetoothDevice.platformName
+      deviceName: bluetoothDevice.name.isNotEmpty
+          ? bluetoothDevice.name
           : "Unknown Device",
-      deviceId: bluetoothDevice.remoteId.toString(),
+      deviceId: bluetoothDevice.macAdress ?? "Unknown",
     );
   }
 
@@ -277,7 +286,6 @@ class AdministrationScreenState extends State<AdministrationScreen>
       borderColor: success.withValues(alpha: 0.3),
       isBoxShadow: false,
       child: Column(
-        spacing: scaleFontSize(6),
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextWidget(
@@ -287,9 +295,9 @@ class AdministrationScreenState extends State<AdministrationScreen>
             color: success,
           ),
           Row(
-            spacing: scaleFontSize(8),
             children: [
               Icon(Icons.circle, color: success, size: scaleFontSize(10)),
+              const SizedBox(width: 8),
               Expanded(
                 child: TextWidget(
                   text: deviceName,
@@ -309,11 +317,12 @@ class AdministrationScreenState extends State<AdministrationScreen>
   }
 
   // MARK: - Helper Methods
-  bool _isDeviceConnected(BluetoothDevice? device) {
-    return device?.isConnected == true;
+
+  bool _isDeviceConnected(BluetoothInfo? device) {
+    return device != null && device.name.isNotEmpty;
   }
 
-  String _getConnectedDeviceCount(BluetoothDevice? device) {
+  String _getConnectedDeviceCount(BluetoothInfo? device) {
     return _isDeviceConnected(device) ? "1" : "0";
   }
 

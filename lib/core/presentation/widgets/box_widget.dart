@@ -49,12 +49,20 @@ class BoxWidget extends StatelessWidget {
   final bool isRounding;
   final Border? border;
   final Gradient? gradient;
-  // final List<BoxShadow>? boxShadow;
 
   @override
   Widget build(BuildContext context) {
     final borderRadius = BorderRadius.circular(scaleFontSize(rounding));
-    final boxShadow = isBoxShadow ? [BoxShadow(color: grey, blurRadius: blurRadius, offset: const Offset(0, 1))] : null;
+    final boxShadow = isBoxShadow
+        ? [
+            BoxShadow(
+              color: grey20,
+              blurRadius: blurRadius,
+              offset: const Offset(0.5, 0.3),
+              spreadRadius: 0,
+            ),
+          ]
+        : null;
 
     Border? borderCondition() {
       if (isBorder) {
@@ -88,6 +96,8 @@ class BoxWidget extends StatelessWidget {
       child: child,
     );
 
-    return onPress == null ? container : InkWell(onTap: onPress, child: container);
+    return onPress == null
+        ? container
+        : InkWell(onTap: onPress, child: container);
   }
 }

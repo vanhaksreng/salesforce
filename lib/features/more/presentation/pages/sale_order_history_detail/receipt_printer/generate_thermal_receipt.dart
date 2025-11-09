@@ -1,20 +1,18 @@
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
-import 'package:image/image.dart' as img;
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_helpers.dart';
+// import 'dart:typed_data';
+// import 'dart:ui' as ui;
+// import 'package:flutter/material.dart';
+// import 'package:image/image.dart' as img;
+// import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+// import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_helpers.dart';
 
-// === MAIN PRINT FUNCTION ===
+// // === MAIN PRINT FUNCTION ===
 // Future<List<int>> printRichKhmerTextFor80mm(
 //   List<StyledTextSegment> segments,
 // ) async {
 //   final profile = await CapabilityProfile.load();
 //   final generator = Generator(PaperSize.mm80, profile);
-
 //   List<int> bytes = [];
 
-//   // XP-P323B supports up to 576 pixels width for 80mm paper
 //   const int paperWidthPixels = 576;
 
 //   final image = await generateRichKhmerTextAsImgImage(
@@ -31,11 +29,17 @@ import 'package:salesforce/features/more/presentation/pages/sale_order_history_d
 //   return bytes;
 // }
 
+// // === GENERATE IMAGE FUNCTION ===
 // Future<ByteData?> generateKhmerTextImageFor80mm(
 //   List<StyledTextSegment> segments,
 //   int width,
 //   int? height,
 // ) async {
+//   segments = segments.where((segment) {
+//     if (segment.image != null) return true;
+//     return segment.text.trim().isNotEmpty && segment.text.trim() != "0";
+//   }).toList();
+
 //   final recorder = ui.PictureRecorder();
 //   final tempHeight = height ?? 2000;
 
@@ -45,74 +49,95 @@ import 'package:salesforce/features/more/presentation/pages/sale_order_history_d
 //   );
 
 //   // White background
-//   final paint = ui.Paint()..color = Colors.white;
+//   final bgPaint = ui.Paint()
+//     ..color = const Color(0xFFFFFFFF)
+//     ..style = ui.PaintingStyle.fill;
+
 //   canvas.drawRect(
 //     ui.Rect.fromLTWH(0, 0, width.toDouble(), tempHeight.toDouble()),
-//     paint,
+//     bgPaint,
 //   );
 
-//   double yOffset = XP323BConfig.topMargin.toDouble();
+//   double yOffset = 10.0;
 
 //   for (final segment in segments) {
 //     if (segment.image != null) {
-//       final uiCodec = await ui.instantiateImageCodec(segment.image!);
-//       final frame = await uiCodec.getNextFrame();
-//       final uiImage = frame.image;
+//       // === Draw image ===
+//       try {
+//         final uiCodec = await ui.instantiateImageCodec(segment.image!);
+//         final frame = await uiCodec.getNextFrame();
+//         final uiImage = frame.image;
 
-//       final targetWidth = (segment.imageWidth ?? uiImage.width).toDouble();
-//       final targetHeight = (segment.imageHeight ?? uiImage.height).toDouble();
+//         final targetWidth = (segment.imageWidth ?? uiImage.width).toDouble();
+//         final targetHeight = (segment.imageHeight ?? uiImage.height).toDouble();
 
-//       final srcRect = ui.Rect.fromLTWH(
-//         0,
-//         0,
-//         uiImage.width.toDouble(),
-//         uiImage.height.toDouble(),
-//       );
+//         final srcRect = ui.Rect.fromLTWH(
+//           0,
+//           0,
+//           uiImage.width.toDouble(),
+//           uiImage.height.toDouble(),
+//         );
+//         final dstRect = ui.Rect.fromLTWH(
+//           (width - targetWidth) / 2,
+//           yOffset,
+//           targetWidth,
+//           targetHeight,
+//         );
 
-//       // Center horizontally with custom width/height
-//       final dstRect = ui.Rect.fromLTWH(
-//         (width - targetWidth) / 2,
-//         yOffset,
-//         targetWidth,
-//         targetHeight,
-//       );
-
-//       canvas.drawImageRect(uiImage, srcRect, dstRect, ui.Paint());
-//       yOffset += targetHeight + 10; // margin below image
+//         canvas.drawImageRect(uiImage, srcRect, dstRect, ui.Paint());
+//         yOffset += targetHeight + 10;
+//       } catch (e) {
+//         debugPrint("⚠️ Image draw failed: $e");
+//       }
 //     } else if (segment.isRow) {
-//       // === TABLE ROW ===
-//       double rowHeight = _drawRow(
+//       // === Draw table row ===
+//       final rowHeight = _drawRow(
 //         canvas,
 //         segment.text,
 //         yOffset,
 //         width,
 //         fontSize: _getFontSizeFor80mm(segment.fontSize),
+//         style: segment.style,
 //       );
 //       yOffset += rowHeight;
-//     } else if (segment.text.isNotEmpty) {
-//       // === NORMAL TEXT ===
+//     } else if (segment.text.trim().isNotEmpty) {
+//       // === Draw normal text ===
 //       final span = TextSpan(
 //         text: segment.text,
 //         style: TextStyle(
-//           fontFamily: 'Siemreap',
 //           fontSize: _getFontSizeFor80mm(segment.fontSize),
 //           fontWeight: _getFontWeight(segment.style),
 //           fontStyle: _getFontStyle(segment.style),
-//           color: segment.color ?? Colors.black,
+//           color: Colors.black,
 //           height: 1.3,
+//           letterSpacing: 0.5,
 //         ),
 //       );
 
 //       final textPainter = TextPainter(
 //         text: span,
 //         textDirection: TextDirection.ltr,
-//         textAlign: TextAlign.left,
+//         textAlign: segment.textAlign ?? TextAlign.left,
 //         maxLines: segment.maxline,
 //       );
 
 //       textPainter.layout(maxWidth: width.toDouble() - 40);
-//       textPainter.paint(canvas, Offset(20, yOffset));
-//       yOffset += textPainter.height;
+
+//       // Alignment
+//       Offset offset;
+//       switch (segment.textAlign) {
+//         case TextAlign.center:
+//           offset = Offset((width - textPainter.width) / 2, yOffset);
+//           break;
+//         case TextAlign.right:
+//           offset = Offset(width - textPainter.width - 20, yOffset);
+//           break;
+//         default:
+//           offset = Offset(20, yOffset);
+//       }
+
+//       textPainter.paint(canvas, offset);
+//       yOffset += textPainter.height + (segment.rowHeight ?? 0);
 //     }
 //   }
 
@@ -123,57 +148,57 @@ import 'package:salesforce/features/more/presentation/pages/sale_order_history_d
 //   return await uiImage.toByteData(format: ui.ImageByteFormat.png);
 // }
 
-// // === TABLE DRAWING FUNCTION ===
-
+// // === TABLE ROW FUNCTION ===
 // double _drawRow(
 //   ui.Canvas canvas,
 //   String text,
 //   double y,
 //   int paperWidth, {
 //   double fontSize = 18,
+//   KhmerTextStyle style = KhmerTextStyle.normal,
 // }) {
 //   final lines = text.split('\n');
 //   double currentY = y;
-//   double lineHeight = fontSize + 16;
+//   double lineHeight = fontSize + 12;
 
-//   for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-//     final parts = lines[lineIndex].split('|');
-//     final colX = [10.0, 60.0, 280.0, 350.0, 420.0, 480.0];
+//   final colX = [10.0, 60.0, 280.0, 350.0, 420.0, 480.0];
 
+//   for (final line in lines) {
+//     if (line.trim().isEmpty || line.trim() == "0") continue;
+
+//     final parts = line.split('|');
 //     for (int i = 0; i < parts.length && i < colX.length; i++) {
+//       final cellText = parts[i].trim();
+//       if (cellText.isEmpty) continue;
+
 //       final span = TextSpan(
-//         text: parts[i].trim(),
+//         text: cellText,
 //         style: TextStyle(
-//           fontFamily: 'Siemreap',
 //           fontSize: fontSize,
+//           fontWeight: _getFontWeight(style),
 //           color: Colors.black,
+//           letterSpacing: 0.3,
 //         ),
 //       );
 
 //       final tp = TextPainter(
 //         text: span,
 //         textDirection: TextDirection.ltr,
-//         textAlign: i == 0 || i == 1 ? TextAlign.left : TextAlign.right,
+//         textAlign: (i == 0 || i == 1) ? TextAlign.left : TextAlign.right,
 //         maxLines: 1,
 //       );
 
-//       // Calculate maxWidth safely
-//       double maxWidth;
-//       if (i < colX.length - 1) {
-//         maxWidth = colX[i + 1] - colX[i] - 5;
-//       } else {
-//         maxWidth = paperWidth - colX[i] - 10;
-//       }
+//       double maxWidth = (i < colX.length - 1)
+//           ? colX[i + 1] - colX[i] - 5
+//           : paperWidth - colX[i] - 10;
 
 //       tp.layout(maxWidth: maxWidth);
 //       tp.paint(canvas, Offset(colX[i], currentY));
 //     }
 
-//     // Move to next line
 //     currentY += lineHeight;
 //   }
 
-//   // Return the total height used by this row
 //   return currentY - y;
 // }
 
@@ -193,13 +218,13 @@ import 'package:salesforce/features/more/presentation/pages/sale_order_history_d
 // double _getFontSizeFor80mm(KhmerFontSize fontSize) {
 //   switch (fontSize) {
 //     case KhmerFontSize.small:
-//       return 14.0;
+//       return 16.0;
 //     case KhmerFontSize.normal:
-//       return 18.0;
-//     case KhmerFontSize.large:
 //       return 24.0;
+//     case KhmerFontSize.large:
+//       return 28.0;
 //     case KhmerFontSize.extraLarge:
-//       return 30.0;
+//       return 36.0;
 //   }
 // }
 
@@ -207,9 +232,9 @@ import 'package:salesforce/features/more/presentation/pages/sale_order_history_d
 //   switch (style) {
 //     case KhmerTextStyle.bold:
 //     case KhmerTextStyle.boldItalic:
-//       return FontWeight.bold;
+//       return FontWeight.w900;
 //     default:
-//       return FontWeight.normal;
+//       return FontWeight.w600;
 //   }
 // }
 
@@ -222,231 +247,264 @@ import 'package:salesforce/features/more/presentation/pages/sale_order_history_d
 //       return FontStyle.normal;
 //   }
 // }
-//=======================sdfasd=f===============================================
 
-// === MAIN PRINT FUNCTION ===
-Future<List<int>> printRichKhmerTextFor80mm(
-  List<StyledTextSegment> segments,
-) async {
-  final profile = await CapabilityProfile.load();
-  final generator = Generator(PaperSize.mm80, profile);
+// // import 'dart:typed_data';
+// // import 'dart:ui' as ui;
+// // import 'package:flutter/material.dart';
+// // import 'package:image/image.dart' as img;
+// // import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+// // import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_helpers.dart';
 
-  List<int> bytes = [];
+// // // === MAIN PRINT FUNCTION ===
+// // Future<List<int>> printRichKhmerTextFor80mm(
+// //   List<StyledTextSegment> segments,
+// // ) async {
+// //   final profile = await CapabilityProfile.load();
+// //   final generator = Generator(PaperSize.mm80, profile);
+// //   List<int> bytes = [];
 
-  const int paperWidthPixels = 576;
+// //   const int paperWidthPixels = 576;
 
-  final image = await generateRichKhmerTextAsImgImage(
-    segments,
-    paperWidthPixels,
-    null,
-  );
+// //   final image = await generateRichKhmerTextAsImgImage(
+// //     segments,
+// //     paperWidthPixels,
+// //     null,
+// //   );
 
-  if (image != null) {
-    bytes += generator.image(image);
-  }
+// //   if (image != null) {
+// //     bytes += generator.image(image);
+// //   }
 
-  bytes += generator.feed(1);
-  return bytes;
-}
+// //   bytes += generator.feed(1);
+// //   return bytes;
+// // }
 
-// === GENERATE IMAGE FUNCTION ===
-Future<ByteData?> generateKhmerTextImageFor80mm(
-  List<StyledTextSegment> segments,
-  int width,
-  int? height,
-) async {
-  final recorder = ui.PictureRecorder();
-  final tempHeight = height ?? 2000;
+// // // === GENERATE IMAGE FUNCTION ===
+// // Future<ByteData?> generateKhmerTextImageFor80mm(
+// //   List<StyledTextSegment> segments,
+// //   int width,
+// //   int? height,
+// // ) async {
+// //   segments = segments.where((segment) {
+// //     if (segment.image != null) return true;
+// //     return segment.text.trim().isNotEmpty && segment.text.trim() != "0";
+// //   }).toList();
 
-  final canvas = ui.Canvas(
-    recorder,
-    ui.Rect.fromLTWH(0, 0, width.toDouble(), tempHeight.toDouble()),
-  );
+// //   final recorder = ui.PictureRecorder();
+// //   final tempHeight = height ?? 2000;
 
-  // White background
-  final paint = ui.Paint()..color = Colors.white;
-  canvas.drawRect(
-    ui.Rect.fromLTWH(0, 0, width.toDouble(), tempHeight.toDouble()),
-    paint,
-  );
+// //   final canvas = ui.Canvas(
+// //     recorder,
+// //     ui.Rect.fromLTWH(0, 0, width.toDouble(), tempHeight.toDouble()),
+// //   );
 
-  double yOffset = XP323BConfig.topMargin.toDouble();
+// //   // PURE WHITE background - critical for thermal printers
+// //   final bgPaint = ui.Paint()
+// //     ..color =
+// //         const Color(0xFFFFFFFF) // Pure white
+// //     ..style = ui.PaintingStyle.fill;
+// //   canvas.drawRect(
+// //     ui.Rect.fromLTWH(0, 0, width.toDouble(), tempHeight.toDouble()),
+// //     bgPaint,
+// //   );
 
-  for (final segment in segments) {
-    if (segment.image != null) {
-      // Draw image
-      final uiCodec = await ui.instantiateImageCodec(segment.image!);
-      final frame = await uiCodec.getNextFrame();
-      final uiImage = frame.image;
+// //   double yOffset = XP323BConfig.topMargin > 0
+// //       ? XP323BConfig.topMargin.toDouble()
+// //       : 10.0;
 
-      final targetWidth = (segment.imageWidth ?? uiImage.width).toDouble();
-      final targetHeight = (segment.imageHeight ?? uiImage.height).toDouble();
+// //   for (final segment in segments) {
+// //     if (segment.image == null &&
+// //         (segment.text.isEmpty || segment.text.trim().isEmpty)) {
+// //       continue;
+// //     }
 
-      final srcRect = ui.Rect.fromLTWH(
-        0,
-        0,
-        uiImage.width.toDouble(),
-        uiImage.height.toDouble(),
-      );
-      final dstRect = ui.Rect.fromLTWH(
-        (width - targetWidth) / 2, // center horizontally
-        yOffset,
-        targetWidth,
-        targetHeight,
-      );
+// //     if (segment.image != null) {
+// //       // Draw image
+// //       final uiCodec = await ui.instantiateImageCodec(segment.image!);
+// //       final frame = await uiCodec.getNextFrame();
+// //       final uiImage = frame.image;
 
-      canvas.drawImageRect(uiImage, srcRect, dstRect, ui.Paint());
-      yOffset += targetHeight + 10; // margin below image
-    } else if (segment.isRow) {
-      // Draw table row
-      double rowHeight = _drawRow(
-        canvas,
-        segment.text,
-        yOffset,
-        width,
-        fontSize: _getFontSizeFor80mm(segment.fontSize),
-      );
-      yOffset += rowHeight;
-    } else if (segment.text.isNotEmpty) {
-      // Draw normal text
-      final span = TextSpan(
-        text: segment.text,
-        style: TextStyle(
-          fontFamily: 'Siemreap',
-          fontSize: _getFontSizeFor80mm(segment.fontSize),
-          fontWeight: _getFontWeight(segment.style),
-          fontStyle: _getFontStyle(segment.style),
-          color: segment.color ?? Colors.black,
-          height: 1.3,
-        ),
-      );
+// //       final targetWidth = (segment.imageWidth ?? uiImage.width).toDouble();
+// //       final targetHeight = (segment.imageHeight ?? uiImage.height).toDouble();
 
-      final textPainter = TextPainter(
-        text: span,
-        textDirection: TextDirection.ltr,
-        textAlign: segment.textAlign ?? TextAlign.left,
-        maxLines: segment.maxline,
-      );
+// //       final srcRect = ui.Rect.fromLTWH(
+// //         0,
+// //         0,
+// //         uiImage.width.toDouble(),
+// //         uiImage.height.toDouble(),
+// //       );
+// //       final dstRect = ui.Rect.fromLTWH(
+// //         (width - targetWidth) / 2,
+// //         yOffset,
+// //         targetWidth,
+// //         targetHeight,
+// //       );
 
-      textPainter.layout(maxWidth: width.toDouble() - 40);
+// //       canvas.drawImageRect(uiImage, srcRect, dstRect, ui.Paint());
+// //       yOffset += targetHeight + 10;
+// //     } else if (segment.isRow) {
+// //       // Draw table row
+// //       double rowHeight = _drawRow(
+// //         canvas,
+// //         segment.text,
+// //         yOffset,
+// //         width,
+// //         fontSize: _getFontSizeFor80mm(segment.fontSize),
+// //         style: segment.style,
+// //       );
+// //       yOffset += rowHeight;
+// //     } else if (segment.text.isNotEmpty) {
+// //       // Draw normal text
+// //       final span = TextSpan(
+// //         text: segment.text,
+// //         style: TextStyle(
+// //           fontFamily: 'Siemreap',
+// //           fontSize: _getFontSizeFor80mm(segment.fontSize),
+// //           fontWeight: _getFontWeight(segment.style),
+// //           fontStyle: _getFontStyle(segment.style),
+// //           color: const Color(0xFF000000), // Pure black
+// //           height: 1.3,
+// //           // Add letter spacing for better clarity
+// //           letterSpacing: 0.5,
+// //         ),
+// //       );
 
-      // Calculate proper offset based on alignment
-      Offset offset;
-      switch (segment.textAlign) {
-        case TextAlign.center:
-          offset = Offset((width - textPainter.width) / 2, yOffset);
-          break;
-        case TextAlign.right:
-          offset = Offset(width - textPainter.width - 20, yOffset);
-          break;
-        default:
-          offset = Offset(20, yOffset); // left padding
-      }
+// //       final textPainter = TextPainter(
+// //         text: span,
+// //         textDirection: TextDirection.ltr,
+// //         textAlign: segment.textAlign ?? TextAlign.left,
+// //         maxLines: segment.maxline,
+// //       );
 
-      textPainter.paint(canvas, offset);
-      yOffset += textPainter.height + (segment.rowHeight ?? 0);
-    }
-  }
+// //       textPainter.layout(maxWidth: width.toDouble() - 40);
 
-  final picture = recorder.endRecording();
-  final calculatedHeight = height ?? (yOffset + 30).ceil();
+// //       // Calculate proper offset based on alignment
+// //       Offset offset;
+// //       switch (segment.textAlign) {
+// //         case TextAlign.center:
+// //           offset = Offset((width - textPainter.width) / 2, yOffset);
+// //           break;
+// //         case TextAlign.right:
+// //           offset = Offset(width - textPainter.width - 20, yOffset);
+// //           break;
+// //         default:
+// //           offset = Offset(20, yOffset);
+// //       }
 
-  final uiImage = await picture.toImage(width, calculatedHeight);
-  return await uiImage.toByteData(format: ui.ImageByteFormat.png);
-}
+// //       textPainter.paint(canvas, offset);
+// //       yOffset += textPainter.height + (segment.rowHeight ?? 0);
+// //     }
+// //   }
 
-// === TABLE ROW FUNCTION ===
-double _drawRow(
-  ui.Canvas canvas,
-  String text,
-  double y,
-  int paperWidth, {
-  double fontSize = 18,
-}) {
-  final lines = text.split('\n');
-  double currentY = y;
-  double lineHeight = fontSize + 16;
+// //   final picture = recorder.endRecording();
+// //   final calculatedHeight = height ?? (yOffset + 30).ceil();
 
-  for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-    final parts = lines[lineIndex].split('|');
-    final colX = [10.0, 60.0, 280.0, 350.0, 420.0, 480.0];
+// //   final uiImage = await picture.toImage(width, calculatedHeight);
+// //   return await uiImage.toByteData(format: ui.ImageByteFormat.png);
+// // }
 
-    for (int i = 0; i < parts.length && i < colX.length; i++) {
-      final span = TextSpan(
-        text: parts[i].trim(),
-        style: TextStyle(
-          fontFamily: 'Siemreap',
-          fontSize: fontSize,
-          color: Colors.black,
-        ),
-      );
+// // // === TABLE ROW FUNCTION - FIXED ===
+// // double _drawRow(
+// //   ui.Canvas canvas,
+// //   String text,
+// //   double y,
+// //   int paperWidth, {
+// //   double fontSize = 18,
+// //   KhmerTextStyle style = KhmerTextStyle.normal,
+// // }) {
+// //   final lines = text.split('\n');
+// //   double currentY = y;
+// //   double lineHeight = fontSize + 16;
 
-      final tp = TextPainter(
-        text: span,
-        textDirection: TextDirection.ltr,
-        textAlign: i == 0 || i == 1 ? TextAlign.left : TextAlign.right,
-        maxLines: 1,
-      );
+// //   for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+// //     if (lines[lineIndex].trim().isEmpty || lines[lineIndex].trim() == "0") {
+// //       continue;
+// //     }
 
-      double maxWidth;
-      if (i < colX.length - 1) {
-        maxWidth = colX[i + 1] - colX[i] - 5;
-      } else {
-        maxWidth = paperWidth - colX[i] - 10;
-      }
+// //     final parts = lines[lineIndex].split('|');
+// //     final colX = [10.0, 60.0, 280.0, 350.0, 420.0, 480.0];
 
-      tp.layout(maxWidth: maxWidth);
-      tp.paint(canvas, Offset(colX[i], currentY));
-    }
+// //     for (int i = 0; i < parts.length && i < colX.length; i++) {
+// //       final cellText = parts[i].trim();
+// //       if (cellText.isEmpty || cellText == "0") continue;
 
-    currentY += lineHeight;
-  }
+// //       final span = TextSpan(
+// //         text: cellText,
+// //         style: TextStyle(
+// //           fontFamily: 'Siemreap',
+// //           fontSize: fontSize,
+// //           fontWeight: _getFontWeight(style), // Apply bold from segment
+// //           color: const Color(0xFF000000), // Pure black
+// //           letterSpacing: 0.3, // Better spacing
+// //         ),
+// //       );
 
-  return currentY - y;
-}
+// //       final tp = TextPainter(
+// //         text: span,
+// //         textDirection: TextDirection.ltr,
+// //         textAlign: i == 0 || i == 1 ? TextAlign.left : TextAlign.right,
+// //         maxLines: 1,
+// //       );
 
-// === WRAPPER TO IMAGE ===
-Future<img.Image?> generateRichKhmerTextAsImgImage(
-  List<StyledTextSegment> segments,
-  int width,
-  int? height,
-) async {
-  final byteData = await generateKhmerTextImageFor80mm(segments, width, height);
-  if (byteData == null) return null;
-  final uint8List = byteData.buffer.asUint8List();
-  return img.decodePng(uint8List);
-}
+// //       double maxWidth;
+// //       if (i < colX.length - 1) {
+// //         maxWidth = colX[i + 1] - colX[i] - 5;
+// //       } else {
+// //         maxWidth = paperWidth - colX[i] - 10;
+// //       }
 
-// === FONT SETTINGS ===
-double _getFontSizeFor80mm(KhmerFontSize fontSize) {
-  switch (fontSize) {
-    case KhmerFontSize.small:
-      return 14.0;
-    case KhmerFontSize.normal:
-      return 18.0;
-    case KhmerFontSize.large:
-      return 24.0;
-    case KhmerFontSize.extraLarge:
-      return 30.0;
-  }
-}
+// //       tp.layout(maxWidth: maxWidth);
+// //       tp.paint(canvas, Offset(colX[i], currentY));
+// //     }
 
-FontWeight _getFontWeight(KhmerTextStyle style) {
-  switch (style) {
-    case KhmerTextStyle.bold:
-    case KhmerTextStyle.boldItalic:
-      return FontWeight.bold;
-    default:
-      return FontWeight.normal;
-  }
-}
+// //     currentY += lineHeight;
+// //   }
 
-FontStyle _getFontStyle(KhmerTextStyle style) {
-  switch (style) {
-    case KhmerTextStyle.italic:
-    case KhmerTextStyle.boldItalic:
-      return FontStyle.italic;
-    default:
-      return FontStyle.normal;
-  }
-}
+// //   return currentY - y;
+// // }
+
+// // // === WRAPPER TO IMAGE ===
+// // Future<img.Image?> generateRichKhmerTextAsImgImage(
+// //   List<StyledTextSegment> segments,
+// //   int width,
+// //   int? height,
+// // ) async {
+// //   final byteData = await generateKhmerTextImageFor80mm(segments, width, height);
+// //   if (byteData == null) return null;
+// //   final uint8List = byteData.buffer.asUint8List();
+// //   return img.decodePng(uint8List);
+// // }
+
+// // // === FONT SETTINGS - INCREASED SIZES ===
+// // double _getFontSizeFor80mm(KhmerFontSize fontSize) {
+// //   switch (fontSize) {
+// //     case KhmerFontSize.small:
+// //       return 16.0; // Increased from 14
+// //     case KhmerFontSize.normal:
+// //       return 20.0; // Increased from 18
+// //     case KhmerFontSize.large:
+// //       return 28.0; // Increased from 24
+// //     case KhmerFontSize.extraLarge:
+// //       return 36.0; // Increased from 30
+// //   }
+// // }
+
+// // FontWeight _getFontWeight(KhmerTextStyle style) {
+// //   switch (style) {
+// //     case KhmerTextStyle.bold:
+// //     case KhmerTextStyle.boldItalic:
+// //       return FontWeight.w900; // Changed from bold to w900 (bolder)
+// //     default:
+// //       return FontWeight.w600; // Changed from normal to w600 (semi-bold)
+// //   }
+// // }
+
+// // FontStyle _getFontStyle(KhmerTextStyle style) {
+// //   switch (style) {
+// //     case KhmerTextStyle.italic:
+// //     case KhmerTextStyle.boldItalic:
+// //       return FontStyle.italic;
+// //     default:
+// //       return FontStyle.normal;
+// //   }
+// // }

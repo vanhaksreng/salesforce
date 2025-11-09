@@ -1,4 +1,5 @@
 import 'package:salesforce/features/tasks/domain/entities/app_version.dart';
+import 'package:salesforce/features/tasks/domain/entities/sale_person_gps_model.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 
@@ -13,6 +14,7 @@ class TasksMainState {
   final AppVersion? appVersion;
   final UserSetup? user;
   final List<SalespersonSchedule> oldSchedules;
+  final List<SalePersonGpsModel> salePersonGps;
 
   const TasksMainState({
     this.isLoading = false,
@@ -25,6 +27,7 @@ class TasksMainState {
     this.user,
     this.hasPendingOldSchedule = false,
     this.oldSchedules = const [],
+    this.salePersonGps = const [],
   });
 
   TasksMainState copyWith({
@@ -38,6 +41,7 @@ class TasksMainState {
     UserSetup? user,
     bool? hasPendingOldSchedule,
     List<SalespersonSchedule>? oldSchedules,
+    List<SalePersonGpsModel>? salePersonGps,
   }) {
     return TasksMainState(
       isLoading: isLoading ?? this.isLoading,
@@ -48,8 +52,10 @@ class TasksMainState {
       text: text ?? this.text,
       appVersion: appVersion ?? this.appVersion,
       user: user ?? this.user,
-      hasPendingOldSchedule: hasPendingOldSchedule ?? this.hasPendingOldSchedule,
+      hasPendingOldSchedule:
+          hasPendingOldSchedule ?? this.hasPendingOldSchedule,
       oldSchedules: oldSchedules ?? this.oldSchedules,
+      salePersonGps: salePersonGps ?? this.salePersonGps,
     );
   }
 }

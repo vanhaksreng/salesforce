@@ -54,7 +54,8 @@ class PromotionTypeHandler extends BaseTableHandler<PromotionType> {
   Type get type => PromotionType;
 }
 
-class PointOfSalesMaterialHandler extends BaseTableHandler<PointOfSalesMaterial> {
+class PointOfSalesMaterialHandler
+    extends BaseTableHandler<PointOfSalesMaterial> {
   @override
   String get tableName => "point_of_sales_material";
 
@@ -134,7 +135,8 @@ class VatPostingSetupHandler extends BaseTableHandler<VatPostingSetup> {
   Type get type => VatPostingSetup;
 }
 
-class CompetitorItemLedgerEntryHandler extends BaseTableHandler<CompetitorItemLedgerEntry> {
+class CompetitorItemLedgerEntryHandler
+    extends BaseTableHandler<CompetitorItemLedgerEntry> {
   @override
   String get tableName => "competitor_item_ledger_entry";
 
@@ -150,7 +152,8 @@ class CompetitorItemLedgerEntryHandler extends BaseTableHandler<CompetitorItemLe
   Type get type => CompetitorItemLedgerEntry;
 }
 
-class CustomerItemLedgerEntryHandler extends BaseTableHandler<CustomerItemLedgerEntry> {
+class CustomerItemLedgerEntryHandler
+    extends BaseTableHandler<CustomerItemLedgerEntry> {
   @override
   String get tableName => "customer_item_ledger_entry";
 
@@ -166,7 +169,8 @@ class CustomerItemLedgerEntryHandler extends BaseTableHandler<CustomerItemLedger
   Type get type => CustomerItemLedgerEntry;
 }
 
-class SalesPersonScheduleMerchandiseHandler extends BaseTableHandler<SalesPersonScheduleMerchandise> {
+class SalesPersonScheduleMerchandiseHandler
+    extends BaseTableHandler<SalesPersonScheduleMerchandise> {
   @override
   String get tableName => "salesperson_schedule_merchandise";
 
@@ -182,7 +186,8 @@ class SalesPersonScheduleMerchandiseHandler extends BaseTableHandler<SalesPerson
   Type get type => SalesPersonScheduleMerchandise;
 }
 
-class ItemPrizeRedemptionLineEntryHandler extends BaseTableHandler<ItemPrizeRedemptionLineEntry> {
+class ItemPrizeRedemptionLineEntryHandler
+    extends BaseTableHandler<ItemPrizeRedemptionLineEntry> {
   @override
   String get tableName => "item_prize_redemption_line_entry";
 
@@ -198,7 +203,8 @@ class ItemPrizeRedemptionLineEntryHandler extends BaseTableHandler<ItemPrizeRede
   Type get type => ItemPrizeRedemptionLineEntry;
 }
 
-class CurrencyExchangeRateHandler extends BaseTableHandler<CurrencyExchangeRate> {
+class CurrencyExchangeRateHandler
+    extends BaseTableHandler<CurrencyExchangeRate> {
   @override
   String get tableName => "currency_exchange_rate";
 
@@ -248,7 +254,8 @@ class CustomerLedgetEntryHandler extends BaseTableHandler<CustomerLedgerEntry> {
 
 class CashReceiptJournalsHandler extends BaseTableHandler<CashReceiptJournals> {
   @override
-  String get tableName => "customer_ledger_entry";
+  // String get tableName => "customer_ledger_entry";
+  String get tableName => "cash_receipt_journals";
 
   @override
   CashReceiptJournals fromMap(Map<String, dynamic> map) {
@@ -262,7 +269,8 @@ class CashReceiptJournalsHandler extends BaseTableHandler<CashReceiptJournals> {
   Type get type => CashReceiptJournals;
 }
 
-class ItemPromotionHeadereHandler extends BaseTableHandler<ItemPromotionHeader> {
+class ItemPromotionHeadereHandler
+    extends BaseTableHandler<ItemPromotionHeader> {
   @override
   String get tableName => "item_promotion_header";
 
@@ -294,7 +302,8 @@ class ItemPromotionLineHandler extends BaseTableHandler<ItemPromotionLine> {
   Type get type => ItemPromotionLine;
 }
 
-class ItemPrizeRedemptionHeaderHandler extends BaseTableHandler<ItemPrizeRedemptionHeader> {
+class ItemPrizeRedemptionHeaderHandler
+    extends BaseTableHandler<ItemPrizeRedemptionHeader> {
   @override
   String get tableName => "item_prize_redemption_header";
 
@@ -310,7 +319,8 @@ class ItemPrizeRedemptionHeaderHandler extends BaseTableHandler<ItemPrizeRedempt
   Type get type => ItemPrizeRedemptionHeader;
 }
 
-class ItemPrizeRedemptionLineHandler extends BaseTableHandler<ItemPrizeRedemptionLine> {
+class ItemPrizeRedemptionLineHandler
+    extends BaseTableHandler<ItemPrizeRedemptionLine> {
   @override
   String get tableName => "item_prize_redemption_line";
 

@@ -8,6 +8,7 @@ extension LoginSessionExtension on LoginSession {
       accessToken: json["token"],
       email: json["email"],
       timeZone: json["time_zone"],
+      avatar128: json["avatar_128"] ?? "",
       lastLoginDateTime: json["last_login_date_time"],
       isLogin: json["is_login"],
       username: json["username"],

@@ -1,278 +1,323 @@
-import 'dart:typed_data';
+// import 'dart:typed_data';
 
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
-import 'package:flutter/painting.dart';
-import 'package:image/image.dart' as img;
-import 'package:http/http.dart' as http;
-import 'package:salesforce/core/enums/enums.dart' as format;
-import 'package:salesforce/core/utils/helpers.dart';
-import 'package:salesforce/core/utils/logger.dart';
-import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/generate_thermal_receipt.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_helpers.dart';
-import 'package:salesforce/realm/scheme/sales_schemas.dart';
-import 'package:salesforce/realm/scheme/schemas.dart';
+// import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+// import 'package:flutter/painting.dart';
+// import 'package:image/image.dart' as img;
+// import 'package:http/http.dart' as http;
+// import 'package:salesforce/core/enums/enums.dart' as format;
+// import 'package:salesforce/core/utils/helpers.dart';
+// import 'package:salesforce/core/utils/logger.dart';
+// import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
+// import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/generate_thermal_receipt.dart';
+// import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_helpers.dart';
+// import 'package:salesforce/realm/scheme/sales_schemas.dart';
+// import 'package:salesforce/realm/scheme/schemas.dart';
 
-class ReceiptMm80 {
-  static Future<List<StyledTextSegment>> buildReceiptSegments({
-    required SaleDetail? detail,
-    required CompanyInformation? companyInfo,
-    bool includeImage = false,
-  }) async {
-    List<StyledTextSegment> segments = [];
-    int numberSign = 88;
+// class ReceiptMm80 {
+//   static Future<List<StyledTextSegment>> buildReceiptSegments({
+//     required SaleDetail? detail,
+//     required CompanyInformation? companyInfo,
+//     bool includeImage = false,
+//   }) async {
+//     List<StyledTextSegment> segments = [];
+//     int numberSign = 47;
 
-    Uint8List? logoBytes;
-    if (companyInfo?.logo128 != null && includeImage) {
-      try {
-        final response = await http.get(Uri.parse(companyInfo!.logo128!));
-        if (response.statusCode == 200) {
-          final decodedImage = img.decodeImage(response.bodyBytes);
-          if (decodedImage != null) {
-            final resizedImage = img.copyResize(decodedImage, width: 384);
-            logoBytes = img.encodePng(resizedImage);
-            segments.add(
-              StyledTextSegment(
-                text: '',
-                image: logoBytes,
-                imageWidth: 120,
-                imageHeight: 120,
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        Logger.log(e);
-      }
-    }
+//     Uint8List? logoBytes;
+//     if (companyInfo?.logo128 != null && includeImage) {
+//       try {
+//         final response = await http.get(Uri.parse(companyInfo?.logo128 ?? ""));
 
-    if (companyInfo?.name != null) {
-      segments.add(
-        StyledTextSegment(
-          text: companyInfo?.name ?? "",
-          style: KhmerTextStyle.bold,
-          textAlign: TextAlign.center,
-          fontSize: KhmerFontSize.large,
-        ),
-      );
-    }
-    if (companyInfo?.address != null) {
-      segments.add(
-        StyledTextSegment(
-          text: companyInfo?.address ?? "",
-          textAlign: TextAlign.center,
-        ),
-      );
-    }
-    if (companyInfo?.email != null) {
-      segments.add(
-        StyledTextSegment(
-          text: "Email : ${companyInfo?.email}",
-          textAlign: TextAlign.center,
-          rowHeight: 20,
-        ),
-      );
-    }
+//         if (response.statusCode == 200) {
+//           final decodedImage = img.decodeImage(response.bodyBytes);
+//           if (decodedImage != null) {
+//             final newHeight = (decodedImage.height * 384 / decodedImage.width)
+//                 .round();
+//             final resizedImage = img.copyResize(
+//               decodedImage,
+//               width: 384,
+//               height: newHeight > 0 ? newHeight : 1,
+//             );
+//             logoBytes = img.encodePng(resizedImage);
 
-    segments.add(
-      StyledTextSegment(
-        text: ReceiptHelpers.composeReceiptLine(
-          "Customer :",
-          detail?.header.customerName ?? '',
-          20,
-        ),
-      ),
-    );
-    segments.add(
-      StyledTextSegment(
-        text: ReceiptHelpers.composeReceiptLine(
-          "Date :",
-          detail?.header.documentDate ?? '',
-          20,
-        ),
-      ),
-    );
-    segments.add(
-      StyledTextSegment(
-        text: ReceiptHelpers.composeReceiptLine(
-          "Invoice No :",
-          detail?.header.no ?? '',
-          20,
-        ),
-      ),
-    );
+//             segments.add(
+//               StyledTextSegment(
+//                 text: "",
+//                 isRow: false,
+//                 image: logoBytes,
+//                 imageWidth: 120,
+//                 imageHeight: 120,
+//               ),
+//             );
+//           }
+//         }
+//       } catch (e) {
+//         Logger.log(e);
+//       }
+//     }
 
-    segments.add(StyledTextSegment(text: "-" * numberSign));
-    segments.add(
-      StyledTextSegment(
-        text: "#|Description|Qty|Price|Disc|Amount",
-        style: KhmerTextStyle.bold,
-        isRow: true,
-      ),
-    );
+//     if (companyInfo?.name != null) {
+//       segments.add(
+//         StyledTextSegment(
+//           text: companyInfo?.name ?? "",
+//           style: KhmerTextStyle.bold,
+//           textAlign: TextAlign.center,
+//           fontSize: KhmerFontSize.large,
+//         ),
+//       );
+//     }
+//     if (companyInfo?.address != null) {
+//       segments.add(
+//         StyledTextSegment(
+//           text: companyInfo?.address ?? "",
+//           style: KhmerTextStyle.bold,
+//           textAlign: TextAlign.center,
+//           fontSize: KhmerFontSize.normal,
+//           rowHeight: 30,
+//         ),
+//       );
+//     }
+//     if (companyInfo?.email != null) {
+//       segments.add(
+//         StyledTextSegment(
+//           text: "Email : ${companyInfo?.email}",
+//           textAlign: TextAlign.center,
+//           rowHeight: 24,
+//           style: KhmerTextStyle.bold,
+//           fontSize: KhmerFontSize.normal,
+//         ),
+//       );
+//     }
 
-    segments.add(StyledTextSegment(text: "-" * numberSign));
-    int itemNumber = 1;
-    for (PosSalesLine item in (detail?.lines ?? [])) {
-      try {
-        segments.add(
-          StyledTextSegment(
-            text: _formatItemLine(
-              itemNumber: itemNumber,
-              description: item.description ?? '',
-              quantity: Helpers.toInt(item.quantity),
-              price: item.unitPrice,
-              discount: item.discountAmount ?? 0,
-              amount: item.amountIncludingVat ?? 0,
-            ),
-            isRow: true,
-          ),
-        );
-      } catch (e) {
-        segments.add(StyledTextSegment(text: "X Error Item"));
-      }
-      itemNumber++;
-    }
+//     segments.add(
+//       StyledTextSegment(
+//         text: ReceiptHelpers.composeReceiptLine(
+//           "Customer :",
+//           detail?.header.customerName ?? '',
+//           24,
+//         ),
+//         style: KhmerTextStyle.bold,
+//         fontSize: KhmerFontSize.normal,
+//       ),
+//     );
+//     segments.add(
+//       StyledTextSegment(
+//         text: ReceiptHelpers.composeReceiptLine(
+//           "Date :",
+//           detail?.header.documentDate ?? '',
+//           24,
+//         ),
+//         style: KhmerTextStyle.bold,
+//         fontSize: KhmerFontSize.normal,
+//       ),
+//     );
+//     segments.add(
+//       StyledTextSegment(
+//         text: ReceiptHelpers.composeReceiptLine(
+//           "Invoice No :",
+//           detail?.header.no ?? '',
+//           24,
+//         ),
+//         style: KhmerTextStyle.bold,
+//         fontSize: KhmerFontSize.normal,
+//         rowHeight: 20,
+//       ),
+//     );
 
-    segments.add(StyledTextSegment(text: "=" * (numberSign - 38)));
+//     segments.add(
+//       StyledTextSegment(text: "-" * numberSign, style: KhmerTextStyle.bold),
+//     );
+//     segments.add(
+//       StyledTextSegment(
+//         text: "#|Description|Qty|Price|Disc|Amount",
+//         style: KhmerTextStyle.bold,
+//         fontSize: KhmerFontSize.normal,
+//         isRow: true,
+//         rowHeight: 30,
+//       ),
+//     );
 
-    final disPercStr = Helpers.formatNumberLink(
-      detail?.header.priceIncludeVat ?? '',
-      option: format.FormatType.percentage,
-    );
-    final disPer = ReceiptHelpers.composeReceiptLine(
-      'Discount (%) :',
-      disPercStr,
-      numberSign - 30,
-    );
-    segments.add(
-      StyledTextSegment(
-        text: disPer,
-        fontSize: KhmerFontSize.large,
-        isRow: false,
-      ),
-    );
+//     segments.add(
+//       StyledTextSegment(text: "-" * numberSign, style: KhmerTextStyle.bold),
+//     );
+//     int itemNumber = 1;
+//     for (PosSalesLine item in (detail?.lines ?? [])) {
+//       try {
+//         segments.add(
+//           StyledTextSegment(
+//             fontSize: KhmerFontSize.normal,
+//             text: _formatItemLine(
+//               itemNumber: itemNumber,
+//               description: item.description ?? '',
+//               quantity: Helpers.toInt(item.quantity),
+//               price: item.unitPrice,
+//               discount: item.discountAmount ?? 0,
+//               amount: item.amountIncludingVat ?? 0,
+//             ),
+//             isRow: true,
+//             rowHeight: 40,
+//           ),
+//         );
+//       } catch (e) {
+//         segments.add(StyledTextSegment(text: "X Error Item"));
+//       }
+//       itemNumber++;
+//     }
 
-    final totalStr = Helpers.formatNumberLink(detail?.header.amount ?? '');
-    final total = ReceiptHelpers.composeReceiptLine(
-      'Total Amount :',
-      totalStr,
-      numberSign - 30,
-    );
+//     segments.add(
+//       StyledTextSegment(
+//         text: "=" * (numberSign - 11),
+//         rowHeight: 10,
+//         style: KhmerTextStyle.bold,
+//         fontSize: KhmerFontSize.normal,
+//       ),
+//     );
 
-    segments.add(
-      StyledTextSegment(
-        text: total,
-        style: KhmerTextStyle.bold,
-        fontSize: KhmerFontSize.large,
-        isRow: false,
-        rowHeight: 20,
-      ),
-    );
+//     final disPercStr = Helpers.formatNumberLink(
+//       detail?.header.priceIncludeVat ?? '',
+//       option: format.FormatType.percentage,
+//     );
+//     final disPer = ReceiptHelpers.composeReceiptLine(
+//       'Discount (%) :',
+//       disPercStr,
+//       numberSign + 20,
+//     );
+//     segments.add(
+//       StyledTextSegment(
+//         rowHeight: 10,
+//         style: KhmerTextStyle.bold,
+//         text: disPer,
+//         fontSize: KhmerFontSize.normal,
+//         isRow: false,
+//       ),
+//     );
 
-    segments.add(
-      StyledTextSegment(
-        style: KhmerTextStyle.normal,
-        textAlign: TextAlign.center,
-        rowHeight: 20,
-        text:
-            "Thank you for shopping with us. We look forward to serving you again! \u{1F64F}\u2764",
-      ),
-    );
+//     final totalStr = Helpers.formatNumberLink(detail?.header.amount ?? '');
+//     final total = ReceiptHelpers.composeReceiptLine(
+//       'Total Amount :',
+//       totalStr,
+//       numberSign + 10,
+//     );
 
-    segments.add(
-      StyledTextSegment(
-        fontSize: KhmerFontSize.small,
-        style: KhmerTextStyle.normal,
-        textAlign: TextAlign.center,
-        text: "Powered by Blue Technology Co., Ltd.",
-      ),
-    );
+//     segments.add(
+//       StyledTextSegment(
+//         text: total,
+//         style: KhmerTextStyle.bold,
+//         fontSize: KhmerFontSize.normal,
+//         isRow: false,
+//         rowHeight: 24,
+//       ),
+//     );
 
-    return segments;
-  }
+//     segments.add(
+//       StyledTextSegment(
+//         textAlign: TextAlign.center,
+//         style: KhmerTextStyle.bold,
+//         fontSize: KhmerFontSize.normal,
+//         rowHeight: 28,
+//         text:
+//             "Thank you for shopping with us. We look forward to serving you again!❤️❤️",
+//       ),
+//     );
 
-  static String _formatItemLine({
-    required int itemNumber,
-    required String description,
-    required int quantity,
-    required dynamic price,
-    required dynamic discount,
-    required dynamic amount,
-    int maxDescLength = 18,
-  }) {
-    double p = Helpers.toDouble(price);
-    double d = Helpers.toDouble(discount);
-    double a = Helpers.toDouble(amount);
+//     segments.add(
+//       StyledTextSegment(
+//         style: KhmerTextStyle.bold,
+//         fontSize: KhmerFontSize.normal,
+//         textAlign: TextAlign.center,
+//         text: "Powered by Blue Technology Co., Ltd.",
+//       ),
+//     );
 
-    if (description.isEmpty) {
-      description = "-";
-    }
+//     return segments;
+//   }
 
-    List<String> descLines = _wrapText(description, maxDescLength);
+//   static String _formatItemLine({
+//     required int itemNumber,
+//     required String description,
+//     required int quantity,
+//     required dynamic price,
+//     required dynamic discount,
+//     required dynamic amount,
+//     int maxDescLength = 18,
+//   }) {
+//     double p = Helpers.toDouble(price);
+//     double d = Helpers.toDouble(discount);
+//     double a = Helpers.toDouble(amount);
 
-    if (descLines.length == 1) {
-      return "$itemNumber|${descLines[0]}|$quantity|${p.toStringAsFixed(2)}|${d > 0 ? d.toStringAsFixed(2) : '_'}|${a.toStringAsFixed(2)}";
-    } else {
-      List<String> lines = [];
-      lines.add(
-        "$itemNumber|${descLines[0]}|$quantity|${p.toStringAsFixed(2)}|${d > 0 ? d.toStringAsFixed(2) : '_'}|${a.toStringAsFixed(2)}",
-      );
+//     if (description.isEmpty) {
+//       description = "-";
+//     }
 
-      for (int i = 1; i < descLines.length; i++) {
-        lines.add(" |${descLines[i]}|||||");
-      }
+//     List<String> descLines = _wrapText(description, maxDescLength);
 
-      return lines.join('\n');
-    }
-  }
+//     if (descLines.length == 1) {
+//       return "$itemNumber|${descLines[0]}|${quantity.toString().padLeft(4)}|${p.toStringAsFixed(2)}|${d > 0 ? d.toStringAsFixed(2) : ' '}|${a.toStringAsFixed(2)}";
+//     } else {
+//       List<String> lines = [];
+//       lines.add(
+//         "$itemNumber|${descLines[0]}|$quantity|${p.toStringAsFixed(2)}|${d > 0 ? d.toStringAsFixed(2) : ' '}|${a.toStringAsFixed(2)}",
+//       );
 
-  // Helper function for smart text wrapping
-  static List<String> _wrapText(String text, int maxLength) {
-    if (text.length <= maxLength) {
-      return [text];
-    }
+//       for (int i = 1; i < descLines.length; i++) {
+//         lines.add(" |${descLines[i]}|||||");
+//       }
 
-    List<String> lines = [];
-    String remaining = text;
+//       return lines.join('\n');
+//     }
+//   }
 
-    while (remaining.length > maxLength) {
-      int splitAt = maxLength;
+//   // Helper function for smart text wrapping
+//   static List<String> _wrapText(String text, int maxLength) {
+//     if (text.length <= maxLength) {
+//       return [text];
+//     }
 
-      int lastSpace = remaining.lastIndexOf(' ', maxLength);
-      if (lastSpace > maxLength * 0.7) {
-        splitAt = lastSpace;
-      }
+//     List<String> lines = [];
+//     String remaining = text;
 
-      lines.add(remaining.substring(0, splitAt).trim());
-      remaining = remaining.substring(splitAt).trim();
-    }
+//     while (remaining.length > maxLength) {
+//       int splitAt = maxLength;
 
-    if (remaining.isNotEmpty) {
-      lines.add(remaining);
-    }
+//       int lastSpace = remaining.lastIndexOf(' ', maxLength);
+//       if (lastSpace > maxLength * 0.7) {
+//         splitAt = lastSpace;
+//       }
 
-    return lines;
-  }
+//       lines.add(remaining.substring(0, splitAt).trim());
+//       remaining = remaining.substring(splitAt).trim();
+//     }
 
-  static Future<List<int>> generateCustomReceiptBytes({
-    SaleDetail? detail,
-    CompanyInformation? companyInfo,
-  }) async {
-    const PaperSize paper = PaperSize.mm80;
-    final profile = await CapabilityProfile.load();
-    final generator = Generator(paper, profile);
-    List<int> bytes = [];
+//     if (remaining.isNotEmpty) {
+//       lines.add(remaining);
+//     }
 
-    final segments = await buildReceiptSegments(
-      detail: detail,
-      companyInfo: companyInfo,
-    );
+//     return lines;
+//   }
 
-    final khmerBytes = await printRichKhmerTextFor80mm(segments);
-    bytes.addAll(khmerBytes);
+//   static Future<List<int>> generateCustomReceiptBytes({
+//     SaleDetail? detail,
+//     CompanyInformation? companyInfo,
+//   }) async {
+//     const PaperSize paper = PaperSize.mm80;
+//     final profile = await CapabilityProfile.load();
+//     final generator = Generator(paper, profile);
+//     List<int> bytes = [];
+//     bytes += generator.reset();
+//     bytes += generator.text('');
+//     final segments =
+//         (await buildReceiptSegments(
+//           detail: detail,
+//           companyInfo: companyInfo,
+//           includeImage: true,
+//         )).where((segment) {
+//           if (segment.image != null) return true;
+//           return segment.text.trim().isNotEmpty && segment.text.trim() != "0";
+//         }).toList();
 
-    bytes += generator.cut();
-    return bytes;
-  }
-}
+//     final khmerBytes = await printRichKhmerTextFor80mm(segments);
+//     bytes.addAll(khmerBytes);
+
+//     bytes += generator.cut();
+//     return bytes;
+//   }
+// }

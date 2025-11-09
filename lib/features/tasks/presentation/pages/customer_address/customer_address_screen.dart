@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/constants/app_config.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
@@ -11,28 +12,37 @@ import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/presentation/widgets/list_tile_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
+import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
+import 'package:salesforce/features/more/presentation/pages/customer_address_form/customer_address_form_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/customer_address/customer_address_cubit.dart';
 import 'package:salesforce/features/tasks/presentation/pages/customer_address/customer_address_state.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class CustomerAddressScreen extends StatefulWidget {
-  const CustomerAddressScreen({super.key, required this.customerNo});
+  const CustomerAddressScreen({
+    super.key,
+    required this.customerNo,
+    required this.addressCode,
+  });
 
   static const String routeName = "customerAddressTaskScreen";
 
   final String customerNo;
+  final String addressCode;
 
   @override
   State<CustomerAddressScreen> createState() => _CustomerAddressScreenState();
 }
 
-class _CustomerAddressScreenState extends State<CustomerAddressScreen> with MessageMixin {
+class _CustomerAddressScreenState extends State<CustomerAddressScreen>
+    with MessageMixin {
   final _cubit = CustomerAddressCubit();
 
   @override
   void initState() {
+    _cubit.selectAddress(widget.addressCode);
     _cubit.getCustomerAddress(widget.customerNo);
     super.initState();
   }
@@ -55,13 +65,18 @@ class _CustomerAddressScreenState extends State<CustomerAddressScreen> with Mess
 
       final filter = tables.map((table) => '"$table"').toList();
 
-      final appSyncLogs = await _cubit.getAppSyncLogs({'tableName': 'IN {${filter.join(",")}}'});
+      final appSyncLogs = await _cubit.getAppSyncLogs({
+        'tableName': 'IN {${filter.join(",")}}',
+      });
 
       if (tables.isEmpty) {
         throw GeneralException("Cannot find any table related");
       }
 
-      await _cubit.downloadDatas(appSyncLogs, param: {'customer_no': widget.customerNo});
+      await _cubit.downloadDatas(
+        appSyncLogs,
+        param: {'customer_no': widget.customerNo},
+      );
 
       l.hide();
     } on GeneralException catch (e) {
@@ -73,6 +88,25 @@ class _CustomerAddressScreenState extends State<CustomerAddressScreen> with Mess
     }
   }
 
+  void _onPushToCreateAddressScreen({CustomerAddress? address}) async {
+    if (!await _cubit.isConnectedToNetwork()) {
+      showWarningMessage(errorInternetMessage);
+      // return;
+    }
+
+    if (!mounted) return;
+
+    Navigator.pushNamed(
+      context,
+      CustomerAddressFormScreen.routeName,
+      arguments: {'address': address, 'customer': widget.customerNo},
+    ).then((value) {
+      if (Helpers.shouldReload(value)) {
+        _cubit.getCustomerAddress(widget.customerNo);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,10 +114,19 @@ class _CustomerAddressScreenState extends State<CustomerAddressScreen> with Mess
         title: "Customer Address",
         actions: [
           Padding(
-            padding: EdgeInsets.only(right: scaleFontSize(appSpace)),
+            padding: EdgeInsets.only(right: scaleFontSize(appSpace8)),
             child: BtnIconCircleWidget(
               onPressed: _handleDownload,
               icons: const Icon(Icons.cloud_download_rounded, color: white),
+              rounded: appBtnRound,
+            ),
+          ),
+
+          Padding(
+            padding: EdgeInsets.only(right: scaleFontSize(appSpace)),
+            child: BtnIconCircleWidget(
+              onPressed: () => _onPushToCreateAddressScreen(address: null),
+              icons: const Icon(Icons.add, color: white),
               rounded: appBtnRound,
             ),
           ),
@@ -122,7 +165,7 @@ class _CustomerAddressScreenState extends State<CustomerAddressScreen> with Mess
           onTap: () => _onSelectedCode(record),
           borderRadius: 0,
           fontWeight: FontWeight.normal,
-          isSelected: record.code == "",
+          isSelected: record.code == state.addressCode,
         );
       },
       separatorBuilder: (context, index) => const Hr(width: double.infinity),

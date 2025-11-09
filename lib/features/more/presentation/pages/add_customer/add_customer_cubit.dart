@@ -53,6 +53,18 @@ class AddCustomerCubit extends Cubit<AddCustomerState>
     }
   }
 
+  Future<void> getSalePosSaleHeader({Map<String, dynamic>? param}) async {
+    try {
+      final response = await repos.getPosSaleHeaders(params: param);
+      response.fold(
+        (failure) => throw Exception(failure.message),
+        (items) => emit(state.copyWith(isLoading: false, posSaleHeader: items)),
+      );
+    } catch (error) {
+      emit(state.copyWith(isLoading: false));
+    }
+  }
+
   Future<void> searchCustomer({String? query}) async {
     try {
       emit(state.copyWith(isLoading: true));

@@ -1,3 +1,4 @@
+import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
 class AddCustomerState {
@@ -6,6 +7,7 @@ class AddCustomerState {
   final bool isLoadingMore;
   final List<CustomerAddress>? customerAddresses;
   final List<Customer> customers;
+  final List<PosSalesHeader> posSaleHeader;
   final Customer? customer;
   final int currentPage;
   final int lastPage;
@@ -18,6 +20,7 @@ class AddCustomerState {
     this.currentPage = 1,
     this.lastPage = 1,
     this.customers = const [],
+    this.posSaleHeader = const [],
     this.customer,
   });
 
@@ -27,6 +30,7 @@ class AddCustomerState {
     bool? isLoadingMore,
     List<CustomerAddress>? customerAddresses,
     List<Customer>? customers,
+    List<PosSalesHeader>? posSaleHeader,
     int? currentPage,
     int? lastPage,
     Customer? customer,
@@ -40,6 +44,7 @@ class AddCustomerState {
       currentPage: currentPage ?? this.currentPage,
       lastPage: lastPage ?? this.lastPage,
       customer: customer ?? this.customer,
+      posSaleHeader: posSaleHeader ?? this.posSaleHeader,
     );
   }
 }

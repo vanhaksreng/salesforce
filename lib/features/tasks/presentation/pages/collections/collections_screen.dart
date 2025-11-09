@@ -27,6 +27,8 @@ import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
+//Check On Moday
+
 class CollectionsScreen extends StatefulWidget {
   const CollectionsScreen({super.key, required this.arg});
   static const String routeName = "collectionScreen";
@@ -36,7 +38,8 @@ class CollectionsScreen extends StatefulWidget {
   State<CollectionsScreen> createState() => CollectionsScreenState();
 }
 
-class CollectionsScreenState extends State<CollectionsScreen> with MessageMixin {
+class CollectionsScreenState extends State<CollectionsScreen>
+    with MessageMixin {
   final _cubit = CollectionsCubit();
 
   @override
@@ -54,16 +57,23 @@ class CollectionsScreenState extends State<CollectionsScreen> with MessageMixin 
   Future<void> _initializeData() async {
     await _cubit.getPaymentType();
 
-    await _cubit.getCustomerLedgerEntry(param: {'customer_no': widget.arg.schedule.customerNo});
+    await _cubit.getCustomerLedgerEntry(
+      param: {'customer_no': widget.arg.schedule.customerNo},
+    );
 
-    await _cubit.getCashReceiptJournals(param: {'customer_no': widget.arg.schedule.customerNo});
+    await _cubit.getCashReceiptJournals(
+      param: {'customer_no': widget.arg.schedule.customerNo},
+    );
   }
 
   void _navigateToDetailScreen(CustomerLedgerEntry entry) {
     Navigator.pushNamed(
       context,
       DetailCollectionsScreen.routeName,
-      arguments: {'schedule': widget.arg.schedule, 'customerLedgerEntry': entry},
+      arguments: {
+        'schedule': widget.arg.schedule,
+        'customerLedgerEntry': entry,
+      },
     ).then((value) {
       if (Helpers.shouldReload(value)) {
         _cubit.getCashReceiptJournals();
@@ -72,7 +82,9 @@ class CollectionsScreenState extends State<CollectionsScreen> with MessageMixin 
   }
 
   Future<void> _onSubmitCollectionHandler() async {
-    final journals = _cubit.state.casReJounals.where((journal) => journal.status == kStatusOpen).toList();
+    final journals = _cubit.state.casReJounals
+        .where((journal) => journal.status == kStatusOpen)
+        .toList();
     if (journals.isEmpty) {
       showWarningMessage(greeting("Nothing to submit"));
       return;
@@ -112,7 +124,9 @@ class CollectionsScreenState extends State<CollectionsScreen> with MessageMixin 
 
       final filter = tables.map((table) => '"$table"').toList();
 
-      final appSyncLogs = await _cubit.getAppSyncLogs({'tableName': 'IN {${filter.join(",")}}'});
+      final appSyncLogs = await _cubit.getAppSyncLogs({
+        'tableName': 'IN {${filter.join(",")}}',
+      });
 
       if (tables.isEmpty) {
         throw GeneralException("Cannot find any table related");
@@ -162,10 +176,15 @@ class CollectionsScreenState extends State<CollectionsScreen> with MessageMixin 
         BlocBuilder<CollectionsCubit, CollectionsState>(
           bloc: _cubit,
           builder: (context, state) {
-            final journals = state.casReJounals.where((journal) => journal.status == kStatusOpen).toList();
+            final journals = state.casReJounals
+                .where((journal) => journal.status == kStatusOpen)
+                .toList();
             return Visibility(
               visible: journals.isNotEmpty,
-              child: BtnWidget(onPressed: _onSubmitCollectionHandler, title: greeting("submit")),
+              child: BtnWidget(
+                onPressed: _onSubmitCollectionHandler,
+                title: greeting("submit"),
+              ),
             );
           },
         ),
@@ -186,6 +205,10 @@ class CollectionsScreenState extends State<CollectionsScreen> with MessageMixin 
 
         final matchingJournals = _getMatchingCashReceiptJournals(record);
 
+        final totalAmt = matchingJournals.fold(0.0, (sum, journal) {
+          return sum + Helpers.toDouble(journal.amountLcy);
+        });
+        final remainingAmt = Helpers.toDouble(record.amountLcy) - totalAmt;
         return BoxWidget(
           key: ValueKey(record.entryNo),
           blurRadius: 15,
@@ -199,7 +222,11 @@ class CollectionsScreenState extends State<CollectionsScreen> with MessageMixin 
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextWidget(text: "#${record.documentNo ?? ''}", fontSize: 16.scale, fontWeight: FontWeight.bold),
+                  TextWidget(
+                    text: "#${record.documentNo ?? ''} ",
+
+                    fontWeight: FontWeight.bold,
+                  ),
                   if (DateTimeExt.parse(record.dueDate).aging() > 0)
                     ChipWidget(
                       bgColor: warning.withValues(alpha: 0.1),
@@ -209,7 +236,11 @@ class CollectionsScreenState extends State<CollectionsScreen> with MessageMixin 
                       child: TextWidget(
                         text: greeting(
                           "days_overdue",
-                          params: {'day': DateTimeExt.parse(record.dueDate).aging().toString()},
+                          params: {
+                            'day': DateTimeExt.parse(
+                              record.dueDate,
+                            ).aging().toString(),
+                          },
                         ),
                         color: warning,
                         fontSize: 12.scale,
@@ -217,22 +248,38 @@ class CollectionsScreenState extends State<CollectionsScreen> with MessageMixin 
                     ),
                 ],
               ),
+              TextWidget(
+                text: "ORDER NO: ${record.orderNo ?? ''}",
+                color: mainColor50,
+                fontWeight: FontWeight.w500,
+              ),
               rowCollectionTitle(
                 key: 'TYPE',
                 value: "Invoice",
                 key2: "DATE",
-                value2: DateTimeExt.parse(record.postingDate).toDateNameString(),
+                value2: DateTimeExt.parse(
+                  record.postingDate,
+                ).toDateNameString(),
               ),
               rowCollectionTitle(
                 key: 'TOTAL',
-                value: Helpers.formatNumber(record.amountLcy, option: FormatType.amount),
+                value: Helpers.formatNumber(
+                  record.amountLcy,
+                  option: FormatType.amount,
+                ),
                 valueColor: success,
                 key2: "REMAINING",
-                value2: Helpers.formatNumber(record.remainingAmountLcy, option: FormatType.amount),
+                value2: Helpers.formatNumber(
+                  remainingAmt,
+                  option: FormatType.amount,
+                ),
                 value2Color: error,
               ),
               Helpers.gapH(1),
-              CashReceiptJournalScreen(cashReJournals: matchingJournals, paymentMethods: state.paymentMethods),
+              CashReceiptJournalScreen(
+                cashReJournals: matchingJournals,
+                paymentMethods: state.paymentMethods,
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -240,7 +287,10 @@ class CollectionsScreenState extends State<CollectionsScreen> with MessageMixin 
                     bgColor: grey20,
                     child: Row(
                       children: [
-                        TextWidget(text: greeting("view_detail"), color: primary),
+                        TextWidget(
+                          text: greeting("view_detail"),
+                          color: primary,
+                        ),
                         const Icon(Icons.arrow_forward_ios),
                       ],
                     ),
@@ -255,8 +305,12 @@ class CollectionsScreenState extends State<CollectionsScreen> with MessageMixin 
     );
   }
 
-  List<CashReceiptJournals> _getMatchingCashReceiptJournals(CustomerLedgerEntry ledgerEntry) {
+  List<CashReceiptJournals> _getMatchingCashReceiptJournals(
+    CustomerLedgerEntry ledgerEntry,
+  ) {
     final allJournals = _cubit.state.casReJounals;
-    return allJournals.where((journal) => journal.applyToDocNo == ledgerEntry.documentNo).toList();
+    return allJournals
+        .where((journal) => journal.applyToDocNo == ledgerEntry.documentNo)
+        .toList();
   }
 }

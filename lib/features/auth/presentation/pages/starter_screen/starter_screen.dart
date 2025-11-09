@@ -61,7 +61,10 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
     l.hide();
 
     if (!mounted) return;
-
+    setCompanyInjection(_cubit.state.companyInfo);
+    if (_cubit.state.companyInfo == null) {
+      return;
+    }
     Navigator.pushNamed(context, routeName, arguments: server);
   }
 
@@ -93,7 +96,6 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
 
       Navigator.pushNamed(context, ScannerScreen.routeName).then((url) {
         if (url != null && url is String) {
-          if (!context.mounted) return;
           _navigateToNextScreen(url);
         }
       });

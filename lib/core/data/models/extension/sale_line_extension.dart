@@ -13,33 +13,87 @@ extension SalesLineExtension on SalesLine {
       no: json['no'] as String? ?? '',
       description: json['description'] as String? ?? '',
       description2: json['description_2'] as String? ?? '',
-      quantity: Helpers.formatNumberDb(json['quantity'], option: FormatType.quantity),
-      outstandingQuantity: Helpers.formatNumberDb(json['outstanding_quantity'] ?? 0, option: FormatType.quantity),
+      quantity: Helpers.formatNumberDb(
+        json['quantity'],
+        option: FormatType.quantity,
+      ),
+      outstandingQuantity: Helpers.formatNumberDb(
+        json['outstanding_quantity'] ?? 0,
+        option: FormatType.quantity,
+      ),
       outstandingQuantityBase: Helpers.formatNumberDb(
         json['outstanding_quantity_base'] ?? 0,
         option: FormatType.quantity,
       ),
-      quantityToShip: Helpers.formatNumberDb(json['quantity_to_ship'] ?? 0, option: FormatType.quantity),
-      quantityToInvoice: Helpers.formatNumberDb(json['quantity_to_invoice'] ?? 0, option: FormatType.quantity),
-      quantityShipped: Helpers.formatNumberDb(json['quantity_shipped'] ?? 0, option: FormatType.quantity),
-      quantityInvoiced: Helpers.formatNumberDb(json['quantity_invoiced'] ?? 0, option: FormatType.quantity),
+      quantityToShip: Helpers.formatNumberDb(
+        json['quantity_to_ship'] ?? 0,
+        option: FormatType.quantity,
+      ),
+      quantityToInvoice: Helpers.formatNumberDb(
+        json['quantity_to_invoice'] ?? 0,
+        option: FormatType.quantity,
+      ),
+      quantityShipped: Helpers.formatNumberDb(
+        json['quantity_shipped'] ?? 0,
+        option: FormatType.quantity,
+      ),
+      quantityInvoiced: Helpers.formatNumberDb(
+        json['quantity_invoiced'] ?? 0,
+        option: FormatType.quantity,
+      ),
       discountPercentage: Helpers.toDouble(json['discount_percentage']),
       discountAmount: Helpers.toDouble(json['discount_amount']),
-      amount: Helpers.formatNumberDb(json['amount'] ?? 0, option: FormatType.amount),
-      amountLcy: Helpers.formatNumberDb(json['amount_lcy'] ?? 0, option: FormatType.amount),
-      vatPercentage: Helpers.formatNumberDb(json['vat_percentage'] ?? 0, option: FormatType.percentage),
-      vatAmount: Helpers.formatNumberDb(json['vat_amount'] ?? 0, option: FormatType.amount),
-      vatBaseAmount: Helpers.formatNumberDb(json['vat_base_amount'] ?? 0, option: FormatType.amount),
-      amountIncludingVat: Helpers.formatNumberDb(json['amount_including_vat'] ?? 0, option: FormatType.amount),
-      amountIncludingVatLcy: Helpers.formatNumberDb(json['amount_including_vat_lcy'] ?? 0, option: FormatType.amount),
+      amount: Helpers.formatNumberDb(
+        json['amount'] ?? 0,
+        option: FormatType.amount,
+      ),
+      amountLcy: Helpers.formatNumberDb(
+        json['amount_lcy'] ?? 0,
+        option: FormatType.amount,
+      ),
+      vatPercentage: Helpers.formatNumberDb(
+        json['vat_percentage'] ?? 0,
+        option: FormatType.percentage,
+      ),
+      vatAmount: Helpers.formatNumberDb(
+        json['vat_amount'] ?? 0,
+        option: FormatType.amount,
+      ),
+      vatBaseAmount: Helpers.formatNumberDb(
+        json['vat_base_amount'] ?? 0,
+        option: FormatType.amount,
+      ),
+      amountIncludingVat: Helpers.formatNumberDb(
+        json['amount_including_vat'] ?? 0,
+        option: FormatType.amount,
+      ),
+      amountIncludingVatLcy: Helpers.formatNumberDb(
+        json['amount_including_vat_lcy'] ?? 0,
+        option: FormatType.amount,
+      ),
       specialType: json['special_type'] as String? ?? '',
       unitOfMeasure: json['unit_of_measure'] as String? ?? "",
       specialTypeNo: json['special_type_no'] as String? ?? '',
-      unitPrice: Helpers.formatNumberDb(json['unit_price'] ?? 0, option: FormatType.price),
-      unitPriceLcy: Helpers.formatNumberDb(json['unit_price_lcy'] ?? 0, option: FormatType.price),
-      manualUnitPrice: Helpers.formatNumberDb(json['manual_unit_price'] ?? 0, option: FormatType.price),
-      unitPriceOri: Helpers.formatNumberDb(json['unit_price_ori'] ?? 0, option: FormatType.price),
-      qtyPerUnitOfMeasure: Helpers.formatNumberDb(json['qty_per_unit_of_measure'] ?? 0, option: FormatType.quantity),
+      unitPrice: Helpers.formatNumberDb(
+        json['unit_price'] ?? 0,
+        option: FormatType.price,
+      ),
+      unitPriceLcy: Helpers.formatNumberDb(
+        json['unit_price_lcy'] ?? 0,
+        option: FormatType.price,
+      ),
+      manualUnitPrice: Helpers.formatNumberDb(
+        json['manual_unit_price'] ?? 0,
+        option: FormatType.price,
+      ),
+      unitPriceOri: Helpers.formatNumberDb(
+        json['unit_price_ori'] ?? 0,
+        option: FormatType.price,
+      ),
+      qtyPerUnitOfMeasure: Helpers.formatNumberDb(
+        json['qty_per_unit_of_measure'] ?? 0,
+        option: FormatType.quantity,
+      ),
       itemCategoryCode: json['item_category_code'] as String? ?? '',
       itemGroupCode: json['item_group_code'] as String? ?? '',
       itemDiscGroupCode: json['item_disc_group_code'] as String? ?? '',
@@ -55,7 +109,9 @@ extension SalesLineExtension on SalesLine {
       currencyCode: json['currency_code'] as String? ?? '',
       currencyFactor: Helpers.toDouble(json['currency_factor']),
       documentDate: DateTimeExt.parse(json["created_at"]).toDateString(),
-      requestShipmentDate: DateTimeExt.parse(json["request_shipment_date"]).toDateString(),
+      requestShipmentDate: DateTimeExt.parse(
+        json["request_shipment_date"],
+      ).toDateString(),
       postingGroup: json["posting_group"] ?? "",
       locationCode: json["location_code"] ?? "",
       documentType: json["document_type"] ?? "",
@@ -133,6 +189,7 @@ extension SalesLineExtension on SalesLine {
       'is_manual_edit': isManualEdit,
       'document_date': documentDate,
       'source_no': sourceNo,
+      'header_id': headerId,
     };
   }
 }

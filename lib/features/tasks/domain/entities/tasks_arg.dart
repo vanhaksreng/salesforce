@@ -14,6 +14,8 @@ class CheckInArg {
   final XFile? imagePath;
   final bool isCloseShop;
   final String? startingTime;
+  final String? checkInPosition;
+  final String? checkOutPosition;
 
   CheckInArg({
     required this.latitude,
@@ -22,6 +24,8 @@ class CheckInArg {
     this.isCloseShop = false,
     this.imagePath,
     this.startingTime,
+    this.checkInPosition = "",
+    this.checkOutPosition = "",
   });
 }
 

@@ -159,7 +159,7 @@ class CartPreviewItemScreenState extends State<CartPreviewItemScreen>
       return;
     }
 
-    if (creditLimitedAmount == 0 && creditLimitType == "") {
+    if (creditLimitedAmount == 0 || creditLimitType == "") {
       _cubit.setCreditLimitText();
       return;
     }

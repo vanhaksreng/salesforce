@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
@@ -26,7 +27,11 @@ import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class DetailCollectionsScreen extends StatefulWidget {
-  const DetailCollectionsScreen({super.key, required this.customerLedgerEntry, required this.schedule});
+  const DetailCollectionsScreen({
+    super.key,
+    required this.customerLedgerEntry,
+    required this.schedule,
+  });
   static const String routeName = "detailCollection";
 
   final CustomerLedgerEntry customerLedgerEntry;
@@ -36,7 +41,8 @@ class DetailCollectionsScreen extends StatefulWidget {
   DetailCollectionsScreenState createState() => DetailCollectionsScreenState();
 }
 
-class DetailCollectionsScreenState extends State<DetailCollectionsScreen> with MessageMixin {
+class DetailCollectionsScreenState extends State<DetailCollectionsScreen>
+    with MessageMixin {
   final _cubit = DetailCollectionsCubit();
   final _receiveAmoutCtr = TextEditingController();
   final _paymentTypeCtr = TextEditingController();
@@ -49,7 +55,9 @@ class DetailCollectionsScreenState extends State<DetailCollectionsScreen> with M
   void initState() {
     super.initState();
     _cubit.getPaymentType();
-    _cubit.getCashReceiptJournals(param: {"apply_to_doc_no": widget.customerLedgerEntry.documentNo});
+    _cubit.getCashReceiptJournals(
+      param: {"apply_to_doc_no": widget.customerLedgerEntry.documentNo},
+    );
 
     cEntry = widget.customerLedgerEntry;
   }
@@ -90,9 +98,12 @@ class DetailCollectionsScreenState extends State<DetailCollectionsScreen> with M
       return showWarningMessage(greeting("receive_amoun_require"));
     }
 
-    final remainingAmt = Helpers.toDouble(cEntry.amountLcy) - _cubit.state.totalReceiveAmt;
+    final remainingAmt =
+        Helpers.toDouble(cEntry.amountLcy) - _cubit.state.totalReceiveAmt;
     if (Helpers.toDouble(_receiveAmoutCtr.text) > remainingAmt) {
-      return showWarningMessage(greeting("Receive amount cannot greather than remaining amount."));
+      return showWarningMessage(
+        greeting("Receive amount cannot greather than remaining amount."),
+      );
     }
 
     if (_paymentMethod == null) {
@@ -120,7 +131,10 @@ class DetailCollectionsScreenState extends State<DetailCollectionsScreen> with M
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBarWidget(title: "Payments", onBack: () => Navigator.of(context).pop(_action)),
+      appBar: AppBarWidget(
+        title: "Payments",
+        onBack: () => Navigator.of(context).pop(_action),
+      ),
       body: BlocBuilder<DetailCollectionsCubit, DetailCollectionsState>(
         bloc: _cubit,
         builder: (context, state) {
@@ -131,12 +145,22 @@ class DetailCollectionsScreenState extends State<DetailCollectionsScreen> with M
   }
 
   Widget buildBody(DetailCollectionsState state) {
-    final remainingAmt = Helpers.toDouble(cEntry.amountLcy) - state.totalReceiveAmt;
+    final remainingAmt =
+        Helpers.toDouble(cEntry.amountLcy) - state.totalReceiveAmt;
+
+    final hasJournals = state.cashReceiptJournals.isNotEmpty;
+    final lastJournalApproved =
+        hasJournals && state.cashReceiptJournals.last.status == kStatusApprove;
+
+    final shouldShowPaymentBox =
+        (hasJournals && lastJournalApproved && remainingAmt > 0) ||
+        !hasJournals;
+
     return ListView(
       padding: EdgeInsets.all(15.scale),
       children: [
         _headerBoxInfo(remainingAmt),
-        if (state.cashReceiptJournals.isNotEmpty) ...[
+        if (hasJournals) ...[
           Helpers.gapH(15),
           BoxWidget(
             padding: EdgeInsets.all(15.scale),
@@ -150,9 +174,17 @@ class DetailCollectionsScreenState extends State<DetailCollectionsScreen> with M
                       radius: 8.scale,
                       vertical: 6.scale,
                       horizontal: 0,
-                      child: Icon(Icons.history, color: success, size: 16.scale),
+                      child: Icon(
+                        Icons.history,
+                        color: success,
+                        size: 16.scale,
+                      ),
                     ),
-                    TextWidget(text: 'Payment Histories', fontSize: 16.scale, fontWeight: FontWeight.bold),
+                    TextWidget(
+                      text: 'Payment Histories',
+                      fontSize: 16.scale,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ],
                 ),
                 Helpers.gapH(15),
@@ -165,8 +197,7 @@ class DetailCollectionsScreenState extends State<DetailCollectionsScreen> with M
             ),
           ),
         ],
-        Helpers.gapH(15),
-        if (remainingAmt > 0) _paymentBox(),
+        if (shouldShowPaymentBox) ...[Helpers.gapH(15), _paymentBox()],
       ],
     );
   }
@@ -181,7 +212,11 @@ class DetailCollectionsScreenState extends State<DetailCollectionsScreen> with M
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              TextWidget(text: cEntry.customerName ?? '', fontSize: 16.scale, fontWeight: FontWeight.bold),
+              TextWidget(
+                text: cEntry.customerName ?? '',
+                fontSize: 16.scale,
+                fontWeight: FontWeight.bold,
+              ),
               ChipWidget(
                 label: "${cEntry.documentType}".toUpperCase(),
                 fontWeight: FontWeight.bold,
@@ -201,9 +236,15 @@ class DetailCollectionsScreenState extends State<DetailCollectionsScreen> with M
           ),
           rowCollectionTitle(
             key: 'Total Amount'.toUpperCase(),
-            value: Helpers.formatNumberLink(cEntry.amountLcy, option: FormatType.amount),
+            value: Helpers.formatNumberLink(
+              cEntry.amountLcy,
+              option: FormatType.amount,
+            ),
             key2: "Remaining Amount".toUpperCase(),
-            value2: Helpers.formatNumberLink(remainingAmt, option: FormatType.amount),
+            value2: Helpers.formatNumberLink(
+              remainingAmt,
+              option: FormatType.amount,
+            ),
             value2Color: red,
           ),
         ],
@@ -225,15 +266,26 @@ class DetailCollectionsScreenState extends State<DetailCollectionsScreen> with M
                 radius: 8.scale,
                 vertical: 6.scale,
                 horizontal: 0,
-                child: Icon(Icons.payment, color: const Color(0XFF7C3AED), size: 16.scale),
+                child: Icon(
+                  Icons.payment,
+                  color: const Color(0XFF7C3AED),
+                  size: 16.scale,
+                ),
               ),
-              TextWidget(text: 'New Payment', fontSize: 16.scale, fontWeight: FontWeight.bold),
+              TextWidget(
+                text: 'New Payment',
+                fontSize: 16.scale,
+                fontWeight: FontWeight.bold,
+              ),
             ],
           ),
           TextFormFieldWidget(
             controller: _receiveAmoutCtr,
             isDense: true,
-            keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(
+              signed: true,
+              decimal: true,
+            ),
             inputFormatters: const [QuantityInputFormatter(decimalRange: 8)],
             textColor: textColor50,
             label: greeting("receive_amount"),
@@ -247,10 +299,18 @@ class DetailCollectionsScreenState extends State<DetailCollectionsScreen> with M
             controller: _paymentTypeCtr,
             isDense: true,
             label: greeting("payment_type"),
-            suffixIcon: const Icon(Icons.arrow_forward_ios_sharp, size: 10, color: primary),
+            suffixIcon: const Icon(
+              Icons.arrow_forward_ios_sharp,
+              size: 10,
+              color: primary,
+            ),
             isDefaultTextForm: true,
           ),
-          BtnWidget(bgColor: primary, onPressed: () => _onSaveCollectionHandler(), title: greeting("save")),
+          BtnWidget(
+            bgColor: primary,
+            onPressed: () => _onSaveCollectionHandler(),
+            title: greeting("save"),
+          ),
         ],
       ),
     );

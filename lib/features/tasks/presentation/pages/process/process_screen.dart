@@ -7,6 +7,7 @@ import 'package:salesforce/core/constants/permission.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
+import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
 import 'package:salesforce/core/presentation/widgets/title_section_widget.dart';
@@ -224,31 +225,72 @@ class _ProcessScreenState extends State<ProcessScreen> with MessageMixin {
     ];
   }
 
-  void _handleDownload() async {
+  // void _handleDownload() async {
+  //   try {
+  //     if (!await _cubit.isConnectedToNetwork()) {
+  //       return;
+  //     }
+
+  //     List<String> tables = [
+  //       "customer_ledger_entry",
+  //       "cash_receipt_journals",
+  //       "promotion_type",
+  //     ];
+
+  //     final filter = tables.map((table) => '"$table"').toList();
+
+  //     final appSyncLogs = await _cubit.getAppSyncLogs({
+  //       'tableName': 'IN {${filter.join(",")}}',
+  //     });
+
+  //     if (tables.isEmpty) {
+  //       return;
+  //     }
+
+  //     await _cubit.downloadDatas(appSyncLogs);
+  //   } on Exception {
+  //     //
+  //   }
+  // }
+
+  Future<void> _handleDownload() async {
+    final loading = LoadingOverlay.of(context);
+
     try {
       if (!await _cubit.isConnectedToNetwork()) {
+        debugPrint('No network connection.');
         return;
       }
 
-      List<String> tables = [
+      const tables = [
         "customer_ledger_entry",
         "cash_receipt_journals",
         "promotion_type",
       ];
 
-      final filter = tables.map((table) => '"$table"').toList();
+      final filter = tables.map((table) => '"$table"').join(',');
 
       final appSyncLogs = await _cubit.getAppSyncLogs({
-        'tableName': 'IN {${filter.join(",")}}',
+        'tableName': 'IN {$filter}',
       });
 
-      if (tables.isEmpty) {
+      if (appSyncLogs.isEmpty) {
+        debugPrint('No tables to download.');
         return;
       }
 
-      await _cubit.downloadDatas(appSyncLogs);
-    } on Exception {
-      //
+      if (!mounted) return;
+
+      loading.show();
+
+      await _cubit.downloadDatas(
+        appSyncLogs,
+        onProgress: (progress, index, tableName, status) {},
+      );
+    } on Exception catch (e) {
+      debugPrint('Download error: $e');
+    } finally {
+      loading.hide();
     }
   }
 

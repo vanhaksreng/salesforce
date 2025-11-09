@@ -1,3 +1,4 @@
+DATE := $(shell date +'%Y%m%d_%H%M%S')
 
 git-pull: 
 	git pull origin rath

@@ -1,106 +1,126 @@
-import 'dart:typed_data';
+// import 'dart:typed_data';
 
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
-import 'package:flutter/material.dart';
-import 'package:image/image.dart' as img;
-import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/generate_thermal_receipt.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_mm80.dart';
-import 'package:salesforce/realm/scheme/schemas.dart';
+// import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+// import 'package:flutter/material.dart';
+// import 'package:image/image.dart' as img;
+// import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
+// import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/generate_thermal_receipt.dart';
+// import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_mm80.dart';
+// import 'package:salesforce/realm/scheme/schemas.dart';
 
-class ReceiptHelpers {
-  static img.Image convertTo1BitDithered(img.Image input) {
-    final gray = img.grayscale(input);
-    final dithered = img.ditherImage(gray);
-    return dithered;
-  }
+// class ReceiptHelpers {
+//   static img.Image convertTo1BitDithered(img.Image input) {
+//     // Convert to grayscale
+//     final gray = img.grayscale(input);
 
-  static Future<List<StyledTextSegment>> buildReceiptSegmentsForPreview({
-    SaleDetail? detail,
-    CompanyInformation? companyInfo,
-  }) async {
-    return await ReceiptMm80.buildReceiptSegments(
-      detail: detail,
-      companyInfo: companyInfo,
-      includeImage: true,
-    );
-  }
+//     // Invert the image first (swap black and white)
+//     final inverted = img.invert(gray);
+//     final enhanced = img.adjustColor(inverted, contrast: 4.0, brightness: 1.5);
 
-  static Future<ReceiptPreview?> generateReceiptPreview(
-    List<StyledTextSegment> segments,
-  ) async {
-    final profile = await CapabilityProfile.load();
-    final generator = Generator(PaperSize.mm80, profile);
+//     // Invert back
+//     final corrected = img.invert(enhanced);
+//     const threshold = 180; // Very aggressive
 
-    const int paperWidthPixels = XP323BConfig.paperWidthPixels;
+//     for (var y = 0; y < corrected.height; y++) {
+//       for (var x = 0; x < corrected.width; x++) {
+//         final pixel = corrected.getPixel(x, y);
+//         final luminance = pixel.r.toInt();
 
-    final image = await generateRichKhmerTextAsImgImage(
-      segments,
-      paperWidthPixels,
-      null,
-    );
+//         // Pure black or white only
+//         final newColor = luminance < threshold ? 0 : 255;
+//         corrected.setPixelRgba(x, y, newColor, newColor, newColor, 255);
+//       }
+//     }
 
-    if (image == null) return null;
+//     return corrected;
+//   }
 
-    final bwImage = ReceiptHelpers.convertTo1BitDithered(image);
-    final bytes = generator.image(bwImage) + generator.feed(1);
+//   static Future<List<StyledTextSegment>> buildReceiptSegmentsForPreview({
+//     SaleDetail? detail,
+//     CompanyInformation? companyInfo,
+//   }) async {
+//     return await ReceiptMm80.buildReceiptSegments(
+//       detail: detail,
+//       companyInfo: companyInfo,
+//       includeImage: true,
+//     );
+//   }
 
-    return ReceiptPreview(bytes: bytes, image: bwImage);
-  }
+//   static Future<ReceiptPreview?> generateReceiptPreview(
+//     List<StyledTextSegment> segments,
+//   ) async {
+//     final profile = await CapabilityProfile.load();
+//     final generator = Generator(PaperSize.mm80, profile);
 
-  static String composeReceiptLine(String label, String value, int lineWidth) {
-    final maxValueLen =
-        lineWidth - label.runes.length - 1; // leave at least 1 space
-    if (value.runes.length > maxValueLen) {
-      value = value.substring(0, maxValueLen); // truncate
-    }
-    final totalLen = label.runes.length + value.runes.length;
-    final padding = totalLen < lineWidth ? ' ' * (lineWidth - totalLen) : ' ';
-    return label + padding + value;
-  }
-}
+//     const int paperWidthPixels = XP323BConfig.paperWidthPixels;
 
-class ReceiptPreview {
-  final List<int> bytes;
-  final img.Image? image;
-  ReceiptPreview({required this.bytes, this.image});
-}
+//     final image = await generateRichKhmerTextAsImgImage(
+//       segments,
+//       paperWidthPixels,
+//       null,
+//     );
 
-class XP323BConfig {
-  static const PaperSize paperSize = PaperSize.mm80;
-  static const int paperWidthPixels = 576;
-  static const int leftMargin = 20;
-  static const int topMargin = 30;
-}
+//     if (image == null) return null;
 
-class StyledTextSegment {
-  final String text;
-  final KhmerTextStyle style;
-  final KhmerFontSize fontSize;
-  final Color? color;
-  final int maxline;
-  final bool isRow;
-  final double? rowHeight;
-  final Uint8List? image; // new field for image bytes
-  final double? imageWidth; // optional custom width
-  final double? imageHeight; // optional custom height
-  final TextAlign? textAlign; // optional custom height
+//     final bwImage = ReceiptHelpers.convertTo1BitDithered(image);
+//     final bytes = generator.image(bwImage) + generator.feed(1);
 
-  StyledTextSegment({
-    required this.text,
-    this.style = KhmerTextStyle.normal,
-    this.fontSize = KhmerFontSize.normal,
-    this.color,
-    this.maxline = 2,
-    this.isRow = false,
-    this.rowHeight,
-    this.image,
-    this.imageWidth,
-    this.imageHeight,
-    this.textAlign,
-  });
-}
+//     return ReceiptPreview(bytes: bytes, image: bwImage);
+//   }
 
-enum KhmerTextStyle { normal, bold, italic, boldItalic }
+//   static String composeReceiptLine(String label, String value, int lineWidth) {
+//     final maxValueLen =
+//         lineWidth - label.runes.length - 1; // leave at least 1 space
+//     if (value.runes.length > maxValueLen) {
+//       value = value.substring(0, maxValueLen); // truncate
+//     }
+//     final totalLen = label.runes.length + value.runes.length;
+//     final padding = totalLen < lineWidth ? ' ' * (lineWidth - totalLen) : ' ';
+//     return label + padding + value;
+//   }
+// }
 
-enum KhmerFontSize { small, normal, large, extraLarge }
+// class ReceiptPreview {
+//   final List<int> bytes;
+//   final img.Image? image;
+//   ReceiptPreview({required this.bytes, this.image});
+// }
+
+// class XP323BConfig {
+//   static const PaperSize paperSize = PaperSize.mm80;
+//   static const int paperWidthPixels = 576;
+//   static const int leftMargin = 20;
+//   static const int topMargin = 0;
+// }
+
+// class StyledTextSegment {
+//   final String text;
+//   final KhmerTextStyle style;
+//   final KhmerFontSize fontSize;
+//   final Color? color;
+//   final int maxline;
+//   final bool isRow;
+//   final double? rowHeight;
+//   final Uint8List? image;
+//   final double? imageWidth;
+//   final double? imageHeight;
+//   final TextAlign? textAlign;
+
+//   StyledTextSegment({
+//     required this.text,
+//     this.style = KhmerTextStyle.normal,
+//     this.fontSize = KhmerFontSize.normal,
+//     this.color,
+//     this.maxline = 2,
+//     this.isRow = false,
+//     this.rowHeight,
+//     this.image,
+//     this.imageWidth,
+//     this.imageHeight,
+//     this.textAlign,
+//   });
+// }
+
+// enum KhmerTextStyle { normal, bold, italic, boldItalic }
+
+// enum KhmerFontSize { small, normal, large, extraLarge }

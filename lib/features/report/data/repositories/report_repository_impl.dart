@@ -14,7 +14,8 @@ import 'package:salesforce/features/report/domain/repositories/report_repository
 import 'package:salesforce/infrastructure/network/network_info.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
-class ReportRepositoryImpl extends BaseAppRepositoryImpl implements ReportRepository {
+class ReportRepositoryImpl extends BaseAppRepositoryImpl
+    implements ReportRepository {
   final ApiReportDataSource _remote;
   final RealmReportDataSource _local;
   final NetworkInfo _networkInfo;
@@ -28,7 +29,9 @@ class ReportRepositoryImpl extends BaseAppRepositoryImpl implements ReportReposi
        _networkInfo = networkInfo;
 
   @override
-  Future<Either<Failure, List<Salesperson>>> getSalespersons({Map<String, dynamic>? param}) async {
+  Future<Either<Failure, List<Salesperson>>> getSalespersons({
+    Map<String, dynamic>? param,
+  }) async {
     try {
       final salerPersons = await _local.getSalespersons(args: param);
       return Right(salerPersons);
@@ -38,35 +41,57 @@ class ReportRepositoryImpl extends BaseAppRepositoryImpl implements ReportReposi
   }
 
   @override
-  Future<Either<Failure, List<SoOutstandingReportModel>>> getSoOutstandingReport({
-    Map<String, dynamic>? param,
-    int page = 1,
-  }) async {
+  Future<Either<Failure, List<SoOutstandingReportModel>>>
+  getSoOutstandingReport({Map<String, dynamic>? param, int page = 1}) async {
     try {
       if (await _networkInfo.isConnected) {
         param?['page'] = page;
-        final soOutstandingReport = await _remote.getSoOutstandingReport(data: param);
+        final soOutstandingReport = await _remote.getSoOutstandingReport(
+          data: param,
+        );
         return Right(soOutstandingReport);
       }
-      return const Right([]);
+
+      return const Left(CacheFailure(errorInternetMessage));
     } on GeneralException {
       return const Left(CacheFailure(errorInternetMessage));
     }
   }
 
+  // @override
+  // Future<Either<Failure, List<SoOutstandingReportModel>>>
+  // getSoOutstandingReport({Map<String, dynamic>? param, int page = 1}) async {
+  //   print("================${await _networkInfo.isConnected}");
+  //   try {
+  //     if (await _networkInfo.isConnected) {
+  //       param?['page'] = page;
+  //       final soOutstandingReport = await _remote.getSoOutstandingReport(
+  //         data: param,
+  //       );
+  //       return Right(soOutstandingReport);
+  //     }
+  //     return const Right([]);
+  //   } on GeneralException {
+  //     return const Left(CacheFailure(errorInternetMessage));
+  //   }
+  // }
+
   @override
-  Future<Either<Failure, List<DailySaleSumaryReportModel>>> getDailySalesSummaryReport({
+  Future<Either<Failure, List<DailySaleSumaryReportModel>>>
+  getDailySalesSummaryReport({
     Map<String, dynamic>? param,
     int page = 1,
   }) async {
     try {
       if (await _networkInfo.isConnected) {
         param?['page'] = page;
-        final dailSalesSummaryReport = await _remote.getDailySalesSummaryReport(param: param);
+        final dailSalesSummaryReport = await _remote.getDailySalesSummaryReport(
+          param: param,
+        );
 
         return Right(dailSalesSummaryReport);
       }
-      return const Right([]);
+      return const Left(CacheFailure(errorInternetMessage));
     } on GeneralException {
       return const Left(CacheFailure(errorInternetMessage));
     }
@@ -90,7 +115,7 @@ class ReportRepositoryImpl extends BaseAppRepositoryImpl implements ReportReposi
 
         return Right({"data": records, "filter_note": data["filter_note"]});
       }
-      return const Right({});
+      return const Left(CacheFailure(errorInternetMessage));
     } on GeneralException {
       return const Left(CacheFailure(errorInternetMessage));
     }
@@ -102,21 +127,29 @@ class ReportRepositoryImpl extends BaseAppRepositoryImpl implements ReportReposi
     int page = 1,
   }) async {
     try {
-      final recordReportStockRequest = await _remote.getStockRequestReport(param: param);
-      return Right(recordReportStockRequest);
+      if (await _networkInfo.isConnected) {
+        final recordReportStockRequest = await _remote.getStockRequestReport(
+          param: param,
+        );
+        return Right(recordReportStockRequest);
+      }
+      return const Left(CacheFailure(errorInternetMessage));
     } on GeneralException {
       return const Left(CacheFailure(errorInternetMessage));
     }
   }
 
   @override
-  Future<Either<Failure, List<CustomerBalanceReport>>> getCustomerBalanceReport({
-    Map<String, dynamic>? param,
-    int page = 1,
-  }) async {
+  Future<Either<Failure, List<CustomerBalanceReport>>>
+  getCustomerBalanceReport({Map<String, dynamic>? param, int page = 1}) async {
     try {
-      final recordCustomerBalance = await _remote.getCustomerBalanceReport(param: param);
-      return Right(recordCustomerBalance);
+      if (await _networkInfo.isConnected) {
+        final recordCustomerBalance = await _remote.getCustomerBalanceReport(
+          param: param,
+        );
+        return Right(recordCustomerBalance);
+      }
+      return const Left(CacheFailure(errorInternetMessage));
     } on GeneralException {
       return const Left(CacheFailure(errorInternetMessage));
     }

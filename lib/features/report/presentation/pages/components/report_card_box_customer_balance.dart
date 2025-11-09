@@ -20,54 +20,88 @@ class ReportCardBoxCustomerBalance extends StatelessWidget {
   Widget build(BuildContext context) {
     return BoxWidget(
       border: Border(
-        left: BorderSide(color: mainColor.withValues(alpha: .5), width: 4.scale),
+        top: BorderSide(color: mainColor.withValues(alpha: .5), width: 2.scale),
       ),
-      padding: EdgeInsets.all(scaleFontSize(appSpace)),
+
       margin: EdgeInsets.only(bottom: 8.scale),
       child: Column(
         spacing: appSpace8,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextWidget(text: report.name ?? "", fontWeight: FontWeight.bold, fontSize: 20),
-          TextWidget(text: report.no ?? ""),
-          Hr(width: double.infinity, vertical: scaleFontSize(8)),
-          Row(
-            spacing: 8.scale,
-            children: [
-              _buildInfo(
-                label: greeting("invoice"),
-                value: report.noOfInvoices ?? "",
-                valueColor: textColor,
-                value1Color: textColor,
-                value1: report.salesAmount ?? "",
-              ),
-              _buildInfo(
-                label: greeting("credit_memo"),
-                value: report.noOfCreditMemo ?? "",
-                valueColor: textColor,
-                value1: report.salesCreditMemoAmount ?? "",
-                value1Color: textColor,
-              ),
-            ],
+          BoxWidget(
+            isBoxShadow: false,
+            isRounding: false,
+            color: secondary.withValues(alpha: 0.1),
+            padding: EdgeInsets.all(scaleFontSize(appSpace)),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      spacing: scaleFontSize(appSpace8),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextWidget(
+                          text: report.name ?? "",
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        TextWidget(text: report.no ?? ""),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        TextWidget(
+                          text: Helpers.formatNumberLink(
+                            report.balance,
+                            option: FormatType.amount,
+                          ),
+                          color: success,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                        TextWidget(text: greeting("Balance")),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
+
           Padding(
-            padding: EdgeInsets.symmetric(vertical: scaleFontSize(8)),
-            child: const DotLine(),
-          ),
-          TextShapeRow(
-            label: greeting("Collection "),
-            valueColor: error,
-            labelColor: textColor,
-            valueFontWeight: FontWeight.w600,
-            valueFontSize: 16,
-            value: Helpers.formatNumberLink(report.collection, option: FormatType.amount),
-          ),
-          TextShapeRow(
-            label: greeting("Balance"),
-            valueColor: success,
-            labelColor: textColor,
-            labelFontWeight: FontWeight.bold,
-            value: Helpers.formatNumberLink(report.balance, option: FormatType.amount),
+            padding: EdgeInsets.all(scaleFontSize(appSpace)),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 8.scale,
+              children: [
+                _buildInfo(
+                  label: greeting("invoice"),
+                  value: report.noOfInvoices ?? "",
+                  valueColor: textColor,
+                  value1Color: textColor,
+                  value1: report.salesAmount ?? "",
+                ),
+                _buildInfo(
+                  label: greeting("credit_memo"),
+                  value: report.noOfCreditMemo ?? "",
+                  valueColor: textColor,
+                  value1: report.salesCreditMemoAmount ?? "",
+                  value1Color: textColor,
+                ),
+
+                _buildInfo(
+                  label: greeting("Collection"),
+                  value: Helpers.formatNumberLink(
+                    report.collection,
+                    option: FormatType.amount,
+                  ),
+                  valueColor: error,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -83,31 +117,29 @@ class ReportCardBoxCustomerBalance extends StatelessWidget {
     FormatType type = FormatType.quantity,
   }) {
     return Expanded(
-      child: BoxWidget(
-        isBorder: false,
-        padding: EdgeInsets.all(15.scale),
-        borderColor: primary.withValues(alpha: .2),
-        color: primary.withValues(alpha: .1),
-        isBoxShadow: false,
-        child: Column(
-          spacing: 8.scale,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextWidget(fontWeight: FontWeight.w600, color: textColor50, text: label.toUpperCase()),
-            TextWidget(
-              text: Helpers.formatNumber(value, option: type),
-              fontSize: 20,
-              color: valueColor,
-              fontWeight: FontWeight.bold,
-            ),
-            TextWidget(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-              text: Helpers.formatNumberLink(value1, option: FormatType.amount),
-              color: value1Color,
-            ),
-          ],
-        ),
+      child: Column(
+        spacing: 8.scale,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          TextWidget(
+            fontWeight: FontWeight.w500,
+            color: textColor50,
+            fontSize: 12,
+            text: label.toUpperCase(),
+          ),
+          TextWidget(
+            text: Helpers.formatNumber(value, option: type),
+            fontSize: 20,
+            color: valueColor,
+            fontWeight: FontWeight.bold,
+          ),
+          TextWidget(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            text: Helpers.formatNumberLink(value1, option: FormatType.amount),
+            color: value1Color,
+          ),
+        ],
       ),
     );
   }

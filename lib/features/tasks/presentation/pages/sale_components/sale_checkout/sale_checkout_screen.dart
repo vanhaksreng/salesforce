@@ -24,7 +24,6 @@ import 'package:salesforce/core/utils/date_input_formatter.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/quantity_input_formatter.dart';
 import 'package:salesforce/core/utils/size_config.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history/sale_order_history_screen.dart';
 import 'package:salesforce/features/tasks/domain/entities/checkout_arg.dart';
 import 'package:salesforce/features/tasks/presentation/pages/customer_address/customer_address_screen.dart';
 import 'package:salesforce/features/tasks/presentation/pages/distributor/distributor_screen.dart';
@@ -223,11 +222,14 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
     // over Aging : Allow to credit up to 30 days
   }
 
-  void _navigateToCustomerAddress() {
+  void _navigateToCustomerAddress(String addressCode) {
     Navigator.pushNamed(
       context,
       CustomerAddressScreen.routeName,
-      arguments: widget.arg.salesHeader.customerNo,
+      arguments: {
+        "customer_no": widget.arg.salesHeader.customerNo,
+        "address_no": addressCode,
+      },
     ).then((value) => _handleCustomerAddress(value));
   }
 
@@ -635,7 +637,7 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
               },
             ),
           TextFormFieldWidget(
-            onTap: () => _navigateToCustomerAddress(),
+            onTap: () => _navigateToCustomerAddress(shipment.code ?? ""),
             readOnly: true,
             textColor: textColor50,
             controller: _shipmentCodeCtr,

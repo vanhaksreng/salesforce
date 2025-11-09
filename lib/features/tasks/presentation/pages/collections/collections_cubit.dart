@@ -9,12 +9,14 @@ import 'package:salesforce/features/tasks/presentation/pages/collections/collect
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
-class CollectionsCubit extends Cubit<CollectionsState> with MessageMixin, DownloadMixin, AppMixin {
+class CollectionsCubit extends Cubit<CollectionsState>
+    with MessageMixin, DownloadMixin, AppMixin {
   CollectionsCubit() : super(const CollectionsState(isLoading: true));
   final _taskRepos = getIt<TaskRepository>();
 
   Future<void> getCustomerLedgerEntry({Map<String, dynamic>? param}) async {
     try {
+      emit(state.copyWith(isLoading: true));
       final response = await _taskRepos.getCustomerLedgerEntry(param: param);
       return response.fold((l) => throw GeneralException(l.message), (items) {
         emit(state.copyWith(cusLedgerEntry: items, isLoading: false));
@@ -55,7 +57,9 @@ class CollectionsCubit extends Cubit<CollectionsState> with MessageMixin, Downlo
       }
 
       final response = await _taskRepos.processCashReceiptJournals(journals);
-      return response.fold((l) => throw GeneralException(l.message), (journals) {
+      return response.fold((l) => throw GeneralException(l.message), (
+        journals,
+      ) {
         emit(state.copyWith(casReJounals: journals, isLoading: false));
       });
     } on GeneralException catch (e) {

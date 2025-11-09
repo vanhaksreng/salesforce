@@ -106,7 +106,11 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> {
         return Padding(
           key: ValueKey(record.id),
           padding: EdgeInsets.only(bottom: scaleFontSize(8)),
-          child: ScheduleCard(key: ValueKey(record.id), schedule: record, isReadOnly: true),
+          child: ScheduleCard(
+            key: ValueKey(record.id),
+            schedule: record,
+            isReadOnly: true,
+          ),
         );
       },
     );

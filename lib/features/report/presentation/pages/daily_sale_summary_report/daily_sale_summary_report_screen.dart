@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/app/app_state_handler.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/default_sale_person_mixin.dart';
@@ -7,6 +8,7 @@ import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/bottom_sheet_fn.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
+import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -23,10 +25,13 @@ class DailySaleSummaryReportScreen extends StatefulWidget {
   const DailySaleSummaryReportScreen({super.key});
   static const routeName = "dailySaleSummaryReportScreen";
   @override
-  State<DailySaleSummaryReportScreen> createState() => _DailySaleSummaryReportScreenState();
+  State<DailySaleSummaryReportScreen> createState() =>
+      _DailySaleSummaryReportScreenState();
 }
 
-class _DailySaleSummaryReportScreenState extends State<DailySaleSummaryReportScreen> with DefaultSalePersonMixin {
+class _DailySaleSummaryReportScreenState
+    extends State<DailySaleSummaryReportScreen>
+    with DefaultSalePersonMixin {
   final _cubit = DailySaleSummaryReportCubit();
 
   DateTime? initialToDate;
@@ -44,7 +49,10 @@ class _DailySaleSummaryReportScreenState extends State<DailySaleSummaryReportScr
     initialFromDate = DateTime.now().firstDayOfMonth();
     initialToDate = DateTime.now().endDayOfMonth();
     _cubit.getDailySalesSummaryReport(
-      param: {"from_date": initialFromDate.toString(), "to_date": initialToDate.toString()},
+      param: {
+        "from_date": initialFromDate.toString(),
+        "to_date": initialToDate.toString(),
+      },
     );
   }
 
@@ -64,8 +72,12 @@ class _DailySaleSummaryReportScreenState extends State<DailySaleSummaryReportScr
     } else {
       selectedDate = "";
     }
-    final String fromDate = initialFromDate != null ? DateTimeExt.parse(initialFromDate.toString()).toDateString() : "";
-    final String toDate = initialToDate != null ? DateTimeExt.parse(initialToDate.toString()).toDateString() : "";
+    final String fromDate = initialFromDate != null
+        ? DateTimeExt.parse(initialFromDate.toString()).toDateString()
+        : "";
+    final String toDate = initialToDate != null
+        ? DateTimeExt.parse(initialToDate.toString()).toDateString()
+        : "";
 
     if (fromDate.isNotEmpty && toDate.isNotEmpty) {
       param["from_date"] = fromDate;
@@ -77,7 +89,9 @@ class _DailySaleSummaryReportScreenState extends State<DailySaleSummaryReportScr
 
     param["salesperson_code"] = salesperson?.code;
 
-    param.removeWhere((key, value) => ['date', 'isFilter', 'salesperson'].contains(key));
+    param.removeWhere(
+      (key, value) => ['date', 'isFilter', 'salesperson'].contains(key),
+    );
 
     _cubit.getDailySalesSummaryReport(param: param, page: 1);
 
@@ -114,28 +128,33 @@ class _DailySaleSummaryReportScreenState extends State<DailySaleSummaryReportScr
           Helpers.gapW(appSpace),
         ],
       ),
-      body: BlocBuilder<DailySaleSummaryReportCubit, DailySaleSummaryReportState>(
-        bloc: _cubit,
-        builder: (context, state) {
-          final records = state.records ?? [];
-
-          if (records.isEmpty) {
-            return const EmptyScreen();
-          }
-          return ListView.builder(
-            itemCount: records.length,
-            padding: const EdgeInsets.all(appSpace),
-            itemBuilder: (context, index) {
-              return ReportCardBoxDailySales(report: records[index]);
+      body:
+          BlocBuilder<DailySaleSummaryReportCubit, DailySaleSummaryReportState>(
+            bloc: _cubit,
+            builder: (context, state) {
+              final records = state.records ?? [];
+              return AppStateHandler(
+                isLoading: state.isLoading,
+                error: state.error,
+                records: records,
+                onData: () => ListView.builder(
+                  itemCount: records.length,
+                  padding: const EdgeInsets.all(appSpace),
+                  itemBuilder: (context, index) {
+                    return ReportCardBoxDailySales(report: records[index]);
+                  },
+                ),
+              );
             },
-          );
-        },
-      ),
+          ),
     );
   }
 
   Widget _buildFilter() {
-    return BlocBuilder<DailySaleSummaryReportCubit, DailySaleSummaryReportState>(
+    return BlocBuilder<
+      DailySaleSummaryReportCubit,
+      DailySaleSummaryReportState
+    >(
       bloc: _cubit,
       builder: (context, state) {
         return SaleBottomsheetFilter(

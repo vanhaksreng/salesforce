@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_text_widget.dart';
 import 'package:salesforce/core/presentation/widgets/buttom_sheet_filter_widget.dart';
@@ -20,11 +21,13 @@ class SaleBottomsheetFilter extends StatefulWidget {
     this.status = "All",
     this.fromDate,
     this.toDate,
+    this.endDate,
     this.onApply,
     this.hasSalePeron = false,
     this.hasStatus = true,
     this.salePersons,
     this.selectDate = "This Week",
+    this.typeReport = "",
   });
 
   final String status;
@@ -32,8 +35,10 @@ class SaleBottomsheetFilter extends StatefulWidget {
   final Salesperson? salePersons;
   final DateTime? fromDate;
   final DateTime? toDate;
+  final DateTime? endDate;
   final bool hasSalePeron;
   final bool hasStatus;
+  final String typeReport;
 
   final Function(Map<String, dynamic>)? onApply;
 
@@ -44,13 +49,22 @@ class SaleBottomsheetFilter extends StatefulWidget {
 class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
   late final ValueNotifier<String> _selectDateNotifier;
 
-  final ValueNotifier<Salesperson?> _salePersonCodeNotifier = ValueNotifier<Salesperson?>(null);
+  final ValueNotifier<Salesperson?> _salePersonCodeNotifier =
+      ValueNotifier<Salesperson?>(null);
   static const List<String> _listStatus = ['All', 'Approved', 'Open', 'Closed'];
 
-  static const List<String> _listDate = ['Today', 'Yesterday', 'This Week', 'Last Week', 'This Month', 'Last Month'];
+  static const List<String> _listDate = [
+    'Today',
+    'Yesterday',
+    'This Week',
+    'Last Week',
+    'This Month',
+    'Last Month',
+  ];
 
   DateTime? _selectedFromDate;
   DateTime? _selectedToDate;
+  DateTime? _selectedEndingDate;
   final now = DateTime.now();
   String status = "All";
   bool isFilter = true;
@@ -62,11 +76,14 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
     _selectDateNotifier = ValueNotifier<String>(widget.selectDate);
     _selectedFromDate = widget.fromDate ?? now.firstDayOfWeek();
     _selectedToDate = widget.toDate ?? now.endDayOfWeek();
+    _selectedEndingDate = widget.endDate ?? now;
     status = widget.status;
   }
 
   void _resetFilter() {
-    widget.hasSalePeron ? _selectDateNotifier.value = "This Month" : _selectDateNotifier.value = "This Week";
+    widget.hasSalePeron
+        ? _selectDateNotifier.value = "This Month"
+        : _selectDateNotifier.value = "This Week";
     _salePersonCodeNotifier.value = null;
     status = "All";
     setState(() {
@@ -81,6 +98,15 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
       status = value;
     }
     setState(() {});
+  }
+
+  void _onPickSingleDate(DateTime? date) {
+    if (date != null) {
+      setState(() {
+        _selectedEndingDate = date;
+        _selectDateNotifier.value = "";
+      });
+    }
   }
 
   void _onPickFrmDate(DateTime? date) {
@@ -119,7 +145,10 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
       context,
       BuildSelectedSaleperson.routeName,
       arguments: BuildSelectedSalepersonArg(
-        salePersonCode: _salePersonCodeNotifier.value?.code ?? widget.salePersons?.code ?? "",
+        salePersonCode:
+            _salePersonCodeNotifier.value?.code ??
+            widget.salePersons?.code ??
+            "",
       ),
     ).then((value) {
       if (value == null) return;
@@ -141,6 +170,8 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
         "date": _selectDateNotifier.value,
         "from_date": _selectedFromDate,
         "to_date": _selectedToDate,
+        if (widget.typeReport == rCustomerBanlance)
+          "ending_date": _selectedEndingDate,
         "status": status,
         "salesperson": _salePersonCodeNotifier.value,
         "isFilter": isFilter,
@@ -150,17 +181,25 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
         spacing: 8.scale,
         children: [
           _buildDate(),
-          const Hr(width: double.infinity),
+          if (widget.typeReport != rCustomerBanlance)
+            const Hr(width: double.infinity),
           _buildStatusDropdown(),
           _buildSalePerson(),
           Helpers.gapH(scaleFontSize(8)),
-          _buildDatePickerSection(),
+          if (widget.typeReport == rCustomerBanlance) ...[
+            _buildDatePickerSingleDate(),
+          ] else ...[
+            _buildDatePickerSection(),
+          ],
         ],
       ),
     );
   }
 
   Widget _buildDate() {
+    if (widget.typeReport == rCustomerBanlance) {
+      return SizedBox.shrink();
+    }
     return Padding(
       padding: EdgeInsets.all(scaleFontSize(8)),
       child: ValueListenableBuilder(
@@ -194,7 +233,9 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
                       to = now.subtract(const Duration(days: 1)).endOfDay;
                       break;
                     case "Last Week":
-                      final lastWeekEnd = now.firstDayOfWeek().subtract(const Duration(days: 1));
+                      final lastWeekEnd = now.firstDayOfWeek().subtract(
+                        const Duration(days: 1),
+                      );
 
                       from = lastWeekEnd.firstDayOfWeek();
                       to = lastWeekEnd.endDayOfWeek();
@@ -219,7 +260,10 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
                     _selectedToDate = to;
                   });
                 },
-                child: TextWidget(text: itemDate, color: isHasSelected ? white : textColor),
+                child: TextWidget(
+                  text: itemDate,
+                  color: isHasSelected ? white : textColor,
+                ),
               );
             }).toList(),
           );
@@ -239,7 +283,11 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
             spacing: 8.scale,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextWidget(text: greeting("sales_person"), fontSize: 16, fontWeight: FontWeight.bold),
+              TextWidget(
+                text: greeting("sales_person"),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
               BoxWidget(
                 height: 45.scale,
                 onPress: () => _navigatorToSaleperonScreen(context),
@@ -250,7 +298,10 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     TextWidget(
-                      text: _salePersonCodeNotifier.value?.name ?? widget.salePersons?.name ?? "Select Sales Person",
+                      text:
+                          _salePersonCodeNotifier.value?.name ??
+                          widget.salePersons?.name ??
+                          "Select Sales Person",
                     ),
                     Icon(Icons.arrow_right, size: 16.scale, color: textColor50),
                   ],
@@ -271,10 +322,16 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
         spacing: 8.scale,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextWidget(text: greeting("status"), fontSize: 16, fontWeight: FontWeight.bold),
+          TextWidget(
+            text: greeting("status"),
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
           BoxWidget(
-            isBoxShadow: false,
-            color: grey20,
+            isBorder: true,
+            borderColor: grey20,
+            isBoxShadow: true,
+            color: white,
             padding: EdgeInsets.symmetric(horizontal: 16.scale),
             child: DropdownButton<String>(
               value: status,
@@ -287,7 +344,10 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
                   .map(
                     (item) => DropdownMenuItem<String>(
                       value: item,
-                      child: TextWidget(text: item, fontWeight: FontWeight.w400),
+                      child: TextWidget(
+                        text: item,
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
                   )
                   .toList(),
@@ -306,7 +366,11 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 8.scale,
         children: [
-          TextWidget(text: greeting("date_range"), fontSize: 16, fontWeight: FontWeight.bold),
+          TextWidget(
+            text: greeting("date_range"),
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
           DatePcikerWidget(
             initialDate: _selectedFromDate ?? DateTime.now(),
             onDateSelected: (date) => _onPickFrmDate(date),
@@ -323,17 +387,50 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
     );
   }
 
+  Widget _buildDatePickerSingleDate() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: scaleFontSize(appSpace)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 8.scale,
+        children: [
+          TextWidget(
+            text: greeting("Ending Date"),
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          DatePcikerWidget(
+            initialDate: _selectedEndingDate ?? DateTime.now(),
+            onDateSelected: (date) => _onPickSingleDate(date),
+            child: _buildDateDisplay(date: _selectedEndingDate, label: ""),
+          ),
+          // TextWidget(text: greeting("to"), fontSize: 14, color: textColor50),
+          // DatePcikerWidget(
+          //   initialDate: _selectedToDate ?? DateTime.now(),
+          //   onDateSelected: (date) => _onPickToDate(date),
+          //   child: _buildDateDisplay(date: _selectedToDate, label: "to"),
+          // ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDateDisplay({required DateTime? date, required String label}) {
     return BoxWidget(
       rounding: 8,
-      isBoxShadow: false,
-      color: grey20,
+      isBoxShadow: true,
+      isBorder: true,
+      borderColor: grey20,
+      color: white,
       padding: EdgeInsets.symmetric(horizontal: 16.scale, vertical: 13.scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          TextWidget(fontWeight: FontWeight.w500, text: date?.toDateNameString() ?? ""),
-          Icon(size: 16.scale, Icons.calendar_today, color: textColor50),
+          TextWidget(
+            fontWeight: FontWeight.w500,
+            text: date?.toDateNameString() ?? "",
+          ),
+          Icon(size: 16.scale, Icons.calendar_month, color: textColor50),
         ],
       ),
     );

@@ -189,12 +189,17 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
 
     await _storage.writeTransaction((realm) {
       if (reset) {
-        handler.cleanAll(realm);
+        if (tableName == "cash_receipt_journals") {
+          // Don't delete anything - just let the loop handle updates
+        } else {
+          handler.cleanAll(realm);
+        }
       }
 
       for (var item in records) {
         if (tableName == "item") {
           final itemCollection = item as Item;
+
           if (Helpers.toDouble(itemCollection.inventory) > 0) {
             realm.add(
               ItemLedgerEntry(
@@ -209,22 +214,63 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
           }
 
           final entries = realm.query<ItemLedgerEntry>(
-            'item_no = \$0 AND quantity < 0',
+            'item_no == \$0 AND quantity < 0',
             [itemCollection.no],
           );
+
           final endingQty = entries.fold<double>(
             0,
-            (sum, entry) => sum + (entry.quantity),
+            (sum, entry) => sum + entry.quantity,
           );
 
           item.inventory =
               Helpers.toDouble(itemCollection.inventory) + endingQty;
-        }
 
-        try {
           realm.add(item, update: true);
-        } catch (e) {
-          Logger.log('Error processing record: $e');
+        } else if (tableName == "cash_receipt_journals") {
+          final journal = item as CashReceiptJournals;
+          final status = (journal.status ?? "").toLowerCase();
+
+          if (status == "approved") {
+            final existing = realm.query<CashReceiptJournals>('id == \$0', [
+              journal.id,
+            ]);
+
+            if (existing.isNotEmpty) {
+              final existingJournal = existing.first;
+
+              existingJournal.status = journal.status ?? existingJournal.status;
+              existingJournal.amount = journal.amount ?? existingJournal.amount;
+              existingJournal.amountLcy =
+                  journal.amountLcy ?? existingJournal.amountLcy;
+              existingJournal.discountAmount =
+                  journal.discountAmount ?? existingJournal.discountAmount;
+              existingJournal.discountAmountLcy =
+                  journal.discountAmountLcy ??
+                  existingJournal.discountAmountLcy;
+              existingJournal.postingDate =
+                  journal.postingDate ?? existingJournal.postingDate;
+              existingJournal.documentNo =
+                  journal.documentNo ?? existingJournal.documentNo;
+              existingJournal.customerNo =
+                  journal.customerNo ?? existingJournal.customerNo;
+              existingJournal.isSync = "Yes";
+            } else {
+              realm.add(journal, update: false);
+            }
+          } else {
+            try {
+              realm.add(journal, update: true);
+            } catch (e) {
+              Logger.log('Error processing cash receipt journal: $e');
+            }
+          }
+        } else {
+          try {
+            realm.add(item, update: true);
+          } catch (e) {
+            Logger.log('Error processing record: $e');
+          }
         }
       }
     });
@@ -590,7 +636,7 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
       realm.deleteMany(realm.all<SalesLine>().toList());
       realm.deleteMany(realm.all<Permission>().toList());
       realm.deleteMany(realm.all<DistributionSetUp>().toList());
-
+      realm.deleteMany(realm.all<CompetitorItemLedgerEntry>().toList());
       return true;
     });
   }
@@ -613,11 +659,12 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
       return true;
     });
   }
-  
+
   @override
-  Future<bool> updateStatusGPSTrackingEntries({required List<GpsTrackingEntry> records}) async {
+  Future<bool> updateStatusGPSTrackingEntries({
+    required List<GpsTrackingEntry> records,
+  }) async {
     return _storage.writeTransaction((realm) {
-      
       for (var record in records) {
         record.isSync = kStatusYes;
         realm.add(record, update: true);

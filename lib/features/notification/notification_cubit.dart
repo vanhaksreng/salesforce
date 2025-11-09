@@ -13,15 +13,20 @@ class NotificationCubit extends Cubit<NotificationState> with MessageMixin {
   Future<void> getNotification() async {
     try {
       final response = await _notificationRepos.getNotification();
-      return response.fold((l) => throw GeneralException(l.message), (items) {
-        emit(
-          state.copyWith(
-            isLoading: false,
-            notifications: items.notifications,
-            countnotifications: items.countNotification,
-          ),
-        );
-      });
+      return response.fold(
+        (l) {
+          emit(state.copyWith(isLoading: false, error: l.message));
+        },
+        (items) {
+          emit(
+            state.copyWith(
+              isLoading: false,
+              notifications: items.notifications,
+              countnotifications: items.countNotification,
+            ),
+          );
+        },
+      );
     } on GeneralException catch (e) {
       showWarningMessage(e.message);
     } on Exception {
