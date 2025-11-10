@@ -112,14 +112,12 @@ class LocationService with WidgetsBindingObserver {
           _eventController.add({'type': 'stopped'});
           break;
         case 'error':
-          Logger.log("error: $args");
           _eventController.add({
             'type': 'error',
             'message': args['message'] ?? 'Unknown',
           });
           break;
         case 'syncLocations':
-          Logger.log("syncLocations: $args");
           _eventController.add({'type': 'syncLocations', 'data': args['data']});
           break;
         default:
