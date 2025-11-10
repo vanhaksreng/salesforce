@@ -160,6 +160,7 @@ class _MainTapScreenState extends State<MainTapScreen>
     });
 
     await _requestPermissions();
+    
     await _startTracking();
   }
 

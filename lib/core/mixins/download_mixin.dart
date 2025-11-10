@@ -11,11 +11,12 @@ mixin DownloadMixin {
     List<AppSyncLog> tables, {
     Function(double, int, String, String)? onProgress,
     Map<String, dynamic>? param,
+    bool showMessageAfterSuccess = true,
   }) async {
     try {
       await _appRepo.downloadTranData(tables: tables, onProgress: onProgress).then((response) {
         response.fold((l) => GeneralException(l.message), (r) {
-          if (onProgress != null) {
+          if (onProgress != null && showMessageAfterSuccess) {
             Helpers.showMessage(msg: "Data is up to date");
           }
         });

@@ -27,8 +27,6 @@ import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
-//Check On Moday
-
 class CollectionsScreen extends StatefulWidget {
   const CollectionsScreen({super.key, required this.arg});
   static const String routeName = "collectionScreen";
@@ -56,6 +54,8 @@ class CollectionsScreenState extends State<CollectionsScreen>
 
   Future<void> _initializeData() async {
     await _cubit.getPaymentType();
+
+    await _handleDownload();
 
     await _cubit.getCustomerLedgerEntry(
       param: {'customer_no': widget.arg.schedule.customerNo},
@@ -115,9 +115,10 @@ class CollectionsScreenState extends State<CollectionsScreen>
     }
   }
 
-  void _handleDownload() async {
+  Future<void> _handleDownload() async {
     final l = LoadingOverlay.of(context);
     l.show();
+
     await Future.delayed(const Duration(milliseconds: 200));
     try {
       List<String> tables = ["customer_ledger_entry", "cash_receipt_journals"];

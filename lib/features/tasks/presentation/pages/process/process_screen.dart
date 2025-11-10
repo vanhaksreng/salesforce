@@ -225,34 +225,6 @@ class _ProcessScreenState extends State<ProcessScreen> with MessageMixin {
     ];
   }
 
-  // void _handleDownload() async {
-  //   try {
-  //     if (!await _cubit.isConnectedToNetwork()) {
-  //       return;
-  //     }
-
-  //     List<String> tables = [
-  //       "customer_ledger_entry",
-  //       "cash_receipt_journals",
-  //       "promotion_type",
-  //     ];
-
-  //     final filter = tables.map((table) => '"$table"').toList();
-
-  //     final appSyncLogs = await _cubit.getAppSyncLogs({
-  //       'tableName': 'IN {${filter.join(",")}}',
-  //     });
-
-  //     if (tables.isEmpty) {
-  //       return;
-  //     }
-
-  //     await _cubit.downloadDatas(appSyncLogs);
-  //   } on Exception {
-  //     //
-  //   }
-  // }
-
   Future<void> _handleDownload() async {
     final loading = LoadingOverlay.of(context);
 
@@ -263,9 +235,10 @@ class _ProcessScreenState extends State<ProcessScreen> with MessageMixin {
       }
 
       const tables = [
-        "customer_ledger_entry",
-        "cash_receipt_journals",
+        // "customer_ledger_entry",
+        // "cash_receipt_journals",
         "promotion_type",
+        "vat_posting_setup",
       ];
 
       final filter = tables.map((table) => '"$table"').join(',');
@@ -285,8 +258,9 @@ class _ProcessScreenState extends State<ProcessScreen> with MessageMixin {
 
       await _cubit.downloadDatas(
         appSyncLogs,
-        onProgress: (progress, index, tableName, status) {},
+        showMessageAfterSuccess: false,
       );
+
     } on Exception catch (e) {
       debugPrint('Download error: $e');
     } finally {

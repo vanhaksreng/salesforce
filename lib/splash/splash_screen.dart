@@ -36,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen> {
       if (await _cubit.isConnectedToNetwork()) {
         await _cubit.loadInitialData();
         await Future.delayed(const Duration(milliseconds: 200));
-        await _handleDownload();
+        // await _handleDownload();
         await _cubit.getSchedules();
       }
       final position = await _location.getCurrentLocation();
@@ -65,7 +65,10 @@ class _SplashScreenState extends State<SplashScreen> {
         return;
       }
 
-      List<String> tables = ["promotion_type"];
+      List<String> tables = [
+        "promotion_type", 
+        "vat_posting_setup"
+      ];
 
       final filter = tables.map((table) => '"$table"').toList();
 
