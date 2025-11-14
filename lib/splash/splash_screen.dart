@@ -39,7 +39,8 @@ class _SplashScreenState extends State<SplashScreen> {
         // await _handleDownload(); // Replace in Process screen
         await _cubit.getSchedules();
       }
-      final position = await _location.getCurrentLocation();
+      if (!mounted) return;
+      final position = await _location.getCurrentLocation(context: context);
       await appRepo.storeLocationOffline(
         LatLng(position.latitude, position.longitude),
       );
@@ -65,10 +66,7 @@ class _SplashScreenState extends State<SplashScreen> {
         return;
       }
 
-      List<String> tables = [
-        "promotion_type", 
-        "vat_posting_setup"
-      ];
+      List<String> tables = ["promotion_type", "vat_posting_setup"];
 
       final filter = tables.map((table) => '"$table"').toList();
 

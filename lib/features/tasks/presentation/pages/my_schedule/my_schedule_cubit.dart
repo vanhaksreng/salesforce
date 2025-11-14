@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:path/path.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/app_mixin.dart';
@@ -71,6 +73,7 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
   }
 
   Future<void> getSchedules(
+    BuildContext context,
     DateTime date, {
     String text = "",
     bool isLoading = true,
@@ -87,8 +90,8 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
           'salesperson_code': state.userSetup?.salespersonCode,
         },
       );
-
-      final current = await _location.getCurrentLocation();
+      if (!context.mounted) return;
+      final current = await _location.getCurrentLocation(context: context);
 
       response.fold((failure) => throw Exception(failure.message), (schedules) {
         for (var s in schedules) {
@@ -357,8 +360,8 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
     emit(state.copyWith(selectedStatus: "All", isSortDistance: false));
   }
 
-  Future<void> getCurrentLocation() async {
-    final current = await _location.getCurrentLocation();
+  Future<void> getCurrentLocation(BuildContext context) async {
+    final current = await _location.getCurrentLocation(context: context);
     emit(state.copyWith(latLng: LatLng(current.latitude, current.longitude)));
   }
 }
