@@ -1,651 +1,332 @@
-import Flutter
-import UIKit
-
-@objc class KhmerTextRenderer: NSObject {
-    
-    private static var renderCache = NSCache<NSString, FlutterStandardTypedData>()
-    private static let cacheQueue = DispatchQueue(label: "com.khmer.render.cache", attributes: .concurrent)
-    
-    // Track if fonts have been logged
-    private static var hasLoggedFonts = false
-    private static var khmerFontAvailable: UIFont?
-    private static var fontCheckComplete = false
-    
-    // ✅ IMPROVED: Better font detection
-    private static func getKhmerFont(size: CGFloat) -> UIFont {
-        // Return cached font if available
-        if let cachedFont = khmerFontAvailable {
-            return cachedFont.withSize(size)
-        }
-        
-        // Print all available fonts ONCE for debugging
-        if !hasLoggedFonts {
-            print("📋 ===== AVAILABLE FONTS =====")
-            for family in UIFont.familyNames.sorted() {
-                print("Family: \(family)")
-                for name in UIFont.fontNames(forFamilyName: family) {
-                    print("  - \(name)")
-                }
-            }
-            print("📋 =============================")
-            hasLoggedFonts = true
-        }
-        
-        let fontNames = [
-            "NotoSansKhmer-Regular",
-            "NotoSansKhmer",
-            "Noto Sans Khmer",
-            "NotoSerifKhmer-Regular",
-            "NotoSerifKhmer",
-            "Noto Serif Khmer",
-            "KhmerOSSystem",
-            "KhmerOS",
-            "Khmer Sangam MN",  // iOS built-in
-            "KhmerUI",
-            "Hanuman",
-        ]
-        
-        for fontName in fontNames {
-            if let font = UIFont(name: fontName, size: size) {
-                print("✅ SUCCESS: Using Khmer font '\(fontName)' at size \(size)")
-                khmerFontAvailable = font
-                fontCheckComplete = true
-                return font
-            } else {
-                print("❌ FAILED: Font '\(fontName)' not found")
-            }
-        }
-        
-        print("⚠️ CRITICAL: NO KHMER FONT FOUND! Text will be garbled!")
-        print("⚠️ Please install NotoSansKhmer-Regular.ttf in Xcode:")
-        print("   1. Add font file to project")
-        print("   2. Add to 'Copy Bundle Resources' in Build Phases")
-        print("   3. Add to Info.plist under UIAppFonts key")
-        
-        fontCheckComplete = true
-        
-        // Last resort - system font (will NOT render Khmer correctly)
-        return UIFont.systemFont(ofSize: size)
-    }
-    
-    // Pre-load fonts with different sizes
-    private static let khmerFont24 = getKhmerFont(size: 24)
-    private static let khmerFont20 = getKhmerFont(size: 20)
-    private static let khmerFont18 = getKhmerFont(size: 18)
-    private static let khmerFont16 = getKhmerFont(size: 16)
-    private static let khmerFont14 = getKhmerFont(size: 14)
-    private static let khmerFont13 = getKhmerFont(size: 13)
-    
-    @objc static func renderText(
-        _ text: String,
-        width: CGFloat = 384,
-        fontSize: CGFloat = 24,
-        useCache: Bool = true,
-        maxLines: Int = 0,
-        completion: @escaping (FlutterStandardTypedData?) -> Void
-    ) {
-        let cleanText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if cleanText.isEmpty {
-            print("⚠️ Empty text provided to renderText")
-            completion(nil)
-            return
-        }
-        
-        let cacheKey = "\(cleanText)_\(Int(width))_\(Int(fontSize))_\(maxLines)" as NSString
-        
-        if useCache, let cached = renderCache.object(forKey: cacheKey) {
-            print("✅ Cache hit for: \(cleanText.prefix(30))...")
-            completion(cached)
-            return
-        }
-        
-        print("🔄 Rendering Khmer: '\(cleanText.prefix(50))'")
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            if let result = renderTextSync(cleanText, width: width, fontSize: fontSize, maxLines: maxLines) {
-                if useCache {
-                    cacheQueue.async(flags: .barrier) {
-                        renderCache.setObject(result, forKey: cacheKey)
-                    }
-                }
-                print("✅ Render successful")
-                completion(result)
-            } else {
-                print("❌ FAILED to render text: '\(cleanText.prefix(30))...'")
-                completion(nil)
-            }
-        }
-    }
-    
-    // ✅ IMPROVED: Better error handling and validation
-    static func renderTextSync(
-        _ text: String,
-        width: CGFloat,
-        fontSize: CGFloat,
-        maxLines: Int = 0
-    ) -> FlutterStandardTypedData? {
-        
-        // Validate input
-        guard !text.isEmpty else {
-            print("❌ Cannot render empty text")
-            return nil
-        }
-        
-        guard width > 0 && fontSize > 0 else {
-            print("❌ Invalid dimensions: width=\(width), fontSize=\(fontSize)")
-            return nil
-        }
-        
-        // Select font
-        let font: UIFont
-        switch Int(fontSize) {
-        case 13: font = khmerFont13
-        case 14: font = khmerFont14
-        case 16: font = khmerFont16
-        case 18: font = khmerFont18
-        case 20: font = khmerFont20
-        case 24: font = khmerFont24
-        default: font = getKhmerFont(size: fontSize)
-        }
-        
-        print("🔤 Rendering with font: \(font.fontName) (\(font.familyName)) at \(fontSize)pt")
-        
-        // Check if font supports Khmer
-        if !font.fontName.lowercased().contains("khmer") &&
-           !font.familyName.lowercased().contains("khmer") {
-            print("⚠️ WARNING: Font '\(font.fontName)' may not support Khmer!")
-        }
-        
-        // Paragraph style
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .left
-        paragraphStyle.lineBreakMode = maxLines > 0 ? .byTruncatingTail : .byWordWrapping
-        paragraphStyle.lineSpacing = 4
-        paragraphStyle.paragraphSpacing = 2
-        
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: UIColor.black,
-            .paragraphStyle: paragraphStyle,
-        ]
-        
-        let attributedText = NSAttributedString(string: text, attributes: attributes)
-        
-        let padding: CGFloat = 10
-        let maxWidth = width - (padding * 2)
-        
-        guard maxWidth > 0 else {
-            print("❌ Width too small after padding: \(maxWidth)")
-            return nil
-        }
-        
-        let constraintRect = CGSize(width: maxWidth, height: .greatestFiniteMagnitude)
-        
-        let boundingBox = attributedText.boundingRect(
-            with: constraintRect,
-            options: [.usesLineFragmentOrigin, .usesFontLeading],
-            context: nil
-        )
-        
-        let lineHeight = font.lineHeight
-        var finalHeight = boundingBox.height
-        
-        if maxLines > 0 {
-            let maxHeight = lineHeight * CGFloat(maxLines)
-            finalHeight = min(finalHeight, maxHeight)
-        }
-        
-        // Ensure minimum height
-        if finalHeight < lineHeight {
-            finalHeight = lineHeight
-        }
-        
-        let imageWidth = width
-        let imageHeight = ceil(finalHeight) + (padding * 2)
-        let size = CGSize(width: imageWidth, height: imageHeight)
-        
-        print("📐 Image dimensions: \(Int(imageWidth))x\(Int(imageHeight))px")
-        
-        // Validate final size
-        guard imageWidth > 0 && imageHeight > 0 else {
-            print("❌ Calculated image size is invalid: \(imageWidth)x\(imageHeight)")
-            return nil
-        }
-        
-        // High quality rendering
-        UIGraphicsBeginImageContextWithOptions(size, true, 2.0)
-        
-        guard let context = UIGraphicsGetCurrentContext() else {
-            UIGraphicsEndImageContext()
-            print("❌ Failed to create graphics context")
-            return nil
-        }
-        
-        // White background
-        context.setFillColor(UIColor.white.cgColor)
-        context.fill(CGRect(origin: .zero, size: size))
-        
-        // Enable high-quality rendering
-        context.setShouldAntialias(true)
-        context.setAllowsAntialiasing(true)
-        context.setShouldSmoothFonts(true)
-        context.setAllowsFontSmoothing(true)
-        context.interpolationQuality = .high
-        
-        // Draw text
-        let textRect = CGRect(x: padding, y: padding, width: maxWidth, height: finalHeight)
-        
-        if maxLines > 0 {
-            context.saveGState()
-            context.clip(to: textRect)
-        }
-        
-        attributedText.draw(in: textRect)
-        
-        if maxLines > 0 {
-            context.restoreGState()
-        }
-        
-        let image = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        guard let cgImage = image?.cgImage else {
-            print("❌ Failed to get CGImage from context")
-            return nil
-        }
-        
-        let uiImage = UIImage(cgImage: cgImage)
-        
-        // Use PNG for perfect quality
-        guard let imageData = uiImage.pngData() else {
-            print("❌ Failed to convert image to PNG data")
-            return nil
-        }
-        
-        let sizeKB = Double(imageData.count) / 1024.0
-        print("✅ Rendered: \(Int(imageWidth))x\(Int(imageHeight))px, \(String(format: "%.1f", sizeKB))KB")
-        
-        return FlutterStandardTypedData(bytes: imageData)
-    }
-    
-    // ✅ IMPROVED: Batch rendering with better error handling
-    static func renderTextBatch(
-        _ texts: [String],
-        widths: [CGFloat],
-        fontSizes: [CGFloat],
-        maxLines: [Int],
-        completion: @escaping ([FlutterStandardTypedData?]) -> Void
-    ) {
-        let startTime = CFAbsoluteTimeGetCurrent()
-        let renderQueue = DispatchQueue(label: "com.khmer.batch.render", attributes: .concurrent)
-        let group = DispatchGroup()
-        var results: [FlutterStandardTypedData?] = Array(repeating: nil, count: texts.count)
-        let resultsLock = NSLock()
-        
-        print("🔄 Starting batch render of \(texts.count) items...")
-        
-        for (index, text) in texts.enumerated() {
-            group.enter()
-            renderQueue.async {
-                let width = index < widths.count ? widths[index] : 384
-                let fontSize = index < fontSizes.count ? fontSizes[index] : 24
-                let maxLine = index < maxLines.count ? maxLines[index] : 0
-                
-                if let rendered = renderTextSync(text, width: width, fontSize: fontSize, maxLines: maxLine) {
-                    resultsLock.lock()
-                    results[index] = rendered
-                    resultsLock.unlock()
-                    print("  ✅ Item \(index + 1)/\(texts.count) rendered")
-                } else {
-                    print("  ❌ Item \(index + 1)/\(texts.count) FAILED")
-                }
-                group.leave()
-            }
-        }
-        
-        group.notify(queue: .main) {
-            let elapsed = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
-            let successCount = results.filter { $0 != nil }.count
-            print("✅ Batch render complete: \(successCount)/\(texts.count) successful in \(String(format: "%.1f", elapsed))ms")
-            completion(results)
-        }
-    }
-    
-    static func clearCache() {
-        cacheQueue.async(flags: .barrier) {
-            renderCache.removeAllObjects()
-            print("🗑️ Cache cleared")
-        }
-    }
-    
-    @objc static func listAvailableFonts() -> [String] {
-        var fonts: [String] = []
-        for family in UIFont.familyNames.sorted() {
-            fonts.append("[\(family)]")
-            for name in UIFont.fontNames(forFamilyName: family) {
-                fonts.append("  \(name)")
-            }
-        }
-        return fonts
-    }
-    
-    // ✅ IMPROVED: Better Khmer support checking
-    @objc static func checkKhmerSupport() -> [String: Any] {
-        let testString = "សូស្តី ជំរាបសួរ" // "Hello" in Khmer
-        let font = getKhmerFont(size: 24)
-        
-        let attributes: [NSAttributedString.Key: Any] = [.font: font]
-        let attributedString = NSAttributedString(string: testString, attributes: attributes)
-        let size = attributedString.size()
-        
-        let supportsKhmer = font.fontName.lowercased().contains("khmer") ||
-                           font.familyName.lowercased().contains("khmer")
-        
-        let isValid = size.width > 0 && size.height > 0 && supportsKhmer
-        
-        print("🔍 Font check results:")
-        print("   Font: \(font.fontName) (\(font.familyName))")
-        print("   Supports Khmer: \(supportsKhmer)")
-        print("   Rendered size: \(size.width)x\(size.height)")
-        print("   Is Valid: \(isValid)")
-        
-        return [
-            "fontName": font.fontName,
-            "fontFamily": font.familyName,
-            "fontSize": font.pointSize,
-            "testString": testString,
-            "renderedWidth": size.width,
-            "renderedHeight": size.height,
-            "isValid": isValid,
-            "supportsKhmer": supportsKhmer,
-            "fontCheckComplete": fontCheckComplete
-        ]
-    }
-}
-
 //import Flutter
 //import UIKit
+//import CoreText
 //
+//// MARK: - Text Alignment
+//@objc enum TextAlignment: Int {
+//    case left = 0
+//    case center = 1
+//    case right = 2
+//    case justified = 3
+//}
+//
+//// MARK: - Text Style
+//@objc class TextStyle: NSObject {
+//    var fontSize: CGFloat = 24
+//    var isBold: Bool = false
+//    var isItalic: Bool = false
+//    var isUnderline: Bool = false
+//    var textColor: UIColor = .black
+//    var backgroundColor: UIColor = .white
+//    var alignment: TextAlignment = .left
+//    var lineSpacing: CGFloat = 0
+//    var letterSpacing: CGFloat = 0
+//    var opacity: CGFloat = 1.0
+//    var monospace: Bool = false
+//    
+//    static func from(dict: [String: Any]) -> TextStyle {
+//        let style = TextStyle()
+//        
+//        // Font size (handle both Double and CGFloat)
+//        if let fontSize = dict["fontSize"] as? CGFloat {
+//            style.fontSize = fontSize
+//        } else if let fontSize = dict["fontSize"] as? Double {
+//            style.fontSize = CGFloat(fontSize)
+//        }
+//        
+//        // Boolean properties
+//        if let isBold = dict["bold"] as? Bool { style.isBold = isBold }
+//        if let isItalic = dict["italic"] as? Bool { style.isItalic = isItalic }
+//        if let isUnderline = dict["underline"] as? Bool { style.isUnderline = isUnderline }
+//        if let monospace = dict["monospace"] as? Bool { style.monospace = monospace }
+//        
+//        // FIXED: Handle alignment as both String and Int
+//        if let alignmentString = dict["alignment"] as? String {
+//            switch alignmentString.lowercased() {
+//            case "left":
+//                style.alignment = .left
+//            case "center", "centre":
+//                style.alignment = .center
+//            case "right":
+//                style.alignment = .right
+//            case "justified", "justify":
+//                style.alignment = .justified
+//            default:
+//                style.alignment = .left
+//            }
+//        } else if let alignmentInt = dict["alignment"] as? Int {
+//            style.alignment = TextAlignment(rawValue: alignmentInt) ?? .left
+//        }
+//        
+//        // Spacing (handle both Double and CGFloat)
+//        if let lineSpacing = dict["lineSpacing"] as? CGFloat {
+//            style.lineSpacing = lineSpacing
+//        } else if let lineSpacing = dict["lineSpacing"] as? Double {
+//            style.lineSpacing = CGFloat(lineSpacing)
+//        }
+//        
+//        if let letterSpacing = dict["letterSpacing"] as? CGFloat {
+//            style.letterSpacing = letterSpacing
+//        } else if let letterSpacing = dict["letterSpacing"] as? Double {
+//            style.letterSpacing = CGFloat(letterSpacing)
+//        }
+//        
+//        // Opacity
+//        if let opacity = dict["opacity"] as? CGFloat {
+//            style.opacity = max(0, min(1, opacity))
+//        } else if let opacity = dict["opacity"] as? Double {
+//            style.opacity = CGFloat(max(0, min(1, opacity)))
+//        }
+//        
+//        // Colors
+//        if let colorHex = dict["textColor"] as? String {
+//            style.textColor = UIColor.from(hex: colorHex)
+//        } else if let colorHex = dict["color"] as? String {
+//            // Support both "textColor" and "color"
+//            style.textColor = UIColor.from(hex: colorHex)
+//        }
+//        
+//        if let bgColorHex = dict["backgroundColor"] as? String {
+//            style.backgroundColor = UIColor.from(hex: bgColorHex)
+//        }
+//        
+//        return style
+//    }
+//}
+//
+//// MARK: - Khmer Text Renderer
 //@objc class KhmerTextRenderer: NSObject {
 //    
 //    private static var renderCache = NSCache<NSString, FlutterStandardTypedData>()
 //    private static let cacheQueue = DispatchQueue(label: "com.khmer.render.cache", attributes: .concurrent)
+//    private static var khmerFont: UIFont?
 //    
-//    // Track if fonts have been logged
-//    private static var hasLoggedFonts = false
+//    private static let khmerFontNames = [
+//        "Noto Sans Khmer",
+//        "NotoSansKhmer-Regular",
+//        "Hanuman",
+//        "Khmer Sangam MN",
+//        "KhmerOSSystem",
+//        "KhmerOS"
+//    ]
 //    
-//    // CRITICAL: List all possible Khmer font names
-//    private static func getKhmerFont(size: CGFloat) -> UIFont {
-//        // Print all available fonts ONCE for debugging
-//        if !hasLoggedFonts {
-//            print("📋 ===== AVAILABLE FONTS =====")
-//            for family in UIFont.familyNames.sorted() {
-//                print("Family: \(family)")
-//                for name in UIFont.fontNames(forFamilyName: family) {
-//                    print("  - \(name)")
+//    private static let monospaceFontNames = [
+//        "Menlo-Regular",
+//        "Monaco",
+//        "Courier New",
+//        "Courier",
+//        "Andale Mono"
+//    ]
+//    
+//    private static func getFont(size: CGFloat, style: TextStyle) -> UIFont {
+//        var baseFont: UIFont
+//        
+//        if style.monospace {
+//            for fontName in monospaceFontNames {
+//                if let font = UIFont(name: fontName, size: size) {
+//                    baseFont = font
+//                    if style.isBold && style.isItalic { return baseFont.withTraits([.traitBold, .traitItalic]) }
+//                    if style.isBold { return baseFont.withTraits([.traitBold]) }
+//                    if style.isItalic { return baseFont.withTraits([.traitItalic]) }
+//                    return baseFont
 //                }
 //            }
-//            print("📋 =============================")
-//            hasLoggedFonts = true
+//            return UIFont.monospacedSystemFont(ofSize: size, weight: style.isBold ? .bold : .regular)
 //        }
 //        
-//        let fontNames = [
-//            "NotoSansKhmer-Regular",
-//            "NotoSansKhmer",
-//            "Noto Sans Khmer",
-//            "NotoSerifKhmer-Regular",
-//            "NotoSerifKhmer",
-//            "Noto Serif Khmer",
-//            "KhmerOSSystem",
-//            "KhmerOS",
-//            "Khmer Sangam MN",  // iOS built-in
-//            "KhmerUI",
-//            "Hanuman",
-//        ]
-//        
-//        for fontName in fontNames {
-//            if let font = UIFont(name: fontName, size: size) {
-//                print("✅ SUCCESS: Using Khmer font '\(fontName)' at size \(size)")
-//                return font
-//            } else {
-//                print("❌ FAILED: Font '\(fontName)' not found")
+//        if let existingKhmer = khmerFont {
+//            baseFont = existingKhmer.withSize(size)
+//        } else {
+//            for fontName in khmerFontNames {
+//                if let font = UIFont(name: fontName, size: size) {
+//                    khmerFont = font
+//                    baseFont = font
+//                    break
+//                }
 //            }
+//            if khmerFont == nil { baseFont = UIFont.systemFont(ofSize: size) }
+//            else { baseFont = khmerFont!.withSize(size) }
 //        }
 //        
-//        print("⚠️ CRITICAL: NO KHMER FONT FOUND! Text will be garbled!")
-//        print("⚠️ Please install NotoSansKhmer-Regular.ttf in Xcode")
+//        if style.isBold && style.isItalic { return baseFont.withTraits([.traitBold, .traitItalic]) }
+//        if style.isBold { return baseFont.withTraits([.traitBold]) }
+//        if style.isItalic { return baseFont.withTraits([.traitItalic]) }
 //        
-//        // Last resort - system font (will NOT render Khmer correctly)
-//        return UIFont.systemFont(ofSize: size)
+//        return baseFont
 //    }
 //    
-//    // Pre-load fonts
-//    private static let khmerFont24 = getKhmerFont(size: 24)
-//    private static let khmerFont20 = getKhmerFont(size: 20)
-//    private static let khmerFont18 = getKhmerFont(size: 18)
-//    private static let khmerFont16 = getKhmerFont(size: 16)
-//    private static let khmerFont14 = getKhmerFont(size: 14)
-//    private static let khmerFont13 = getKhmerFont(size: 13)
-//    
+//    // MARK: - Public render method
 //    @objc static func renderText(
 //        _ text: String,
 //        width: CGFloat = 384,
 //        fontSize: CGFloat = 24,
 //        useCache: Bool = true,
 //        maxLines: Int = 0,
+//        styleDict: [String: Any]? = nil,
 //        completion: @escaping (FlutterStandardTypedData?) -> Void
 //    ) {
 //        let cleanText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-//        if cleanText.isEmpty {
-//            completion(nil)
-//            return
+//        if cleanText.isEmpty { completion(nil); return }
+//        
+//        // FIXED: Proper optional handling
+//        let style: TextStyle
+//        if let dict = styleDict {
+//            style = TextStyle.from(dict: dict)
+//        } else {
+//            style = TextStyle()
 //        }
+//        style.fontSize = fontSize
 //        
-//        let cacheKey = "\(cleanText)_\(Int(width))_\(Int(fontSize))_\(maxLines)" as NSString
-//        
-//        if useCache, let cached = renderCache.object(forKey: cacheKey) {
-//            print("✅ Cache hit for: \(cleanText.prefix(30))...")
-//            completion(cached)
-//            return
-//        }
-//        
-//        print("🔄 Rendering Khmer: '\(cleanText.prefix(50))'")
+//        let cacheKey = generateCacheKey(text: cleanText, width: width, style: style, maxLines: maxLines)
+//        if useCache, let cached = renderCache.object(forKey: cacheKey) { completion(cached); return }
 //        
 //        DispatchQueue.global(qos: .userInitiated).async {
-//            if let result = renderTextSync(cleanText, width: width, fontSize: fontSize, maxLines: maxLines) {
-//                if useCache {
-//                    cacheQueue.async(flags: .barrier) {
-//                        renderCache.setObject(result, forKey: cacheKey)
-//                    }
-//                }
+//            if let result = renderTextSync(cleanText, width: width, style: style, maxLines: maxLines) {
+//                if useCache { cacheQueue.async(flags: .barrier) { renderCache.setObject(result, forKey: cacheKey) } }
 //                completion(result)
-//            } else {
-//                print("❌ FAILED to render text")
-//                completion(nil)
-//            }
+//            } else { completion(nil) }
 //        }
 //    }
 //    
-//     static func renderTextSync(
-//        _ text: String,
-//        width: CGFloat,
-//        fontSize: CGFloat,
-//        maxLines: Int = 0
-//    ) -> FlutterStandardTypedData? {
-//        // Select font
-//        let font: UIFont
-//        switch Int(fontSize) {
-//        case 13: font = khmerFont13
-//        case 14: font = khmerFont14
-//        case 16: font = khmerFont16
-//        case 18: font = khmerFont18
-//        case 20: font = khmerFont20
-//        case 24: font = khmerFont24
-//        default: font = getKhmerFont(size: fontSize)
+//    // MARK: - Synchronous rendering (used for ESC/POS conversion)
+//    static func renderTextSync(_ text: String, width: CGFloat, style: TextStyle, maxLines: Int = 0) -> FlutterStandardTypedData? {
+//        let font = getFont(size: style.fontSize, style: style)
+//        
+//        let paragraphStyle = NSMutableParagraphStyle()
+//        paragraphStyle.lineBreakMode = .byWordWrapping
+//        
+//        // IMPROVED: Better line spacing calculation
+//        let baseLineSpacing = max(style.lineSpacing, style.fontSize * 0.3)
+//        paragraphStyle.lineSpacing = baseLineSpacing
+//        paragraphStyle.lineHeightMultiple = 1.2
+//        paragraphStyle.minimumLineHeight = font.lineHeight
+//        paragraphStyle.maximumLineHeight = font.lineHeight * 1.2 + baseLineSpacing
+//        
+//        switch style.alignment {
+//        case .left: paragraphStyle.alignment = .left
+//        case .center: paragraphStyle.alignment = .center
+//        case .right: paragraphStyle.alignment = .right
+//        case .justified: paragraphStyle.alignment = .justified
 //        }
 //        
-//        print("📝 Rendering with font: \(font.fontName) (\(font.familyName)) at \(fontSize)pt")
-//        
-//        // Paragraph style
-//        let paragraphStyle = NSMutableParagraphStyle()
-//        paragraphStyle.alignment = .left
-//        paragraphStyle.lineBreakMode = maxLines > 0 ? .byTruncatingTail : .byWordWrapping
-//        paragraphStyle.lineSpacing = 4
-//        paragraphStyle.paragraphSpacing = 2
-//        
-//        let attributes: [NSAttributedString.Key: Any] = [
+//        var attributes: [NSAttributedString.Key: Any] = [
 //            .font: font,
-//            .foregroundColor: UIColor.black,
 //            .paragraphStyle: paragraphStyle,
+//            .foregroundColor: style.textColor.withAlphaComponent(style.opacity)
 //        ]
+//        if style.letterSpacing != 0 { attributes[.kern] = style.letterSpacing }
+//        if style.isUnderline { attributes[.underlineStyle] = NSUnderlineStyle.single.rawValue; attributes[.underlineColor] = style.textColor }
 //        
-//        let attributedText = NSAttributedString(string: text, attributes: attributes)
+//        let attrString = NSAttributedString(string: text, attributes: attributes)
+//        let textStorage = NSTextStorage(attributedString: attrString)
+//        let layoutManager = NSLayoutManager()
 //        
-//        let padding: CGFloat = 10
-//        let maxWidth = width - (padding * 2)
-//        let constraintRect = CGSize(width: maxWidth, height: .greatestFiniteMagnitude)
+//        let lineHeight = font.lineHeight * 1.2 + baseLineSpacing
+//        let maxHeight: CGFloat = (maxLines > 0) ? lineHeight * CGFloat(maxLines) : .greatestFiniteMagnitude
 //        
-//        let boundingBox = attributedText.boundingRect(
-//            with: constraintRect,
-//            options: [.usesLineFragmentOrigin, .usesFontLeading],
-//            context: nil
+//        let horizontalPadding: CGFloat = 10
+//        let textContainer = NSTextContainer(size: CGSize(width: width - horizontalPadding * 2, height: maxHeight))
+//        textContainer.lineFragmentPadding = 0
+//        if maxLines > 0 { textContainer.maximumNumberOfLines = maxLines }
+//        
+//        layoutManager.addTextContainer(textContainer)
+//        textStorage.addLayoutManager(layoutManager)
+//        
+//        _ = layoutManager.glyphRange(for: textContainer)
+//        let usedRect = layoutManager.usedRect(for: textContainer)
+//        let clampedHeight = min(usedRect.height, maxHeight)
+//        
+//        // IMPROVED: Better padding calculation to prevent clipping
+//        let verticalPadding: CGFloat = max(10, style.fontSize * 0.4)
+//        let extraBuffer: CGFloat = style.fontSize * 0.2
+//        let imageSize = CGSize(
+//            width: width,
+//            height: ceil(clampedHeight) + verticalPadding * 2 + extraBuffer
 //        )
 //        
-//        let lineHeight = font.lineHeight
-//        var finalHeight = boundingBox.height
+//        UIGraphicsBeginImageContextWithOptions(imageSize, true, 2.0)
+//        defer { UIGraphicsEndImageContext() }
+//        guard let context = UIGraphicsGetCurrentContext() else { return nil }
 //        
-//        if maxLines > 0 {
-//            let maxHeight = lineHeight * CGFloat(maxLines)
-//            finalHeight = min(finalHeight, maxHeight)
-//        }
-//        
-//        let imageWidth = width
-//        let imageHeight = ceil(finalHeight) + (padding * 2)
-//        let size = CGSize(width: imageWidth, height: imageHeight)
-//        
-//        // High quality rendering
-//        UIGraphicsBeginImageContextWithOptions(size, true, 2.0)
-//        
-//        guard let context = UIGraphicsGetCurrentContext() else {
-//            UIGraphicsEndImageContext()
-//            return nil
-//        }
-//        
-//        // White background
-//        context.setFillColor(UIColor.white.cgColor)
-//        context.fill(CGRect(origin: .zero, size: size))
-//        
-//        // Enable high-quality rendering
-//        context.setShouldAntialias(true)
+//        // HIGH QUALITY rendering settings
 //        context.setAllowsAntialiasing(true)
-//        context.setShouldSmoothFonts(true)
-//        context.setAllowsFontSmoothing(true)
+//        context.setShouldAntialias(true)
+//        context.interpolationQuality = .high
 //        
-//        // Draw text
-//        let textRect = CGRect(x: padding, y: padding, width: maxWidth, height: finalHeight)
+//        context.setFillColor(style.backgroundColor.cgColor)
+//        context.fill(CGRect(origin: .zero, size: imageSize))
 //        
-//        if maxLines > 0 {
-//            context.saveGState()
-//            context.clip(to: textRect)
-//        }
+//        let textOrigin = CGPoint(x: horizontalPadding, y: verticalPadding)
+//        layoutManager.drawBackground(forGlyphRange: NSRange(location: 0, length: layoutManager.numberOfGlyphs), at: textOrigin)
+//        layoutManager.drawGlyphs(forGlyphRange: NSRange(location: 0, length: layoutManager.numberOfGlyphs), at: textOrigin)
 //        
-//        attributedText.draw(in: textRect)
-//        
-//        if maxLines > 0 {
-//            context.restoreGState()
-//        }
-//        
-//        let image = UIGraphicsGetImageFromCurrentImageContext()
-//        UIGraphicsEndImageContext()
-//        
-//        guard let cgImage = image?.cgImage else {
-//            return nil
-//        }
-//        
-//        let uiImage = UIImage(cgImage: cgImage)
-//        
-//        // Use PNG for perfect quality
-//        guard let imageData = uiImage.pngData() else {
-//            return nil
-//        }
-//        
-//        let sizeKB = Double(imageData.count) / 1024.0
-//        print("✅ Rendered: \(Int(imageWidth))x\(Int(imageHeight))px, \(String(format: "%.1f", sizeKB))KB")
-//        
-//        return FlutterStandardTypedData(bytes: imageData)
+//        guard let image = UIGraphicsGetImageFromCurrentImageContext(), let pngData = image.pngData() else { return nil }
+//        return FlutterStandardTypedData(bytes: pngData)
 //    }
 //    
-//    static func renderTextBatch(
-//        _ texts: [String],
-//        widths: [CGFloat],
-//        fontSizes: [CGFloat],
-//        maxLines: [Int],
-//        completion: @escaping ([FlutterStandardTypedData?]) -> Void
-//    ) {
-//        let startTime = CFAbsoluteTimeGetCurrent()
-//        let renderQueue = DispatchQueue(label: "com.khmer.batch.render", attributes: .concurrent)
-//        let group = DispatchGroup()
-//        var results: [FlutterStandardTypedData?] = Array(repeating: nil, count: texts.count)
-//        let resultsLock = NSLock()
-//        
-//        for (index, text) in texts.enumerated() {
-//            group.enter()
-//            renderQueue.async {
-//                let width = index < widths.count ? widths[index] : 384
-//                let fontSize = index < fontSizes.count ? fontSizes[index] : 24
-//                let maxLine = index < maxLines.count ? maxLines[index] : 0
-//                
-//                if let rendered = renderTextSync(text, width: width, fontSize: fontSize, maxLines: maxLine) {
-//                    resultsLock.lock()
-//                    results[index] = rendered
-//                    resultsLock.unlock()
-//                }
-//                group.leave()
-//            }
-//        }
-//        
-//        group.notify(queue: .main) {
-//            let elapsed = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
-//            print("✅ Batch rendered \(texts.count) texts in \(String(format: "%.1f", elapsed))ms")
-//            completion(results)
-//        }
+//    private static func generateCacheKey(text: String, width: CGFloat, style: TextStyle, maxLines: Int) -> NSString {
+//        return "\(text)_\(Int(width))_\(Int(style.fontSize))_\(style.isBold)_\(style.isItalic)_\(style.alignment.rawValue)_\(style.monospace)_\(maxLines)" as NSString
 //    }
 //    
-//    static func clearCache() {
-//        cacheQueue.async(flags: .barrier) {
-//            renderCache.removeAllObjects()
-//            print("🗑️ Cache cleared")
-//        }
-//    }
-//    
-//    @objc static func listAvailableFonts() -> [String] {
-//        var fonts: [String] = []
-//        for family in UIFont.familyNames.sorted() {
-//            fonts.append("[\(family)]")
-//            for name in UIFont.fontNames(forFamilyName: family) {
-//                fonts.append("  \(name)")
-//            }
-//        }
-//        return fonts
+//    @objc static func clearCache() {
+//        cacheQueue.async(flags: .barrier) { renderCache.removeAllObjects() }
 //    }
 //    
 //    @objc static func checkKhmerSupport() -> [String: Any] {
-//        let testString = "សួស្តី ជំរាបសួរ" // "Hello" in Khmer
-//        let font = getKhmerFont(size: 24)
+//        let testText = "សួស្តី Hello ជំរាបសួរ 123"
+//        let font = getFont(size: 24, style: TextStyle())
+//        let attributed = NSAttributedString(string: testText, attributes: [.font: font])
+//        let size = attributed.size()
 //        
-//        let attributes: [NSAttributedString.Key: Any] = [.font: font]
-//        let attributedString = NSAttributedString(string: testString, attributes: attributes)
-//        let size = attributedString.size()
+//        var monoStyle = TextStyle()
+//        monoStyle.monospace = true
+//        let monoFont = getFont(size: 24, style: monoStyle)
 //        
 //        return [
 //            "fontName": font.fontName,
 //            "fontFamily": font.familyName,
-//            "fontSize": font.pointSize,
-//            "testString": testString,
+//            "supportsKhmer": true,
+//            "supportsEnglish": true,
 //            "renderedWidth": size.width,
 //            "renderedHeight": size.height,
 //            "isValid": size.width > 0 && size.height > 0,
-//            "supportsKhmer": font.fontName.lowercased().contains("khmer")
+//            "supportsMonospace": true,
+//            "monospaceFontName": monoFont.fontName
 //        ]
+//    }
+//}
+//
+//// MARK: - UIFont Extensions
+//extension UIFont {
+//    func withTraits(_ traits: UIFontDescriptor.SymbolicTraits) -> UIFont {
+//        guard let descriptor = fontDescriptor.withSymbolicTraits(traits) else { return self }
+//        return UIFont(descriptor: descriptor, size: 0)
+//    }
+//}
+//
+//// MARK: - UIColor Extensions
+//extension UIColor {
+//    static func from(hex: String) -> UIColor {
+//        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+//        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
+//        var rgb: UInt64 = 0
+//        Scanner(string: hexSanitized).scanHexInt64(&rgb)
+//        
+//        let length = hexSanitized.count
+//        let red, green, blue: CGFloat
+//        
+//        if length == 6 {
+//            red = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
+//            green = CGFloat((rgb & 0x00FF00) >> 8) / 255.0
+//            blue = CGFloat(rgb & 0x0000FF) / 255.0
+//        } else if length == 8 {
+//            red = CGFloat((rgb & 0xFF000000) >> 24) / 255.0
+//            green = CGFloat((rgb & 0x00FF0000) >> 16) / 255.0
+//            blue = CGFloat((rgb & 0x0000FF00) >> 8) / 255.0
+//        } else {
+//            return UIColor.black
+//        }
+//        
+//        return UIColor(red: red, green: green, blue: blue, alpha: 1.0)
 //    }
 //}

@@ -24,6 +24,4 @@ enum DateType { fromDate, toDate }
 
 enum ListTileType { trailingArrow, trailingSelect }
 
-enum KhmerTextStyle { normal, bold, italic, boldItalic }
-
 enum KhmerFontSize { small, normal, large, extraLarge }
