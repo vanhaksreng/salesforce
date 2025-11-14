@@ -1,9 +1,15 @@
+import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/enums/enums.dart';
+import 'package:salesforce/core/mixins/generate_pdf_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
 import 'package:salesforce/core/presentation/widgets/custom_alert_dialog_widget.dart';
@@ -27,8 +33,10 @@ import 'package:salesforce/features/tasks/presentation/pages/team_schedule_histo
 import 'package:salesforce/features/tasks/presentation/pages/team_schedult/team_schedult_screen.dart';
 import 'package:salesforce/features/tasks/tasks_main_cubit.dart';
 import 'package:salesforce/features/tasks/tasks_main_state.dart';
+import 'package:salesforce/infrastructure/printer/bluetooth/bluetooth_printer_handler.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/localization/trans.dart';
+import 'package:salesforce/testprint.dart';
 import 'package:salesforce/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -42,7 +50,7 @@ class TasksMainScreen extends StatefulWidget {
 }
 
 class _TaskScreenState extends State<TasksMainScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, GeneratePdfMixin {
   late TabController _tabController;
 
   late DateTime scheduleDate;
@@ -260,10 +268,77 @@ class _TaskScreenState extends State<TasksMainScreen>
               const TeamSchedultScreen(),
             ],
           ),
-          floatingActionButton: optionView(),
+          // floatingActionButton: optionView(),
+          bottomNavigationBar: BottomAppBar(
+            shape: CircularNotchedRectangle(),
+            child: IconButton(
+              icon: Icon(Icons.print),
+              onPressed: () => _runDiagnostics(context),
+            ),
+          ),
         );
       },
     );
+  }
+
+  Future<void> _runDiagnostics(BuildContext context) async {
+    final messages = <String>[];
+
+    // Check 1: Handler registered
+    messages.add('✓ Handler is registered');
+
+    // Helpers.showMessage(msg: 'Handler is registered');
+    // Check 2: Try to scan
+    try {
+      await BluetoothPrinterHandler.scanDevices();
+
+      // Listen for discovered devices
+      BluetoothPrinterHandler.setDeviceFoundCallback((device) {
+        print('Found: ${device['name']} - ${device['address']}');
+
+        if (!BluetoothPrinterHandler.isConnected &&
+            device['name'] == "XP-P323B-E1FE") {
+          BluetoothPrinterHandler.connectDevice(device['address']);
+        }
+      });
+
+      messages.add('✓ Scan command sent successfully');
+      // Helpers.showMessage(msg: 'Scan command sent successfully');
+    } catch (e) {
+      Helpers.showMessage(msg: '✗ Scan failed: $e');
+      messages.add('✗ Scan failed: $e');
+    }
+
+    final StringBuffer buffer = StringBuffer();
+
+    // final List<int> codePageCmd = [0x1B, 0x74, 18];
+    // final codePageBytes = Uint8List.fromList(codePageCmd);
+    // final codePageString = utf8.decode(codePageBytes);
+    // buffer.write(codePageString);
+
+    buffer.writeln();
+    buffer.writeln('ប្លូតិចឡូជី'); // Khmer company
+    buffer.writeln('BLUE TECHNOLOGY CO., LTD');
+    buffer.writeln();
+    buffer.writeln(
+      'Description           Qty  UOM  Price  Disc  Amount',
+    );
+
+    final rawString = buffer.toString();
+    final rawBytes = utf8.encode(rawString); // UTF-8 for Khmer
+
+    if (BluetoothPrinterHandler.isConnected) {
+      // const List<Map<String, dynamic>> items = [
+      //   {'description': 'Item 1 (ផលិតផល)', 'qty': 1, 'uom': 'EA', 'price': 10.00, 'disc': 0, 'amount': 10.00},
+      //   {'description': 'Item 2 (សៀវភៅ)', 'qty': 2, 'uom': 'PCS', 'price': 5.00, 'disc': 1.00, 'amount': 9.00},
+      // ];
+
+      if(!context.mounted) return;
+      // await ReceiptPrinter.printReceipt(context, items);
+      // ReceiptPrinter.buildReceiptWidget();
+      await BluetoothPrinterHandler.printRaw(rawBytes);
+      // await BluetoothPrinterHandler.printHtml(html);
+    }
   }
 
   optionView() {

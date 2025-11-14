@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -15,6 +15,8 @@
 		632D8EFC2E5EA9460011C00E /* MyLocationPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632D8EFB2E5EA9440011C00E /* MyLocationPlugin.swift */; };
 		632D8EFE2E5EAA810011C00E /* MyLocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632D8EFD2E5EAA810011C00E /* MyLocationManager.swift */; };
 		632ED5502E5D544F004F6908 /* KalmanLocationFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632ED54F2E5D544D004F6908 /* KalmanLocationFilter.swift */; };
+		638C25CD2EC6D4680020E8D4 /* BluetoothPrinterHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 638C25CC2EC6D4640020E8D4 /* BluetoothPrinterHandler.swift */; };
+		638C25EF2EC6FAFD0020E8D4 /* BluetoothPrinterPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 638C25EE2EC6FAF40020E8D4 /* BluetoothPrinterPlugin.swift */; };
 		63C636282E5C555F002A086E /* LocalStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C636272E5C555A002A086E /* LocalStorageManager.swift */; };
 		63D41BFE2E5057F600DEE8AA /* OneSignalNotificationServiceExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 63D41BF72E5057F600DEE8AA /* OneSignalNotificationServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
@@ -86,6 +88,8 @@
 		632D8EFB2E5EA9440011C00E /* MyLocationPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyLocationPlugin.swift; sourceTree = "<group>"; };
 		632D8EFD2E5EAA810011C00E /* MyLocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyLocationManager.swift; sourceTree = "<group>"; };
 		632ED54F2E5D544D004F6908 /* KalmanLocationFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KalmanLocationFilter.swift; sourceTree = "<group>"; };
+		638C25CC2EC6D4640020E8D4 /* BluetoothPrinterHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothPrinterHandler.swift; sourceTree = "<group>"; };
+		638C25EE2EC6FAF40020E8D4 /* BluetoothPrinterPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothPrinterPlugin.swift; sourceTree = "<group>"; };
 		639A845B2E4C447300B01D6C /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		63C636272E5C555A002A086E /* LocalStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStorageManager.swift; sourceTree = "<group>"; };
 		63D41BF72E5057F600DEE8AA /* OneSignalNotificationServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OneSignalNotificationServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -214,6 +218,8 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				638C25EE2EC6FAF40020E8D4 /* BluetoothPrinterPlugin.swift */,
+				638C25CC2EC6D4640020E8D4 /* BluetoothPrinterHandler.swift */,
 				FAF70F132EC18E7000D5E431 /* KhmerRendererPlugin.swift */,
 				632D8EFD2E5EAA810011C00E /* MyLocationManager.swift */,
 				632D8EFB2E5EA9440011C00E /* MyLocationPlugin.swift */,
@@ -423,13 +429,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -452,64 +454,7 @@
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
 		};
-<<<<<<< HEAD
-		95DA8CF4B3B553BE5344FE44 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		9740EEB61CF901F6004384FC /* Run Script */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Run Script";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build\n";
-		};
-		9B23BA002D87526E2B33D6F6 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		AAA20D4783719B4503C1CFB4 /* [CP] Check Pods Manifest.lock */ = {
-=======
 		5EBABB6189AF45010D18B836 /* [CP] Check Pods Manifest.lock */ = {
->>>>>>> c06e0225bf567054d07957ad3c52aa393a63d511
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -598,13 +543,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -633,7 +574,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				638C25EF2EC6FAFD0020E8D4 /* BluetoothPrinterPlugin.swift in Sources */,
 				FA5FAADC2EB4743500D8C754 /* ESCPOSGenerator.swift in Sources */,
+				638C25CD2EC6D4680020E8D4 /* BluetoothPrinterHandler.swift in Sources */,
 				FA5FAADD2EB4743500D8C754 /* BluetoothPrinterManager.swift in Sources */,
 				632ED5502E5D544F004F6908 /* KalmanLocationFilter.swift in Sources */,
 				FA4F908D2EC489C5009E7F84 /* KhmerRendererPlugin-Supporting.swift in Sources */,

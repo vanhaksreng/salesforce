@@ -632,6 +632,7 @@ class QuickExamples {
       fontSize: 20,
       style: KhmerTextStyle(alignment: 'center'),
     );
+    
     if (subtitle != null) receipt.add(subtitle);
 
     receipt.add(ESCPOSCommands.feedLines(3));
