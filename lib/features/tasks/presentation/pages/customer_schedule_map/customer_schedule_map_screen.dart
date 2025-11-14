@@ -34,7 +34,8 @@ class CustomerScheduleMapScreen extends StatefulWidget {
 class _MapScheduleScreenState extends State<CustomerScheduleMapScreen> {
   final Set<Polyline> _polylines = {};
   final String googleAPIKey = kGoogleKey;
-  final CarouselSliderController carouselController = CarouselSliderController();
+  final CarouselSliderController carouselController =
+      CarouselSliderController();
 
   final ILocationService _location = GeolocatorLocationService();
 
@@ -75,7 +76,10 @@ class _MapScheduleScreenState extends State<CustomerScheduleMapScreen> {
 
       BitmapDescriptor? customIcon;
 
-      customIcon = await _getCustomMarkerIcon(customer.avatar128, customer.name ?? "");
+      customIcon = await _getCustomMarkerIcon(
+        customer.avatar128,
+        customer.name ?? "",
+      );
       _cubit.getMarker(
         Marker(
           markerId: MarkerId(schedule.id),
@@ -92,10 +96,12 @@ class _MapScheduleScreenState extends State<CustomerScheduleMapScreen> {
       await _cubit.getSchedules(DateTime.now());
       final schedules = _cubit.state.schedules;
       if (schedules == null || schedules.isEmpty) return;
-
-      final position = await _location.getCurrentLocation();
+      if (!mounted) return;
+      final position = await _location.getCurrentLocation(context: context);
       if ((position.latitude == 0 && position.longitude == 0)) {
-        throw GeneralException(greeting("Your current location is not available."));
+        throw GeneralException(
+          greeting("Your current location is not available."),
+        );
       }
 
       final userLat = position.latitude;
@@ -110,7 +116,12 @@ class _MapScheduleScreenState extends State<CustomerScheduleMapScreen> {
         final lat = Helpers.toDouble(schedule.latitude);
         final lng = Helpers.toDouble(schedule.longitude);
 
-        final distance = Helpers.calculateDistanceInMeters(userLat, userLng, lat, lng);
+        final distance = Helpers.calculateDistanceInMeters(
+          userLat,
+          userLng,
+          lat,
+          lng,
+        );
 
         if (distance < shortestDistance) {
           shortestDistance = distance;
@@ -128,7 +139,10 @@ class _MapScheduleScreenState extends State<CustomerScheduleMapScreen> {
       );
 
       await _getDataOnChange(
-        LatLng(Helpers.toDouble(nearestSchedule.latitude), Helpers.toDouble(nearestSchedule.longitude)),
+        LatLng(
+          Helpers.toDouble(nearestSchedule.latitude),
+          Helpers.toDouble(nearestSchedule.longitude),
+        ),
         schedule: nearestSchedule,
       );
     } catch (e) {
@@ -136,7 +150,10 @@ class _MapScheduleScreenState extends State<CustomerScheduleMapScreen> {
     }
   }
 
-  Future<BitmapDescriptor> _getCustomMarkerIcon(String? imageUrl, String customerName) async {
+  Future<BitmapDescriptor> _getCustomMarkerIcon(
+    String? imageUrl,
+    String customerName,
+  ) async {
     return await Helpers.createPinMarkerWithImageAndTitle(
       title: customerName,
       imageUrl ?? "",
@@ -146,11 +163,16 @@ class _MapScheduleScreenState extends State<CustomerScheduleMapScreen> {
     );
   }
 
-  Future<void>? _getDataOnChange(LatLng position, {SalespersonSchedule? schedule}) async {
+  Future<void>? _getDataOnChange(
+    LatLng position, {
+    SalespersonSchedule? schedule,
+  }) async {
     if (schedule == null) return;
 
     _cubit.state.mapController?.animateCamera(
-      CameraUpdate.newCameraPosition(CameraPosition(target: position, zoom: widget.isMore ? 15 : 15)),
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: position, zoom: widget.isMore ? 15 : 15),
+      ),
     );
 
     List<Customer> customers = _cubit.state.customers;
@@ -158,7 +180,10 @@ class _MapScheduleScreenState extends State<CustomerScheduleMapScreen> {
 
     BitmapDescriptor? customIcon;
 
-    customIcon = await _getCustomMarkerIcon(customer.avatar128, customer.name ?? "");
+    customIcon = await _getCustomMarkerIcon(
+      customer.avatar128,
+      customer.name ?? "",
+    );
 
     _cubit.getMarker(
       Marker(
@@ -195,7 +220,8 @@ class _MapScheduleScreenState extends State<CustomerScheduleMapScreen> {
           }
           return GoogleMap(
             polylines: _polylines,
-            initialCameraPosition: state.kGooglePostition ?? _phnomPenhLatlong(),
+            initialCameraPosition:
+                state.kGooglePostition ?? _phnomPenhLatlong(),
             mapType: MapType.normal,
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
@@ -205,75 +231,100 @@ class _MapScheduleScreenState extends State<CustomerScheduleMapScreen> {
           );
         },
       ),
-      bottomSheet: BlocBuilder<CustomerScheduleMapCubit, CustomerScheduleMapState>(
-        bloc: _cubit,
-        builder: (context, state) {
-          final schedules = state.schedules ?? [];
-          final customers = state.customers;
+      bottomSheet:
+          BlocBuilder<CustomerScheduleMapCubit, CustomerScheduleMapState>(
+            bloc: _cubit,
+            builder: (context, state) {
+              final schedules = state.schedules ?? [];
+              final customers = state.customers;
 
-          return DraggableScrollableSheet(
-            expand: false,
-            minChildSize: 0.1,
-            maxChildSize: 0.40,
-            initialChildSize: 0.1,
-            builder: (BuildContext context, ScrollController scrollController) {
-              return Column(
-                children: [
-                  Container(
-                    margin: EdgeInsets.all(scaleFontSize(8)),
-                    width: scaleFontSize(40),
-                    height: scaleFontSize(4),
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: grey),
-                  ),
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        Positioned(left: 0, right: 0, child: _buildHeader(schedules, customers)),
-                        SingleChildScrollView(
-                          padding: EdgeInsets.only(top: scaleFontSize(16)),
-                          controller: scrollController,
-                          child: Column(
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.only(top: scaleFontSize(16)),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    ScheduleCarousel(
-                                      customers: state.customers,
-                                      carouselController: carouselController,
-                                      schedules: schedules,
-                                      onPageChanged: _onChangePageCustomer,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+              return DraggableScrollableSheet(
+                expand: false,
+                minChildSize: 0.1,
+                maxChildSize: 0.40,
+                initialChildSize: 0.1,
+                builder:
+                    (BuildContext context, ScrollController scrollController) {
+                      return Column(
+                        children: [
+                          Container(
+                            margin: EdgeInsets.all(scaleFontSize(8)),
+                            width: scaleFontSize(40),
+                            height: scaleFontSize(4),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: grey,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                          Expanded(
+                            child: Stack(
+                              children: [
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  child: _buildHeader(schedules, customers),
+                                ),
+                                SingleChildScrollView(
+                                  padding: EdgeInsets.only(
+                                    top: scaleFontSize(16),
+                                  ),
+                                  controller: scrollController,
+                                  child: Column(
+                                    children: [
+                                      Padding(
+                                        padding: EdgeInsets.only(
+                                          top: scaleFontSize(16),
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            ScheduleCarousel(
+                                              customers: state.customers,
+                                              carouselController:
+                                                  carouselController,
+                                              schedules: schedules,
+                                              onPageChanged:
+                                                  _onChangePageCustomer,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
               );
             },
-          );
-        },
-      ),
+          ),
     );
   }
 
-  Widget _buildHeader(List<SalespersonSchedule> schedules, List<Customer> customers) {
+  Widget _buildHeader(
+    List<SalespersonSchedule> schedules,
+    List<Customer> customers,
+  ) {
     List<Customer> newCustomer = [];
 
     for (final schedule in schedules) {
-      newCustomer.addAll(customers.where((e) => e.no == schedule.customerNo).toList());
+      newCustomer.addAll(
+        customers.where((e) => e.no == schedule.customerNo).toList(),
+      );
     }
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: scaleFontSize(16)),
-      child: TextWidget(text: greeting("Customer schedule"), fontWeight: FontWeight.w400, fontSize: 18),
+      child: TextWidget(
+        text: greeting("Customer schedule"),
+        fontWeight: FontWeight.w400,
+        fontSize: 18,
+      ),
     );
   }
 }
