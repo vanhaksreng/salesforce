@@ -30,7 +30,6 @@ class BluetoothPrinterManager: NSObject {
     }
     
     func scanForDevices(timeout: TimeInterval = 10, completion: @escaping ([[String: String]]) -> Void) {
-        print("🔍 Starting scan...")
         discoveredDevices.removeAll()
         scanCompletion = completion
         
@@ -40,7 +39,6 @@ class BluetoothPrinterManager: NSObject {
                 self?.stopScan()
             }
         } else {
-            print("❌ Bluetooth not ready")
             completion([])
         }
     }
@@ -202,8 +200,16 @@ extension BluetoothPrinterManager: CBCentralManagerDelegate {
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         if !discoveredDevices.contains(where: { $0.identifier == peripheral.identifier }) {
+            
+            if (peripheral.name == nil) {
+                return;
+            }
+            
             discoveredDevices.append(peripheral)
-            print("📱 Found: \(peripheral.name ?? "Unknown") (RSSI: \(RSSI))")
+            
+//            print(peripheral.name);
+            
+            //print("📱 Found: \(peripheral.name ?? "Unknown") (RSSI: \(RSSI))")
         }
     }
     

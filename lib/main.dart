@@ -7,6 +7,7 @@ import 'package:salesforce/features/worker_manager/auto_upload_manager.dart';
 import 'package:salesforce/data/services/onesignal_notification.dart';
 import 'package:salesforce/app/app_router.dart';
 import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/infrastructure/printer/bluetooth/bluetooth_printer_handler.dart';
 import 'package:salesforce/localization/locals_delegate.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_themes.dart';
@@ -37,6 +38,8 @@ void main() async {
     await AutoUploadManager.initialize();
     await _initializeApp();
     await di.getItInit();
+
+    BluetoothPrinterHandler.register();
 
     runApp(const TradeB2b());
 

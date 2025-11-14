@@ -1,12 +1,16 @@
 DATE := $(shell date +'%Y%m%d_%H%M%S')
 
-git-pull: 
+pull: 
 	git pull origin rath
 
-git-push: 
+push: 
 	git add .
 	git commit -m "Commited : $(DATE)"
 	git push origin main
+
+add: 
+	git add .
+	git commit -m "Commited : $(DATE)"
 
 run: 
 	flutter run
