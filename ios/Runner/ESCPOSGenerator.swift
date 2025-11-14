@@ -1,399 +1,565 @@
+
+//
+// ESCPOSGenerator.swift
+//
 import UIKit
 
 class ESCPOSGenerator {
-    // MARK: - Character Detection
-    static func containsKhmerCharacters(_ text: String) -> Bool {
-        return text.unicodeScalars.contains { scalar in
-            let codePoint = scalar.value
-            // Khmer Unicode range: U+1780 to U+17FF and U+19E0 to U+19FF
-            return (0x1780...0x17FF).contains(codePoint) ||
-                   (0x19E0...0x19FF).contains(codePoint)
-        }
-    }
-    
-    // MARK: - Control Commands
-    static func reset() -> Data {
-        return Data([0x1B, 0x40]) // ESC @
-    }
-    
-    static func cut() -> Data {
-        return Data([0x1D, 0x56, 0x00]) // GS V 0
-    }
-    
-    static func feedLines(_ lines: Int = 3) -> Data {
-        return Data([0x1B, 0x64, UInt8(lines)]) // ESC d n
-    }
-    
-    // MARK: - Text Formatting
-    static func setAlignment(_ alignment: TextAlignment) -> Data {
-        var cmd: UInt8
-        switch alignment {
-        case .left:
-            cmd = 0x00
-        case .center:
-            cmd = 0x01
-        case .right:
-            cmd = 0x02
-        }
-        return Data([0x1B, 0x61, cmd]) // ESC a n
-    }
-    
-    static func setBold(_ enabled: Bool) -> Data {
-        return Data([0x1B, 0x45, enabled ? 0x01 : 0x00]) // ESC E n
-    }
-    
-    static func setFontSize(_ size: FontSize) -> Data {
-        var value: UInt8 = 0x00
-        switch size {
-        case .normal:
-            value = 0x00
-        case .wide:
-            value = 0x10
-        case .tall:
-            value = 0x01
-        case .large:
-            value = 0x11
-        case .extraLarge:
-            value = 0x22
-        }
-        return Data([0x1D, 0x21, value]) // GS ! n
-    }
-    
-    static func setUnderline(_ enabled: Bool) -> Data {
-        return Data([0x1B, 0x2D, enabled ? 0x01 : 0x00]) // ESC - n
-    }
-    
-    // MARK: - Text Printing
-    static func printText(_ text: String, encoding: String.Encoding = .utf8) -> Data {
-        // Don't print Khmer text as raw text
-        if containsKhmerCharacters(text) {
-            print("⚠️ Skipping raw Khmer text: \(text.prefix(20))...")
-            return Data()
-        }
-        
-        guard let data = text.data(using: encoding) else {
-            return Data()
-        }
-        return data
-    }
-    
-    static func printLine(_ text: String = "", encoding: String.Encoding = .utf8) -> Data {
-        // Don't print Khmer text lines as raw text
-        if containsKhmerCharacters(text) {
-            print("⚠️ Skipping raw Khmer line: \(text.prefix(20))...")
-            return Data()
-        }
-        
-        var data = printText(text, encoding: encoding)
-        data.append(Data([0x0A])) // LF
-        return data
-    }
-    
-    // MARK: - Khmer Text as Image - FIXED
-    static func printKhmerTextAsImage(_ text: String, width: Int = 384, fontSize: CGFloat = 16) -> Data {
-        print("🖼️ Converting Khmer text to image: \(text.prefix(30))...")
-        
-        // Use KhmerTextRenderer to convert text to image - FIXED CALL
-        if let renderedData = KhmerTextRenderer.renderTextSync(text, width: CGFloat(width), fontSize: fontSize) {
-            if let image = UIImage(data: renderedData.data) {
-                let imageData = imageRaster(image, width: width)
-                print("✅ Khmer text converted to image: \(imageData.count) bytes")
-                return imageData
-            }
-        }
-        
-        print("❌ Failed to convert Khmer text to image")
-        return Data()
-    }
-    
-    // MARK: - Table/Column Support (UPDATED)
-    static func printColumns(_ columns: [String], widths: [Int], encoding: String.Encoding = .utf8) -> Data {
-        guard columns.count == widths.count else { return Data() }
-        
-        var data = Data()
-        var hasKhmerText = false
-        
-        // Check if any column contains Khmer text
-        for column in columns {
-            if containsKhmerCharacters(column) {
-                hasKhmerText = true
-                break
-            }
-        }
-        
-        if hasKhmerText {
-            // Handle Khmer text - render each Khmer column as image
-            for (index, column) in columns.enumerated() {
-                if containsKhmerCharacters(column) {
-                    // Render Khmer text as image
-                    let imageWidth = widths[index] * 8 // Convert character width to pixels
-                    data.append(printKhmerTextAsImage(column, width: imageWidth, fontSize: 12))
-                    data.append(feedLines(1))
-                } else {
-                    // Print regular text normally
-                    let width = widths[index]
-                    let truncated = column.count > width ? String(column.prefix(width)) : column
-                    let padded = truncated.padding(toLength: width, withPad: " ", startingAt: 0)
-                    
-                    if let textData = padded.data(using: encoding) {
-                        data.append(textData)
-                    }
-                }
-            }
-            data.append(Data([0x0A])) // LF
-        } else {
-            // Original implementation for non-Khmer text
-            var line = ""
-            for (index, column) in columns.enumerated() {
-                let width = widths[index]
-                let truncated = column.count > width ? String(column.prefix(width)) : column
-                let padded = truncated.padding(toLength: width, withPad: " ", startingAt: 0)
-                line += padded
-            }
-            data.append(printLine(line, encoding: encoding))
-        }
-        
-        return data
-    }
-    
-    // MARK: - Separator Lines
-    static func printSeparator(char: String = "-", width: Int = 48) -> Data {
-        let separator = String(repeating: char, count: width)
-        return printLine(separator)
-    }
-    
-    static func printDoubleSeparator(width: Int = 48) -> Data {
-        let separator = String(repeating: "=", count: width)
-        return printLine(separator)
-    }
-    
-    // MARK: - Receipt Builder (UPDATED)
-    static func buildReceiptData(
-        companyName: String?,
-        companyAddress: String?,
-        companyEmail: String?,
-        customerName: String?,
-        invoiceNo: String?,
-        items: [ReceiptItem],
-        subtotal: String?,
-        discount: String?,
-        total: String?,
-        logo: UIImage? = nil
-    ) -> Data {
-        var data = Data()
-        
-        // Initialize
-        data.append(reset())
-        data.append(setAlignment(.center))
-        
-        // Logo (if provided)
-        if let logo = logo {
-            data.append(imageRaster(logo, width: 200))
-            data.append(feedLines(1))
-        }
-        
-        // Company Name (handle Khmer)
-        if let name = companyName, !name.isEmpty {
-            if containsKhmerCharacters(name) {
-                data.append(printKhmerTextAsImage(name, width: 300, fontSize: 18))
-                data.append(feedLines(1))
-            } else {
-                data.append(setBold(true))
-                data.append(setFontSize(.large))
-                data.append(printLine(name))
-                data.append(setBold(false))
-                data.append(setFontSize(.normal))
-            }
-        }
-        
-        // Company Address (handle Khmer)
-        if let address = companyAddress, !address.isEmpty {
-            if containsKhmerCharacters(address) {
-                data.append(printKhmerTextAsImage(address, width: 300, fontSize: 14))
-                data.append(feedLines(1))
-            } else {
-                data.append(printLine(address))
-            }
-        }
-        
-        // Company Email
-        if let email = companyEmail, !email.isEmpty {
-            data.append(printLine(email))
-        }
-        
-        data.append(feedLines(1))
-        data.append(printSeparator())
-        
-        // Customer Info
-        data.append(setAlignment(.left))
-        if let customer = customerName, !customer.isEmpty {
-            data.append(printLine("Customer: \(customer)"))
-        }
-        
-        if let invoice = invoiceNo, !invoice.isEmpty {
-            data.append(printLine("Invoice No: \(invoice)"))
-        }
-        
-        data.append(printSeparator(char: "-", width: 48))
-        
-        // Table Header
-        data.append(setBold(true))
-        data.append(printColumns(
-            ["#", "Item", "Qty", "Price", "Total"],
-            widths: [3, 20, 5, 10, 10]
-        ))
-        data.append(setBold(false))
-        data.append(printSeparator(char: "-", width: 48))
-        
-        // Items (UPDATED - handle Khmer in items)
-        for (index, item) in items.enumerated() {
-            let itemData = printColumns(
-                ["\(index + 1)", item.description, "\(item.quantity)", item.price, item.amount],
-                widths: [3, 20, 5, 10, 10]
-            )
-            data.append(itemData)
-        }
-        
-        data.append(printSeparator(char: "-", width: 48))
-        
-        // Totals
-        data.append(setAlignment(.right))
-        
-        if let subtotal = subtotal {
-            data.append(printLine("Subtotal: \(subtotal)"))
-        }
-        
-        if let discount = discount {
-            data.append(printLine("Discount: \(discount)"))
-        }
-        
-        data.append(printDoubleSeparator())
-        data.append(setBold(true))
-        data.append(setFontSize(.wide))
-        
-        if let total = total {
-            data.append(printLine("TOTAL: \(total)"))
-        }
-        
-        data.append(setBold(false))
-        data.append(setFontSize(.normal))
-        data.append(printDoubleSeparator())
-        
-        // Footer
-        data.append(setAlignment(.center))
-        data.append(feedLines(1))
-        data.append(printLine("Thank you for your business!"))
-        data.append(printLine("Powered by Blue Technology Co., Ltd."))
-        
-        // Cut
-        data.append(feedLines(3))
-        data.append(cut())
-        
-        return data
-    }
-    
-    // MARK: - Image Support
-    static func imageRaster(_ image: UIImage, width: Int = 384) -> Data {
-        guard let resizedImage = resizeImage(image, targetWidth: width),
-              let cgImage = resizedImage.cgImage else {
-            return Data()
-        }
-        
-        let imageWidth = cgImage.width
-        let imageHeight = cgImage.height
-        let widthBytes = (imageWidth + 7) / 8
-        
-        var bitmap = [UInt8](repeating: 0, count: widthBytes * imageHeight)
-        
-        guard let context = CGContext(
-            data: nil,
-            width: imageWidth,
-            height: imageHeight,
-            bitsPerComponent: 8,
-            bytesPerRow: imageWidth,
-            space: CGColorSpaceCreateDeviceGray(),
-            bitmapInfo: CGImageAlphaInfo.none.rawValue
-        ) else {
-            return Data()
-        }
-        
-        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: imageWidth, height: imageHeight))
-        
-        guard let pixelData = context.data else {
-            return Data()
-        }
-        
-        let pixels = pixelData.bindMemory(to: UInt8.self, capacity: imageWidth * imageHeight)
-        
-        for y in 0..<imageHeight {
-            let rowOffset = y * widthBytes
-            let pixelRowOffset = y * imageWidth
-            
-            for byteX in 0..<widthBytes {
-                var byte: UInt8 = 0
-                let startX = byteX * 8
-                
-                for bit in 0..<8 {
-                    let x = startX + bit
-                    if x < imageWidth {
-                        if pixels[pixelRowOffset + x] < 128 {
-                            byte |= (1 << (7 - bit))
-                        }
-                    }
-                }
-                
-                bitmap[rowOffset + byteX] = byte
-            }
-        }
-        
-        var data = Data()
-        data.reserveCapacity(8 + bitmap.count)
-        
-        // GS v 0 (Raster bit image)
-        data.append(contentsOf: [0x1D, 0x76, 0x30, 0x00])
-        data.append(UInt8(widthBytes & 0xFF))
-        data.append(UInt8((widthBytes >> 8) & 0xFF))
-        data.append(UInt8(imageHeight & 0xFF))
-        data.append(UInt8((imageHeight >> 8) & 0xFF))
-        data.append(contentsOf: bitmap)
-        
-        return data
-    }
-    
-    static func resizeImage(_ image: UIImage, targetWidth: Int) -> UIImage? {
-        let scale = CGFloat(targetWidth) / image.size.width
-        let newHeight = image.size.height * scale
-        let newSize = CGSize(width: CGFloat(targetWidth), height: newHeight)
-        
-        let format = UIGraphicsImageRendererFormat()
-        format.opaque = true
-        format.scale = 1.0
-        
-        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
-        return renderer.image { context in
-            image.draw(in: CGRect(origin: .zero, size: newSize))
-        }
-    }
+
+// MARK: - Character Detection
+static func containsNonASCIICharacters(_ text: String) -> Bool {
+return !text.allSatisfy({ $0.isASCII })
 }
 
-// MARK: - Supporting Types
-enum TextAlignment {
-    case left
-    case center
-    case right
+// MARK: - Control Commands
+static func reset() -> Data {
+return Data([0x1B, 0x40]) // ESC @
 }
 
-enum FontSize {
-    case normal
-    case wide
-    case tall
-    case large
-    case extraLarge
+static func cut() -> Data {
+return Data([0x1D, 0x56, 0x00]) // GS V 0 (Full cut)
 }
 
-struct ReceiptItem {
-    let description: String
-    let quantity: Int
-    let price: String
-    let amount: String
+static func feedLines(_ lines: Int = 3) -> Data {
+return Data([0x1B, 0x64, UInt8(lines)]) // ESC d n
 }
+
+// MARK: - DYNAMIC TEXT RENDERING (Primary Entry Point)
+static func generatePrintData(
+_ text: String,
+style: TextStyle,
+width: Int = 384
+) -> Data {
+if text.isEmpty {
+return Data([0x0A]) // Just a newline
+}
+
+if containsNonASCIICharacters(text) {
+print("🚨 Non-ASCII text detected. Using image rendering.")
+return renderTextAsImage(text, style: style, width: width)
+} else {
+print("✅ Pure ASCII text detected. Using raw ESC/POS commands.")
+return printEnglishText(text, style: style)
+}
+}
+
+// MARK: - 1. Image-Based Text Rendering (For Non-ASCII/Khmer)
+static func renderTextAsImage(
+_ text: String,
+style: TextStyle,
+width: Int = 384
+) -> Data {
+if text.isEmpty { return Data([0x0A]) }
+
+// This relies on the fixed KhmerTextRenderer (not shown here, but assumed fixed)
+if let renderedData = KhmerTextRenderer.renderTextSync(
+text,
+width: CGFloat(width),
+style: style,
+maxLines: 0
+) {
+if let image = UIImage(data: renderedData.data) {
+guard image.size.width > 0 && image.size.height > 0 else { return Data([0x0A]) }
+
+// Add padding to prevent clipping
+let paddedImage = addVerticalPadding(to: image, padding: 10)
+
+let imageData = imageRaster(paddedImage, width: width)
+
+// Basic validation (Checks for the image header 0x1D 0x76 0x30 0x00)
+guard imageData.count > 8 else { return Data([0x0A]) }
+
+if imageData.count >= 4 &&
+imageData[0] == 0x1D &&
+imageData[1] == 0x76 &&
+imageData[2] == 0x30 &&
+imageData[3] == 0x00 {
+return imageData
+}
+}
+}
+
+print("⚠️ Image rendering failed, returning empty line.")
+return Data([0x0A])
+}
+
+// MARK: - 2. Raw Command Text Printing (For Pure ASCII/English)
+static func printEnglishText(_ text: String, style: TextStyle) -> Data {
+guard text.allSatisfy({ $0.isASCII }) else {
+return renderTextAsImage(text, style: style)
+}
+
+var data = Data()
+
+// 1. CRITICAL: Set Code Page 437/USA (Initial)
+data.append(Data([0x1B, 0x52, 0x01])) // ESC R 1 (Select USA International)
+data.append(Data([0x1B, 0x74, 0x00])) // ESC t 0 (Select Code Page 437)
+
+// 2. Set alignment
+switch style.alignment {
+case .left:
+data.append(Data([0x1B, 0x61, 0x00]))
+case .center:
+data.append(Data([0x1B, 0x61, 0x01]))
+case .right:
+data.append(Data([0x1B, 0x61, 0x02]))
+case .justified:
+data.append(Data([0x1B, 0x61, 0x00]))
+}
+
+// 3. Set bold and font size (using existing logic)
+if style.isBold { data.append(Data([0x1B, 0x45, 0x01])) }
+var sizeValue: UInt8 = 0x00
+if style.fontSize > 28 { sizeValue = 0x11 }
+else if style.fontSize > 22 { sizeValue = 0x10 }
+if sizeValue != 0x00 { data.append(Data([0x1D, 0x21, sizeValue])) }
+
+// 4. Add ASCII text
+if let textData = text.data(using: .ascii) { data.append(textData) }
+data.append(Data([0x0A])) // Line feed
+
+// 5. Reset formatting
+data.append(Data([0x1B, 0x45, 0x00])) // Bold off
+data.append(Data([0x1D, 0x21, 0x00])) // Size normal
+data.append(Data([0x1B, 0x61, 0x00])) // Left align
+
+// 💥 6. CRITICAL FIX: Re-select the safe code page 437/USA (Final)
+// This ensures the printer is in a safe, known state for the next line,
+// preventing corruption of the Khmer image data.
+data.append(Data([0x1B, 0x52, 0x01])) // ESC R 1 (Select USA International)
+data.append(Data([0x1B, 0x74, 0x00])) // ESC t 0 (Select Code Page 437)
+
+return data
+}
+
+// MARK: - Image Helper Functions
+
+private static func addVerticalPadding(to image: UIImage, padding: CGFloat) -> UIImage {
+let newSize = CGSize(width: image.size.width, height: image.size.height + (padding * 2))
+let format = UIGraphicsImageRendererFormat()
+format.opaque = false
+format.scale = image.scale
+
+let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
+return renderer.image { context in
+UIColor.white.setFill()
+context.fill(CGRect(origin: .zero, size: newSize))
+image.draw(at: CGPoint(x: 0, y: padding))
+}
+}
+
+static func imageRaster(_ image: UIImage, width: Int = 384) -> Data {
+guard let resizedImage = resizeImage(image, targetWidth: width),
+let cgImage = resizedImage.cgImage else {
+return Data()
+}
+
+let imageWidth = cgImage.width
+let imageHeight = cgImage.height
+let widthBytes = (imageWidth + 7) / 8
+
+var bitmap = [UInt8](repeating: 0, count: widthBytes * imageHeight)
+
+guard let context = CGContext(
+data: nil,
+width: imageWidth,
+height: imageHeight,
+bitsPerComponent: 8,
+bytesPerRow: imageWidth,
+space: CGColorSpaceCreateDeviceGray(),
+bitmapInfo: CGImageAlphaInfo.none.rawValue
+) else {
+return Data()
+}
+
+context.interpolationQuality = .high
+context.setShouldAntialias(true)
+context.draw(cgImage, in: CGRect(x: 0, y: 0, width: imageWidth, height: imageHeight))
+
+guard let pixelData = context.data else { return Data() }
+let pixels = pixelData.bindMemory(to: UInt8.self, capacity: imageWidth * imageHeight)
+
+let threshold: UInt8 = 128
+for y in 0..<imageHeight {
+let rowOffset = y * widthBytes
+let pixelRowOffset = y * imageWidth
+
+for byteX in 0..<widthBytes {
+var byte: UInt8 = 0
+let startX = byteX * 8
+
+for bit in 0..<8 {
+let x = startX + bit
+if x < imageWidth {
+// Invert color (Black text is '1' bit)
+if pixels[pixelRowOffset + x] < threshold {
+byte |= (1 << (7 - bit))
+}
+}
+}
+bitmap[rowOffset + byteX] = byte
+}
+}
+
+var data = Data()
+data.reserveCapacity(8 + bitmap.count)
+
+// GS v 0 (Raster bit image)
+data.append(contentsOf: [0x1D, 0x76, 0x30, 0x00])
+data.append(UInt8(widthBytes & 0xFF))
+data.append(UInt8((widthBytes >> 8) & 0xFF))
+data.append(UInt8(imageHeight & 0xFF))
+data.append(UInt8((imageHeight >> 8) & 0xFF))
+data.append(contentsOf: bitmap)
+
+return data
+}
+
+static func resizeImage(_ image: UIImage, targetWidth: Int) -> UIImage? {
+let scale = CGFloat(targetWidth) / image.size.width
+let newHeight = image.size.height * scale
+let newSize = CGSize(width: CGFloat(targetWidth), height: newHeight)
+
+let format = UIGraphicsImageRendererFormat()
+format.opaque = true
+format.scale = 1.0
+
+let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
+return renderer.image { context in
+context.cgContext.interpolationQuality = .high
+context.cgContext.setShouldAntialias(true)
+image.draw(in: CGRect(origin: .zero, size: newSize))
+}
+}
+}
+//import UIKit
+//
+//class ESCPOSGenerator {
+//    // MARK: - Character Detection
+//    // RENAMED/MODIFIED: Check for any NON-ASCII characters
+//    static func containsNonASCIICharacters(_ text: String) -> Bool {
+//        return !text.allSatisfy({ $0.isASCII })
+//    }
+//    
+//    // Original Khmer ranges (kept for reference, but new function above is more generic)
+//    // static func containsKhmerCharacters(_ text: String) -> Bool {
+//    //     return text.unicodeScalars.contains { scalar in
+//    //         let codePoint = scalar.value
+//    //         return (0x1780...0x17FF).contains(codePoint) ||
+//    //                  (0x19E0...0x19FF).contains(codePoint)
+//    //     }
+//    // }
+//    
+//    // MARK: - Control Commands
+//    static func reset() -> Data {
+//        return Data([0x1B, 0x40]) // ESC @
+//    }
+//    
+//    static func cut() -> Data {
+//        return Data([0x1D, 0x56, 0x00]) // GS V 0
+//    }
+//    
+//    static func feedLines(_ lines: Int = 3) -> Data {
+//        return Data([0x1B, 0x64, UInt8(lines)]) // ESC d n
+//    }
+//    
+//    // MARK: - DYNAMIC TEXT RENDERING (New Primary Function)
+//    /**
+//     Dynamically prints text. Uses image rendering for non-ASCII characters (Khmer, etc.)
+//     and raw ESC/POS commands for pure ASCII text (English, numbers).
+//     */
+//    static func printText(
+//        _ text: String,
+//        style: TextStyle,
+//        width: Int = 384
+//    ) -> Data {
+//        if text.isEmpty {
+//            return Data([0x0A]) // Just a newline
+//        }
+//        
+//        if containsNonASCIICharacters(text) {
+//            print("🚨 Non-ASCII characters detected. Using image rendering for maximum compatibility.")
+//            return renderTextAsImage(text, style: style, width: width)
+//        } else {
+//            print("✅ Pure ASCII text detected. Using raw ESC/POS commands (faster).")
+//            return printEnglishText(text, style: style)
+//        }
+//    }
+//    
+//    // MARK: - Non-ASCII Text Rendering (Image-Based)
+//    // RENAMED: from renderKhmerText to renderTextAsImage
+//    static func renderTextAsImage(
+//        _ text: String,
+//        style: TextStyle,
+//        width: Int = 384
+//    ) -> Data {
+//        if text.isEmpty {
+//            return Data([0x0A]) // Just a newline
+//        }
+//          
+//        print("🖼️ Rendering text as image with style: \(text.prefix(30))...")
+//        
+//        // CRITICAL: Only use image-based rendering for complex characters
+//        // NEVER send raw text to printer (causes Chinese characters)
+//        // ... (The rest of the original 'renderKhmerText' function logic remains the same)
+//        //
+//        
+//        if let renderedData = KhmerTextRenderer.renderTextSync(
+//            text,
+//            width: CGFloat(width),
+//            style: style,
+//            maxLines: 0
+//        ) {
+//            if let image = UIImage(data: renderedData.data) {
+//                // Validate image
+//                guard image.size.width > 0 && image.size.height > 0 else {
+//                    print("❌ Invalid image dimensions: \(image.size)")
+//                    return Data([0x0A])
+//                }
+//                
+//                // Add padding to prevent clipping
+//                let paddedImage = addVerticalPadding(to: image, padding: 10)
+//                print("✅ Added padding: \(paddedImage.size)")
+//                
+//                let imageData = imageRaster(paddedImage, width: width)
+//                
+//                // Validate ESC/POS output
+//                guard imageData.count > 8 else {
+//                    print("❌ ESC/POS data too small: \(imageData.count) bytes")
+//                    return Data([0x0A])
+//                }
+//                
+//                // Verify header
+//                if imageData.count >= 4 &&
+//                    imageData[0] == 0x1D &&
+//                    imageData[1] == 0x76 &&
+//                    imageData[2] == 0x30 &&
+//                    imageData[3] == 0x00 {
+//                    print("✅ Text rendered as ESC/POS image: \(imageData.count) bytes")
+//                    return imageData
+//                } else {
+//                    print("❌ Invalid ESC/POS header generated")
+//                    return Data([0x0A])
+//                }
+//            } else {
+//                print("❌ Failed to decode PNG image")
+//            }
+//        } else {
+//            print("❌ KhmerTextRenderer.renderTextSync returned nil")
+//        }
+//          
+//        // CRITICAL: NEVER use fallback - it causes Chinese characters!
+//        // If rendering fails completely, just return empty line
+//        print("⚠️ Rendering failed completely, returning empty line")
+//        print("   DO NOT send raw text - it will show as Chinese!")
+//        return Data([0x0A])
+//    }
+//    
+//    // MARK: - ASCII Text Rendering (Raw Commands)
+//    static func printEnglishText(_ text: String, style: TextStyle) -> Data {
+//        // The check inside this function is now redundant but kept for safety.
+//        guard text.allSatisfy({ $0.isASCII }) else {
+//            // This case should ideally not be reached if printText() is used.
+//            print("⚠️ Non-ASCII text detected, falling back to image rendering.")
+//            return renderTextAsImage(text, style: style)
+//        }
+//        
+//        var data = Data()
+//        
+//        // Set alignment
+//        switch style.alignment {
+//        case .left:
+//            data.append(Data([0x1B, 0x61, 0x00]))
+//        case .center:
+//            data.append(Data([0x1B, 0x61, 0x01]))
+//        case .right:
+//            data.append(Data([0x1B, 0x61, 0x02]))
+//        case .justified:
+//            data.append(Data([0x1B, 0x61, 0x00]))
+//        }
+//        
+//        // Set bold
+//        if style.isBold {
+//            data.append(Data([0x1B, 0x45, 0x01]))
+//        }
+//        
+//        // Set font size
+//        var sizeValue: UInt8 = 0x00
+//        if style.fontSize > 28 {
+//            sizeValue = 0x11 // Double width and height
+//        } else if style.fontSize > 22 {
+//            sizeValue = 0x10 // Double width
+//        }
+//        if sizeValue != 0x00 {
+//            data.append(Data([0x1D, 0x21, sizeValue]))
+//        }
+//        
+//        // Add ASCII text only
+//        if let textData = text.data(using: .ascii) {
+//            data.append(textData)
+//        }
+//        data.append(Data([0x0A])) // Line feed
+//        
+//        // Reset formatting
+//        data.append(Data([0x1B, 0x45, 0x00])) // Bold off
+//        data.append(Data([0x1D, 0x21, 0x00])) // Size normal
+//        data.append(Data([0x1B, 0x61, 0x00])) // Left align
+//        
+//        return data
+//    }
+//    
+//    // MARK: - Add Padding Helper
+//    private static func addVerticalPadding(to image: UIImage, padding: CGFloat) -> UIImage {
+//        // ... (unchanged)
+//        let newSize = CGSize(
+//            width: image.size.width,
+//            height: image.size.height + (padding * 2)
+//        )
+//        
+//        let format = UIGraphicsImageRendererFormat()
+//        format.opaque = false
+//        format.scale = image.scale
+//        
+//        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
+//        return renderer.image { context in
+//            // Fill with white background
+//            UIColor.white.setFill()
+//            context.fill(CGRect(origin: .zero, size: newSize))
+//            
+//            // Draw original image with padding offset
+//            image.draw(at: CGPoint(x: 0, y: padding))
+//        }
+//    }
+//    
+//    // MARK: - Image Support
+//    static func imageRaster(_ image: UIImage, width: Int = 384) -> Data {
+//        // ... (unchanged)
+//        guard let resizedImage = resizeImage(image, targetWidth: width),
+//              let cgImage = resizedImage.cgImage else {
+//            print("❌ Failed to resize/prepare image")
+//            return Data()
+//        }
+//        
+//        let imageWidth = cgImage.width
+//        let imageHeight = cgImage.height
+//        let widthBytes = (imageWidth + 7) / 8
+//        
+//        print("📐 Image dimensions: \(imageWidth)x\(imageHeight), widthBytes: \(widthBytes)")
+//        
+//        var bitmap = [UInt8](repeating: 0, count: widthBytes * imageHeight)
+//        
+//        guard let context = CGContext(
+//            data: nil,
+//            width: imageWidth,
+//            height: imageHeight,
+//            bitsPerComponent: 8,
+//            bytesPerRow: imageWidth,
+//            space: CGColorSpaceCreateDeviceGray(),
+//            bitmapInfo: CGImageAlphaInfo.none.rawValue
+//        ) else {
+//            print("❌ Failed to create CGContext")
+//            return Data()
+//        }
+//        
+//        // High quality rendering
+//        context.interpolationQuality = .high
+//        context.setShouldAntialias(true)
+//        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: imageWidth, height: imageHeight))
+//        
+//        guard let pixelData = context.data else {
+//            print("❌ No pixel data")
+//            return Data()
+//        }
+//        
+//        let pixels = pixelData.bindMemory(to: UInt8.self, capacity: imageWidth * imageHeight)
+//        
+//        // Convert to 1-bit bitmap
+//        let threshold: UInt8 = 128
+//        for y in 0..<imageHeight {
+//            let rowOffset = y * widthBytes
+//            let pixelRowOffset = y * imageWidth
+//            
+//            for byteX in 0..<widthBytes {
+//                var byte: UInt8 = 0
+//                let startX = byteX * 8
+//                
+//                for bit in 0..<8 {
+//                    let x = startX + bit
+//                    if x < imageWidth {
+//                        if pixels[pixelRowOffset + x] < threshold {
+//                            byte |= (1 << (7 - bit))
+//                        }
+//                    }
+//                }
+//                
+//                bitmap[rowOffset + byteX] = byte
+//            }
+//        }
+//        
+//        var data = Data()
+//        data.reserveCapacity(8 + bitmap.count)
+//        
+//        // GS v 0 (Raster bit image)
+//        data.append(contentsOf: [0x1D, 0x76, 0x30, 0x00])
+//        data.append(UInt8(widthBytes & 0xFF))
+//        data.append(UInt8((widthBytes >> 8) & 0xFF))
+//        data.append(UInt8(imageHeight & 0xFF))
+//        data.append(UInt8((imageHeight >> 8) & 0xFF))
+//        data.append(contentsOf: bitmap)
+//        
+//        print("✅ ESC/POS raster created: \(data.count) bytes")
+//        return data
+//    }
+//    
+//    static func resizeImage(_ image: UIImage, targetWidth: Int) -> UIImage? {
+//        // ... (unchanged)
+//        let scale = CGFloat(targetWidth) / image.size.width
+//        let newHeight = image.size.height * scale
+//        let newSize = CGSize(width: CGFloat(targetWidth), height: newHeight)
+//        
+//        let format = UIGraphicsImageRendererFormat()
+//        format.opaque = true
+//        format.scale = 1.0
+//        
+//        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
+//        return renderer.image { context in
+//            // High quality scaling
+//            context.cgContext.interpolationQuality = .high
+//            context.cgContext.setShouldAntialias(true)
+//            image.draw(in: CGRect(origin: .zero, size: newSize))
+//        }
+//    }
+//}
+//
+//// MARK: - Receipt Builder Extension
+//extension ESCPOSGenerator {
+//    
+//    /// Helper to create TextStyle from parameters
+//    static func createTextStyle(
+//        fontSize: CGFloat = 20,
+//        bold: Bool = false,
+//        alignment: TextAlignment = .left,
+//        monospace: Bool = false
+//    ) -> TextStyle {
+//        let style = TextStyle()
+//        style.fontSize = fontSize
+//        style.isBold = bold
+//        style.alignment = alignment
+//        style.monospace = monospace
+//        return style
+//    }
+//    
+//}
+//
+//// MARK: - Supporting Types
+//struct ReceiptItem {
+//    let description: String
+//    let quantity: Int
+//    let price: String
+//    let discount: String
+//    let amount: String
+//}
+//
+//
+//
+//

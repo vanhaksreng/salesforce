@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:salesforce/features/worker_manager/auto_upload_manager.dart';
 import 'package:salesforce/data/services/onesignal_notification.dart';
 import 'package:salesforce/app/app_router.dart';
-import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/localization/locals_delegate.dart';
 import 'package:salesforce/localization/trans.dart';
@@ -33,7 +32,7 @@ void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
 
-    await Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+    await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
     HttpOverrides.global = MyHttpOverrides();
     await AutoUploadManager.initialize();
     await _initializeApp();
