@@ -157,7 +157,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
   }
 
   Future<void> getCurrentAddress() async {
-    final locationData = await _location.getCurrentLocation();
+    final locationData = await _location.getCurrentLocation(context: context);
 
     _onUpdateMapController(
       LatLng(locationData.latitude, locationData.longitude),

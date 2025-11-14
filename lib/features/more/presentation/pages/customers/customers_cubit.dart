@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
@@ -18,13 +19,17 @@ class CustomersCubit extends Cubit<CustomersState>
   final ILocationService _location = GeolocatorLocationService();
 
   Future<void> getCustomers({
+    required BuildContext context,
     Map<String, dynamic>? params,
     int page = 1,
   }) async {
     try {
       emit(state.copyWith(isLoading: true));
       final result = await _repos.getCustomers(params: params, page: page);
-      final currentLatLng = await _location.getCurrentLocation();
+      if (!context.mounted) return;
+      final currentLatLng = await _location.getCurrentLocation(
+        context: context,
+      );
       result.fold((l) => throw Exception(), (records) {
         for (var a in records) {
           a.distance = _location.getDistanceBetween(
@@ -42,12 +47,13 @@ class CustomersCubit extends Cubit<CustomersState>
   }
 
   Future<void> sortCustomer({
+    required BuildContext context,
     bool sortByDistance = false,
     double? maxDistance,
     Map<String, dynamic>? params,
     int page = 1,
   }) async {
-    final currentLatLng = await _location.getCurrentLocation();
+    final currentLatLng = await _location.getCurrentLocation(context: context);
     final result = await _repos.getCustomers(params: params, page: page);
 
     result.fold((l) => throw Exception(), (records) {
@@ -96,9 +102,11 @@ class CustomersCubit extends Cubit<CustomersState>
     emit(state.copyWith(isValidation: false, messageCode: ""));
   }
 
-  Future<void> getLatLng() async {
+  Future<void> getLatLng(BuildContext context) async {
     try {
-      final currentLocation = await _location.getCurrentLocation();
+      final currentLocation = await _location.getCurrentLocation(
+        context: context,
+      );
 
       emit(
         state.copyWith(

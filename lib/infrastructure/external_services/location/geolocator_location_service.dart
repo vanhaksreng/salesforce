@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:path/path.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
+import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/infrastructure/external_services/location/i_location_service.dart';
 import 'package:salesforce/infrastructure/external_services/location/location_permission_status.dart';
@@ -41,10 +45,12 @@ class GeolocatorLocationService implements ILocationService {
   }
 
   @override
-  Future<LocationPermissionStatus> requestPermission() async {
+  Future<LocationPermissionStatus> requestPermission(
+    BuildContext context,
+  ) async {
     try {
       // Check and request location service first
-      await _ensureLocationServiceEnabled();
+      await _ensureLocationServiceEnabled(context);
 
       // Then request permission
       final permission = await Geolocator.requestPermission();
@@ -60,10 +66,11 @@ class GeolocatorLocationService implements ILocationService {
 
   @override
   Future<Position> getCurrentLocation({
+    required BuildContext context,
     LocationSettings? customSettings,
   }) async {
     try {
-      await _ensureLocationServiceEnabled();
+      await _ensureLocationServiceEnabled(context);
       await _ensureLocationPermission();
 
       final locationSettings = customSettings ?? _getLocationSettings();
@@ -190,11 +197,12 @@ class GeolocatorLocationService implements ILocationService {
   /// Additional utility methods
 
   Future<double> getDistanceFromCurrentLocation(
+    BuildContext context,
     double targetLatitude,
     double targetLongitude,
   ) async {
     try {
-      final currentPosition = await getCurrentLocation();
+      final currentPosition = await getCurrentLocation(context: context);
       return getDistanceBetween(
         currentPosition.latitude,
         currentPosition.longitude,
@@ -208,11 +216,12 @@ class GeolocatorLocationService implements ILocationService {
   }
 
   Future<double> getBearingTo(
+    BuildContext context,
     double targetLatitude,
     double targetLongitude,
   ) async {
     try {
-      final currentPosition = await getCurrentLocation();
+      final currentPosition = await getCurrentLocation(context: context);
       return Geolocator.bearingBetween(
         currentPosition.latitude,
         currentPosition.longitude,
@@ -231,18 +240,54 @@ class GeolocatorLocationService implements ILocationService {
     Logger.log("GeolocatorLocationService disposed");
   }
 
-  // Private helper methods
+  static bool _isAlertCurrentlyShowing = false;
 
-  Future<void> _ensureLocationServiceEnabled() async {
+  // (Assuming this function is part of a class with the static flag)
+  // static bool _isAlertCurrentlyShowing = false;
+
+  Future<void> _ensureLocationServiceEnabled(BuildContext context) async {
+    // 1. Check current status
     bool serviceEnabled = await isLocationServiceEnabled();
 
     if (!serviceEnabled) {
-      Logger.log("Location service disabled, opening settings");
-      await Geolocator.openLocationSettings();
+      Logger.log("Location service disabled, showing alert to open settings");
 
-      // Wait a bit and check again
-      await Future.delayed(const Duration(milliseconds: 500));
-      serviceEnabled = await isLocationServiceEnabled();
+      // Prevent concurrent dialogs
+      if (_isAlertCurrentlyShowing) {
+        throw GeneralException(
+          "Location services check is already in progress.",
+        );
+      }
+
+      _isAlertCurrentlyShowing = true; // Lock the function
+
+      bool? didConfirm;
+      if (!context.mounted) return;
+      try {
+        didConfirm = await Helpers.showDialogAction(
+          context,
+          labelAction: "Location Services Required",
+          subtitle:
+              "Location services are currently disabled. Please enable them in your device settings to use this feature.",
+          canCancel: true,
+          cancelText: "No, Cancel",
+          confirmText: "Yes, Open setting",
+
+          confirm: () async {
+            Navigator.pop(context);
+            await Geolocator.openLocationSettings();
+          },
+        );
+      } finally {
+        _isAlertCurrentlyShowing = false;
+      }
+
+      if (didConfirm == true) {
+        await Geolocator.openLocationSettings();
+
+        await Future.delayed(const Duration(milliseconds: 500));
+        serviceEnabled = await isLocationServiceEnabled();
+      }
 
       if (!serviceEnabled) {
         throw GeneralException(

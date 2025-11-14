@@ -6,6 +6,7 @@ import 'package:salesforce/app/custom_bottom_navigation_bar.dart';
 import 'package:salesforce/app/navigation_item.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
+import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/features/more/more_main_page.dart';
 import 'package:salesforce/features/more/more_main_page_cubit.dart';
@@ -160,7 +161,7 @@ class _MainTapScreenState extends State<MainTapScreen>
     });
 
     await _requestPermissions();
-    
+
     await _startTracking();
   }
 

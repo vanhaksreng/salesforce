@@ -52,7 +52,10 @@ class _TransitionAppBarDelegate extends SliverPersistentHeaderDelegate {
   final String subtitle;
   final VoidCallback? onTap;
 
-  final _avatarAlignTween = AlignmentTween(begin: Alignment.bottomLeft, end: Alignment.topLeft);
+  final _avatarAlignTween = AlignmentTween(
+    begin: Alignment.bottomLeft,
+    end: Alignment.topLeft,
+  );
 
   final _avatarMarginTween = EdgeInsetsTween(
     begin: EdgeInsets.only(left: 16.scale, bottom: 16.scale),
@@ -60,8 +63,17 @@ class _TransitionAppBarDelegate extends SliverPersistentHeaderDelegate {
   );
 
   final _titleMarginTween = EdgeInsetsTween(
-    begin: EdgeInsets.only(left: 120.scale, bottom: 0.scale, top: 80.scale, right: scaleFontSize(appSpace)),
-    end: EdgeInsets.only(left: 90.scale, top: 55.scale, right: scaleFontSize(appSpace)),
+    begin: EdgeInsets.only(
+      left: 120.scale,
+      bottom: 0.scale,
+      top: 80.scale,
+      right: scaleFontSize(appSpace),
+    ),
+    end: EdgeInsets.only(
+      left: 90.scale,
+      top: 55.scale,
+      right: scaleFontSize(appSpace),
+    ),
   );
 
   @override
@@ -76,7 +88,11 @@ class _TransitionAppBarDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final tempVal = maxExtent * scaleFontSize(0.30);
     final progress = shrinkOffset > tempVal ? 1.0 : shrinkOffset / tempVal;
 
@@ -95,7 +111,11 @@ class _TransitionAppBarDelegate extends SliverPersistentHeaderDelegate {
     );
   }
 
-  Padding _buildAvtar(EdgeInsets avatarMargin, Alignment avatarAlign, double avatarSize) {
+  Padding _buildAvtar(
+    EdgeInsets avatarMargin,
+    Alignment avatarAlign,
+    double avatarSize,
+  ) {
     return Padding(
       padding: avatarMargin,
       child: Align(
@@ -103,7 +123,11 @@ class _TransitionAppBarDelegate extends SliverPersistentHeaderDelegate {
         child: Hero(
           tag: 'profile_avatar',
           child: ClipOval(
-            child: SizedBox(width: avatarSize, height: avatarSize, child: avatar),
+            child: SizedBox(
+              width: avatarSize,
+              height: avatarSize,
+              child: avatar,
+            ),
           ),
         ),
       ),
@@ -118,27 +142,31 @@ class _TransitionAppBarDelegate extends SliverPersistentHeaderDelegate {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              spacing: 6.scale,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextWidget(
-                  text: title,
-                  color: progress > scaleFontSize(0.95) ? Colors.white : Colors.white,
-                  fontWeight: FontWeight.bold,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  fontSize: 22 - (6 * progress), // 22 -> 14
-                ),
-                TextWidget(
-                  text: subtitle,
-                  color: progress > 0.95 ? Colors.white : Colors.white,
-                  fontWeight: FontWeight.w600,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  fontSize: 18 - (4 * progress), // 22 -> 14
-                ),
-              ],
+            Expanded(
+              child: Column(
+                spacing: 6.scale,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextWidget(
+                    text: title,
+                    color: progress > scaleFontSize(0.95)
+                        ? Colors.white
+                        : Colors.white,
+                    fontWeight: FontWeight.bold,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    fontSize: 22 - (6 * progress), // 22 -> 14
+                  ),
+                  TextWidget(
+                    text: subtitle,
+                    color: progress > 0.95 ? Colors.white : Colors.white,
+                    fontWeight: FontWeight.w600,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    fontSize: 18 - (4 * progress), // 22 -> 14
+                  ),
+                ],
+              ),
             ),
             BoxWidget(
               onPress: onTap,
@@ -149,7 +177,11 @@ class _TransitionAppBarDelegate extends SliverPersistentHeaderDelegate {
               child: Row(
                 spacing: 4.scale,
                 children: [
-                  TextWidget(fontSize: 16, text: greeting("Edit"), color: white),
+                  TextWidget(
+                    fontSize: 16,
+                    text: greeting("Edit"),
+                    color: white,
+                  ),
                   const Icon(Icons.arrow_forward_ios, size: 14, color: white),
                 ],
               ),

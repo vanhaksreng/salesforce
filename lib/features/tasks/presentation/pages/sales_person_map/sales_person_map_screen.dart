@@ -82,7 +82,7 @@ class SalesPersonMapScreenState extends State<SalesPersonMapScreen> {
     List<SalePersonGpsModel> salePersons,
   ) async {
     try {
-      final position = await _location.getCurrentLocation();
+      final position = await _location.getCurrentLocation(context: context);
       if ((position.latitude == 0 && position.longitude == 0)) {
         throw GeneralException(
           greeting("Your current location is not available."),
