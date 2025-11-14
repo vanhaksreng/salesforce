@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:salesforce/infrastructure/external_services/location/location_permission_status.dart';
 
@@ -17,11 +18,11 @@ abstract class ILocationService {
 
   /// Requests location permissions from the user.
   /// Returns the new permission status.
-  Future<LocationPermissionStatus> requestPermission();
+  Future<LocationPermissionStatus> requestPermission(BuildContext context);
 
   /// Gets the current position of the device.
   /// Throws an exception if permissions are not granted or service is disabled.
-  Future<Position> getCurrentLocation();
+  Future<Position> getCurrentLocation({required BuildContext context});
 
   /// Provides a stream of location updates.
   /// Not implemented in this example but shows extensibility.

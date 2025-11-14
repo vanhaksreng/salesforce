@@ -81,7 +81,7 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
         throw GeneralException(greeting("comments_field_require"));
       }
 
-      await _cubit.getLatLng();
+      await _cubit.getLatLng(context);
       final location = _cubit.state.latLng;
       if (location == null) {
         throw GeneralException("Cannot get Latitude & Longitude");
@@ -147,7 +147,7 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
         );
       }
 
-      await _cubit.getLatLng();
+      await _cubit.getLatLng(context);
       final location = _cubit.state.latLng;
       if (location == null) {
         throw GeneralException("Cannot get Latitude & Longitude");

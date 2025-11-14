@@ -54,12 +54,16 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
 
   @override
   void initState() {
-    _cubit.getCustomers(page: 1);
+    _cubit.getCustomers(page: 1, context: context);
     super.initState();
   }
 
   _filter(String text) {
-    _cubit.getCustomers(page: 1, params: {'name': "LIKE %$text%"});
+    _cubit.getCustomers(
+      page: 1,
+      params: {'name': "LIKE %$text%"},
+      context: context,
+    );
   }
 
   void _handleDownload() async {
@@ -92,8 +96,8 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
       );
 
       await Future.delayed(const Duration(milliseconds: 300));
-
-      await _cubit.getCustomers(page: 1);
+      if (!mounted) return;
+      await _cubit.getCustomers(page: 1, context: context);
 
       l.hide();
     } on GeneralException catch (e) {
@@ -112,7 +116,8 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
       arguments: customer,
     ).then((value) {
       if (Helpers.shouldReload(value)) {
-        _cubit.getCustomers();
+        if (!mounted) return;
+        _cubit.getCustomers(context: context);
       }
     });
   }
@@ -143,7 +148,8 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
       arguments: customer,
     ).then((value) {
       if (Helpers.shouldReload(value)) {
-        _cubit.getCustomers();
+        if (!mounted) return;
+        _cubit.getCustomers(context: context);
       }
     });
   }
@@ -191,8 +197,8 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
       );
       if (setting == kStatusYes) {
         final String maxvalue = await _cubit.getSetting(kMaxDistanceKm);
-
-        await _cubit.getLatLng();
+        if (!mounted) return;
+        await _cubit.getLatLng(context);
         final location = _cubit.state.latLng;
         if (location == null) {
           throw GeneralException("Cannot get Latitude & Longitude");
@@ -273,11 +279,12 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
       l.show();
       if (isSort) {
         await _cubit.sortCustomer(
+          context: context,
           sortByDistance: true,
           maxDistance: distance > 0 ? distance : null,
         );
       } else {
-        await _cubit.sortCustomer(maxDistance: distance);
+        await _cubit.sortCustomer(maxDistance: distance, context: context);
       }
 
       if (!mounted) return;

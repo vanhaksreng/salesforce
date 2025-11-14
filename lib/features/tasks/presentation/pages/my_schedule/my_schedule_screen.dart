@@ -69,7 +69,7 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     super.initState();
     scheduleDate = DateTime.now();
     _cubit.getUserSetup();
-    _cubit.getCurrentLocation();
+    _cubit.getCurrentLocation(context);
     checkInitWithLocation();
     refreshSchedule();
   }
@@ -78,21 +78,21 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
   bool get wantKeepAlive => true;
 
   void refreshSchedule() {
-    _cubit.getSchedules(scheduleDate);
+    _cubit.getSchedules(context, scheduleDate);
     _cubit.getSaleLine(scheduleDate);
   }
 
   @override
   void didUpdateWidget(MyScheduleScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _cubit.getSchedules(scheduleDate, text: widget.searchText);
+    _cubit.getSchedules(context, scheduleDate, text: widget.searchText);
     if (oldWidget.refresh != widget.refresh) {
       refreshSchedule();
     }
   }
 
   Future<LatLng> getCurrentLocation() async {
-    final current = await _location.getCurrentLocation();
+    final current = await _location.getCurrentLocation(context: context);
     return LatLng(current.latitude, current.longitude);
   }
 
@@ -394,7 +394,7 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     final l = LoadingOverlay.of(context);
     try {
       l.show();
-      await _cubit.getSchedules(scheduleDate);
+      await _cubit.getSchedules(context, scheduleDate);
 
       if (sortByDistance) {
         _cubit.sortCustomerViaLatlng(

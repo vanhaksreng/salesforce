@@ -54,6 +54,7 @@ class _LoaderScreenState extends State<LoaderScreen>
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
