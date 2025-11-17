@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
@@ -16,7 +17,7 @@ import 'package:salesforce/features/more/presentation/pages/components/sale_bott
 import 'package:salesforce/features/more/presentation/pages/components/sale_history_card_box.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_credit_memo_history/sale_credit_memo_history_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_credit_memo_history/sale_credit_memo_history_state.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen_old.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
@@ -29,10 +30,12 @@ class SaleCreditMemoHistoryScreen extends StatefulWidget {
   static const routeName = "SaleCreditMemoHistoryScreen";
 
   @override
-  State<SaleCreditMemoHistoryScreen> createState() => _SaleCreditMemoScreenState();
+  State<SaleCreditMemoHistoryScreen> createState() =>
+      _SaleCreditMemoScreenState();
 }
 
-class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen> with MessageMixin {
+class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
+    with MessageMixin {
   final _cubit = SaleCreditMemoHistoryCubit();
   final ScrollController _scrollController = ScrollController();
 
@@ -48,7 +51,8 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen> with
     _cubit.getSaleCreditMemo(
       param: {
         'document_type': 'Credit Memo',
-        "posting_date": "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+        "posting_date":
+            "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
       },
     );
     _scrollController.addListener(_handleScrolling);
@@ -62,7 +66,9 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen> with
   }
 
   bool _shouldLoadMore() {
-    return _scrollController.position.pixels == _scrollController.position.maxScrollExtent && !_cubit.state.isFetching;
+    return _scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent &&
+        !_cubit.state.isFetching;
   }
 
   void _loadMoreItems() async {
@@ -86,8 +92,12 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen> with
     } else {
       selectedDate = "";
     }
-    final String fromDate = initialFromDate != null ? DateTimeExt.parse(initialFromDate.toString()).toDateString() : "";
-    final String toDate = initialToDate != null ? DateTimeExt.parse(initialToDate.toString()).toDateString() : "";
+    final String fromDate = initialFromDate != null
+        ? DateTimeExt.parse(initialFromDate.toString()).toDateString()
+        : "";
+    final String toDate = initialToDate != null
+        ? DateTimeExt.parse(initialToDate.toString()).toDateString()
+        : "";
 
     if (fromDate.isNotEmpty && toDate.isNotEmpty) {
       param["posting_date"] = '$fromDate .. $toDate';
@@ -123,7 +133,11 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen> with
     _cubit.getSaleCreditMemo(param: param, page: 1, fetchingApi: true);
   }
 
-  Future<Object?> navigatorToSaleHistoryList(BuildContext context, List<dynamic> records, int index) {
+  Future<Object?> navigatorToSaleHistoryList(
+    BuildContext context,
+    List<dynamic> records,
+    int index,
+  ) {
     return Navigator.pushNamed(
       context,
       SaleOrderHistoryDetailScreen.routeName,
@@ -135,14 +149,20 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen> with
     final l = LoadingOverlay.of(context);
     try {
       l.show();
-      final html = await _cubit.getInvoiceHtml(documentNo: documentNo, documenType: "Credit Memo");
+      final html = await _cubit.getInvoiceHtml(
+        documentNo: documentNo,
+        documenType: "Credit Memo",
+      );
 
       if (html.isEmpty) {
         l.hide();
         return;
       }
 
-      final pdfFile = await Helpers.generateToPdfDocument(htmlContent: html, documentNo: documentNo);
+      final pdfFile = await Helpers.generateToPdfDocument(
+        htmlContent: html,
+        documentNo: documentNo,
+      );
 
       if (pdfFile == null) {
         l.hide();
@@ -211,7 +231,8 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen> with
     );
   }
 
-  BlocBuilder<SaleCreditMemoHistoryCubit, SaleCreditMemoHistoryState> _buildFilter() {
+  BlocBuilder<SaleCreditMemoHistoryCubit, SaleCreditMemoHistoryState>
+  _buildFilter() {
     return BlocBuilder<SaleCreditMemoHistoryCubit, SaleCreditMemoHistoryState>(
       bloc: _cubit,
       builder: (context, state) {
