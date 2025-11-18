@@ -339,11 +339,10 @@ class _SaleOrderHistoryDetailScreenState
           return;
         }
       }
-
+      List<int> bytes = [];
       final profile = await CapabilityProfile.load();
       final generator = Generator(PaperSize.mm80, profile);
 
-      List<int> bytes = [];
       bytes += generator.reset();
       debugPrint("Creating receipt image...");
       final receiptImage = await _createReceiptImage(
@@ -356,8 +355,8 @@ class _SaleOrderHistoryDetailScreenState
       bytes += generator.cut();
 
       debugPrint(" Sending ${bytes.length} bytes to printer...");
-      await PrintBluetoothThermal.writeBytes(bytes);
 
+      await _writeInChunks(bytes);
       showSuccessMessage("Sending to Printer!");
     } catch (e) {
       debugPrint("Print error: $e");
@@ -736,6 +735,15 @@ class _SaleOrderHistoryDetailScreenState
 
     debugPrint("Receipt image created: ${width}x$height pixels");
     return img.decodeImage(pngBytes)!;
+  }
+
+  Future<void> _writeInChunks(List<int> bytes) async {
+    const chunkSize = 1024; // 1KB chunks
+    for (int i = 0; i < bytes.length; i += chunkSize) {
+      final end = (i + chunkSize < bytes.length) ? i + chunkSize : bytes.length;
+      await PrintBluetoothThermal.writeBytes(bytes.sublist(i, end));
+      await Future.delayed(Duration(milliseconds: 50));
+    }
   }
 
   @override

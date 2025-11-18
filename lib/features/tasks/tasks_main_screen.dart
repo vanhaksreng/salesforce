@@ -268,14 +268,14 @@ class _TaskScreenState extends State<TasksMainScreen>
               const TeamSchedultScreen(),
             ],
           ),
-          // floatingActionButton: optionView(),
-          bottomNavigationBar: BottomAppBar(
-            shape: CircularNotchedRectangle(),
-            child: IconButton(
-              icon: Icon(Icons.print),
-              onPressed: () => _runDiagnostics(context),
-            ),
-          ),
+          floatingActionButton: optionView(),
+          // bottomNavigationBar: BottomAppBar(
+          //   shape: CircularNotchedRectangle(),
+          //   child: IconButton(
+          //     icon: Icon(Icons.print),
+          //     onPressed: () => _runDiagnostics(context),
+          //   ),
+          // ),
         );
       },
     );
@@ -320,9 +320,7 @@ class _TaskScreenState extends State<TasksMainScreen>
     buffer.writeln('ប្លូតិចឡូជី'); // Khmer company
     buffer.writeln('BLUE TECHNOLOGY CO., LTD');
     buffer.writeln();
-    buffer.writeln(
-      'Description           Qty  UOM  Price  Disc  Amount',
-    );
+    buffer.writeln('Description           Qty  UOM  Price  Disc  Amount');
 
     final rawString = buffer.toString();
     final rawBytes = utf8.encode(rawString); // UTF-8 for Khmer
@@ -333,7 +331,7 @@ class _TaskScreenState extends State<TasksMainScreen>
       //   {'description': 'Item 2 (សៀវភៅ)', 'qty': 2, 'uom': 'PCS', 'price': 5.00, 'disc': 1.00, 'amount': 9.00},
       // ];
 
-      if(!context.mounted) return;
+      if (!context.mounted) return;
       // await ReceiptPrinter.printReceipt(context, items);
       // ReceiptPrinter.buildReceiptWidget();
       await BluetoothPrinterHandler.printRaw(rawBytes);
