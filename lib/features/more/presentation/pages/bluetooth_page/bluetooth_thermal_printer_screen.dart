@@ -1,7 +1,11 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:app_settings/app_settings.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+import 'package:salesforce/core/utils/helpers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
@@ -87,10 +91,50 @@ class BluetoothThermalPrinterScreenState
     }
   }
 
-  // MARK: - Scan Devices
   Future<void> scanDevices() async {
     try {
       setState(() => isScanning = true);
+
+      bool? isBluetoothOn = await PrintBluetoothThermal.bluetoothEnabled;
+
+      if (isBluetoothOn == false) {
+        setState(() => isScanning = false);
+        if (!mounted) return;
+        if (Platform.isAndroid) {
+          Helpers.showDialogAction(
+            context,
+            labelAction: "Bluetooth is Off",
+            subtitle: "Do you want to enable Bluetooth?",
+            confirmText: "Yes,Trun on",
+            cancelText: "No,Cancel",
+            canCancel: true,
+            confirm: () async {
+              Navigator.pop(context);
+              try {
+                await FlutterBluePlus.turnOn();
+                await Future.delayed(Duration(seconds: 1));
+                scanDevices();
+              } catch (e) {
+                showErrorMessage("Failed to enable Bluetooth: $e");
+              }
+            },
+          );
+        } else if (Platform.isIOS) {
+          Helpers.showDialogAction(
+            context,
+            labelAction: "Bluetooth is Off",
+            subtitle: "Please enable Bluetooth in Settings or Control Center.",
+            canCancel: true,
+            confirm: () {
+              Navigator.pop(context);
+              AppSettings.openAppSettings(type: AppSettingsType.bluetooth);
+            },
+          );
+        }
+        return;
+      }
+
+      // Proceed with scanning
       final result = await PrintBluetoothThermal.pairedBluetooths;
       setState(() => devices = result);
 
