@@ -65,7 +65,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
 
   Future<void> _refreshBluetoothDevices() async {
     String? storedMac = await _getStoredConnectedMac();
-    print('storedMac=============${storedMac}');
+
     if ((storedMac ?? "").isEmpty) {
       return;
     }

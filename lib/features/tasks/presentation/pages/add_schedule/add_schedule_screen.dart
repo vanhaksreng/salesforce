@@ -36,7 +36,7 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
 
   @override
   void initState() {
-    _cubit.loadCustomers(page: 1);
+    _cubit.loadCustomers(context: context, page: 1);
     _cubit.getSalePersonSchedule();
     _scrollController.addListener(_handleScrolling);
     super.initState();
@@ -53,7 +53,11 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
   }
 
   void _loadMoreItems() {
-    _cubit.loadCustomers(page: _cubit.state.currentPage + 1, isLoading: false);
+    _cubit.loadCustomers(
+      context: context,
+      page: _cubit.state.currentPage + 1,
+      append: true,
+    );
   }
 
   bool _shouldLoadMore() {
@@ -198,8 +202,8 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
         },
       );
 
-      await Future.delayed(const Duration(milliseconds: 300));
-      await _cubit.loadCustomers(page: 1, isLoading: false);
+      if (!mounted) return;
+      await _cubit.loadCustomers(context: context, page: 1, append: false);
       l.hide();
     } on GeneralException catch (e) {
       l.hide();
@@ -211,7 +215,11 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
   }
 
   _onSearch(String value) {
-    _cubit.loadCustomers(page: 1, param: {"name": 'LIKE $value%'});
+    _cubit.loadCustomers(
+      context: context,
+      page: 1,
+      params: {"name": 'LIKE $value%'},
+    );
   }
 
   @override
@@ -274,17 +282,13 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
     return ListView.builder(
       padding: EdgeInsets.symmetric(vertical: scaleFontSize(appSpace8)),
       controller: _scrollController,
-      itemCount: customers.length + 1,
+      itemCount: customers.length,
       itemBuilder: (context, index) {
-        if (index == customers.length) {
-          if (state.currentPage == state.lastPage) {
-            return const SizedBox.shrink();
-          }
-          return const LoadingPageWidget();
-        }
-
         final customer = customers[index];
         final hasSchedule = schedules.any((e) => e.customerNo == customer.no);
+        if (index == state.customers.length) {
+          return state.isFetching ? LoadingPageWidget() : const SizedBox();
+        }
 
         return BuildSelectCustomer(
           key: ValueKey(customer.no),

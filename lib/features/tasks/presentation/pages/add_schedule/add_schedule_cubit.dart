@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/data/models/extension/customer_extension.dart';
 import 'package:salesforce/core/mixins/app_mixin.dart';
@@ -10,7 +11,8 @@ import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 
 part 'add_schedule_state.dart';
 
-class AddScheduleCubit extends Cubit<AddScheduleState> with DownloadMixin, AppMixin {
+class AddScheduleCubit extends Cubit<AddScheduleState>
+    with DownloadMixin, AppMixin {
   AddScheduleCubit() : super(const AddScheduleState(isLoading: true));
 
   final repos = getIt<TaskRepository>();
@@ -19,36 +21,73 @@ class AddScheduleCubit extends Cubit<AddScheduleState> with DownloadMixin, AppMi
     try {
       emit(state.copyWith(isLoading: true));
 
-      final response = await repos.getCustomerAddresses(params: {'customer_no': cusNO});
+      final response = await repos.getCustomerAddresses(
+        params: {'customer_no': cusNO},
+      );
 
       response.fold(
         (failure) => throw Exception(failure.message),
-        (items) => emit(state.copyWith(isLoading: false, customerAddresses: items)),
+        (items) =>
+            emit(state.copyWith(isLoading: false, customerAddresses: items)),
       );
     } catch (error) {
       error.toString();
     }
   }
 
-  Future<void> loadCustomers({required int page, bool isLoading = true, Map<String, dynamic>? param}) async {
+  // Future<void> loadCustomers({required int page, bool isLoading = true, Map<String, dynamic>? param}) async {
+  //   try {
+  //     final oldCustomers = List<Customer>.from(state.customers);
+  //     emit(state.copyWith(isLoading: isLoading, isLoadingMore: !isLoading));
+  //     final response = await repos.getCustomers(page: page, params: param);
+  //     response.fold(
+  //       (failure) => throw Exception(failure.message),
+  //       (items) => emit(
+  //         state.copyWith(isLoading: false, isLoadingMore: false, customers: page == 1 ? items : oldCustomers + items),
+  //       ),
+  //     );
+  //   } catch (error) {
+  //     emit(state.copyWith(isLoading: false, isLoadingMore: false));
+  //   }
+  // }
+
+  Future<void> loadCustomers({
+    required BuildContext context,
+    Map<String, dynamic>? params,
+    int page = 1,
+    bool append = false,
+  }) async {
     try {
-      final oldCustomers = List<Customer>.from(state.customers);
-      emit(state.copyWith(isLoading: isLoading, isLoadingMore: !isLoading));
-      final response = await repos.getCustomers(page: page, params: param);
-      response.fold(
-        (failure) => throw Exception(failure.message),
-        (items) => emit(
-          state.copyWith(isLoading: false, isLoadingMore: false, customers: page == 1 ? items : oldCustomers + items),
-        ),
-      );
+      if (append) {
+        emit(state.copyWith(isFetching: true, isLoading: false));
+      }
+
+      final result = await repos.getCustomers(params: params, page: page);
+      if (!context.mounted) return;
+      result.fold((l) => throw Exception(), (records) {
+        // Append or replace
+        final newRecords = append ? [...state.customers, ...records] : records;
+
+        emit(
+          state.copyWith(
+            isLoading: false,
+            isFetching: false,
+            customers: newRecords,
+            currentPage: page,
+            lastPage: records.isEmpty ? page : page + 1,
+          ),
+        );
+      });
     } catch (error) {
-      emit(state.copyWith(isLoading: false, isLoadingMore: false));
+      emit(state.copyWith(isLoading: false));
     }
   }
 
   Future<bool> createSchedule() async {
     try {
-      final response = await repos.createSchedules({"schedules": state.selectedCustomers});
+      final response = await repos.createSchedules({
+        "schedules": state.selectedCustomers,
+      });
 
       return response.fold(
         (error) {
@@ -78,12 +117,20 @@ class AddScheduleCubit extends Cubit<AddScheduleState> with DownloadMixin, AppMi
       final index = state.customers.indexWhere((c) => c.no == customerNo);
 
       if (index != -1) {
-        final updatedCustomer = state.customers[index].copyWith(address: address.address, phoneNo: address.phoneNo);
+        final updatedCustomer = state.customers[index].copyWith(
+          address: address.address,
+          phoneNo: address.phoneNo,
+        );
 
         final updatedCustomers = [...state.customers];
         updatedCustomers[index] = updatedCustomer;
 
-        emit(state.copyWith(selectedCustomers: updatedList, customers: updatedCustomers));
+        emit(
+          state.copyWith(
+            selectedCustomers: updatedList,
+            customers: updatedCustomers,
+          ),
+        );
 
         return;
       }
