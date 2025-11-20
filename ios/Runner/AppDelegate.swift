@@ -74,7 +74,8 @@ import workmanager_apple
 //           
 //        }
 //        print("✅ ESC/POS channel registered")
-        
+        // Register the Thermal Printer Plugin
+        ThermalPrinterPlugin.register(with: self.registrar(forPlugin: "ThermalPrinterPlugin")!)
         // ============================================
         // MARK: - Other Plugins
         // ============================================

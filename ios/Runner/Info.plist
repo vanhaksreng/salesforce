@@ -83,6 +83,12 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIAppFonts</key>
+<!-- 	
+	<key>UISupportedExternalAccessoryProtocols</key>
+	<array>
+		<string>com.your.printer.protocol</string>
+	</array>
+	 -->
 	<array>
 		<string>NotoSansKhmer-Regular.ttf</string>
 	</array>

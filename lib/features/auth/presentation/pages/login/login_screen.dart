@@ -178,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
               style: TextStyle(fontSize: 14.scale),
               children: [
                 TextSpan(
-                  text: greeting("Login to"),
+                  text: greeting("Login to  "),
                   style: TextStyle(fontSize: 15.scale, color: textColor50),
                 ),
                 TextSpan(

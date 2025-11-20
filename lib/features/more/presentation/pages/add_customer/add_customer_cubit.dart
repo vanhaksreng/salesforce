@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/mixins/download_mixin.dart';
@@ -29,27 +30,61 @@ class AddCustomerCubit extends Cubit<AddCustomerState>
     }
   }
 
-  Future<void> loadCustomers({
-    required int page,
-    bool isLoading = true,
-    Map<String, dynamic>? param,
+  // Future<void> loadCustomers({
+  //   required int page,
+  //   bool isLoading = true,
+  //   Map<String, dynamic>? param,
+  //   bool append = false,
+  // }) async {
+  //   try {
+  //     final oldCustomers = List<Customer>.from(state.customers);
+  //     emit(state.copyWith(isLoading: isLoading, isLoadingMore: !isLoading));
+  //     final response = await repos.getCustomers(page: page, params: param);
+  //     response.fold(
+  //       (failure) => throw Exception(failure.message),
+  //       (items) => emit(
+  //         state.copyWith(
+  //           isLoading: false,
+  //           isLoadingMore: false,
+  //           customers: page == 1 ? items : oldCustomers + items,
+  //         ),
+  //       ),
+  //     );
+  //   } catch (error) {
+  //     emit(state.copyWith(isLoading: false, isLoadingMore: false));
+  //   }
+  // }
+
+  Future<void> getCustomers({
+    required BuildContext context,
+    Map<String, dynamic>? params,
+    int page = 1,
+    bool append = false,
   }) async {
     try {
-      final oldCustomers = List<Customer>.from(state.customers);
-      emit(state.copyWith(isLoading: isLoading, isLoadingMore: !isLoading));
-      final response = await repos.getCustomers(page: page, params: param);
-      response.fold(
-        (failure) => throw Exception(failure.message),
-        (items) => emit(
+      if (append) {
+        emit(state.copyWith(isFetching: true, isLoading: false));
+      }
+
+      final result = await repos.getCustomers(params: params, page: page);
+      if (!context.mounted) return;
+
+      result.fold((l) => throw Exception(), (records) {
+        // Append or replace
+        final newRecords = append ? [...state.customers, ...records] : records;
+
+        emit(
           state.copyWith(
             isLoading: false,
-            isLoadingMore: false,
-            customers: page == 1 ? items : oldCustomers + items,
+            isFetching: false,
+            customers: newRecords,
+            currentPage: page,
+            lastPage: records.isEmpty ? page : page + 1,
           ),
-        ),
-      );
+        );
+      });
     } catch (error) {
-      emit(state.copyWith(isLoading: false, isLoadingMore: false));
+      emit(state.copyWith(isLoading: false, error: error.toString()));
     }
   }
 

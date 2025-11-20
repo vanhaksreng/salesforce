@@ -34,9 +34,7 @@ abstract interface class ILocalStorage {
 
   Future<T> writeTransaction<T>(T Function(Realm realm) action);
 
-  Future<int> getCount<M extends RealmObject>({
-    Map<String, dynamic>? args,
-  });
+  Future<int> getCount<M extends RealmObject>({Map<String, dynamic>? args});
 
   void dispose();
 }

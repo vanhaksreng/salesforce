@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/app/custom_bottom_navigation_bar.dart';
 import 'package:salesforce/app/navigation_item.dart';
+import 'package:salesforce/core/constants/app_setting.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
+import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/logger.dart';
@@ -29,7 +32,7 @@ class MainTapScreen extends StatefulWidget {
 }
 
 class _MainTapScreenState extends State<MainTapScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, AppMixin {
   final ValueNotifier<int> _selectedIndex = ValueNotifier<int>(0);
   final appRepo = di.getIt<BaseAppRepository>();
   final svc = LocationService.instance;
@@ -63,36 +66,39 @@ class _MainTapScreenState extends State<MainTapScreen>
     if (auth == null) {
       return;
     }
+    final String setting = await getSetting(kGpsRealTimeTracking);
 
-    await appRepo.syncOfflineLocationToBackend();
-    await appRepo.heartbeatStatus(
-      params: {'status': 'online', 'rtype': 'heartbeat'},
-    );
+    if (setting == kStatusYes) {
+      await appRepo.syncOfflineLocationToBackend();
+      await appRepo.heartbeatStatus(
+        params: {'status': 'online', 'rtype': 'heartbeat'},
+      );
 
-    syncTimer = Timer.periodic(Duration(seconds: 60), (timer) async {
-      if (latestLocation != null) {
-        try {
-          await appRepo.syncOfflineLocationToBackend();
-          Logger.log(
-            "Synced to backend: ${latestLocation!['latitude']}, ${latestLocation!['longitude']}",
-          );
-        } catch (e) {
-          Logger.log("Error syncing to backend: $e");
+      syncTimer = Timer.periodic(Duration(seconds: 60), (timer) async {
+        if (latestLocation != null) {
+          try {
+            await appRepo.syncOfflineLocationToBackend();
+            Logger.log(
+              "Synced to backend: ${latestLocation!['latitude']}, ${latestLocation!['longitude']}",
+            );
+          } catch (e) {
+            Logger.log("Error syncing to backend: $e");
+          }
         }
-      }
-    });
+      });
 
-    heartbeatTimer = Timer.periodic(Duration(seconds: 90), (timer) async {
-      if (latestLocation != null) {
-        try {
-          await appRepo.heartbeatStatus(
-            params: {'status': 'online', 'rtype': 'heartbeat'},
-          );
-        } catch (e) {
-          Logger.log("Error syncing to backend: $e");
+      heartbeatTimer = Timer.periodic(Duration(seconds: 90), (timer) async {
+        if (latestLocation != null) {
+          try {
+            await appRepo.heartbeatStatus(
+              params: {'status': 'online', 'rtype': 'heartbeat'},
+            );
+          } catch (e) {
+            Logger.log("Error syncing to backend: $e");
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   void _stopTimers() {
@@ -132,6 +138,9 @@ class _MainTapScreenState extends State<MainTapScreen>
 
   // MARK: - Enhanced Background Task Initialization
   Future<void> _initBGTasks() async {
+    final String setting = await getSetting(kGpsRealTimeTracking);
+
+    if (setting == kStatusNo) return;
     // svc.onLocation.listen((loc) async {
     //   try {
     //     await appRepo.storeLocationOffline(

@@ -269,74 +269,9 @@ class _TaskScreenState extends State<TasksMainScreen>
             ],
           ),
           floatingActionButton: optionView(),
-          // bottomNavigationBar: BottomAppBar(
-          //   shape: CircularNotchedRectangle(),
-          //   child: IconButton(
-          //     icon: Icon(Icons.print),
-          //     onPressed: () => _runDiagnostics(context),
-          //   ),
-          // ),
         );
       },
     );
-  }
-
-  Future<void> _runDiagnostics(BuildContext context) async {
-    final messages = <String>[];
-
-    // Check 1: Handler registered
-    messages.add('✓ Handler is registered');
-
-    // Helpers.showMessage(msg: 'Handler is registered');
-    // Check 2: Try to scan
-    try {
-      await BluetoothPrinterHandler.scanDevices();
-
-      // Listen for discovered devices
-      BluetoothPrinterHandler.setDeviceFoundCallback((device) {
-        print('Found: ${device['name']} - ${device['address']}');
-
-        if (!BluetoothPrinterHandler.isConnected &&
-            device['name'] == "XP-P323B-E1FE") {
-          BluetoothPrinterHandler.connectDevice(device['address']);
-        }
-      });
-
-      messages.add('✓ Scan command sent successfully');
-      // Helpers.showMessage(msg: 'Scan command sent successfully');
-    } catch (e) {
-      Helpers.showMessage(msg: '✗ Scan failed: $e');
-      messages.add('✗ Scan failed: $e');
-    }
-
-    final StringBuffer buffer = StringBuffer();
-
-    // final List<int> codePageCmd = [0x1B, 0x74, 18];
-    // final codePageBytes = Uint8List.fromList(codePageCmd);
-    // final codePageString = utf8.decode(codePageBytes);
-    // buffer.write(codePageString);
-
-    buffer.writeln();
-    buffer.writeln('ប្លូតិចឡូជី'); // Khmer company
-    buffer.writeln('BLUE TECHNOLOGY CO., LTD');
-    buffer.writeln();
-    buffer.writeln('Description           Qty  UOM  Price  Disc  Amount');
-
-    final rawString = buffer.toString();
-    final rawBytes = utf8.encode(rawString); // UTF-8 for Khmer
-
-    if (BluetoothPrinterHandler.isConnected) {
-      // const List<Map<String, dynamic>> items = [
-      //   {'description': 'Item 1 (ផលិតផល)', 'qty': 1, 'uom': 'EA', 'price': 10.00, 'disc': 0, 'amount': 10.00},
-      //   {'description': 'Item 2 (សៀវភៅ)', 'qty': 2, 'uom': 'PCS', 'price': 5.00, 'disc': 1.00, 'amount': 9.00},
-      // ];
-
-      if (!context.mounted) return;
-      // await ReceiptPrinter.printReceipt(context, items);
-      // ReceiptPrinter.buildReceiptWidget();
-      await BluetoothPrinterHandler.printRaw(rawBytes);
-      // await BluetoothPrinterHandler.printHtml(html);
-    }
   }
 
   optionView() {

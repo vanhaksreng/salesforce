@@ -6,7 +6,6 @@ class AddScheduleState {
   final List<CustomerAddress>? customerAddresses;
   final List<Customer> customers;
   final List<SalespersonSchedule>? schedules;
-
   final bool isFetching;
   final bool isLoadingCreate;
   final int currentPage;
