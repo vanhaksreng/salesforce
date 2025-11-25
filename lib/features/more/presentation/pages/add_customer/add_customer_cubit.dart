@@ -65,8 +65,12 @@ class AddCustomerCubit extends Cubit<AddCustomerState>
       if (append) {
         emit(state.copyWith(isFetching: true, isLoading: false));
       }
+      final inactive = {"inactived": "No"};
 
-      final result = await repos.getCustomers(params: params, page: page);
+      final result = await repos.getCustomers(
+        params: {...?params, ...inactive},
+        page: page,
+      );
       if (!context.mounted) return;
 
       result.fold((l) => throw Exception(), (records) {

@@ -20,7 +20,8 @@ class RealmStorage implements ILocalStorage {
         .map((sort) {
           if (sort is! Map<String, String>) return '';
           final field = sort['field'];
-          final order = sort['order']?.toUpperCase() ?? (ascending ? 'ASC' : 'DESC');
+          final order =
+              sort['order']?.toUpperCase() ?? (ascending ? 'ASC' : 'DESC');
           return '$field $order';
         })
         .where((clause) => clause.isNotEmpty)
@@ -68,8 +69,14 @@ class RealmStorage implements ILocalStorage {
     }
   }
 
-  Future<List<M>> _get<M extends RealmObject>({Map<String, dynamic>? args, List? sortBy, bool ascending = true}) async {
-    var queryString = args != null ? await filters(args: args) : "TRUEPREDICATE";
+  Future<List<M>> _get<M extends RealmObject>({
+    Map<String, dynamic>? args,
+    List? sortBy,
+    bool ascending = true,
+  }) async {
+    var queryString = args != null
+        ? await filters(args: args)
+        : "TRUEPREDICATE";
     final sortClause = _buildSortClause(sortBy, ascending);
 
     if (sortClause.isNotEmpty) {
@@ -89,8 +96,16 @@ class RealmStorage implements ILocalStorage {
   }
 
   @override
-  Future<M?> getFirst<M extends RealmObject>({Map<String, dynamic>? args, List? sortBy, bool ascending = true}) async {
-    final List<M> results = await _get(args: args, sortBy: sortBy, ascending: ascending);
+  Future<M?> getFirst<M extends RealmObject>({
+    Map<String, dynamic>? args,
+    List? sortBy,
+    bool ascending = true,
+  }) async {
+    final List<M> results = await _get(
+      args: args,
+      sortBy: sortBy,
+      ascending: ascending,
+    );
 
     if (results.isEmpty) {
       return null;
@@ -133,117 +148,146 @@ class RealmStorage implements ILocalStorage {
 
   Future<String> filters({required Map<String, dynamic> args}) async {
     try {
-      final conditions = args.entries.where((e) => e.value != null).map((e) {
-        final key = e.key;
-        final value = e.value;
+      final conditions = args.entries
+          .where((e) => e.value != null)
+          .map((e) {
+            final key = e.key;
+            final value = e.value;
 
-        if (value is String) {
-          // Handle IN clause
-          if (value.startsWith('IN {') && value.endsWith('}')) {
-            return "$key $value";
-          }
+            if (value is String && value.trim().isEmpty) {
+              return null; // ignore empty string
+            }
 
-          // Handle .. syntax
-          if (value.contains('..')) {
-            final range = value.split('..');
-            if (range.length == 2) {
-              final start = range[0].trim();
-              final end = range[1].trim();
-              // return '($key >= "$start" AND $key <= "$end")';
-              // return '$key BETWEEN {"$start", "$end"}';
+            final numericCompare = RegExp(r'^(>=|<=|>|<)\s*(\d+(\.\d+)?)$');
+            if (value is String && numericCompare.hasMatch(value)) {
+              final match = numericCompare.firstMatch(value)!;
+              final op = match.group(1)!; // >, >=, <, <=
+              final number = match.group(2)!; // numeric value
+              return '$key $op $number'; // NO quotes
+            }
 
-              final startNum = double.tryParse(start);
-              final endNum = double.tryParse(end);
+            if (value is String) {
+              // Handle IN clause
+              if (value.startsWith('IN {') && value.endsWith('}')) {
+                return "$key $value";
+              }
 
-              if (startNum != null && endNum != null) {
-                // Format numbers to match database format for string comparison
-                final formattedStart = _formatNumberForStringComparison(start);
-                final formattedEnd = _formatNumberForStringComparison(end);
-                return '($key >= "$formattedStart" AND $key <= "$formattedEnd")';
-              } else {
+              if (key == "_raw_query") {
+                return value;
+              }
+
+              // Handle .. syntax
+              if (value.contains('..')) {
+                final range = value.split('..');
+                if (range.length == 2) {
+                  final start = range[0].trim();
+                  final end = range[1].trim();
+                  // return '($key >= "$start" AND $key <= "$end")';
+                  // return '$key BETWEEN {"$start", "$end"}';
+
+                  final startNum = double.tryParse(start);
+                  final endNum = double.tryParse(end);
+
+                  if (startNum != null && endNum != null) {
+                    // Format numbers to match database format for string comparison
+                    final formattedStart = _formatNumberForStringComparison(
+                      start,
+                    );
+                    final formattedEnd = _formatNumberForStringComparison(end);
+                    return '($key >= "$formattedStart" AND $key <= "$formattedEnd")';
+                  } else {
+                    return '($key >= "$start" AND $key <= "$end")';
+                  }
+                }
+              }
+
+              // Handle LIKE clause
+              if (value.startsWith('LIKE ')) {
+                final searchTerm = value.replaceFirst('LIKE ', '').trim();
+
+                // Handle LIKE with wildcards
+                if (searchTerm.contains('%')) {
+                  final term = searchTerm.replaceAll('%', '').trim();
+
+                  // LIKE '%text%' -> CONTAINS[c]
+                  if (searchTerm.startsWith('%') && searchTerm.endsWith('%')) {
+                    return '$key CONTAINS[c] "$term"';
+                  }
+
+                  // LIKE 'text%' -> BEGINSWITH[c]
+                  if (!searchTerm.startsWith('%') && searchTerm.endsWith('%')) {
+                    return '$key BEGINSWITH[c] "$term"';
+                  }
+
+                  // LIKE '%text' -> ENDSWITH[c]
+                  if (searchTerm.startsWith('%') && !searchTerm.endsWith('%')) {
+                    return '$key ENDSWITH[c] "$term"';
+                  }
+                }
+
+                return '$key ==[c] "$searchTerm"';
+              }
+
+              if (value.startsWith('!=')) {
+                final compareValue = value.replaceFirst('!=', '').trim();
+                final formattedValue = _formatValueForComparison(compareValue);
+                return '$key != "$formattedValue"';
+              }
+
+              if (value.startsWith('<>')) {
+                final compareValue = value.replaceFirst('<>', '').trim();
+                final formattedValue = _formatValueForComparison(compareValue);
+                return '$key != "$formattedValue"';
+              }
+
+              if (value.startsWith('>=')) {
+                final compareValue = value.replaceFirst('>=', '').trim();
+                final formattedValue = _formatValueForComparison(compareValue);
+                return '$key >= "$formattedValue"';
+              }
+
+              if (value.startsWith('<=')) {
+                final compareValue = value.replaceFirst('<=', '').trim();
+                final formattedValue = _formatValueForComparison(compareValue);
+                return '$key <= "$formattedValue"';
+              }
+
+              if (value.startsWith('>')) {
+                final compareValue = value.replaceFirst('>', '').trim();
+                final formattedValue = _formatValueForComparison(compareValue);
+                return '$key > "$formattedValue"';
+              }
+
+              if (value.startsWith('<')) {
+                final compareValue = value.replaceFirst('<', '').trim();
+                final formattedValue = _formatValueForComparison(compareValue);
+                return '$key < "$formattedValue"';
+              }
+
+              // Handle BETWEEN or between syntax
+              final pattern = RegExp(
+                r'(BETWEEN|between)\s+',
+                caseSensitive: false,
+              );
+              if (pattern.hasMatch(value)) {
+                final end = value.replaceFirst(pattern, '').trim();
+                final start = value.split(pattern)[0].trim();
+
                 return '($key >= "$start" AND $key <= "$end")';
-              }
-            }
-          }
-
-          // Handle LIKE clause
-          if (value.startsWith('LIKE ')) {
-            final searchTerm = value.replaceFirst('LIKE ', '').trim();
-
-            // Handle LIKE with wildcards
-            if (searchTerm.contains('%')) {
-              final term = searchTerm.replaceAll('%', '').trim();
-
-              // LIKE '%text%' -> CONTAINS[c]
-              if (searchTerm.startsWith('%') && searchTerm.endsWith('%')) {
-                return '$key CONTAINS[c] "$term"';
-              }
-
-              // LIKE 'text%' -> BEGINSWITH[c]
-              if (!searchTerm.startsWith('%') && searchTerm.endsWith('%')) {
-                return '$key BEGINSWITH[c] "$term"';
-              }
-
-              // LIKE '%text' -> ENDSWITH[c]
-              if (searchTerm.startsWith('%') && !searchTerm.endsWith('%')) {
-                return '$key ENDSWITH[c] "$term"';
+                // return '$key BETWEEN {"$start", "$end"}';
               }
             }
 
-            return '$key ==[c] "$searchTerm"';
-          }
+            return '$key == "$value"';
+          })
+          .whereType<String>()
+          .toList();
 
-          if (value.startsWith('!=')) {
-            final compareValue = value.replaceFirst('!=', '').trim();
-            final formattedValue = _formatValueForComparison(compareValue);
-            return '$key != "$formattedValue"';
-          }
+      String resutl = conditions.isEmpty
+          ? "TRUEPREDICATE"
+          : conditions.join(" AND ");
 
-          if (value.startsWith('<>')) {
-            final compareValue = value.replaceFirst('<>', '').trim();
-            final formattedValue = _formatValueForComparison(compareValue);
-            return '$key != "$formattedValue"';
-          }
-
-          if (value.startsWith('>=')) {
-            final compareValue = value.replaceFirst('>=', '').trim();
-            final formattedValue = _formatValueForComparison(compareValue);
-            return '$key >= "$formattedValue"';
-          }
-
-          if (value.startsWith('<=')) {
-            final compareValue = value.replaceFirst('<=', '').trim();
-            final formattedValue = _formatValueForComparison(compareValue);
-            return '$key <= "$formattedValue"';
-          }
-
-          if (value.startsWith('>')) {
-            final compareValue = value.replaceFirst('>', '').trim();
-            final formattedValue = _formatValueForComparison(compareValue);
-            return '$key > "$formattedValue"';
-          }
-
-          if (value.startsWith('<')) {
-            final compareValue = value.replaceFirst('<', '').trim();
-            final formattedValue = _formatValueForComparison(compareValue);
-            return '$key < "$formattedValue"';
-          }
-
-          // Handle BETWEEN or between syntax
-          final pattern = RegExp(r'(BETWEEN|between)\s+', caseSensitive: false);
-          if (pattern.hasMatch(value)) {
-            final end = value.replaceFirst(pattern, '').trim();
-            final start = value.split(pattern)[0].trim();
-
-            return '($key >= "$start" AND $key <= "$end")';
-            // return '$key BETWEEN {"$start", "$end"}';
-          }
-        }
-
-        return '$key == "$value"';
-      }).toList();
-
-      return conditions.isEmpty ? "TRUEPREDICATE" : conditions.join(" AND ");
+      return resutl;
     } catch (e) {
       debugPrint('Filter error: $e');
       return "TRUEPREDICATE";
@@ -265,7 +309,9 @@ class RealmStorage implements ILocalStorage {
         return [];
       }
 
-      var queryString = args != null ? await filters(args: args) : "TRUEPREDICATE";
+      var queryString = args != null
+          ? await filters(args: args)
+          : "TRUEPREDICATE";
       final sortClause = _buildSortClause(sortBy, ascending);
 
       if (sortClause.isNotEmpty) {
@@ -279,7 +325,11 @@ class RealmStorage implements ILocalStorage {
         return [];
       }
 
-      return results.freeze().skip(offset).take(min(limit, results.length - offset)).toList();
+      return results
+          .freeze()
+          .skip(offset)
+          .take(min(limit, results.length - offset))
+          .toList();
     } catch (e) {
       debugPrint('Pagination error: $e');
       return [];
@@ -330,7 +380,9 @@ class RealmStorage implements ILocalStorage {
   }
 
   @override
-  Future<int> getCount<M extends RealmObject>({Map<String, dynamic>? args}) async {
+  Future<int> getCount<M extends RealmObject>({
+    Map<String, dynamic>? args,
+  }) async {
     try {
       if (args != null) {
         final queryString = await filters(args: args);

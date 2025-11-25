@@ -180,7 +180,7 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
       itemCount: customers.length + 1,
       itemBuilder: (context, index) {
         if (index == customers.length) {
-          if (state.currentPage == state.lastPage) {
+          if (!state.isFetching) {
             return const SizedBox.shrink();
           }
           return const LoadingPageWidget();

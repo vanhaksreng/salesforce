@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
+import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/mixins/permission_mixin.dart';
 import 'package:salesforce/features/tasks/domain/entities/checkout_arg.dart';
 import 'package:salesforce/features/tasks/domain/repositories/task_repository.dart';
 import 'package:salesforce/features/tasks/presentation/pages/sale_components/sale_checkout/sale_checkout_state.dart';
 import 'package:salesforce/injection_container.dart';
+import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
 class SaleCheckoutCubit extends Cubit<SaleCheckoutState>
-    with PermissionMixin, MessageMixin {
+    with PermissionMixin, MessageMixin, AppMixin {
   SaleCheckoutCubit() : super(const SaleCheckoutState(isLoading: true));
 
   final _taskRepo = getIt<TaskRepository>();

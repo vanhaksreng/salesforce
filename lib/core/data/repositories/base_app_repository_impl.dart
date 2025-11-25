@@ -70,7 +70,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
     String errorText = '';
 
     try {
-      await _remote.checkApiSession();
+      await _remote.isValidApiSession();
 
       for (var table in tables) {
         errorText = '';
@@ -168,7 +168,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
     }
 
     try {
-      await _remote.checkApiSession();
+      await _remote.isValidApiSession();
       final result = await _remote.downloadAppSetting();
       await _local.storeInitAppData(result);
 
@@ -189,6 +189,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
     int page = 1,
     Map<String, dynamic>? params,
   }) async {
+    print(params);
     try {
       final customer = await _local.getCustomers(page: page, params: params);
       return Right(customer);
@@ -200,6 +201,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   @override
   Future<Either<Failure, List<Item>>> getItems({
     Map<String, dynamic>? param,
+    List<String>? searchFields,
     int page = 1,
   }) async {
     try {

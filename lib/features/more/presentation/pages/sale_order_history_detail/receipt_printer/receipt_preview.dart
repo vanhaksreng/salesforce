@@ -37,6 +37,8 @@ class ReceiptPreview extends StatelessWidget {
 
   Widget _buildCommand(ReceiptCommand command) {
     switch (command.type) {
+      case ReceiptCommandType.row:
+        return _buildTextRowCommand(command.params);
       case ReceiptCommandType.text:
         return _buildTextCommand(command.params);
       case ReceiptCommandType.image:
@@ -48,12 +50,71 @@ class ReceiptPreview extends StatelessWidget {
     }
   }
 
+  Widget _buildTextRowCommand(Map<String, dynamic> params) {
+    final columnMaps = params['columns'] as List<dynamic>;
+    final fontSize = (params['fontSize'] as int? ?? 24).toDouble();
+
+    final columns = columnMaps.map((colMap) {
+      final map = colMap as Map<String, dynamic>;
+      return {
+        'text': map['text'] as String? ?? '',
+        'width': map['width'] as int? ?? 1,
+        'align': map['align'] as String? ?? 'left',
+        'bold': map['bold'] as bool? ?? false,
+      };
+    }).toList();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: columns.map((column) {
+          final flex = column['width'] as int;
+          final text = column['text'] as String;
+          final align = column['align'] as String;
+          final bold = column['bold'] as bool;
+
+          // Dynamic maxLines based on column width
+          final maxLines = flex >= 4 ? 3 : 2;
+
+          return Expanded(
+            flex: flex,
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: fontSize * 0.6,
+                fontFamily: 'NotoSansKhmer',
+                fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+              ),
+              textAlign: _getTextAlignFromString(align),
+              overflow: TextOverflow.ellipsis,
+              softWrap: true,
+              maxLines: maxLines,
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  TextAlign _getTextAlignFromString(String align) {
+    switch (align.toLowerCase()) {
+      case 'center':
+        return TextAlign.center;
+      case 'right':
+        return TextAlign.right;
+      default:
+        return TextAlign.left;
+    }
+  }
+
   Widget _buildTextCommand(Map<String, dynamic> params) {
-    final text = params['text'] as String;
-    final fontSize = (params['fontSize'] as int).toDouble();
-    final bold = params['bold'] as bool;
-    final align = params['align'] as String;
-    final maxChars = params['maxCharsPerLine'] as int;
+    // ✅ FIXED: Add null safety checks
+    final text = params['text'] as String? ?? '';
+    final fontSize = (params['fontSize'] as int? ?? 24).toDouble();
+    final bold = params['bold'] as bool? ?? false;
+    final align = params['align'] as String? ?? 'left';
+    final maxChars = params['maxCharsPerLine'] as int? ?? 48;
 
     // Wrap text based on maxCharsPerLine
     final wrappedLines = _wrapText(text, maxChars);
@@ -68,8 +129,7 @@ class ReceiptPreview extends StatelessWidget {
             style: TextStyle(
               fontSize: fontSize * 0.6, // Scale down for preview
               fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-              fontFamily: 'Courier',
-              color: Colors.black,
+              fontFamily: 'NotoSansKhmer',
             ),
             textAlign: _getTextAlign(align),
           );
@@ -79,8 +139,12 @@ class ReceiptPreview extends StatelessWidget {
   }
 
   Widget _buildImageCommand(Map<String, dynamic> params) {
-    final imageBytes = params['imageBytes'] as Uint8List;
-    final width = (params['width'] as int).toDouble();
+    final imageBytes = params['imageBytes'] as Uint8List?;
+    final width = (params['width'] as int? ?? 384).toDouble();
+
+    if (imageBytes == null) {
+      return const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -89,7 +153,7 @@ class ReceiptPreview extends StatelessWidget {
   }
 
   Widget _buildFeedPaperCommand(Map<String, dynamic> params) {
-    final lines = params['lines'] as int;
+    final lines = params['lines'] as int? ?? 1;
     return SizedBox(height: lines * 4.0); // 4 pixels per line
   }
 
@@ -156,6 +220,6 @@ class ReceiptPreview extends StatelessWidget {
     }
     if (currentLine.isNotEmpty) lines.add(currentLine);
 
-    return lines;
+    return lines.isEmpty ? [text] : lines;
   }
 }

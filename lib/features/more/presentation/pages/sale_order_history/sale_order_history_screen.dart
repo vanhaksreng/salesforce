@@ -20,7 +20,6 @@ import 'package:salesforce/features/more/presentation/pages/components/sale_hist
 import 'package:salesforce/features/more/presentation/pages/components/sale_bottomsheet_filter.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history/sale_order_history_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history/sale_order_history_state.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen_old.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';

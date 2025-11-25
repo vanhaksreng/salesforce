@@ -136,7 +136,12 @@ class _MainPageStockScreenState extends State<MainPageStockScreen>
   }
 
   _onSearch(String value) async {
-    await _cubit.getItems(param: {"description": 'LIKE $value%'});
+    await _cubit.getItems(
+      param: {
+        "_raw_query":
+            '(description CONTAINS[c] "$value" OR no CONTAINS[c] "$value")',
+      },
+    );
   }
 
   @override

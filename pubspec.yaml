@@ -45,6 +45,7 @@ dependencies:
   workmanager: ^0.9.0+3
   print_bluetooth_thermal: ^1.1.7
   app_settings: ^6.1.1
+  characters: ^1.4.0
   # imin_printer: ^0.6.14
   # characters: ^1.4.0
 
@@ -61,14 +62,19 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/fonts/
     - assets/icons/
     - assets/icons/process_icon/
     
   fonts:
-    - family: Siemreap
-      fonts:
-        - asset: assets/fonts/Siemreap-Regular.ttf
+    # - family: Siemreap
+    #   fonts:
+    #     - asset: assets/fonts/Siemreap-Regular.ttf
 
     - family: NotoSansKhmer
       fonts:
         - asset: assets/fonts/NotoSansKhmer-Regular.ttf      
+        - asset: assets/fonts/NotoSansKhmer-Black.ttf      
+        - asset: assets/fonts/NotoSansKhmer-Bold.ttf      
+        - asset: assets/fonts/NotoSansKhmer-Medium.ttf     
+        - asset: assets/fonts/NotoSansKhmer-SemiBold.ttf

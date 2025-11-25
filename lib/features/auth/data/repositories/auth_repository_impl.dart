@@ -60,6 +60,9 @@ class AuthRepositoryImpl extends BaseAppRepositoryImpl
   @override
   Future<bool> logout() async {
     try {
+      if (!await _networkInfo.isConnected) {
+        throw GeneralException(errorInternetMessage);
+      }
       _remote.logout();
 
       LoginSession? user = await _local.getLoginSession();

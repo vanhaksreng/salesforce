@@ -10,6 +10,7 @@ import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart
 import 'package:salesforce/core/presentation/widgets/btn_text_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
+import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -135,8 +136,6 @@ class CollectionsScreenState extends State<CollectionsScreen>
 
       await _cubit.downloadDatas(appSyncLogs);
 
-      await _initializeData();
-
       l.hide();
     } on GeneralException catch (e) {
       l.hide();
@@ -171,7 +170,12 @@ class CollectionsScreenState extends State<CollectionsScreen>
       ),
       body: BlocBuilder<CollectionsCubit, CollectionsState>(
         bloc: _cubit,
-        builder: (context, state) => _buildBody(state),
+        builder: (context, state) {
+          if (state.cusLedgerEntry.isEmpty) {
+            return EmptyScreen();
+          }
+          return _buildBody(state);
+        },
       ),
       persistentFooterButtons: [
         BlocBuilder<CollectionsCubit, CollectionsState>(

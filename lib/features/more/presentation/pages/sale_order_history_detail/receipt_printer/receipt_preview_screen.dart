@@ -1,9 +1,6 @@
-import 'dart:convert';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
+import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
@@ -13,8 +10,13 @@ import 'package:salesforce/features/more/presentation/pages/sale_order_history_d
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
+// NOTE: Placeholder classes (like PosColumn, AlignStyle, PrinterDevice, ConnectionType,
+// ReceiptCommandType) would normally be imported from your project files.
+// Assuming they are defined and functional based on the rest of the code.
+
 class ReceiptPreviewScreen extends StatefulWidget {
   const ReceiptPreviewScreen({super.key, this.detail, this.companyInfo});
+
   final SaleDetail? detail;
   final CompanyInformation? companyInfo;
 
@@ -31,8 +33,16 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
   bool isSearching = false;
   bool isPrinting = false;
   bool isReceiptBuilt = false;
+
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+
+  // Column width configuration - will be set based on printer width
+  late List<int> columnWidths;
+  late int totalWidth;
+
+  // Printer width - will be set during initialization
+  int printerWidth = 576; // Default to 80mm (576 pixels)
 
   @override
   void initState() {
@@ -41,9 +51,14 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
+
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+
+    // Set printer configuration based on size
+    _configurePrinterSize();
+
     _initializeReceipt();
   }
 
@@ -57,9 +72,16 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
   }
 
   Future<void> _initializeReceipt() async {
+    // Set printer width in native code if needed
+    // await ThermalPrinter.setPrinterWidth(printerWidth);
+
     await _buildSampleReceipt();
     await searchPrinters();
   }
+
+  // ============================================================================
+  // PRINTER CONNECTION METHODS
+  // ============================================================================
 
   Future<void> searchPrinters() async {
     setState(() {
@@ -71,7 +93,8 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       final foundPrinters = await ThermalPrinter.discoverPrinters(
         type: ConnectionType.bluetooth,
       );
-      print("===========all${foundPrinters.map((e) => e.name)}");
+
+      debugPrint("Found printers: ${foundPrinters.map((e) => e.name)}");
 
       setState(() {
         printers = foundPrinters;
@@ -94,8 +117,76 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     }
   }
 
+  Future<void> connectToPrinter() async {
+    if (printers.isEmpty) {
+      _showSnackBar('No printers available', Colors.red, Icons.error);
+      return;
+    }
+
+    try {
+      final printer = printers.firstWhere(
+        (e) => e.name.contains("XP-P323B-E1FE"),
+        // (e) => e.name.contains("SW_3ADE"),
+        // (e) => e.name.contains("MPT-II"),
+        orElse: () {
+          debugPrint('XP-P323B-E1FE not found in printers list');
+          throw Exception('Printer XP-P323B-E1FE not found');
+        },
+      );
+
+      debugPrint('Found printer: ${printer.name} (${printer.address})');
+
+      _showSnackBar(
+        'Connecting to ${printer.name}...',
+        Colors.blue,
+        Icons.bluetooth_searching,
+      );
+
+      final connected = await ThermalPrinter.connect(printer).timeout(
+        const Duration(seconds: 25),
+        onTimeout: () {
+          debugPrint('Connection timeout after 25 seconds');
+          return false;
+        },
+      );
+
+      debugPrint('Connection result: $connected');
+
+      setState(() {
+        isConnected = connected;
+        if (connected) selectedPrinter = printer;
+      });
+
+      if (connected) {
+        _showSnackBar(
+          'Connected to ${printer.name}',
+          Colors.green,
+          Icons.check_circle,
+        );
+      } else {
+        _showSnackBar('Connection failed', Colors.red, Icons.error);
+      }
+    } on TimeoutException catch (e) {
+      debugPrint('Connection timeout: $e');
+      _showSnackBar(
+        'Connection timeout - Please try again',
+        Colors.orange,
+        Icons.timer,
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Connection error: $e');
+      debugPrint('Stack trace: $stackTrace');
+      _showSnackBar(
+        'Connection error: ${e.toString()}',
+        Colors.red,
+        Icons.error,
+      );
+    }
+  }
+
   void _showSnackBar(String message, Color color, IconData icon) {
     if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -113,264 +204,185 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     );
   }
 
-  Future<void> connectToPrinter() async {
-    if (printers.isEmpty) {
-      _showSnackBar('No printers available', Colors.red, Icons.error);
-      return;
-    }
+  // ============================================================================
+  // COLUMN WIDTH CONFIGURATION
+  // ============================================================================
 
-    try {
-      final printer = printers.firstWhere(
-        (e) => e.name.contains("XP-P323B-E1FE"),
-        orElse: () => printers.first,
-      );
-
-      _showSnackBar(
-        'Connecting to ${printer.name}...',
-        Colors.blue,
-        Icons.bluetooth_searching,
-      );
-
-      final connected = await ThermalPrinter.connect(printer);
-
-      setState(() {
-        isConnected = connected;
-        if (connected) selectedPrinter = printer;
-      });
-
-      if (connected) {
-        _showSnackBar(
-          'Connected to ${printer.name}',
-          Colors.green,
-          Icons.check_circle,
-        );
-      } else {
-        _showSnackBar('Connection failed', Colors.red, Icons.error);
-      }
-    } catch (e) {
-      print('Connection error: $e');
-      _showSnackBar('Connection error: $e', Colors.red, Icons.error);
+  void _configurePrinterSize() {
+    if (printerWidth == 384) {
+      // 58mm printer (32 chars per line at fontSize 20)
+      columnWidths = [2, 6, 4, 5, 4, 5]; // [#, Item, Qty, Price, Disc, Total]
+      totalWidth = 32;
+    } else {
+      // 80mm printer (48 chars per line at fontSize 20)
+      // FIX: The column widths must sum to 12 for the library validation.
+      columnWidths = [1, 4, 1, 2, 2, 2]; // Sums to 12
+      totalWidth = 51;
     }
   }
 
   Future<void> _buildSampleReceipt() async {
-    const int valueLine = 43;
-    _builder.clear();
-
-    await _buildLogo();
-
-    _builder.addText(
-      widget.companyInfo?.name ?? "Company Name",
-      fontSize: 24,
-      bold: true,
-      align: AlignStyle.center,
-    );
-    _builder.addText(
-      widget.companyInfo?.address ?? "Company Address",
-      fontSize: 20,
-      align: AlignStyle.center,
-    );
-    _builder.addText(
-      "Email: ${widget.companyInfo?.email ?? 'info@company.com'}",
-      fontSize: 20,
-      align: AlignStyle.center,
-    );
-    _builder.addText("-" * valueLine, fontSize: 20, align: AlignStyle.center);
-    _builder.feedPaper(1);
-
-    PosSalesHeader? header = widget.detail?.header;
-    _builder.addText(
-      "Customer: ${header?.customerName ?? 'Walk-in Customer'}",
-      fontSize: 20,
-      align: AlignStyle.left,
-    );
-    _builder.addText(
-      "Date: ${header?.orderDate ?? DateTime.now().toString().split(' ')[0]}",
-      fontSize: 20,
-      align: AlignStyle.left,
-    );
-    _builder.addText(
-      "Invoice No: ${header?.no ?? 'N/A'}",
-      fontSize: 20,
-      align: AlignStyle.left,
-    );
-
-    _builder.addText("-" * valueLine, fontSize: 20, align: AlignStyle.center);
-    _builder.addText(
-      _buildHeaderLine(),
-      fontSize: 20,
-      bold: true,
-      maxCharPerLine: 50,
-      align: AlignStyle.left,
-    );
-    _builder.addText("-" * valueLine, fontSize: 20, align: AlignStyle.center);
-
-    List<PosSalesLine> lines = widget.detail?.lines ?? [];
-    double total = 0.0;
-
-    for (var i = 0; i < lines.length; i++) {
-      final item = lines[i];
-      final amount = double.tryParse(item.amount?.toString() ?? '0') ?? 0.0;
-      total += amount;
+    try {
+      _builder.clear();
 
       _builder.addText(
-        _buildItemLine(
-          index: i + 1,
-          description: item.description ?? "Item",
-          qty: Helpers.toStrings(item.quantity),
-          price: Helpers.toStrings(item.unitPrice),
-          discount: Helpers.toStrings(item.discountAmount ?? "0"),
-          amount: Helpers.toStrings(item.amount),
-        ),
+        widget.companyInfo?.name ?? "COMPANY NAME",
+        fontSize: 28,
+        bold: true,
+        align: AlignStyle.center,
+      );
+      _builder.addText(
+        widget.companyInfo?.address ?? "123 Business Street, City",
+        fontSize: 18,
+        align: AlignStyle.center,
+      );
+
+      _builder.addText(
+        "Email: ${widget.companyInfo?.email ?? 'info@company.com'}",
+        fontSize: 18,
+        align: AlignStyle.center,
+      );
+      _builder.feedPaper(1);
+      // ══════════════════════════════════════════════════════════════
+      // INVOICE INFO SECTION
+      // ══════════════════════════════════════════════════════════════
+      PosSalesHeader? header = widget.detail?.header;
+
+      _builder.addText(
+        "Invoice #: ${header?.no ?? 'N/A'}",
         fontSize: 20,
-        maxCharPerLine: 250,
         align: AlignStyle.left,
       );
-    }
-
-    _builder.addText("-" * valueLine, fontSize: 20, align: AlignStyle.center);
-    _builder.addText(
-      'TOTAL:            \$${total.toStringAsFixed(2)}',
-      fontSize: 24,
-      bold: true,
-      align: AlignStyle.right,
-    );
-    _builder.feedPaper(2);
-
-    _builder.addText(
-      'Thank you for your business!',
-      fontSize: 24,
-      bold: true,
-      align: AlignStyle.center,
-    );
-    _builder.feedPaper(3);
-    _builder.cutPaper();
-
-    setState(() => isReceiptBuilt = true);
-  }
-
-  final columnWidths = [2, 12, 7, 7, 7, 8];
-
-  String _buildItemLine({
-    required int index,
-    required String description,
-    required String qty,
-    required String price,
-    required String discount,
-    required String amount,
-  }) {
-    return [
-      _padCol(index.toString(), columnWidths[0]),
-      _padCol(description, columnWidths[1]),
-      _padCol(
-        Helpers.formatNumber(qty, option: FormatType.amount),
-        columnWidths[2],
-        right: true,
-      ),
-      _padCol(
-        Helpers.formatNumber(price, option: FormatType.amount),
-        columnWidths[3],
-        right: true,
-      ),
-      _padCol(
-        Helpers.formatNumber(discount, option: FormatType.amount),
-        columnWidths[4],
-        right: true,
-      ),
-      _padCol(
-        Helpers.formatNumber(amount, option: FormatType.amount),
-        columnWidths[5],
-        right: true,
-      ),
-    ].join();
-  }
-
-  String _padCol(String text, int width, {bool right = false}) {
-    if (text.length >= width) return text.substring(0, width);
-    final padding = width - text.length;
-    return right ? " " * padding + text : text + " " * padding;
-  }
-
-  String _buildHeaderLine() {
-    return [
-      _col("#", 2),
-      _col("Description", 12),
-      _col("Qty", 7, right: true),
-      _col("Price", 7, right: true),
-      _col("Disc", 7, right: true),
-      _col("Amount", 8, right: true),
-    ].join();
-  }
-
-  String _col(String text, int width, {bool right = false}) {
-    if (text.length >= width) return text.substring(0, width);
-    final padding = width - text.length;
-    return right ? " " * padding + text : text + " " * padding;
-  }
-
-  Future<void> _buildLogo() async {
-    if (widget.companyInfo?.logo128 == null ||
-        widget.companyInfo!.logo128!.isEmpty)
-      return;
-
-    try {
-      Uint8List bytes;
-
-      if ((widget.companyInfo?.logo128 ?? "").startsWith('http')) {
-        final response = await http.get(
-          Uri.parse(widget.companyInfo?.logo128 ?? ""),
-        );
-        if (response.statusCode == 200) {
-          bytes = response.bodyBytes;
-        } else {
-          throw Exception("HTTP ${response.statusCode}");
-        }
-      } else {
-        bytes = base64Decode(widget.companyInfo?.logo128 ?? "");
-      }
-
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      final logoImage = frame.image;
-
-      final byteData = await logoImage.toByteData(
-        format: ui.ImageByteFormat.png,
+      _builder.addText(
+        "Date: ${header?.orderDate ?? DateTime.now().toString().split(' ')[0]}",
+        fontSize: 20,
+        align: AlignStyle.left,
+      );
+      _builder.addText(
+        "Customer: ${header?.customerName ?? 'Walk-in Customer'}",
+        fontSize: 20,
+        align: AlignStyle.left,
+      );
+      _builder.addText(
+        "=" * (totalWidth - 1),
+        fontSize: 20,
+        maxCharPerLine: 48,
+        align: AlignStyle.center,
       );
 
-      if (byteData != null) {
-        _builder.addImage(byteData.buffer.asUint8List(), width: 250);
+      // ══════════════════════════════════════════════════════════════
+      // ITEMS TABLE HEADER
+      // ══════════════════════════════════════════════════════════════
+      _builder.addRow([
+        PosColumn(text: '#', width: columnWidths[0], bold: true),
+        PosColumn(text: 'Item', width: columnWidths[1], bold: true),
+        PosColumn(text: 'Qty', width: columnWidths[2], bold: true),
+        PosColumn(text: 'Price', width: columnWidths[3], bold: true),
+        PosColumn(text: 'Disc', width: columnWidths[4], bold: true),
+        PosColumn(text: 'Total', width: columnWidths[5], bold: true),
+      ], fontSize: 20);
+
+      _builder.addText(
+        "=" * (totalWidth - 1),
+        fontSize: 20,
+        maxCharPerLine: 48,
+        align: AlignStyle.center,
+      );
+
+      // ══════════════════════════════════════════════════════════════
+      // ITEMS LIST
+      // ══════════════════════════════════════════════════════════════
+      List<PosSalesLine> lines = widget.detail?.lines ?? [];
+      double subtotal = 0.0;
+
+      for (var i = 0; i < lines.length; i++) {
+        final item = lines[i];
+        final amount = double.tryParse(item.amount?.toString() ?? '0') ?? 0.0;
+        final discount =
+            double.tryParse(item.discountAmount?.toString() ?? '0') ?? 0.0;
+
+        subtotal += amount;
+
+        _builder.addRow([
+          PosColumn(text: '${i + 1}', width: columnWidths[0], bold: false),
+          PosColumn(
+            bold: false,
+            text: item.description ?? 'Item',
+            width: columnWidths[1],
+            align: AlignStyle.left,
+          ),
+          PosColumn(
+            text: Helpers.formatNumber(
+              item.quantity,
+
+              option: FormatType.quantity,
+            ),
+            bold: false,
+            width: columnWidths[2],
+          ),
+          PosColumn(
+            text: Helpers.toStrings(item.unitPrice),
+            width: columnWidths[3],
+            bold: false,
+          ),
+          PosColumn(
+            text: Helpers.toStrings(discount),
+            width: columnWidths[4],
+            bold: false,
+          ),
+          PosColumn(
+            text: Helpers.toStrings(amount),
+            width: columnWidths[5],
+            bold: false,
+          ),
+        ], fontSize: 18);
       }
-    } catch (e) {
-      debugPrint("Failed to load logo: $e");
+
+      // ══════════════════════════════════════════════════════════════
+      // TOTALS SECTION
+      // ══════════════════════════════════════════════════════════════
+      _builder.addText(
+        "=" * (totalWidth - 1),
+        fontSize: 20,
+        maxCharPerLine: 48,
+        align: AlignStyle.center,
+      );
+
+      _builder.addText(
+        "Subtotal: ${Helpers.formatNumber(subtotal, option: FormatType.amount)}",
+        fontSize: 20,
+        bold: true,
+        maxCharPerLine: 48,
+        align: AlignStyle.right,
+      );
+      _builder.addText(
+        "TOTAL AMOUNT: ${Helpers.formatNumber(header?.amount, option: FormatType.amount)}",
+        fontSize: 20,
+        bold: true,
+        maxCharPerLine: 48,
+        align: AlignStyle.right,
+      );
+
+      _builder.feedPaper(1);
+      _builder.addText(
+        'Thank you for your business!',
+        fontSize: 22,
+        bold: true,
+        align: AlignStyle.center,
+      );
+      _builder.addText(
+        'Please come again',
+        fontSize: 18,
+        align: AlignStyle.center,
+      );
+      _builder.feedPaper(3);
+      _builder.cutPaper();
+
+      setState(() => isReceiptBuilt = true);
+    } catch (e, stackTrace) {
+      debugPrint('Stack trace: $stackTrace');
+      setState(() => isReceiptBuilt = false);
     }
-  }
-
-  Future<void> _printReceiptOld() async {
-    // if (!isConnected) {
-    //   _showSnackBar(
-    //     'Printer not connected. Searching...',
-    //     Colors.orange,
-    //     Icons.warning,
-    //   );
-    //   await searchPrinters();
-    //   if (!isConnected) {
-    //     _showSnackBar('Failed to connect', Colors.red, Icons.error);
-    //     return;
-    //   }
-    // }
-    await ThermalPrinter.printText(
-      "hello Android. ស្វាគមន៍​មកកាន់ ភាសាខ្មែរ(KhmerLang)!៖ ពិនិត្យអក្ខរាវិរុទ្ធ ចម្ងាយពាក្យខ្មែរ អក្សរខ្មែរ ទៅ រ៉ូម៉ាំង អក្សរខ្មែរ ទៅ សូរ ពាក្យពពក។",
-      bold: true,
-      maxCharPerLine: 32,
-    );
-    await ThermalPrinter.printText(
-      "hello Android Sueputhearatat",
-      bold: true,
-      maxCharPerLine: 32,
-    );
-    await ThermalPrinter.feedPaper(2);
-
-    await ThermalPrinter.cutPaper();
   }
 
   Future<void> _printReceipt() async {
@@ -426,31 +438,59 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         );
       }
 
-      for (final ReceiptCommand cmd in _builder.commands) {
-        switch (cmd.type) {
-          case ReceiptCommandType.text:
-            await ThermalPrinter.printText(
-              cmd.params["text"],
-              fontSize: cmd.params["fontSize"] ?? 24,
-              bold: cmd.params["bold"] ?? false,
-              maxCharPerLine: cmd.params["maxCharsPerLine"] ?? 32,
-              align: cmd.params["align"],
-            );
-            break;
-          case ReceiptCommandType.image:
-            await ThermalPrinter.printImage(
-              cmd.params["imageBytes"],
-              width: cmd.params["width"] ?? 384,
-            );
-            break;
-          case ReceiptCommandType.feedPaper:
-            await ThermalPrinter.feedPaper(cmd.params["lines"]);
-            break;
-          case ReceiptCommandType.cutPaper:
-            await ThermalPrinter.cutPaper();
-            break;
+      for (int i = 0; i < _builder.commands.length; i++) {
+        final cmd = _builder.commands[i];
+
+        try {
+          switch (cmd.type) {
+            case ReceiptCommandType.row:
+              final columnsList = cmd.params["columns"] as List<dynamic>;
+              final columns = columnsList
+                  .map((col) => col as Map<String, dynamic>)
+                  .toList();
+
+              await ThermalPrinter.printRow(
+                columns: columns,
+                fontSize: cmd.params["fontSize"] ?? 24,
+              );
+              // await Future.delayed(const Duration(milliseconds: 50));
+              break;
+
+            case ReceiptCommandType.text:
+              await ThermalPrinter.printText(
+                cmd.params["text"],
+                fontSize: cmd.params["fontSize"] ?? 24,
+                bold: cmd.params["bold"] ?? false,
+                maxCharPerLine: cmd.params["maxCharsPerLine"] ?? 48,
+                align: cmd.params["align"],
+              );
+              // await Future.delayed(const Duration(milliseconds: 50));
+              break;
+
+            case ReceiptCommandType.image:
+              await ThermalPrinter.printImage(
+                cmd.params["imageBytes"],
+                width: cmd.params["width"] ?? 384,
+              );
+              // await Future.delayed(const Duration(milliseconds: 200));
+              break;
+
+            case ReceiptCommandType.feedPaper:
+              await ThermalPrinter.feedPaper(cmd.params["lines"]);
+              await Future.delayed(const Duration(milliseconds: 30));
+              break;
+
+            case ReceiptCommandType.cutPaper:
+              await ThermalPrinter.cutPaper();
+              // await Future.delayed(const Duration(milliseconds: 500));
+              break;
+          }
+        } catch (e) {
+          debugPrint('Error executing command $i (${cmd.type}): $e');
         }
       }
+
+      // await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) Navigator.pop(context);
       _showSnackBar(
@@ -466,6 +506,10 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     }
   }
 
+  // ============================================================================
+  // UI BUILD METHOD
+  // ============================================================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -473,6 +517,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         elevation: 0,
         title: const Text('Receipt Preview'),
         actions: [
+          // Loading indicator while searching
           if (isSearching)
             const Padding(
               padding: EdgeInsets.all(16.0),
@@ -485,6 +530,8 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                 ),
               ),
             ),
+
+          // Connection status badge
           if (!isSearching)
             AnimatedBuilder(
               animation: _pulseAnimation,
@@ -539,6 +586,8 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                 );
               },
             ),
+
+          // Refresh button
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: isSearching ? null : searchPrinters,
@@ -549,6 +598,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       body: isReceiptBuilt
           ? Column(
               children: [
+                // Printer info card
                 if (selectedPrinter != null)
                   Container(
                     margin: const EdgeInsets.all(16),
@@ -591,6 +641,8 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                       ),
                     ),
                   ),
+
+                // Receipt preview
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(16),

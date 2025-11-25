@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
+import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/constants/permission.dart';
@@ -60,10 +61,12 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
   PaymentMethod? _paymentMethod;
   Distributor? _distributor;
   DateTime? pickDate;
+  String? kHidePayment;
 
   @override
   void initState() {
     super.initState();
+    checkHidePaymentInv();
     _cubit.loadInitialData(widget.arg.salesHeader);
     _shipmentCodeCtr.text = widget.arg.salesHeader.shipToCode ?? "";
     _initLoad();
@@ -84,6 +87,10 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
     if (widget.arg.salesHeader.documentType == kSaleCreditMemo) {
       _paymentAmoutCtr.text = "${widget.arg.amountDue}";
     }
+  }
+
+  Future<void> checkHidePaymentInv() async {
+    kHidePayment = await _cubit.getSetting(kHidePaymentInv);
   }
 
   void _onCheckoutHandler() async {
@@ -522,7 +529,10 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
     );
   }
 
-  BoxWidget _paymentBox() {
+  Widget _paymentBox() {
+    if (kHidePayment == kStatusYes) {
+      return SizedBox.shrink();
+    }
     return BoxWidget(
       padding: EdgeInsets.all(15.scale),
       child: Column(
