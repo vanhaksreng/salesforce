@@ -16,6 +16,9 @@ import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/domain/entities/device_info.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_state.dart';
+import 'package:salesforce/features/more/presentation/pages/administration/adminstatration_helper.dart';
+import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/form_connect_printer.dart';
+import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/list_device_connection.dart';
 import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_thermal_printer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/imin_device/printer_test_page.dart';
 import 'package:salesforce/localization/trans.dart';
@@ -100,16 +103,28 @@ class AdministrationScreenState extends State<AdministrationScreen>
           return _buildBody(state);
         },
       ),
+      floatingActionButton: FloatingActionButton(
+        shape: const CircleBorder(),
+        backgroundColor: mainColor,
+        child: Icon(Icons.add, color: white),
+        onPressed: () {
+          Navigator.pushNamed(context, FormConnectPrinter.routeName);
+        },
+      ),
     );
   }
 
   Widget _buildBody(AdministrationState state) {
     return ListView(
+      // physics: NeverScrollableScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: scaleFontSize(16)),
       children: [
         _buildDashboardHeader(state),
         Helpers.gapH(8),
-        _buildAdminOptions(state),
+        if (!state.isIminDevice)
+          _buildBluetoothPrintingSection(state)
+        else
+          _buildAPKDeploymentSection(state),
         Helpers.gapH(8),
       ],
     );
@@ -168,38 +183,124 @@ class AdministrationScreenState extends State<AdministrationScreen>
     );
   }
 
-  Widget _buildAdminOptions(AdministrationState state) {
-    return Column(
-      children: [
-        if (!state.isIminDevice)
-          _buildBluetoothPrintingSection(state)
-        else
-          _buildAPKDeploymentSection(state),
-      ],
-    );
-  }
-
   Widget _buildBluetoothPrintingSection(AdministrationState state) {
+    final List<DeviceConnect> devices = [
+      DeviceConnect(
+        name: 'AirPods Pro',
+        connectorDevice: BluetoothDeviceCus(
+          bluetoothName: "AirPods Pro",
+          macAdddress: "123456789",
+        ),
+
+        isConnected: true,
+        isPaired: true,
+        model: 'AirPods Pro',
+        paperWidth: 576,
+      ),
+      DeviceConnect(
+        name: 'Galaxy Watch 4',
+        connectorDevice: BluetoothDeviceCus(
+          bluetoothName: "AirPods Pro",
+          macAdddress: "123456789",
+        ),
+
+        isConnected: false,
+        isPaired: false,
+        model: 'AirPods Pro',
+        paperWidth: 576,
+      ),
+      DeviceConnect(
+        name: 'AirPods Pro',
+        connectorDevice: BluetoothDeviceCus(
+          bluetoothName: "AirPods Pro",
+          macAdddress: "123456789",
+        ),
+
+        isConnected: true,
+        isPaired: true,
+        model: 'AirPods Pro',
+        paperWidth: 576,
+      ),
+      DeviceConnect(
+        name: 'Galaxy Watch 4',
+        connectorDevice: BluetoothDeviceCus(
+          bluetoothName: "AirPods Pro",
+          macAdddress: "123456789",
+        ),
+
+        isConnected: false,
+        isPaired: false,
+        model: 'AirPods Pro',
+        paperWidth: 576,
+      ),
+
+      DeviceConnect(
+        name: 'Galaxy Watch 4',
+        connectorDevice: BluetoothDeviceCus(
+          bluetoothName: "AirPods Pro",
+          macAdddress: "123456789",
+        ),
+
+        isConnected: false,
+        isPaired: false,
+        model: 'AirPods Pro',
+        paperWidth: 576,
+      ),
+      DeviceConnect(
+        name: 'Galaxy Watch 4',
+        connectorDevice: BluetoothDeviceCus(
+          bluetoothName: "AirPods Pro",
+          macAdddress: "123456789",
+        ),
+
+        isConnected: false,
+        isPaired: false,
+        model: 'AirPods Pro',
+        paperWidth: 576,
+      ),
+      DeviceConnect(
+        name: 'Galaxy Watch 4',
+        connectorDevice: BluetoothDeviceCus(
+          bluetoothName: "AirPods Pro",
+          macAdddress: "123456789",
+        ),
+
+        isConnected: false,
+        isPaired: false,
+        model: 'AirPods Pro',
+        paperWidth: 576,
+      ),
+    ];
     return HeaderWidget(
       title: "Print via Bluetooth",
       subtitle: "Manage wireless printing operations",
       bgIcon: primary,
       icon: Icon(Icons.bluetooth, color: white),
-      child: Column(
-        spacing: scaleFontSize(appSpace),
-        children: [
-          _buildBluetoothConnectionStatus(state.bluetoothDevice),
-
-          BtnWidget(
-            onPressed: () => _navigateToBluetoothPage(state.bluetoothDevice),
-            title: "Manage Bluetooth Printing",
-            gradient: linearGradient,
-            suffixIcon: const Icon(Icons.arrow_forward),
-          ),
-        ],
-      ),
+      child: BluetoothDeviceList(devices: devices),
     );
   }
+
+  // Widget _buildBluetoothPrintingSection(AdministrationState state) {
+  //   return HeaderWidget(
+  //     title: "Print via Bluetooth",
+  //     subtitle: "Manage wireless printing operations",
+  //     bgIcon: primary,
+  //     icon: Icon(Icons.bluetooth, color: white),
+  //     child: Column(
+  //       spacing: scaleFontSize(appSpace),
+  //       children: [
+  //         _buildBluetoothConnectionStatus(state.bluetoothDevice),
+
+  //         BtnWidget(
+  //           onPressed: () => _navigateToBluetoothPage(state.bluetoothDevice),
+  //           title: "Manage Bluetooth Printing",
+  //           gradient: linearGradient,
+  //           suffixIcon: const Icon(Icons.arrow_forward),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildAPKDeploymentSection(AdministrationState state) {
     return HeaderWidget(

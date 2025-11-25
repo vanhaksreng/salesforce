@@ -119,8 +119,8 @@ class TextFormFieldWidget extends TextFormField {
   }) {
     final defaultBorder = OutlineInputBorder(
       borderSide: BorderSide(
-        color: primary.withValues(alpha: 0.3),
-        width: scaleFontSize(0.5),
+        color: primary.withValues(alpha: 0.5),
+        width: scaleFontSize(1),
       ),
       borderRadius: BorderRadius.circular(scaleFontSize(8)),
     );

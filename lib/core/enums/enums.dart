@@ -25,3 +25,5 @@ enum DateType { fromDate, toDate }
 enum ListTileType { trailingArrow, trailingSelect }
 
 enum KhmerFontSize { small, normal, large, extraLarge }
+
+enum TypeConnectDevice { bluetooth, network, usb }
