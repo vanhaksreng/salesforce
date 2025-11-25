@@ -4,6 +4,7 @@ import 'package:salesforce/features/auth/presentation/pages/first_download/first
 import 'package:salesforce/features/auth/presentation/pages/forget_password/forget_password_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/login/login_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/verify_phone_number/verify_phone_number_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/form_connect_printer.dart';
 
 Route<dynamic>? authOnGenerateRoute(RouteSettings settings) {
   switch (settings.name) {
@@ -36,6 +37,16 @@ Route<dynamic>? authOnGenerateRoute(RouteSettings settings) {
           return RouteST.st(animation, child, begin: 1, end: 0);
         },
       );
+    case FormConnectPrinter.routeName:
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FormConnectPrinter();
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return RouteST.st(animation, child, begin: 1, end: 0);
+        },
+      );
+
     case FirstDownloadScreen.routeName:
       return MaterialPageRoute(builder: (_) => const FirstDownloadScreen());
 
