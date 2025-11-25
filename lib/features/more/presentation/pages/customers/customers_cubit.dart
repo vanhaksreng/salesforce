@@ -56,8 +56,11 @@ class CustomersCubit extends Cubit<CustomersState>
       if (append) {
         emit(state.copyWith(isFetching: true, isLoading: false));
       }
-
-      final result = await _repos.getCustomers(params: params, page: page);
+      final inactive = {"inactived": "No"};
+      final result = await _repos.getCustomers(
+        params: {...?params, ...inactive},
+        page: page,
+      );
       if (!context.mounted) return;
 
       final currentLatLng = await _location.getCurrentLocation(
@@ -106,7 +109,11 @@ class CustomersCubit extends Cubit<CustomersState>
       final currentLatLng = await _location.getCurrentLocation(
         context: context,
       );
-      final result = await _repos.getCustomers(params: params, page: page);
+      final inactive = {"inactived": "No"};
+      final result = await _repos.getCustomers(
+        params: {...?params, ...inactive},
+        page: page,
+      );
 
       result.fold((l) => throw Exception(), (records) {
         // calculate distances

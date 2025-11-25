@@ -23,7 +23,11 @@ class ReceiptPrinter {
               children: [
                 const Text(
                   'ប្លូតិចឡូជី', // Khmer
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'KhmerFont'),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'KhmerFont',
+                  ),
                 ),
                 const Text(
                   'BLUE TECHNOLOGY CO., LTD',
@@ -34,22 +38,51 @@ class ReceiptPrinter {
                   border: TableBorder.all(color: Colors.black),
                   defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                   children: [
-                    const TableRow(children: [  // Headers
-                      Text('Description', style: TextStyle(fontSize: 12)),
-                      Text('Qty', style: TextStyle(fontSize: 12)),
-                      Text('UOM', style: TextStyle(fontSize: 12)),
-                      Text('Price', style: TextStyle(fontSize: 12)),
-                      Text('Disc', style: TextStyle(fontSize: 12)),
-                      Text('Amount', style: TextStyle(fontSize: 12)),
-                    ]),
-                    ...items.map((item) => TableRow(children: [  // Dynamic rows
-                      Text(item['description'] ?? '', style: const TextStyle(fontSize: 12, fontFamily: 'NotoSansKhmer')),
-                      Text(item['qty'].toString(), style: const TextStyle(fontSize: 12)),
-                      Text(item['uom'] ?? '', style: const TextStyle(fontSize: 12)),
-                      Text(item['price'].toString(), style: const TextStyle(fontSize: 12)),
-                      Text(item['disc'].toString(), style: const TextStyle(fontSize: 12)),
-                      Text(item['amount'].toString(), style: const TextStyle(fontSize: 12)),
-                    ])),
+                    const TableRow(
+                      children: [
+                        // Headers
+                        Text('Description', style: TextStyle(fontSize: 12)),
+                        Text('Qty', style: TextStyle(fontSize: 12)),
+                        Text('UOM', style: TextStyle(fontSize: 12)),
+                        Text('Price', style: TextStyle(fontSize: 12)),
+                        Text('Disc', style: TextStyle(fontSize: 12)),
+                        Text('Amount', style: TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                    ...items.map(
+                      (item) => TableRow(
+                        children: [
+                          // Dynamic rows
+                          Text(
+                            item['description'] ?? '',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontFamily: 'NotoSansKhmer',
+                            ),
+                          ),
+                          Text(
+                            item['qty'].toString(),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          Text(
+                            item['uom'] ?? '',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          Text(
+                            item['price'].toString(),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          Text(
+                            item['disc'].toString(),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          Text(
+                            item['amount'].toString(),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20), // Footer
@@ -62,7 +95,10 @@ class ReceiptPrinter {
   }
 
   // NEW: Off-screen capture via positioned Stack in Overlay (fixes type/assertion errors)
-  static Future<ui.Image?> _captureImageOffScreen(BuildContext context, List<Map<String, dynamic>> items) async {
+  static Future<ui.Image?> _captureImageOffScreen(
+    BuildContext context,
+    List<Map<String, dynamic>> items,
+  ) async {
     final GlobalKey _boundaryKey = GlobalKey();
     final Completer<ui.Image?> completer = Completer<ui.Image?>();
     final double screenHeight = MediaQuery.of(context).size.height;
@@ -101,18 +137,24 @@ class ReceiptPrinter {
       try {
         // Short delay for full render (fonts/table)
         await Future.delayed(const Duration(milliseconds: 50));
-        
-        final RenderRepaintBoundary boundary = _boundaryKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+
+        final RenderRepaintBoundary boundary =
+            _boundaryKey.currentContext!.findRenderObject()
+                as RenderRepaintBoundary;
         final ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
-        
-        debugPrint('Captured off-screen image: ${image.width} x ${image.height}');
-        
+
+        debugPrint(
+          'Captured off-screen image: ${image.width} x ${image.height}',
+        );
+
         if (image.width == 0 || image.height == 0) {
           image.dispose();
-          completer.completeError(Exception('Invalid dimensions: ${image.width}x${image.height}'));
+          completer.completeError(
+            Exception('Invalid dimensions: ${image.width}x${image.height}'),
+          );
           return;
         }
-        
+
         completer.complete(image);
       } catch (e) {
         completer.completeError(e);
@@ -125,12 +167,18 @@ class ReceiptPrinter {
   }
 
   // _uiImageToMonochrome (unchanged)
-  static Future<Uint8List> _uiImageToMonochrome(ui.Image uiImage, int width, int height) async {
+  static Future<Uint8List> _uiImageToMonochrome(
+    ui.Image uiImage,
+    int width,
+    int height,
+  ) async {
     final byteWidth = (width + 7) ~/ 8;
     final totalBytes = byteWidth * height;
     final List<int> bitmap = List<int>.filled(totalBytes, 0);
 
-    final ByteData? tempByteData = await uiImage.toByteData(format: ui.ImageByteFormat.rawRgba);
+    final ByteData? tempByteData = await uiImage.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    );
     if (tempByteData == null) {
       throw Exception('Failed to convert image to ByteData');
     }
@@ -176,7 +224,10 @@ class ReceiptPrinter {
   }
 
   // UPDATED: Main print function—now passes context to off-screen capture
-  static Future<void> printReceipt(BuildContext context, List<Map<String, dynamic>> items) async {
+  static Future<void> printReceipt(
+    BuildContext context,
+    List<Map<String, dynamic>> items,
+  ) async {
     if (!context.mounted) return;
 
     try {
@@ -196,7 +247,7 @@ class ReceiptPrinter {
       } else {
         throw Exception('Printer not connected');
       }
-      
+
       image.dispose();
     } catch (e) {
       debugPrint('Print error: $e');

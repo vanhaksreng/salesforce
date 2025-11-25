@@ -61,8 +61,11 @@ class AddScheduleCubit extends Cubit<AddScheduleState>
       if (append) {
         emit(state.copyWith(isFetching: true, isLoading: false));
       }
-
-      final result = await repos.getCustomers(params: params, page: page);
+      final inactive = {"inactived": "No"};
+      final result = await repos.getCustomers(
+        params: {...?params, ...inactive},
+        page: page,
+      );
       if (!context.mounted) return;
       result.fold((l) => throw Exception(), (records) {
         // Append or replace
@@ -142,7 +145,11 @@ class AddScheduleCubit extends Cubit<AddScheduleState>
   Future<void> searchCustomer({String? query}) async {
     try {
       emit(state.copyWith(isLoading: true));
-      final response = await repos.getCustomers(page: 1);
+
+      final response = await repos.getCustomers(
+        page: 1,
+        params: {"inactived": "No"},
+      );
       response.fold((l) => emit(throw Exception(l.toString())), (items) {
         emit(state.copyWith(isLoading: false, customers: items));
       });

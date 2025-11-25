@@ -90,17 +90,17 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
     }
   }
 
-  @override
-  Future<void> checkApiSession() async {
-    try {
-      await apiClient.postCheckSession(
-        'v2/check-api-session',
-        body: await getParams(),
-      );
-    } catch (e) {
-      rethrow;
-    }
-  }
+  // @override
+  // Future<void> checkApiSession() async {
+  //   try {
+  //     await apiClient.postCheckSession(
+  //       'v2/check-api-session',
+  //       body: await getParams(),
+  //     );
+  //   } catch (e) {
+  //     rethrow;
+  //   }
+  // }
 
   @override
   Future<void> updateSchedule(

@@ -50,7 +50,7 @@ Route<dynamic>? appRouter(RouteSettings settings) {
   if (auth != null && auth.expired == kStatusYes) {
     return MaterialPageRoute(
       builder: (_) {
-        return const LoggedinHistoryScreen();
+        return const LoginScreen();
       },
     );
   }

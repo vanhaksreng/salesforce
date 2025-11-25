@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 
-enum ReceiptCommandType { text, image, feedPaper, cutPaper }
+enum ReceiptCommandType { text, image, feedPaper, cutPaper, row }
 
 // Receipt command model
 class ReceiptCommand {
@@ -57,5 +57,20 @@ class ReceiptBuilder {
 
   void clear() {
     _commands.clear();
+  }
+
+  void addRow(List<PosColumn> columns, {int fontSize = 24}) {
+    // Validate total width
+    final totalWidth = columns.fold<int>(0, (sum, col) => sum + col.width);
+    if (totalWidth > 12) {
+      throw Exception('Total column width cannot exceed 12, got $totalWidth');
+    }
+
+    _commands.add(
+      ReceiptCommand(ReceiptCommandType.row, {
+        'columns': columns.map((col) => col.toMap()).toList(),
+        'fontSize': fontSize,
+      }),
+    );
   }
 }

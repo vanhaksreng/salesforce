@@ -97,15 +97,18 @@ class _ItemScreenState extends State<ItemScreen>
     }
 
     if (searchString.isNotEmpty) {
-      params["description"] = 'LIKE $searchString%';
+      params["_raw_query"] =
+          '(description CONTAINS[c] "$searchString" OR no CONTAINS[c] "$searchString")';
     }
 
     if (params["item_group_code"] == "IN {}") {
       params["item_group_code"] = "";
     }
+
     if (statusStock.isNotEmpty) {
       params["inventory"] = statusStock;
     }
+
     await _cubit.getItems(page: page, isLoading: false, param: params);
   }
 

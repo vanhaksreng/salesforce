@@ -15,6 +15,24 @@ enum AlignStyle {
   String toString() => value;
 }
 
+class PosColumn {
+  final String text;
+  final int width; // Width out of 12 (12 = full width)
+  final AlignStyle align; // 'left', 'center', 'right'
+  final bool bold;
+
+  PosColumn({
+    required this.text,
+    required this.width,
+    this.align = AlignStyle.left,
+    this.bold = false,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {'text': text, 'width': width};
+  }
+}
+
 AlignStyle parseAlignStyle(String? align) {
   if (align == null) return AlignStyle.left;
 
@@ -170,6 +188,22 @@ class ThermalPrinter {
     }
   }
 
+  static Future<bool> printRow({
+    required List<Map<String, dynamic>> columns,
+    int fontSize = 24,
+  }) async {
+    try {
+      final result = await _channel.invokeMethod('printRow', {
+        'columns': columns,
+        'fontSize': fontSize,
+      });
+      return result == true;
+    } catch (e) {
+      print('Print row error: $e');
+      return false;
+    }
+  }
+
   /// Print image from bytes
   static Future<bool> printImage(
     Uint8List imageBytes, {
@@ -217,6 +251,17 @@ class ThermalPrinter {
       return status.cast<String, dynamic>();
     } catch (e) {
       throw Exception('Failed to get status: $e');
+    }
+  }
+
+  static Future<bool> setPrinterWidth(int width) async {
+    try {
+      final bool result = await _channel.invokeMethod('setPrinterWidth', {
+        'width': width,
+      });
+      return result;
+    } catch (e) {
+      throw Exception('Failed to feed paper: $e');
     }
   }
 }
