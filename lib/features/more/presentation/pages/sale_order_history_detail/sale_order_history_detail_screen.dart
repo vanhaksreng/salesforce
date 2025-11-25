@@ -322,15 +322,15 @@ class _SaleOrderHistoryDetailScreenState
     required SaleDetail? detail,
     required CompanyInformation? companyInfo,
   }) async {
-    Navigator.push(
-      context,
-      // MaterialPageRoute(builder: (context) => ReceiptPrinterApp()),
-      MaterialPageRoute(
-        builder: (context) =>
-            ReceiptPreviewScreen(companyInfo: companyInfo, detail: detail),
-      ),
-    );
-    return;
+    // Navigator.push(
+    //   context,
+    //   // MaterialPageRoute(builder: (context) => ReceiptPrinterApp()),
+    //   MaterialPageRoute(
+    //     builder: (context) =>
+    //         ReceiptPreviewScreen(companyInfo: companyInfo, detail: detail),
+    //   ),
+    // );
+    // return;
     try {
       debugPrint(" Starting print job...");
 
