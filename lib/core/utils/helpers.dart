@@ -17,6 +17,7 @@ import 'package:salesforce/core/utils/fllutter_html_to_pdf.dart';
 import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/core/utils/message_helper.dart';
 import 'package:salesforce/core/utils/size_config.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
@@ -970,5 +971,18 @@ class Helpers {
     parts.add("${seconds.toString().padLeft(2, '0')}s");
 
     return parts.join(" ");
+  }
+
+  static ConnectionType stringToConnectionType(String type) {
+    switch (type.toLowerCase()) {
+      case 'bluetooth':
+        return ConnectionType.bluetooth;
+      case 'usb':
+        return ConnectionType.usb;
+      case 'network':
+        return ConnectionType.network;
+      default:
+        return ConnectionType.ble;
+    }
   }
 }

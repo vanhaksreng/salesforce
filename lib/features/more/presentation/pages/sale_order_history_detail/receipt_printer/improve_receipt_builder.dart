@@ -18,8 +18,8 @@ class ReceiptPrinterScreen extends StatefulWidget {
 }
 
 class _ReceiptPrinterScreenState extends State<ReceiptPrinterScreen> {
-  List<PrinterDevice> printers = [];
-  PrinterDevice? selectedPrinter;
+  List<PrinterDeviceDiscover> printers = [];
+  PrinterDeviceDiscover? selectedPrinter;
   bool isConnected = false;
   bool isSearching = false;
   bool isPrinting = false;
@@ -75,7 +75,7 @@ class _ReceiptPrinterScreenState extends State<ReceiptPrinterScreen> {
     }
   }
 
-  Future<void> connectToPrinter(PrinterDevice device) async {
+  Future<void> connectToPrinter(PrinterDeviceDiscover device) async {
     try {
       showSnackBar('Connecting to ${device.name}...', Colors.blue);
 
@@ -113,7 +113,7 @@ class _ReceiptPrinterScreenState extends State<ReceiptPrinterScreen> {
       setState(() {
         isConnected = connected;
         if (connected) {
-          selectedPrinter = PrinterDevice(
+          selectedPrinter = PrinterDeviceDiscover(
             name: 'Network Printer',
             address: '$ip:$port',
             type: ConnectionType.network,
