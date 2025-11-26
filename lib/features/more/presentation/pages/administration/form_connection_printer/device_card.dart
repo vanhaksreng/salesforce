@@ -4,22 +4,37 @@ import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
-import 'package:salesforce/features/more/presentation/pages/administration/adminstatration_helper.dart';
+import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class BluetoothDeviceItem extends StatelessWidget {
-  final DeviceConnect device;
-  final Function(DeviceConnect)? onTap;
+  final DevicePrinter device;
+  final Function(DevicePrinter)? onTap;
+  final Function(DevicePrinter)? onConnect;
+  final Function(DevicePrinter)? onDisconnect;
+  final bool isConnected;
+  final bool isConnecting;
 
-  const BluetoothDeviceItem({super.key, required this.device, this.onTap});
+  const BluetoothDeviceItem({
+    super.key,
+    required this.device,
+    this.onTap,
+    this.onConnect,
+    this.onDisconnect,
+    this.isConnected = false,
+    this.isConnecting = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    print("=========dd===========${isConnected}");
     return BoxWidget(
-      onPress: () => onTap?.call(device),
+      onPress: () {
+        onTap?.call(device);
+      },
       margin: const EdgeInsets.only(bottom: 6),
       isBorder: true,
-      borderColor: device.isConnected
+      borderColor: isConnected
           ? mainColor.withValues(alpha: .5)
           : Colors.transparent,
       padding: EdgeInsets.all(scaleFontSize(appSpace8)),
@@ -28,19 +43,18 @@ class BluetoothDeviceItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: device.isConnected
+              color: isConnected
                   ? mainColor.withValues(alpha: .1)
                   : grey.withValues(alpha: .1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               Icons.print_rounded,
-              color: device.isConnected ? mainColor : Colors.grey[700],
+              color: isConnected ? mainColor : Colors.grey[700],
               size: 28,
             ),
           ),
           Helpers.gapW(scaleFontSize(12)),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,12 +63,12 @@ class BluetoothDeviceItem extends StatelessWidget {
                   children: [
                     Expanded(
                       child: TextWidget(
-                        text: device.name,
+                        text: device.deviceName,
                         fontSize: 14,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (device.isPaired)
+                    if (isConnected)
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 6,
@@ -75,7 +89,7 @@ class BluetoothDeviceItem extends StatelessWidget {
                 ),
                 Helpers.gapH(4),
                 TextWidget(
-                  text: device.connectorDevice.bluetoothName,
+                  text: device.macAddress,
                   fontSize: 12,
                   color: Colors.grey[600],
                 ),
@@ -83,21 +97,19 @@ class BluetoothDeviceItem extends StatelessWidget {
               ],
             ),
           ),
-          if (device.isConnected)
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: .1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_circle,
-                color: Colors.green,
-                size: 20,
-              ),
+          // Connect/Disconnect Button
+          if (isConnected)
+            IconButton(
+              onPressed: () => onDisconnect?.call(device),
+              icon: const Icon(Icons.link_off, color: Colors.red, size: 20),
+              tooltip: 'Disconnect',
             )
           else
-            Icon(Icons.chevron_right, color: Colors.grey[400]),
+            IconButton(
+              onPressed: () => onConnect?.call(device),
+              icon: Icon(Icons.link, color: mainColor, size: 20),
+              tooltip: 'Connect',
+            ),
         ],
       ),
     );

@@ -219,21 +219,25 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             return
         }
 
-        val allPrinters = mutableListOf<Map<String, Any>>()
-        discoveredDevices.forEach { device ->
+        // Use mutableListOf and addAll
+        val allPrinters = discoveredDevices.mapNotNull { device ->
             try {
-                allPrinters.add(
+                val deviceName = device.name
+                if (!deviceName.isNullOrBlank() && deviceName != "Unknown Device") {
                     mapOf(
-                        "name" to (device.name ?: "Unknown Device"),
+                        "name" to deviceName,
                         "address" to device.address,
                         "type" to "bluetooth"
                     )
-                )
+                } else {
+                    null
+                }
             } catch (e: SecurityException) {
-                // Skip if we can't access device info
+                null
             }
-        }
+        }.toMutableList()
 
+        // Add USB devices
         usbManager?.deviceList?.values?.forEach { device ->
             allPrinters.add(
                 mapOf(

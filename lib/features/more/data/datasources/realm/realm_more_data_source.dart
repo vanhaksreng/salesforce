@@ -35,4 +35,6 @@ abstract class RealmMoreDataSource extends BaseRealmDataSource {
     required List<PosSalesLine> saleLines,
     bool refreshLine = true,
   });
+  Future<DevicePrinter> storeDevicePrinter(DevicePrinter customer);
+  Future<List<DevicePrinter>> getDevicePrinter({Map<String, dynamic>? param});
 }

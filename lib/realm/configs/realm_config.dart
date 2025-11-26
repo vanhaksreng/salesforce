@@ -90,6 +90,7 @@ class RealmConfig {
         UserSetup.schema,
         VatPostingSetup.schema,
         GpsRouteTracking.schema,
+        DevicePrinter.schema,
       ],
       path: realmPath,
       schemaVersion: 1,

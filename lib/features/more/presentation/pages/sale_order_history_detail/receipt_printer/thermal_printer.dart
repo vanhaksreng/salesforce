@@ -48,19 +48,19 @@ AlignStyle parseAlignStyle(String? align) {
   }
 }
 
-class PrinterDevice {
+class PrinterDeviceDiscover {
   final String name;
   final String address;
   final ConnectionType type;
 
-  PrinterDevice({
+  PrinterDeviceDiscover({
     required this.name,
     required this.address,
     required this.type,
   });
 
-  factory PrinterDevice.fromMap(Map<String, dynamic> map) {
-    return PrinterDevice(
+  factory PrinterDeviceDiscover.fromMap(Map<String, dynamic> map) {
+    return PrinterDeviceDiscover(
       name: map['name'] ?? 'Unknown',
       address: map['address'] ?? '',
       type: _parseConnectionType(map['type']),
@@ -96,7 +96,7 @@ class ThermalPrinter {
   static const MethodChannel _channel = MethodChannel('thermal_printer');
 
   /// Discover available thermal printers of specific type
-  static Future<List<PrinterDevice>> discoverPrinters({
+  static Future<List<PrinterDeviceDiscover>> discoverPrinters({
     ConnectionType type = ConnectionType.bluetooth,
   }) async {
     try {
@@ -105,7 +105,9 @@ class ThermalPrinter {
         {'type': type.toString().split('.').last},
       );
       return printers
-          .map((p) => PrinterDevice.fromMap(Map<String, dynamic>.from(p)))
+          .map(
+            (p) => PrinterDeviceDiscover.fromMap(Map<String, dynamic>.from(p)),
+          )
           .toList();
     } catch (e) {
       throw Exception('Failed to discover printers: $e');
@@ -113,13 +115,15 @@ class ThermalPrinter {
   }
 
   /// Discover all available printers (all connection types)
-  static Future<List<PrinterDevice>> discoverAllPrinters() async {
+  static Future<List<PrinterDeviceDiscover>> discoverAllPrinters() async {
     try {
       final List<dynamic> printers = await _channel.invokeMethod(
         'discoverAllPrinters',
       );
       return printers
-          .map((p) => PrinterDevice.fromMap(Map<String, dynamic>.from(p)))
+          .map(
+            (p) => PrinterDeviceDiscover.fromMap(Map<String, dynamic>.from(p)),
+          )
           .toList();
     } catch (e) {
       throw Exception('Failed to discover printers: $e');
@@ -127,7 +131,7 @@ class ThermalPrinter {
   }
 
   /// Connect to a printer
-  static Future<bool> connect(PrinterDevice device) async {
+  static Future<bool> connect(PrinterDeviceDiscover device) async {
     print(device.toMap());
     try {
       final bool result = await _channel.invokeMethod(

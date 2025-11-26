@@ -2,17 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:salesforce/core/enums/enums.dart';
+import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
+import 'package:salesforce/features/more/presentation/pages/administration/device_printer_mixin.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_builder.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_preview.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
+import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
-
-// NOTE: Placeholder classes (like PosColumn, AlignStyle, PrinterDevice, ConnectionType,
-// ReceiptCommandType) would normally be imported from your project files.
-// Assuming they are defined and functional based on the rest of the code.
 
 class ReceiptPreviewScreen extends StatefulWidget {
   const ReceiptPreviewScreen({super.key, this.detail, this.companyInfo});
@@ -25,12 +24,12 @@ class ReceiptPreviewScreen extends StatefulWidget {
 }
 
 class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, DevicePrinterMixin {
   final ReceiptBuilder _builder = ReceiptBuilder();
-  List<PrinterDevice> printers = [];
-  PrinterDevice? selectedPrinter;
-  bool isConnected = false;
-  bool isSearching = false;
+
+  PrinterDeviceDiscover? selectedPrinter;
+  // bool isConnected = true;
+
   bool isPrinting = false;
   bool isReceiptBuilt = false;
 
@@ -55,158 +54,48 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-
+    _initializeReceipt();
     // Set printer configuration based on size
     _configurePrinterSize();
-
-    _initializeReceipt();
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
-    if (isConnected) {
+    if (isConnected()) {
       ThermalPrinter.disconnect();
     }
     super.dispose();
   }
 
-  Future<void> _initializeReceipt() async {
-    // Set printer width in native code if needed
-    // await ThermalPrinter.setPrinterWidth(printerWidth);
-
-    await _buildSampleReceipt();
-    await searchPrinters();
-  }
-
-  // ============================================================================
-  // PRINTER CONNECTION METHODS
-  // ============================================================================
-
-  Future<void> searchPrinters() async {
-    setState(() {
-      isSearching = true;
-      printers.clear();
-    });
-
-    try {
-      final foundPrinters = await ThermalPrinter.discoverPrinters(
-        type: ConnectionType.bluetooth,
-      );
-
-      debugPrint("Found printers: ${foundPrinters.map((e) => e.name)}");
-
-      setState(() {
-        printers = foundPrinters;
-        isSearching = false;
-      });
-
-      if (printers.isEmpty) {
-        _showSnackBar('No printers found', Colors.orange, Icons.search_off);
-      } else {
-        _showSnackBar(
-          'Found ${printers.length} printer(s)',
-          Colors.green,
-          Icons.devices,
-        );
-        await connectToPrinter();
-      }
-    } catch (e) {
-      setState(() => isSearching = false);
-      _showSnackBar('Search failed: ${e.toString()}', Colors.red, Icons.error);
+  bool isConnected() {
+    if (selectedPrinter == null) {
+      return false;
+    } else {
+      return true;
     }
   }
 
-  Future<void> connectToPrinter() async {
-    if (printers.isEmpty) {
-      _showSnackBar('No printers available', Colors.red, Icons.error);
+  Future<void> _initializeReceipt() async {
+    DevicePrinter? device = await loadSelectedPrinter();
+    await _buildSampleReceipt();
+
+    if (device == null) {
+      Helpers.showMessage(
+        status: MessageStatus.errors,
+        msg: "Device not found! ,Please check connection on Administation",
+      );
       return;
     }
 
-    try {
-      final printer = printers.firstWhere(
-        (e) => e.name.contains("XP-P323B-E1FE"),
-        // (e) => e.name.contains("SW_3ADE"),
-        // (e) => e.name.contains("MPT-II"),
-        orElse: () {
-          debugPrint('XP-P323B-E1FE not found in printers list');
-          throw Exception('Printer XP-P323B-E1FE not found');
-        },
-      );
-
-      debugPrint('Found printer: ${printer.name} (${printer.address})');
-
-      _showSnackBar(
-        'Connecting to ${printer.name}...',
-        Colors.blue,
-        Icons.bluetooth_searching,
-      );
-
-      final connected = await ThermalPrinter.connect(printer).timeout(
-        const Duration(seconds: 25),
-        onTimeout: () {
-          debugPrint('Connection timeout after 25 seconds');
-          return false;
-        },
-      );
-
-      debugPrint('Connection result: $connected');
-
-      setState(() {
-        isConnected = connected;
-        if (connected) selectedPrinter = printer;
-      });
-
-      if (connected) {
-        _showSnackBar(
-          'Connected to ${printer.name}',
-          Colors.green,
-          Icons.check_circle,
-        );
-      } else {
-        _showSnackBar('Connection failed', Colors.red, Icons.error);
-      }
-    } on TimeoutException catch (e) {
-      debugPrint('Connection timeout: $e');
-      _showSnackBar(
-        'Connection timeout - Please try again',
-        Colors.orange,
-        Icons.timer,
-      );
-    } catch (e, stackTrace) {
-      debugPrint('Connection error: $e');
-      debugPrint('Stack trace: $stackTrace');
-      _showSnackBar(
-        'Connection error: ${e.toString()}',
-        Colors.red,
-        Icons.error,
-      );
-    }
-  }
-
-  void _showSnackBar(String message, Color color, IconData icon) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 3),
-      ),
+    selectedPrinter = PrinterDeviceDiscover(
+      name: device.originDeviceName,
+      address: device.macAddress,
+      type: Helpers.stringToConnectionType(device.typeConnection),
     );
-  }
 
-  // ============================================================================
-  // COLUMN WIDTH CONFIGURATION
-  // ============================================================================
+    await ThermalPrinter.connect(selectedPrinter!);
+  }
 
   void _configurePrinterSize() {
     if (printerWidth == 384) {
@@ -386,56 +275,19 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
   }
 
   Future<void> _printReceipt() async {
-    if (!isConnected) {
-      _showSnackBar(
-        'Printer not connected. Searching...',
-        Colors.orange,
-        Icons.warning,
-      );
-      await searchPrinters();
-      if (!isConnected) {
-        _showSnackBar('Failed to connect', Colors.red, Icons.error);
-        return;
-      }
-    }
-
     setState(() => isPrinting = true);
-
+    if (!isConnected()) {
+      Helpers.showMessage(
+        status: MessageStatus.errors,
+        msg: "Device not found! ,Please check connection on Administation",
+      );
+      setState(() => isPrinting = false);
+      return;
+    }
+    final l = LoadingOverlay.of(context);
     try {
       if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => Center(
-            child: Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Padding(
-                padding: EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 50,
-                      height: 50,
-                      child: CircularProgressIndicator(strokeWidth: 4),
-                    ),
-                    SizedBox(height: 20),
-                    Text(
-                      'Printing Receipt...',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
+        l.show();
       }
 
       for (int i = 0; i < _builder.commands.length; i++) {
@@ -453,7 +305,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                 columns: columns,
                 fontSize: cmd.params["fontSize"] ?? 24,
               );
-              // await Future.delayed(const Duration(milliseconds: 50));
+
               break;
 
             case ReceiptCommandType.text:
@@ -464,7 +316,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                 maxCharPerLine: cmd.params["maxCharsPerLine"] ?? 48,
                 align: cmd.params["align"],
               );
-              // await Future.delayed(const Duration(milliseconds: 50));
+
               break;
 
             case ReceiptCommandType.image:
@@ -472,7 +324,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                 cmd.params["imageBytes"],
                 width: cmd.params["width"] ?? 384,
               );
-              // await Future.delayed(const Duration(milliseconds: 200));
+
               break;
 
             case ReceiptCommandType.feedPaper:
@@ -482,33 +334,22 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
 
             case ReceiptCommandType.cutPaper:
               await ThermalPrinter.cutPaper();
-              // await Future.delayed(const Duration(milliseconds: 500));
+
               break;
           }
         } catch (e) {
           debugPrint('Error executing command $i (${cmd.type}): $e');
         }
       }
-
-      // await Future.delayed(const Duration(milliseconds: 500));
-
-      if (mounted) Navigator.pop(context);
-      _showSnackBar(
-        'Receipt printed successfully!',
-        Colors.green,
-        Icons.check_circle,
-      );
+      l.hide();
+      return;
     } catch (e) {
-      if (mounted) Navigator.pop(context);
-      _showSnackBar('Print failed: $e', Colors.red, Icons.error);
+      l.hide();
+      return;
     } finally {
       setState(() => isPrinting = false);
     }
   }
-
-  // ============================================================================
-  // UI BUILD METHOD
-  // ============================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -517,81 +358,60 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         elevation: 0,
         title: const Text('Receipt Preview'),
         actions: [
-          // Loading indicator while searching
-          if (isSearching)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-            ),
-
-          // Connection status badge
-          if (!isSearching)
-            AnimatedBuilder(
-              animation: _pulseAnimation,
-              builder: (context, child) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Center(
-                    child: Transform.scale(
-                      scale: isConnected ? _pulseAnimation.value : 1.0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isConnected ? Colors.green : Colors.red,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: isConnected
-                              ? [
-                                  BoxShadow(
-                                    color: Colors.green.withOpacity(0.5),
-                                    blurRadius: 8,
-                                    spreadRadius: 2,
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isConnected
-                                  ? Icons.bluetooth_connected
-                                  : Icons.bluetooth_disabled,
+          AnimatedBuilder(
+            animation: _pulseAnimation,
+            builder: (context, child) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Center(
+                  child: Transform.scale(
+                    scale: isConnected() ? _pulseAnimation.value : 1.0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isConnected() ? Colors.green : Colors.red,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: isConnected()
+                            ? [
+                                BoxShadow(
+                                  color: Colors.green.withOpacity(0.5),
+                                  blurRadius: 8,
+                                  spreadRadius: 2,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isConnected()
+                                ? Icons.bluetooth_connected
+                                : Icons.bluetooth_disabled,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            selectedPrinter != null
+                                ? 'Connected'
+                                : 'Disconnected',
+                            style: const TextStyle(
                               color: Colors.white,
-                              size: 16,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              isConnected ? 'Connected' : 'Disconnected',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                );
-              },
-            ),
-
-          // Refresh button
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: isSearching ? null : searchPrinters,
-            tooltip: 'Reconnect Printer',
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -604,13 +424,13 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                     margin: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: isConnected
+                        colors: isConnected()
                             ? [Colors.green.shade50, Colors.green.shade100]
                             : [Colors.red.shade50, Colors.red.shade100],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isConnected
+                        color: isConnected()
                             ? Colors.green.shade200
                             : Colors.red.shade200,
                         width: 2,
@@ -620,7 +440,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                       leading: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: isConnected ? Colors.green : Colors.red,
+                          color: isConnected() ? Colors.green : Colors.red,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -635,8 +455,8 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                       ),
                       subtitle: Text(selectedPrinter!.address),
                       trailing: Icon(
-                        isConnected ? Icons.check_circle : Icons.error,
-                        color: isConnected ? Colors.green : Colors.red,
+                        isConnected() ? Icons.check_circle : Icons.error,
+                        color: isConnected() ? Colors.green : Colors.red,
                         size: 32,
                       ),
                     ),
@@ -664,7 +484,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       floatingActionButton: isReceiptBuilt
           ? FloatingActionButton.extended(
               onPressed: isPrinting ? null : _printReceipt,
-              backgroundColor: isConnected ? null : Colors.grey,
+              backgroundColor: isConnected() ? null : Colors.grey,
               icon: isPrinting
                   ? const SizedBox(
                       width: 20,

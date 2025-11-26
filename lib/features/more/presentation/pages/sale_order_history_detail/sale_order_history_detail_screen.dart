@@ -201,135 +201,136 @@ class _SaleOrderHistoryDetailScreenState
     return prefs.getString('connected_printer_mac');
   }
 
-  Future<void> showPrintPreview({
-    required SaleDetail? detail,
-    required CompanyInformation? companyInfo,
-  }) async {
-    final l = LoadingOverlay.of(context);
+  // Future<void> showPrintPreview({
+  //   required SaleDetail? detail,
+  //   required CompanyInformation? companyInfo,
+  // }) async {
+  //   final l = LoadingOverlay.of(context);
 
-    if (detail == null || companyInfo == null) {
-      showErrorMessage("No data available to print");
+  //   if (detail == null || companyInfo == null) {
+  //     showErrorMessage("No data available to print");
 
-      return;
-    }
+  //     return;
+  //   }
 
-    try {
-      l.show();
-      final receiptImage = await _createReceiptImage(
-        detail: detail,
-        companyInfo: companyInfo,
-      );
+  //   try {
+  //     l.show();
+  //     final receiptImage = await _createReceiptImage(
+  //       detail: detail,
+  //       companyInfo: companyInfo,
+  //     );
 
-      final pngBytes = img.encodePng(receiptImage);
+  //     final pngBytes = img.encodePng(receiptImage);
 
-      if (!mounted) return;
+  //     if (!mounted) return;
 
-      l.hide();
+  //     l.hide();
 
-      showDialog(
-        context: context,
-        builder: (context) => Dialog(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: mainColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.receipt_long, color: white),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Receipt Preview',
-                      style: TextStyle(
-                        color: white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: white),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-              ),
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) => Dialog(
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             Container(
+  //               padding: const EdgeInsets.all(16),
+  //               decoration: BoxDecoration(
+  //                 color: mainColor,
+  //                 borderRadius: const BorderRadius.only(
+  //                   topLeft: Radius.circular(12),
+  //                   topRight: Radius.circular(12),
+  //                 ),
+  //               ),
+  //               child: Row(
+  //                 children: [
+  //                   const Icon(Icons.receipt_long, color: white),
+  //                   const SizedBox(width: 8),
+  //                   const Text(
+  //                     'Receipt Preview',
+  //                     style: TextStyle(
+  //                       color: white,
+  //                       fontSize: 18,
+  //                       fontWeight: FontWeight.bold,
+  //                     ),
+  //                   ),
+  //                   const Spacer(),
+  //                   IconButton(
+  //                     icon: const Icon(Icons.close, color: white),
+  //                     onPressed: () => Navigator.of(context).pop(),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
 
-              // Preview Image (scrollable)
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.all(scaleFontSize(appSpace)),
-                  child: Image.memory(pngBytes, fit: BoxFit.contain),
-                ),
-              ),
+  //             // Preview Image (scrollable)
+  //             Flexible(
+  //               child: SingleChildScrollView(
+  //                 padding: EdgeInsets.all(scaleFontSize(appSpace)),
+  //                 child: Image.memory(pngBytes, fit: BoxFit.contain),
+  //               ),
+  //             ),
 
-              // Action Buttons
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: BtnWidget(
-                        onPressed: () => Navigator.of(context).pop(),
-                        title: greeting("Cancel"),
-                        bgColor: red,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: BtnWidget(
-                        onPressed: () async {
-                          Navigator.of(context).pop();
-                          await printReceipt(
-                            detail: detail,
-                            companyInfo: companyInfo,
-                          );
-                        },
-                        icon: Icon(Icons.print, color: white),
-                        title: greeting("Print"),
-                        bgColor: success,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.of(context).pop(); // Close loading
-      showErrorMessage("Failed to generate preview: $e");
-    }
-  }
+  //             // Action Buttons
+  //             Container(
+  //               padding: const EdgeInsets.all(16),
+  //               decoration: BoxDecoration(
+  //                 color: Colors.grey[100],
+  //                 borderRadius: const BorderRadius.only(
+  //                   bottomLeft: Radius.circular(12),
+  //                   bottomRight: Radius.circular(12),
+  //                 ),
+  //               ),
+  //               child: Row(
+  //                 children: [
+  //                   Expanded(
+  //                     child: BtnWidget(
+  //                       onPressed: () => Navigator.of(context).pop(),
+  //                       title: greeting("Cancel"),
+  //                       bgColor: red,
+  //                     ),
+  //                   ),
+  //                   const SizedBox(width: 12),
+  //                   Expanded(
+  //                     child: BtnWidget(
+  //                       onPressed: () async {
+  //                         MaterialPageRoute(
+  //                           builder: (context) => ReceiptPreviewScreen(
+  //                             companyInfo: companyInfo,
+  //                             detail: detail,
+  //                           ),
+  //                         );
+  //                       },
+  //                       icon: Icon(Icons.print, color: white),
+  //                       title: greeting("Print"),
+  //                       bgColor: success,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     if (!mounted) return;
+  //     Navigator.of(context).pop(); // Close loading
+  //     showErrorMessage("Failed to generate preview: $e");
+  //   }
+  // }
 
   Future<void> printReceipt({
     required SaleDetail? detail,
     required CompanyInformation? companyInfo,
   }) async {
-    Navigator.push(
-      context,
-      // MaterialPageRoute(builder: (context) => ReceiptPrinterApp()),
-      MaterialPageRoute(
-        builder: (context) =>
-            ReceiptPreviewScreen(companyInfo: companyInfo, detail: detail),
-      ),
-    );
+    // Navigator.push(
+    //   context,
+    //   // MaterialPageRoute(builder: (context) => ReceiptPrinterApp()),
+    //   MaterialPageRoute(
+    //     builder: (context) =>
+    //         ReceiptPreviewScreen(companyInfo: companyInfo, detail: detail),
+    //   ),
+    // );
     return;
     try {
       debugPrint(" Starting print job...");
@@ -760,8 +761,17 @@ class _SaleOrderHistoryDetailScreenState
               final detail = state.record;
               final company = state.comPanyInfo;
               return BtnIconCircleWidget(
-                onPressed: () =>
-                    showPrintPreview(detail: detail, companyInfo: company),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ReceiptPreviewScreen(
+                        companyInfo: company,
+                        detail: detail,
+                      ),
+                    ),
+                  );
+                },
                 icons: const Icon(Icons.print_rounded, color: white),
                 rounded: appBtnRound,
               );

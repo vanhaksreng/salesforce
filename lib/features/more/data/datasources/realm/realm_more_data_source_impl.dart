@@ -139,4 +139,16 @@ class RealmMoreDataSourceImpl extends BaseRealmDataSourceImpl
       return "Success";
     });
   }
+
+  @override
+  Future<DevicePrinter> storeDevicePrinter(DevicePrinter customer) async {
+    return await ils.add(customer);
+  }
+
+  @override
+  Future<List<DevicePrinter>> getDevicePrinter({
+    Map<String, dynamic>? param,
+  }) async {
+    return await ils.getAll<DevicePrinter>();
+  }
 }

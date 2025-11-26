@@ -1,14 +1,16 @@
-class BluetoothDeviceCus {
-  final String bluetoothName;
-  final String macAdddress;
+// class BluetoothDeviceCus {
+//   final String bluetoothName;
+//   final String macAdddress;
 
-  BluetoothDeviceCus({required this.bluetoothName, required this.macAdddress});
-}
+//   BluetoothDeviceCus({required this.bluetoothName, required this.macAdddress});
+// }
+
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 
 class DeviceConnect {
   final String name;
   final String model;
-  final BluetoothDeviceCus connectorDevice;
+  final PrinterDeviceDiscover connectorDevice;
   final double paperWidth;
   final bool isConnected;
   final bool isPaired;
