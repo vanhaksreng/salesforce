@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+// import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/app/route_slide_transaction.dart';
 import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
@@ -323,17 +323,17 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
           return RouteST.st(animation, child, begin: 1, end: 0);
         },
       );
-    case BluetoothThermalPrinterScreen.routeName:
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return BluetoothThermalPrinterScreen(
-            // bluetoothDevice: settings.arguments as BluetoothDevice?,
-          );
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return RouteST.st(animation, child, begin: 1, end: 0);
-        },
-      );
+    // case BluetoothThermalPrinterScreen.routeName:
+    //   return PageRouteBuilder(
+    //     pageBuilder: (context, animation, secondaryAnimation) {
+    //       return BluetoothThermalPrinterScreen(
+    //         // bluetoothDevice: settings.arguments as BluetoothDevice?,
+    //       );
+    //     },
+    //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
+    //       return RouteST.st(animation, child, begin: 1, end: 0);
+    //     },
+    //   );
 
     case InvoicePrinterScreen.routeName:
       return PageRouteBuilder(

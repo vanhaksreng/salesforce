@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
+import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
@@ -12,6 +13,7 @@ class BluetoothDeviceItem extends StatelessWidget {
   final Function(DevicePrinter)? onTap;
   final Function(DevicePrinter)? onConnect;
   final Function(DevicePrinter)? onDisconnect;
+  final Function(DevicePrinter)? onDelete;
   final bool isConnected;
   final bool isConnecting;
 
@@ -21,14 +23,17 @@ class BluetoothDeviceItem extends StatelessWidget {
     this.onTap,
     this.onConnect,
     this.onDisconnect,
+    this.onDelete,
     this.isConnected = false,
     this.isConnecting = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    print("=========dd===========${isConnected}");
     return BoxWidget(
+      onLongPress: () {
+        onDelete?.call(device);
+      },
       onPress: () {
         onTap?.call(device);
       },
@@ -105,6 +110,10 @@ class BluetoothDeviceItem extends StatelessWidget {
               tooltip: 'Disconnect',
             )
           else
+            // BtnWidget(
+            //   onPressed: () => onConnect?.call(device),
+            //   icon: Icon(Icons.link, color: mainColor, size: 20),
+            // ),
             IconButton(
               onPressed: () => onConnect?.call(device),
               icon: Icon(Icons.link, color: mainColor, size: 20),

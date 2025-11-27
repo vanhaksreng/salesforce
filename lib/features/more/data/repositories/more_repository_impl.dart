@@ -1161,4 +1161,16 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
       return Left(CacheFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, bool>> deletePrinter({
+    required DevicePrinter device,
+  }) async {
+    try {
+      await _local.deletePrinter(device);
+      return Right(true);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
 }

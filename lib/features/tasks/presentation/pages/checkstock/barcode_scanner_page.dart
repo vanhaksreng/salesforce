@@ -87,8 +87,10 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
                 final frameWidth = isQRCode ? 250.0 : 350.0;
                 final frameHeight = isQRCode ? 250.0 : 150.0;
 
-                final horizontalPadding = (width - frameWidth) / scaleFontSize(2.25);
-                final verticalPadding = (height - frameHeight) / scaleFontSize(2.15);
+                final horizontalPadding =
+                    (width - frameWidth) / scaleFontSize(2.25);
+                final verticalPadding =
+                    (height - frameHeight) / scaleFontSize(2.15);
 
                 return Stack(
                   children: [
@@ -98,7 +100,9 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
                       left: 0.scale,
                       right: 0.scale,
                       height: scaleFontSize(verticalPadding),
-                      child: Container(color: Colors.black.withValues(alpha: 0.6)),
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.6),
+                      ),
                     ),
                     // Bottom
                     Positioned(
@@ -106,7 +110,9 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
                       left: 0.scale,
                       right: 0.scale,
                       height: scaleFontSize(verticalPadding),
-                      child: Container(color: Colors.black.withValues(alpha: 0.6)),
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.6),
+                      ),
                     ),
                     // Left
                     Positioned(
@@ -114,7 +120,9 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
                       bottom: scaleFontSize(verticalPadding),
                       left: 0.scale,
                       width: scaleFontSize(horizontalPadding),
-                      child: Container(color: Colors.black.withValues(alpha: 0.6)),
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.6),
+                      ),
                     ),
                     // Right
                     Positioned(
@@ -122,7 +130,9 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
                       bottom: scaleFontSize(verticalPadding),
                       right: 0.scale,
                       width: scaleFontSize(horizontalPadding),
-                      child: Container(color: Colors.black.withValues(alpha: 0.6)),
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.6),
+                      ),
                     ),
                   ],
                 );
@@ -139,7 +149,9 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
               color: const Color.fromRGBO(0, 0, 0, 0.4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [Expanded(child: Center(child: _barcodePreview(_barcode)))],
+                children: [
+                  Expanded(child: Center(child: _barcodePreview(_barcode))),
+                ],
               ),
             ),
           ),

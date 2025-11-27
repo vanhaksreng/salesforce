@@ -5,11 +5,11 @@ import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
+import 'package:salesforce/features/more/presentation/pages/administration/bletooth_printer_service.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/device_printer_mixin.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_builder.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_preview.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
-import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
@@ -26,17 +26,15 @@ class ReceiptPreviewScreen extends StatefulWidget {
 class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     with SingleTickerProviderStateMixin, DevicePrinterMixin {
   final ReceiptBuilder _builder = ReceiptBuilder();
-
-  PrinterDeviceDiscover? selectedPrinter;
-  // bool isConnected = true;
+  final _bluetoothService = BluetoothPrinterService();
 
   bool isPrinting = false;
   bool isReceiptBuilt = false;
+  String? buildError;
 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  // Column width configuration - will be set based on printer width
   late List<int> columnWidths;
   late int totalWidth;
 
@@ -54,47 +52,46 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    _initializeReceipt();
 
     _configurePrinterSize();
+    _initializeReceipt();
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
-    if (isConnected()) {
-      ThermalPrinter.disconnect();
-    }
     super.dispose();
   }
 
-  bool isConnected() {
-    if (selectedPrinter == null) {
-      return false;
-    } else {
-      return true;
-    }
-  }
+  bool isConnected() => _bluetoothService.isConnected;
 
   Future<void> _initializeReceipt() async {
-    DevicePrinter? device = await loadSelectedPrinter();
-    await _buildSampleReceipt();
+    try {
+      await _buildSampleReceipt();
 
-    if (device == null) {
-      Helpers.showMessage(
-        status: MessageStatus.errors,
-        msg: "Device not found! ,Please check connection on Administation",
-      );
-      return;
+      if (!_bluetoothService.isConnected) {
+        if (mounted) {
+          Helpers.showMessage(
+            status: MessageStatus.warning,
+            msg: "No printer connected. You can preview but cannot print.",
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Stack trace: $stackTrace');
+
+      if (mounted) {
+        setState(() {
+          buildError = e.toString();
+          isReceiptBuilt = false;
+        });
+
+        Helpers.showMessage(
+          status: MessageStatus.errors,
+          msg: "Failed to build receipt: $e",
+        );
+      }
     }
-
-    selectedPrinter = PrinterDeviceDiscover(
-      name: device.originDeviceName,
-      address: device.macAddress,
-      type: Helpers.stringToConnectionType(device.typeConnection),
-    );
-
-    await ThermalPrinter.connect(selectedPrinter!);
   }
 
   void _configurePrinterSize() {
@@ -104,7 +101,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       totalWidth = 32;
     } else {
       // 80mm printer (48 chars per line at fontSize 20)
-      // FIX: The column widths must sum to 12 for the library validation.
       columnWidths = [1, 4, 1, 2, 2, 2]; // Sums to 12
       totalWidth = 51;
     }
@@ -132,6 +128,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         align: AlignStyle.center,
       );
       _builder.feedPaper(1);
+
       // ══════════════════════════════════════════════════════════════
       // INVOICE INFO SECTION
       // ══════════════════════════════════════════════════════════════
@@ -162,6 +159,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       // ══════════════════════════════════════════════════════════════
       // ITEMS TABLE HEADER
       // ══════════════════════════════════════════════════════════════
+
       _builder.addRow([
         PosColumn(text: '#', width: columnWidths[0], bold: true),
         PosColumn(text: 'Item', width: columnWidths[1], bold: true),
@@ -203,7 +201,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
           PosColumn(
             text: Helpers.formatNumber(
               item.quantity,
-
               option: FormatType.quantity,
             ),
             bold: false,
@@ -230,6 +227,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       // ══════════════════════════════════════════════════════════════
       // TOTALS SECTION
       // ══════════════════════════════════════════════════════════════
+
       _builder.addText(
         "=" * (totalWidth - 1),
         fontSize: 20,
@@ -267,28 +265,48 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       _builder.feedPaper(3);
       _builder.cutPaper();
 
-      setState(() => isReceiptBuilt = true);
+      // IMPORTANT: Update state to show the receipt
+      if (mounted) {
+        setState(() {
+          isReceiptBuilt = true;
+          buildError = null;
+        });
+      }
     } catch (e, stackTrace) {
+      debugPrint(' Error in _buildSampleReceipt: $e');
       debugPrint('Stack trace: $stackTrace');
-      setState(() => isReceiptBuilt = false);
+
+      if (mounted) {
+        setState(() {
+          isReceiptBuilt = false;
+          buildError = e.toString();
+        });
+      }
+
+      rethrow; // Re-throw to be caught by _initializeReceipt
     }
   }
 
   Future<void> _printReceipt() async {
-    setState(() => isPrinting = true);
     if (!isConnected()) {
       Helpers.showMessage(
         status: MessageStatus.errors,
-        msg: "Device not found! ,Please check connection on Administation",
+        msg: "No printer connected! Please connect in Administration.",
       );
-      setState(() => isPrinting = false);
       return;
     }
+
+    setState(() => isPrinting = true);
+
     final l = LoadingOverlay.of(context);
     try {
       if (mounted) {
         l.show();
       }
+
+      debugPrint(
+        '🖨️ Starting print job with ${_builder.commands.length} commands...',
+      );
 
       for (int i = 0; i < _builder.commands.length; i++) {
         final cmd = _builder.commands[i];
@@ -305,7 +323,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                 columns: columns,
                 fontSize: cmd.params["fontSize"] ?? 24,
               );
-
               break;
 
             case ReceiptCommandType.text:
@@ -316,7 +333,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                 maxCharPerLine: cmd.params["maxCharsPerLine"] ?? 48,
                 align: cmd.params["align"],
               );
-
               break;
 
             case ReceiptCommandType.image:
@@ -324,7 +340,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                 cmd.params["imageBytes"],
                 width: cmd.params["width"] ?? 384,
               );
-
               break;
 
             case ReceiptCommandType.feedPaper:
@@ -334,20 +349,32 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
 
             case ReceiptCommandType.cutPaper:
               await ThermalPrinter.cutPaper();
-
               break;
           }
         } catch (e) {
-          debugPrint('Error executing command $i (${cmd.type}): $e');
+          debugPrint(' Error executing command $i (${cmd.type}): $e');
         }
       }
-      l.hide();
-      return;
+
+      if (mounted) {
+        l.hide();
+        Helpers.showMessage(
+          status: MessageStatus.success,
+          msg: "Receipt printed successfully!",
+        );
+      }
     } catch (e) {
-      l.hide();
-      return;
+      if (mounted) {
+        l.hide();
+        Helpers.showMessage(
+          status: MessageStatus.errors,
+          msg: "Print failed: $e",
+        );
+      }
     } finally {
-      setState(() => isPrinting = false);
+      if (mounted) {
+        setState(() => isPrinting = false);
+      }
     }
   }
 
@@ -377,7 +404,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                         boxShadow: isConnected()
                             ? [
                                 BoxShadow(
-                                  color: Colors.green.withOpacity(0.5),
+                                  color: Colors.green.withValues(alpha: .5),
                                   blurRadius: 8,
                                   spreadRadius: 2,
                                 ),
@@ -395,15 +422,20 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                             size: 16,
                           ),
                           const SizedBox(width: 6),
-                          Text(
-                            selectedPrinter != null
-                                ? 'Connected'
-                                : 'Disconnected',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          StreamBuilder(
+                            stream: _bluetoothService.connectionStream,
+                            builder: (context, snapshot) {
+                              final device = snapshot.data;
+                              final isConnected = device != null;
+                              return Text(
+                                isConnected ? 'Connected' : 'Disconnected',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -415,72 +447,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
           ),
         ],
       ),
-      body: isReceiptBuilt
-          ? Column(
-              children: [
-                // Printer info card
-                if (selectedPrinter != null)
-                  Container(
-                    margin: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isConnected()
-                            ? [Colors.green.shade50, Colors.green.shade100]
-                            : [Colors.red.shade50, Colors.red.shade100],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isConnected()
-                            ? Colors.green.shade200
-                            : Colors.red.shade200,
-                        width: 2,
-                      ),
-                    ),
-                    child: ListTile(
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: isConnected() ? Colors.green : Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.print,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                      title: Text(
-                        selectedPrinter!.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(selectedPrinter!.address),
-                      trailing: Icon(
-                        isConnected() ? Icons.check_circle : Icons.error,
-                        color: isConnected() ? Colors.green : Colors.red,
-                        size: 32,
-                      ),
-                    ),
-                  ),
-
-                // Receipt preview
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: ReceiptPreview(commands: _builder.commands),
-                  ),
-                ),
-              ],
-            )
-          : const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Building receipt...'),
-                ],
-              ),
-            ),
+      body: _buildBody(),
       floatingActionButton: isReceiptBuilt
           ? FloatingActionButton.extended(
               onPressed: isPrinting ? null : _printReceipt,
@@ -498,6 +465,69 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
               label: Text(isPrinting ? 'Printing...' : 'Print Receipt'),
             )
           : null,
+    );
+  }
+
+  Widget _buildBody() {
+    if (buildError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to build receipt',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                buildError!,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  buildError = null;
+                  isReceiptBuilt = false;
+                });
+                _initializeReceipt();
+              },
+              icon: Icon(Icons.refresh),
+              label: Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!isReceiptBuilt) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Building receipt...'),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: ReceiptPreview(commands: _builder.commands),
+          ),
+        ),
+      ],
     );
   }
 }

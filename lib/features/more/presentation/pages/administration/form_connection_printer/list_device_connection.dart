@@ -7,6 +7,7 @@ class BluetoothDeviceList extends StatelessWidget {
   final Function(DevicePrinter)? onDeviceTap;
   final Function(DevicePrinter)? onConnect;
   final Function(DevicePrinter)? onDisconnect;
+  final Function(DevicePrinter)? onDelete;
   final DevicePrinter? selectedDevice;
   final String? connectingDeviceId;
 
@@ -17,6 +18,7 @@ class BluetoothDeviceList extends StatelessWidget {
     this.onConnect,
     this.onDisconnect,
     this.selectedDevice,
+    this.onDelete,
     this.connectingDeviceId,
   });
 
@@ -35,6 +37,7 @@ class BluetoothDeviceList extends StatelessWidget {
           onTap: onDeviceTap,
           onConnect: onConnect,
           onDisconnect: onDisconnect,
+          onDelete: onDelete,
           isConnected: selectedDevice?.macAddress == device.macAddress,
           isConnecting: connectingDeviceId == device.macAddress,
         );

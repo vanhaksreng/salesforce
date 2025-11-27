@@ -1,4 +1,4 @@
-import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+// import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:salesforce/features/more/domain/entities/device_info.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
@@ -8,7 +8,7 @@ class AdministrationState {
   final bool isFetching;
   final String? error;
   final DeviceInfo? deviceInfo;
-  final BluetoothInfo? bluetoothDevice;
+  // final BluetoothInfo? bluetoothDevice;
   final bool isScanning;
   final DateTime? lastScanTime;
   final bool isIminDevice;
@@ -24,7 +24,7 @@ class AdministrationState {
     this.error,
     this.lastScanTime,
     this.deviceInfo,
-    this.bluetoothDevice,
+    // this.bluetoothDevice,
     this.selectedDevice,
     this.connectingDeviceId,
     this.devicePrinter = const [],
@@ -38,7 +38,7 @@ class AdministrationState {
     String? error,
     DateTime? lastScanTime,
     DeviceInfo? deviceInfo,
-    BluetoothInfo? bluetoothDevice,
+    // BluetoothInfo? bluetoothDevice,
     bool? isIminDevice,
     bool? isScanning,
     List<DevicePrinter>? devicePrinter,
@@ -56,7 +56,7 @@ class AdministrationState {
       isScanning: isScanning ?? this.isScanning,
       deviceInfo: deviceInfo ?? this.deviceInfo,
       lastScanTime: lastScanTime ?? this.lastScanTime,
-      bluetoothDevice: bluetoothDevice ?? this.bluetoothDevice,
+      // bluetoothDevice: bluetoothDevice ?? this.bluetoothDevice,
       isIminDevice: isIminDevice ?? this.isIminDevice,
       printerDeviceDiscover:
           printerDeviceDiscover ?? this.printerDeviceDiscover,
