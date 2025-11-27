@@ -26,6 +26,7 @@ class BoxWidget extends StatelessWidget {
     this.bottomLeft = 0,
     this.border,
     this.gradient,
+    this.onLongPress,
   });
 
   final Widget child;
@@ -41,6 +42,7 @@ class BoxWidget extends StatelessWidget {
   final double bottomRight;
   final double bottomLeft;
   final VoidCallback? onPress;
+  final VoidCallback? onLongPress;
   final EdgeInsetsGeometry? margin;
   final Color? color;
   final bool isBoxShadow;
@@ -98,6 +100,6 @@ class BoxWidget extends StatelessWidget {
 
     return onPress == null
         ? container
-        : InkWell(onTap: onPress, child: container);
+        : InkWell(onTap: onPress, child: container, onLongPress: onLongPress);
   }
 }

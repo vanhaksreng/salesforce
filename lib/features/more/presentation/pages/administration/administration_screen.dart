@@ -1,7 +1,6 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
@@ -17,16 +16,12 @@ import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/domain/entities/device_info.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_state.dart';
-import 'package:salesforce/features/more/presentation/pages/administration/adminstatration_helper.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/form_connect_printer.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/list_device_connection.dart';
-import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_thermal_printer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/imin_device/printer_test_page.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class AdministrationScreen extends StatefulWidget {
   const AdministrationScreen({super.key});
@@ -44,7 +39,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
   void initState() {
     super.initState();
     _cubit.getDevicePrinter();
-
+    _cubit.initialize();
     _initializeScreen();
   }
 
@@ -57,8 +52,6 @@ class AdministrationScreenState extends State<AdministrationScreen>
   Future<void> _initializeScreen() async {
     await _cubit.checkInforDevice();
     await checkIminDevice();
-    await _cubit.initialize();
-    // await _refreshBluetoothDevices();
   }
 
   Future<void> checkIminDevice() async {
@@ -102,10 +95,11 @@ class AdministrationScreenState extends State<AdministrationScreen>
       children: [
         _buildDashboardHeader(state),
         Helpers.gapH(8),
-        if (!state.isIminDevice)
-          _buildBluetoothPrintingSection(state)
-        else
-          _buildAPKDeploymentSection(state),
+        _buildBluetoothPrintingSection(state),
+        // if (!state.isIminDevice)
+        //   _buildBluetoothPrintingSection(state)
+        // else
+        //   _buildAPKDeploymentSection(state),
         Helpers.gapH(8),
       ],
     );
@@ -173,13 +167,25 @@ class AdministrationScreenState extends State<AdministrationScreen>
       child: BluetoothDeviceList(
         devices: state.devicePrinter,
         selectedDevice: state.selectedDevice,
+        onDelete: (DevicePrinter device) async {
+          Helpers.showDialogAction(
+            context,
+            labelAction: "Deletee",
+            subtitle: "Do you want to delete ${device.deviceName}",
+            confirm: () {
+              Navigator.pop(context);
+              _cubit.deletePrinter(device: device);
+            },
+          );
+        },
         connectingDeviceId: state.connectingDeviceId,
         onDeviceTap: (DevicePrinter device) async {
-          _cubit.saveSelectedPrinter(device);
+          // _cubit.s(device);
         },
         onConnect: (DevicePrinter device) async {
           await _cubit.connectToPrinter(device);
         },
+
         onDisconnect: (DevicePrinter device) async {
           await _cubit.disconnectFromPrinter(device);
         },
