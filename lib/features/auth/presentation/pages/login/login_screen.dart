@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -70,7 +73,22 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
       );
       return;
     }
+    final DeviceInfoPlugin device = DeviceInfoPlugin();
+    String deviceId = "";
+    String platform = "";
+    String devVersion = "";
 
+    if (Platform.isAndroid) {
+      final AndroidDeviceInfo android = await device.androidInfo;
+      deviceId = android.id;
+      platform = "android";
+      devVersion = android.version.release;
+    } else {
+      final IosDeviceInfo ios = await device.iosInfo;
+      deviceId = ios.identifierForVendor ?? "";
+      platform = "ios";
+      devVersion = ios.systemVersion;
+    }
     if (!mounted) return;
 
     final l = LoadingOverlay.of(context);
@@ -78,9 +96,12 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
     try {
       await _cubit.login(
         arg: LoginArg(
+          userAgent: deviceId,
           email: nameController.text,
           password: passwordController.text,
           server: server,
+          platform: platform,
+          devVersion: devVersion,
           notificationKey: OneSignal.User.pushSubscription.id ?? "",
         ),
       );
