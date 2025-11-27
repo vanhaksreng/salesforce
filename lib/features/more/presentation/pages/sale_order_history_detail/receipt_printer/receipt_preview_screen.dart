@@ -55,7 +55,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
     _initializeReceipt();
-    // Set printer configuration based on size
+
     _configurePrinterSize();
   }
 

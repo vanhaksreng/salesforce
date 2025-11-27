@@ -289,12 +289,12 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
             }
         }
     }
-
+    
     private func discoverBluetoothPrinters(result: @escaping FlutterResult) {
         scanResult = result
         discoveredPrinters.removeAll()
         isScanning = true
-
+        
         if centralManager.state == .poweredOn {
             centralManager.scanForPeripherals(
                 withServices: nil,
@@ -305,39 +305,95 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
             isScanning = false
             result(
                 FlutterError(
-                    code: "BLUETOOTH_OFF", message: "Bluetooth is turned off", details: nil))
+                    code: "BLUETOOTH_OFF",
+                    message: "Bluetooth is turned off",
+                    details: nil))
             scanResult = nil
             return
         } else if centralManager.state == .unauthorized {
             isScanning = false
             result(
                 FlutterError(
-                    code: "PERMISSION_DENIED", message: "Bluetooth permission denied", details: nil)
+                    code: "PERMISSION_DENIED",
+                    message: "Bluetooth permission denied",
+                    details: nil)
             )
             scanResult = nil
             return
         }
-
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
             if self.isScanning {
                 self.isScanning = false
                 self.centralManager.stopScan()
             }
-
-            let printers = self.discoveredPrinters.map { printer in
-                return [
-                    "name": printer.name ?? "Unknown Device",
-                    "address": printer.identifier.uuidString,
-                    "type": "ble",
-                ] as [String: Any]
-            }
-
+            
+            // Filter out devices without a name
+            let printers = self.discoveredPrinters
+                .filter { $0.name != nil && !$0.name!.isEmpty }
+                .map { printer in
+                    return [
+                        "name": printer.name!,
+                        "address": printer.identifier.uuidString,
+                        "type": "ble",
+                    ] as [String: Any]
+                }
+            
             if let callback = self.scanResult {
                 callback(printers)
                 self.scanResult = nil
             }
         }
     }
+
+//    private func discoverBluetoothPrinters(result: @escaping FlutterResult) {
+//        scanResult = result
+//        discoveredPrinters.removeAll()
+//        isScanning = true
+//
+//        if centralManager.state == .poweredOn {
+//            centralManager.scanForPeripherals(
+//                withServices: nil,
+//                options: [
+//                    CBCentralManagerScanOptionAllowDuplicatesKey: false
+//                ])
+//        } else if centralManager.state == .poweredOff {
+//            isScanning = false
+//            result(
+//                FlutterError(
+//                    code: "BLUETOOTH_OFF", message: "Bluetooth is turned off", details: nil))
+//            scanResult = nil
+//            return
+//        } else if centralManager.state == .unauthorized {
+//            isScanning = false
+//            result(
+//                FlutterError(
+//                    code: "PERMISSION_DENIED", message: "Bluetooth permission denied", details: nil)
+//            )
+//            scanResult = nil
+//            return
+//        }
+//
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+//            if self.isScanning {
+//                self.isScanning = false
+//                self.centralManager.stopScan()
+//            }
+//
+//            let printers = self.discoveredPrinters.map { printer in
+//                return [
+//                    "name": printer.name ?? "Unknown Device",
+//                    "address": printer.identifier.uuidString,
+//                    "type": "ble",
+//                ] as [String: Any]
+//            }
+//
+//            if let callback = self.scanResult {
+//                callback(printers)
+//                self.scanResult = nil
+//            }
+//        }
+//    }
 
     private func discoverUSBPrinters(result: @escaping FlutterResult) {
         let accessories = EAAccessoryManager.shared().connectedAccessories
