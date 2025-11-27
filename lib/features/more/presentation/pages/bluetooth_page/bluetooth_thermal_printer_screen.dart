@@ -1,7 +1,13 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:app_settings/app_settings.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+import 'package:salesforce/core/utils/helpers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
@@ -44,9 +50,63 @@ class BluetoothThermalPrinterScreenState
     _initializePrinter();
   }
 
-  Future<void> _initializePrinter() async {
+  Future<bool> _requestBluetoothPermissions() async {
+    if (Platform.isAndroid) {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+
+      if (androidInfo.version.sdkInt >= 31) {
+        // Android 12+ permissions
+        Map<Permission, PermissionStatus> statuses = await [
+          Permission.bluetoothScan,
+          Permission.bluetoothConnect,
+        ].request();
+
+        return statuses.values.every((status) => status.isGranted);
+      } else if (androidInfo.version.sdkInt >= 23) {
+        // Android 6-11 permissions
+        Map<Permission, PermissionStatus> statuses = await [
+          Permission.bluetooth,
+          Permission.location,
+        ].request();
+
+        return statuses.values.every((status) => status.isGranted);
+      }
+    }
+    return true;
+  }
+
+  Future _initializePrinter() async {
     try {
       setState(() => isScanning = true);
+
+      // Request permissions first
+      final hasPermission = await _requestBluetoothPermissions();
+
+      if (!hasPermission) {
+        setState(() {
+          statusMessage =
+              "Bluetooth permissions denied. Please enable them in Settings.";
+          isScanning = false;
+        });
+
+        // Show dialog to open settings
+        if (mounted) {
+          Helpers.showDialogAction(
+            context,
+            labelAction: "Permission Required",
+            subtitle:
+                "Please enable Bluetooth permissions in Settings to use the printer.",
+            confirmText: "Open Settings",
+            canCancel: true,
+            confirm: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+          );
+        }
+        return;
+      }
+
       await checkExistingConnection();
       await scanDevices();
 
@@ -87,10 +147,50 @@ class BluetoothThermalPrinterScreenState
     }
   }
 
-  // MARK: - Scan Devices
   Future<void> scanDevices() async {
     try {
       setState(() => isScanning = true);
+
+      bool? isBluetoothOn = await PrintBluetoothThermal.bluetoothEnabled;
+
+      if (isBluetoothOn == false) {
+        setState(() => isScanning = false);
+        if (!mounted) return;
+        if (Platform.isAndroid) {
+          Helpers.showDialogAction(
+            context,
+            labelAction: "Bluetooth is Off",
+            subtitle: "Do you want to enable Bluetooth?",
+            confirmText: "Yes,Trun on",
+            cancelText: "No,Cancel",
+            canCancel: true,
+            confirm: () async {
+              Navigator.pop(context);
+              try {
+                await FlutterBluePlus.turnOn();
+                await Future.delayed(Duration(seconds: 1));
+                scanDevices();
+              } catch (e) {
+                showErrorMessage("Failed to enable Bluetooth: $e");
+              }
+            },
+          );
+        } else if (Platform.isIOS) {
+          Helpers.showDialogAction(
+            context,
+            labelAction: "Bluetooth is Off",
+            subtitle: "Please enable Bluetooth in Settings or Control Center.",
+            canCancel: true,
+            confirm: () {
+              Navigator.pop(context);
+              AppSettings.openAppSettings(type: AppSettingsType.bluetooth);
+            },
+          );
+        }
+        return;
+      }
+
+      // Proceed with scanning
       final result = await PrintBluetoothThermal.pairedBluetooths;
       setState(() => devices = result);
 

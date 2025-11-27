@@ -611,16 +611,27 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
           if (input.code != kPromotionTypeStd) {
             discountPercent = 100;
             discountAmt = 0;
-            unitPrice = item.unitPrice ?? 0;
+
+            unitPrice = Helpers.formatNumberDb(
+              itemUom.price,
+              option: FormatType.price,
+            );
+
+            if(unitPrice == 0) {
+              unitPrice = item.unitPrice ?? 0;
+            }
+            
           } else {
             manualPrice = Helpers.formatNumberDb(
               saleArg.manualPrice,
               option: FormatType.price,
             );
+
             unitPrice = Helpers.formatNumberDb(
               saleArg.itemUnitPrice,
               option: FormatType.price,
             );
+            
             if (manualPrice > 0) {
               unitPrice = manualPrice;
             }

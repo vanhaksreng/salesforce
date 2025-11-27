@@ -1,768 +1,905 @@
-// // Improved Receipt Builder with Perfect Column Alignment
-// // This version uses pixel-perfect rendering with proper Khmer support
-
-// import 'dart:typed_data';
-// import 'package:flutter/material.dart';
-// import 'package:image/image.dart' as img;
-// import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/khmer_text_render.dart';
-
-// class ImprovedReceiptBuilder {
-//   // Print width configuration
-//   static const double printWidth = 576;
-//   static const int paddingVertical = 2;
-
-//   // Column width configuration (in pixels)
-//   static const ReceiptColumnConfig columnConfig = ReceiptColumnConfig(
-//     itemNumber: 40, // "#"
-//     description: 200, // Description (wider for Khmer)
-//     quantity: 70, // Qty
-//     price: 90, // Price
-//     discount: 70, // Disc
-//     amount: 100, // Amount
-//   );
-
-//   /// Main method to build receipt preview image
-//   static Future<Uint8List> buildReceiptPreviewImage({
-//     required SaleDetail? detail,
-//     required CompanyInformation? companyInfo,
-//   }) async {
-//     final images = <img.Image>[];
-
-//     try {
-//       // 1️⃣ Logo Section
-//       await _addLogo(images, companyInfo);
-
-//       // 2️⃣ Company Information
-//       await _addCompanyInfo(images, companyInfo);
-
-//       // 3️⃣ Divider
-//       images.add(_createDivider(heavy: true));
-//       images.add(_createSpacing(10));
-
-//       // 4️⃣ Customer & Invoice Info
-//       await _addInvoiceInfo(images, detail);
-
-//       // 5️⃣ Table Header
-//       images.add(_createDivider());
-//       await _addTableHeader(images);
-//       images.add(_createDivider());
-
-//       // 6️⃣ Line Items
-//       await _addLineItems(images, detail);
-
-//       // 7️⃣ Totals Section
-//       images.add(_createDivider());
-//       await _addTotals(images, detail);
-
-//       // 8️⃣ Footer
-//       images.add(_createDivider(heavy: true));
-//       images.add(_createSpacing(10));
-//       await _addFooter(images);
-//       images.add(_createSpacing(30));
-
-//       // 9️⃣ Combine all images vertically
-//       return _combineImages(images);
-//     } catch (e) {
-//       debugPrint("❌ Critical error in buildReceiptPreviewImage: $e");
-//       rethrow;
-//     }
-//   }
-
-//   // ═══════════════════════════════════════════════════════════════
-//   // LOGO SECTION
-//   // ═══════════════════════════════════════════════════════════════
-
-//   static Future<void> _addLogo(
-//     List<img.Image> images,
-//     CompanyInformation? companyInfo,
-//   ) async {
-//     if (companyInfo?.logo128?.isNotEmpty != true) return;
-
-//     try {
-//       final logoImage = await _loadLogoForPrinter(companyInfo!.logo128!);
-//       if (logoImage != null) {
-//         final centered = _centerImage(logoImage, verticalPadding: 8);
-//         images.add(centered);
-//         images.add(_createSpacing(5));
-//       }
-//     } catch (e) {
-//       debugPrint("⚠️ Logo rendering failed: $e");
-//     }
-//   }
-
-//   // ═══════════════════════════════════════════════════════════════
-//   // COMPANY INFO SECTION
-//   // ═══════════════════════════════════════════════════════════════
-
-//   static Future<void> _addCompanyInfo(
-//     List<img.Image> images,
-//     CompanyInformation? companyInfo,
-//   ) async {
-//     if (companyInfo?.name?.isNotEmpty == true) {
-//       images.add(
-//         await _renderText(
-//           companyInfo!.name!,
-//           fontSize: KhmerTextRenderer.containsKhmer(companyInfo.name!)
-//               ? 26
-//               : 22,
-//           align: KhmerTextAlign.center,
-//           bold: true,
-//           maxLines: 2,
-//         ),
-//       );
-//     }
-
-//     if (companyInfo?.address?.isNotEmpty == true) {
-//       images.add(
-//         await _renderText(
-//           companyInfo?.address ?? "",
-//           fontSize: 18,
-//           align: KhmerTextAlign.center,
-//           maxLines: 3,
-//         ),
-//       );
-//     }
-
-//     if (companyInfo?.email?.isNotEmpty == true) {
-//       images.add(
-//         await _renderText(
-//           companyInfo?.email ?? "",
-//           fontSize: 18,
-//           align: KhmerTextAlign.center,
-//         ),
-//       );
-//     }
-
-//     if (companyInfo?.phone?.isNotEmpty == true) {
-//       images.add(
-//         await _renderText(
-//           'Tel: ${companyInfo?.phone}',
-//           fontSize: 18,
-//           align: KhmerTextAlign.center,
-//         ),
-//       );
-//     }
-//   }
-
-//   // ═══════════════════════════════════════════════════════════════
-//   // INVOICE INFO SECTION
-//   // ═══════════════════════════════════════════════════════════════
-
-//   static Future<void> _addInvoiceInfo(
-//     List<img.Image> images,
-//     SaleDetail? detail,
-//   ) async {
-//     if (detail?.header.customerName?.isNotEmpty == true) {
-//       images.add(
-//         await _renderText(
-//           'Customer: ${detail!.header.customerName}',
-//           fontSize: 18,
-//           align: KhmerTextAlign.left,
-//         ),
-//       );
-//     }
-
-//     if (detail?.header.no?.isNotEmpty == true) {
-//       images.add(
-//         await _renderText(
-//           'Invoice No: ${detail!.header.no}',
-//           fontSize: 18,
-//           align: KhmerTextAlign.left,
-//         ),
-//       );
-//     }
-
-//     final date = detail?.header.documentDate ?? '';
-//     if (date.isNotEmpty) {
-//       images.add(
-//         await _renderText(
-//           'Date: $date',
-//           fontSize: 18,
-//           align: KhmerTextAlign.left,
-//         ),
-//       );
-//     }
-
-//     images.add(_createSpacing(5));
-//   }
-
-//   // ═══════════════════════════════════════════════════════════════
-//   // TABLE HEADER
-//   // ═══════════════════════════════════════════════════════════════
-
-//   static Future<void> _addTableHeader(List<img.Image> images) async {
-//     final headerRow = await _createTableRow(
-//       itemNumber: '#',
-//       description: 'Description',
-//       quantity: 'Qty',
-//       price: 'Price',
-//       discount: 'Disc',
-//       amount: 'Amount',
-//       bold: true,
-//       fontSize: 16,
-//     );
-//     images.add(headerRow);
-//   }
-
-//   // ═══════════════════════════════════════════════════════════════
-//   // LINE ITEMS
-//   // ═══════════════════════════════════════════════════════════════
-
-//   static Future<void> _addLineItems(
-//     List<img.Image> images,
-//     SaleDetail? detail,
-//   ) async {
-//     int itemNumber = 1;
-
-//     for (final line in detail?.lines ?? []) {
-//       try {
-//         final description = (line.description ?? '').trim();
-//         final qty = Helpers.toInt(line.quantity).toString();
-//         final price = Helpers.formatNumber(
-//           line.unitPrice,
-//           option: FormatType.amount,
-//         );
-//         final disc = (line.discountAmount != null && line.discountAmount! > 0)
-//             ? Helpers.formatNumber(
-//                 line.discountAmount!,
-//                 option: FormatType.amount,
-//               )
-//             : '-';
-//         final amount = Helpers.formatNumber(
-//           line.amountIncludingVat,
-//           option: FormatType.amount,
-//         );
-
-//         // Render item row
-//         final itemRow = await _createTableRow(
-//           itemNumber: itemNumber.toString(),
-//           description: description,
-//           quantity: qty,
-//           price: price,
-//           discount: disc,
-//           amount: amount,
-//           fontSize: 16,
-//         );
-
-//         images.add(itemRow);
-//         itemNumber++;
-//       } catch (e) {
-//         debugPrint("⚠️ Item $itemNumber rendering failed: $e");
-//       }
-//     }
-//   }
-
-//   // ═══════════════════════════════════════════════════════════════
-//   // TOTALS SECTION
-//   // ═══════════════════════════════════════════════════════════════
-
-//   static Future<void> _addTotals(
-//     List<img.Image> images,
-//     SaleDetail? detail,
-//   ) async {
-//     // Subtotal
-//     if (detail?.header.priceIncludeVat != null) {
-//       images.add(
-//         await _renderText(
-//           'Subtotal: ${Helpers.formatNumber(detail!.header.priceIncludeVat!, option: FormatType.amount)}',
-//           fontSize: 18,
-//           align: KhmerTextAlign.right,
-//         ),
-//       );
-//     }
-
-//     // Discount
-//     final discountAmount = detail?.header.discountAmount ?? 0;
-//     if (discountAmount > 0) {
-//       images.add(
-//         await _renderText(
-//           'Discount: -${Helpers.formatNumber(discountAmount, option: FormatType.amount)}',
-//           fontSize: 18,
-//           align: KhmerTextAlign.right,
-//         ),
-//       );
-//     }
-
-//     // VAT
-//     final vatAmount = detail?.header.vatAmount ?? 0;
-//     if (vatAmount > 0) {
-//       images.add(
-//         await _renderText(
-//           'VAT: ${Helpers.formatNumber(vatAmount, option: FormatType.amount)}',
-//           fontSize: 18,
-//           align: KhmerTextAlign.right,
-//         ),
-//       );
-//     }
-
-//     // Total (prominent)
-//     images.add(_createSpacing(5));
-//     images.add(
-//       await _renderText(
-//         'TOTAL: ${Helpers.formatNumber(detail?.header.amount ?? 0, option: FormatType.amount)}',
-//         fontSize: 24,
-//         align: KhmerTextAlign.right,
-//         bold: true,
-//       ),
-//     );
-//   }
-
-//   // ═══════════════════════════════════════════════════════════════
-//   // FOOTER SECTION
-//   // ═══════════════════════════════════════════════════════════════
-
-//   static Future<void> _addFooter(List<img.Image> images) async {
-//     // Thank you message (bilingual)
-//     images.add(
-//       await _renderText(
-//         'សូមអរគុណ! Thank you!',
-//         fontSize: 20,
-//         align: KhmerTextAlign.center,
-//         bold: true,
-//         maxLines: 2,
-//       ),
-//     );
-
-//     images.add(_createSpacing(5));
-
-//     images.add(
-//       await _renderText(
-//         'We look forward to serving you again!',
-//         fontSize: 16,
-//         align: KhmerTextAlign.center,
-//       ),
-//     );
-
-//     images.add(_createSpacing(10));
-
-//     // Powered by
-//     images.add(
-//       await _renderText(
-//         'Powered by Blue Technology Co., Ltd.',
-//         fontSize: 14,
-//         align: KhmerTextAlign.center,
-//       ),
-//     );
-//   }
-
-//   // ═══════════════════════════════════════════════════════════════
-//   // TABLE ROW CREATION (Perfect Column Alignment)
-//   // ═══════════════════════════════════════════════════════════════
-
-//   static Future<img.Image> _createTableRow({
-//     required String itemNumber,
-//     required String description,
-//     required String quantity,
-//     required String price,
-//     required String discount,
-//     required String amount,
-//     bool bold = false,
-//     double fontSize = 16,
-//   }) async {
-//     final columns = <img.Image>[];
-
-//     // Column 1: Item Number (Left aligned)
-//     columns.add(
-//       await _renderTextWithWidth(
-//         itemNumber,
-//         width: columnConfig.itemNumber,
-//         fontSize: fontSize,
-//         bold: bold,
-//         align: KhmerTextAlign.left,
-//       ),
-//     );
-
-//     // Column 2: Description (Left aligned, can be Khmer)
-//     columns.add(
-//       await _renderTextWithWidth(
-//         description,
-//         width: columnConfig.description,
-//         fontSize: fontSize,
-//         bold: bold,
-//         align: KhmerTextAlign.left,
-//         maxLines: 3, // Allow wrapping for long descriptions
-//       ),
-//     );
-
-//     // Column 3: Quantity (Right aligned, monospace)
-//     columns.add(
-//       await _renderTextWithWidth(
-//         quantity,
-//         width: columnConfig.quantity,
-//         fontSize: fontSize,
-//         bold: bold,
-//         align: KhmerTextAlign.right,
-//         monospace: true,
-//       ),
-//     );
-
-//     // Column 4: Price (Right aligned, monospace)
-//     columns.add(
-//       await _renderTextWithWidth(
-//         price,
-//         width: columnConfig.price,
-//         fontSize: fontSize,
-//         bold: bold,
-//         align: KhmerTextAlign.right,
-//         monospace: true,
-//       ),
-//     );
-
-//     // Column 5: Discount (Right aligned, monospace)
-//     columns.add(
-//       await _renderTextWithWidth(
-//         discount,
-//         width: columnConfig.discount,
-//         fontSize: fontSize,
-//         bold: bold,
-//         align: KhmerTextAlign.right,
-//         monospace: true,
-//       ),
-//     );
-
-//     // Column 6: Amount (Right aligned, monospace)
-//     columns.add(
-//       await _renderTextWithWidth(
-//         amount,
-//         width: columnConfig.amount,
-//         fontSize: fontSize,
-//         bold: bold,
-//         align: KhmerTextAlign.right,
-//         monospace: true,
-//       ),
-//     );
-
-//     return _composeRow(columns);
-//   }
-
-//   // ═══════════════════════════════════════════════════════════════
-//   // HELPER METHODS - TEXT RENDERING
-//   // ═══════════════════════════════════════════════════════════════
-
-//   static Future<img.Image> _renderText(
-//     String text, {
-//     double fontSize = 18,
-//     KhmerTextAlign align = KhmerTextAlign.left,
-//     bool bold = false,
-//     bool monospace = false,
-//     int maxLines = 0,
-//   }) async {
-//     final style = KhmerTextStyle(
-//       fontSize: fontSize,
-//       bold: bold,
-//       alignment: align,
-//       monospace: monospace,
-//     );
-
-//     final data = await KhmerTextRenderer.renderText(
-//       text,
-//       width: printWidth,
-//       style: style,
-//       maxLines: maxLines,
-//     );
-
-//     if (data == null) {
-//       return _createEmptyImage(printWidth.toInt(), 20);
-//     }
-
-//     img.Image rendered = img.decodePng(data)!;
-//     return _trimVerticalWhitespace(rendered, padding: paddingVertical);
-//   }
-
-//   static Future<img.Image> _renderTextWithWidth(
-//     String text, {
-//     required double width,
-//     double fontSize = 18,
-//     KhmerTextAlign align = KhmerTextAlign.left,
-//     bool bold = false,
-//     bool monospace = false,
-//     int maxLines = 1,
-//   }) async {
-//     final style = KhmerTextStyle(
-//       fontSize: fontSize,
-//       bold: bold,
-//       alignment: align,
-//       monospace: monospace,
-//     );
-
-//     final data = await KhmerTextRenderer.renderText(
-//       text,
-//       width: width,
-//       style: style,
-//       maxLines: maxLines,
-//     );
-
-//     if (data == null) {
-//       return _createEmptyImage(width.toInt(), 20);
-//     }
-
-//     img.Image rendered = img.decodePng(data)!;
-
-//     // Ensure exact width by padding/cropping
-//     if (rendered.width != width.toInt()) {
-//       return _ensureExactWidth(rendered, width.toInt());
-//     }
-
-//     return rendered;
-//   }
-
-//   // ═══════════════════════════════════════════════════════════════
-//   // HELPER METHODS - IMAGE COMPOSITION
-//   // ═══════════════════════════════════════════════════════════════
-
-//   static img.Image _composeRow(List<img.Image> columns) {
-//     if (columns.isEmpty) {
-//       return _createEmptyImage(printWidth.toInt(), 20);
-//     }
-
-//     // Find maximum height among all columns
-//     final maxHeight = columns.fold<int>(
-//       0,
-//       (max, col) => col.height > max ? col.height : max,
-//     );
-
-//     // Create row canvas
-//     final row = img.Image(width: printWidth.toInt(), height: maxHeight);
-//     img.fill(row, color: img.ColorRgb8(255, 255, 255));
-
-//     // Composite columns horizontally
-//     int xOffset = 0;
-//     for (final col in columns) {
-//       // Vertically center shorter columns
-//       final yOffset = (maxHeight - col.height) ~/ 2;
-//       img.compositeImage(row, col, dstX: xOffset, dstY: yOffset);
-//       xOffset += col.width;
-//     }
-
-//     return row;
-//   }
-
-//   static img.Image _centerImage(img.Image image, {int verticalPadding = 0}) {
-//     final centered = img.Image(
-//       width: printWidth.toInt(),
-//       height: image.height + (verticalPadding * 2),
-//     );
-//     img.fill(centered, color: img.ColorRgb8(255, 255, 255));
-
-//     final xOffset = (printWidth - image.width) ~/ 2;
-//     img.compositeImage(centered, image, dstX: xOffset, dstY: verticalPadding);
-
-//     return centered;
-//   }
-
-//   static img.Image _ensureExactWidth(img.Image image, int targetWidth) {
-//     final canvas = img.Image(width: targetWidth, height: image.height);
-//     img.fill(canvas, color: img.ColorRgb8(255, 255, 255));
-
-//     if (image.width <= targetWidth) {
-//       // Center if smaller
-//       final xOffset = (targetWidth - image.width) ~/ 2;
-//       img.compositeImage(canvas, image, dstX: xOffset, dstY: 0);
-//     } else {
-//       // Crop if larger
-//       final cropped = img.copyCrop(
-//         image,
-//         x: 0,
-//         y: 0,
-//         width: targetWidth,
-//         height: image.height,
-//       );
-//       img.compositeImage(canvas, cropped, dstX: 0, dstY: 0);
-//     }
-
-//     return canvas;
-//   }
-
-//   static Uint8List _combineImages(List<img.Image> images) {
-//     final totalHeight = images.fold<int>(0, (sum, img) => sum + img.height);
-
-//     final combined = img.Image(width: printWidth.toInt(), height: totalHeight);
-//     img.fill(combined, color: img.ColorRgb8(255, 255, 255));
-
-//     int yOffset = 0;
-//     for (final image in images) {
-//       img.compositeImage(combined, image, dstY: yOffset);
-//       yOffset += image.height;
-//     }
-
-//     return Uint8List.fromList(img.encodePng(combined));
-//   }
-
-//   // ═══════════════════════════════════════════════════════════════
-//   // HELPER METHODS - UTILITIES
-//   // ═══════════════════════════════════════════════════════════════
-
-//   static img.Image _createSpacing(int height) {
-//     final spacing = img.Image(width: printWidth.toInt(), height: height);
-//     img.fill(spacing, color: img.ColorRgb8(255, 255, 255));
-//     return spacing;
-//   }
-
-//   static img.Image _createDivider({bool heavy = false}) {
-//     final char = heavy ? '═' : '─';
-//     final text = char * 64;
-
-//     // Create a simple divider using pixels
-//     final divider = img.Image(width: printWidth.toInt(), height: heavy ? 3 : 1);
-//     img.fill(divider, color: img.ColorRgb8(0, 0, 0));
-
-//     return divider;
-//   }
-
-//   static img.Image _createEmptyImage(int width, int height) {
-//     final empty = img.Image(width: width, height: height);
-//     img.fill(empty, color: img.ColorRgb8(255, 255, 255));
-//     return empty;
-//   }
-
-//   static img.Image _trimVerticalWhitespace(img.Image image, {int padding = 1}) {
-//     int? topCrop;
-//     int? bottomCrop;
-
-//     // Find first non-white row from top
-//     for (int y = 0; y < image.height; y++) {
-//       if (_rowHasContent(image, y)) {
-//         topCrop = (y - padding).clamp(0, image.height - 1);
-//         break;
-//       }
-//     }
-
-//     // Find last non-white row from bottom
-//     for (int y = image.height - 1; y >= 0; y--) {
-//       if (_rowHasContent(image, y)) {
-//         bottomCrop = (y + padding).clamp(0, image.height - 1);
-//         break;
-//       }
-//     }
-
-//     if (topCrop == null || bottomCrop == null || topCrop >= bottomCrop) {
-//       return image;
-//     }
-
-//     final newHeight = (bottomCrop - topCrop + 1).clamp(1, image.height);
-
-//     return img.copyCrop(
-//       image,
-//       x: 0,
-//       y: topCrop,
-//       width: image.width,
-//       height: newHeight,
-//     );
-//   }
-
-//   static bool _rowHasContent(img.Image image, int y) {
-//     const threshold = 240;
-//     for (int x = 0; x < image.width; x++) {
-//       final pixel = image.getPixel(x, y);
-//       if (pixel.r < threshold || pixel.g < threshold || pixel.b < threshold) {
-//         return true;
-//       }
-//     }
-//     return false;
-//   }
-
-//   static Future<img.Image?> _loadLogoForPrinter(String base64Logo) async {
-//     // Implement your logo loading logic here
-//     // This is a placeholder - replace with your actual implementation
-//     return null;
-//   }
-// }
-
-// // ═══════════════════════════════════════════════════════════════
-// // CONFIGURATION CLASSES
-// // ═══════════════════════════════════════════════════════════════
-
-// class ReceiptColumnConfig {
-//   final double itemNumber;
-//   final double description;
-//   final double quantity;
-//   final double price;
-//   final double discount;
-//   final double amount;
-
-//   const ReceiptColumnConfig({
-//     required this.itemNumber,
-//     required this.description,
-//     required this.quantity,
-//     required this.price,
-//     required this.discount,
-//     required this.amount,
-//   });
-
-//   double get totalWidth =>
-//       itemNumber + description + quantity + price + discount + amount;
-// }
-
-// // ═══════════════════════════════════════════════════════════════
-// // PLACEHOLDER CLASSES (Replace with your actual models)
-// // ═══════════════════════════════════════════════════════════════
-
-// class SaleDetail {
-//   final SaleHeader header;
-//   final List<PosSalesLine> lines;
-
-//   SaleDetail({required this.header, required this.lines});
-// }
-
-// class SaleHeader {
-//   final String? customerName;
-//   final String? no;
-//   final String? documentDate;
-//   final double? priceIncludeVat;
-//   final double? discountAmount;
-//   final double? vatAmount;
-//   final double? amount;
-
-//   SaleHeader({
-//     this.customerName,
-//     this.no,
-//     this.documentDate,
-//     this.priceIncludeVat,
-//     this.discountAmount,
-//     this.vatAmount,
-//     this.amount,
-//   });
-// }
-
-// class PosSalesLine {
-//   final String? description;
-//   final double? quantity;
-//   final double? unitPrice;
-//   final double? discountAmount;
-//   final double? amountIncludingVat;
-
-//   PosSalesLine({
-//     this.description,
-//     this.quantity,
-//     this.unitPrice,
-//     this.discountAmount,
-//     this.amountIncludingVat,
-//   });
-// }
-
-// class CompanyInformation {
-//   final String? name;
-//   final String? address;
-//   final String? email;
-//   final String? phone;
-//   final String? logo128;
-
-//   CompanyInformation({
-//     this.name,
-//     this.address,
-//     this.email,
-//     this.phone,
-//     this.logo128,
-//   });
-// }
-
-// class Helpers {
-//   static int toInt(double? value) => value?.toInt() ?? 0;
-
-//   static String formatNumber(double? value, {FormatType? option}) {
-//     if (value == null) return '\$0.00';
-//     return '\$${value.toStringAsFixed(2)}';
-//   }
-// }
-
-// enum FormatType { amount }
+import 'package:flutter/material.dart';
+import 'thermal_printer.dart';
+
+class ReceiptPrinterApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Receipt Printer Test',
+      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+      home: ReceiptPrinterScreen(),
+    );
+  }
+}
+
+class ReceiptPrinterScreen extends StatefulWidget {
+  @override
+  _ReceiptPrinterScreenState createState() => _ReceiptPrinterScreenState();
+}
+
+class _ReceiptPrinterScreenState extends State<ReceiptPrinterScreen> {
+  List<PrinterDeviceDiscover> printers = [];
+  PrinterDeviceDiscover? selectedPrinter;
+  bool isConnected = false;
+  bool isSearching = false;
+  bool isPrinting = false;
+  ConnectionType selectedType = ConnectionType.bluetooth;
+
+  final TextEditingController ipController = TextEditingController();
+  final TextEditingController portController = TextEditingController(
+    text: '9100',
+  );
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    ipController.dispose();
+    portController.dispose();
+    super.dispose();
+  }
+
+  Future<void> searchPrinters() async {
+    setState(() {
+      isSearching = true;
+      printers.clear();
+    });
+
+    try {
+      if (selectedType == ConnectionType.network) {
+        showSnackBar('Enter IP address for network printer', Colors.orange);
+        setState(() => isSearching = false);
+        return;
+      }
+
+      final foundPrinters = await ThermalPrinter.discoverPrinters(
+        type: selectedType,
+      );
+
+      setState(() {
+        printers = foundPrinters;
+        isSearching = false;
+      });
+
+      if (printers.isEmpty) {
+        showSnackBar('No printers found', Colors.orange);
+      } else {
+        showSnackBar('Found ${printers.length} printer(s)', Colors.green);
+      }
+    } catch (e) {
+      setState(() => isSearching = false);
+      showSnackBar('Error: $e', Colors.red);
+    }
+  }
+
+  Future<void> connectToPrinter(PrinterDeviceDiscover device) async {
+    try {
+      showSnackBar('Connecting to ${device.name}...', Colors.blue);
+
+      final connected = await ThermalPrinter.connect(device);
+
+      setState(() {
+        isConnected = connected;
+        if (connected) selectedPrinter = device;
+      });
+
+      if (connected) {
+        showSnackBar('✓ Connected to ${device.name}', Colors.green);
+      } else {
+        showSnackBar('Failed to connect', Colors.red);
+      }
+    } catch (e) {
+      showSnackBar('Connection error: $e', Colors.red);
+    }
+  }
+
+  Future<void> connectNetworkPrinter() async {
+    try {
+      final ip = ipController.text.trim();
+      final port = int.tryParse(portController.text) ?? 9100;
+
+      if (ip.isEmpty) {
+        showSnackBar('Please enter IP address', Colors.orange);
+        return;
+      }
+
+      showSnackBar('Connecting to $ip:$port...', Colors.blue);
+
+      final connected = await ThermalPrinter.connectNetwork(ip, port: port);
+
+      setState(() {
+        isConnected = connected;
+        if (connected) {
+          selectedPrinter = PrinterDeviceDiscover(
+            name: 'Network Printer',
+            address: '$ip:$port',
+            type: ConnectionType.network,
+          );
+        }
+      });
+
+      if (connected) {
+        showSnackBar('✓ Connected to $ip:$port', Colors.green);
+      } else {
+        showSnackBar('Failed to connect', Colors.red);
+      }
+    } catch (e) {
+      showSnackBar('Connection error: $e', Colors.red);
+    }
+  }
+
+  Future<void> disconnectPrinter() async {
+    try {
+      await ThermalPrinter.disconnect();
+      setState(() {
+        isConnected = false;
+        selectedPrinter = null;
+      });
+      showSnackBar('Disconnected', Colors.grey);
+    } catch (e) {
+      showSnackBar('Disconnect error: $e', Colors.red);
+    }
+  }
+
+  // RECEIPT PRINTING FUNCTIONS
+
+  Future<void> printSimpleReceipt() async {
+    if (!isConnected) {
+      showSnackBar('Please connect to a printer first', Colors.orange);
+      return;
+    }
+
+    setState(() => isPrinting = true);
+
+    try {
+      await ThermalPrinter.printText(
+        '================================',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '        SIMPLE RECEIPT',
+        fontSize: 24,
+        bold: true,
+      );
+      await ThermalPrinter.printText(
+        '================================',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        'Date: ${DateTime.now().toString().substring(0, 19)}',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '--------------------------------',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        'Item 1: Coffee          \$3.50',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        'Item 2: Sandwich        \$7.00',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        'Item 3: Cookie          \$2.50',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '--------------------------------',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        'TOTAL:                 \$13.00',
+        fontSize: 28,
+        bold: true,
+      );
+      await ThermalPrinter.printText(
+        '================================',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '       Thank you!',
+        fontSize: 24,
+        bold: true,
+      );
+      await ThermalPrinter.feedPaper(3);
+      await ThermalPrinter.cutPaper();
+
+      showSnackBar('✓ Simple receipt printed', Colors.green);
+    } catch (e) {
+      showSnackBar('Print error: $e', Colors.red);
+    } finally {
+      setState(() => isPrinting = false);
+    }
+  }
+
+  Future<void> printDetailedReceipt() async {
+    if (!isConnected) {
+      showSnackBar('Please connect to a printer first', Colors.orange);
+      return;
+    }
+
+    setState(() => isPrinting = true);
+
+    try {
+      // Header
+      await ThermalPrinter.printText(
+        '================================',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '    MY COFFEE SHOP',
+        fontSize: 32,
+        bold: true,
+      );
+      await ThermalPrinter.printText('   123 Main Street', fontSize: 20);
+      await ThermalPrinter.printText('   Tel: (555) 123-4567', fontSize: 20);
+      await ThermalPrinter.printText(
+        '================================',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      // Date and Receipt Number
+      final now = DateTime.now();
+      await ThermalPrinter.printText(
+        'Receipt #: 000${now.millisecond}',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        'Date: ${now.day}/${now.month}/${now.year}',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        'Time: ${now.hour}:${now.minute.toString().padLeft(2, '0')}',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('Cashier: John Doe', fontSize: 20);
+      await ThermalPrinter.printText('', fontSize: 20);
+      await ThermalPrinter.printText(
+        '--------------------------------',
+        fontSize: 20,
+      );
+
+      // Items
+      await ThermalPrinter.printText('ITEMS:', fontSize: 24, bold: true);
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      await ThermalPrinter.printText('1x Espresso', fontSize: 22, bold: true);
+      await ThermalPrinter.printText(
+        '   Regular size           \$3.50',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      await ThermalPrinter.printText('2x Cappuccino', fontSize: 22, bold: true);
+      await ThermalPrinter.printText(
+        '   Large size      @\$5.00 \$10.00',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '   Extra shot              \$0.50',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      await ThermalPrinter.printText('1x Croissant', fontSize: 22, bold: true);
+      await ThermalPrinter.printText(
+        '   Fresh baked             \$4.00',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      await ThermalPrinter.printText(
+        '1x Chocolate Muffin',
+        fontSize: 22,
+        bold: true,
+      );
+      await ThermalPrinter.printText(
+        '   With chocolate chips    \$3.50',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      // Totals
+      await ThermalPrinter.printText(
+        '--------------------------------',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        'Subtotal:              \$21.50',
+        fontSize: 22,
+      );
+      await ThermalPrinter.printText(
+        'Tax (10%):              \$2.15',
+        fontSize: 22,
+      );
+      await ThermalPrinter.printText(
+        '================================',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        'TOTAL:                 \$23.65',
+        fontSize: 32,
+        bold: true,
+      );
+      await ThermalPrinter.printText(
+        '================================',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      // Payment
+      await ThermalPrinter.printText(
+        'Payment Method: VISA **** 1234',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('Approval Code: 987654', fontSize: 20);
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      // Footer
+      await ThermalPrinter.printText(
+        '--------------------------------',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '   Thank you for your visit!',
+        fontSize: 24,
+        bold: true,
+      );
+      await ThermalPrinter.printText('  Please come again soon!', fontSize: 20);
+      await ThermalPrinter.printText('', fontSize: 20);
+      await ThermalPrinter.printText('   Save 10% on your next', fontSize: 20);
+      await ThermalPrinter.printText('   purchase with code:', fontSize: 20);
+      await ThermalPrinter.printText(
+        '      COFFEE10',
+        fontSize: 28,
+        bold: true,
+      );
+      await ThermalPrinter.printText(
+        '================================',
+        fontSize: 20,
+      );
+
+      await ThermalPrinter.feedPaper(4);
+      await ThermalPrinter.cutPaper();
+
+      showSnackBar('✓ Detailed receipt printed', Colors.green);
+    } catch (e) {
+      showSnackBar('Print error: $e', Colors.red);
+    } finally {
+      setState(() => isPrinting = false);
+    }
+  }
+
+  Future<void> printRestaurantReceipt() async {
+    if (!isConnected) {
+      showSnackBar('Please connect to a printer first', Colors.orange);
+      return;
+    }
+
+    setState(() => isPrinting = true);
+
+    try {
+      // Header
+      await ThermalPrinter.printText(
+        '================================',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '     RESTAURANT DELUXE',
+        fontSize: 32,
+        bold: true,
+      );
+      await ThermalPrinter.printText('   456 Restaurant Ave', fontSize: 20);
+      await ThermalPrinter.printText('   Tel: (555) 987-6543', fontSize: 20);
+      await ThermalPrinter.printText(
+        '================================',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      final now = DateTime.now();
+      await ThermalPrinter.printText('Table: 12      Guests: 4', fontSize: 20);
+      await ThermalPrinter.printText('Server: Sarah M.', fontSize: 20);
+      await ThermalPrinter.printText(
+        'Date: ${now.day}/${now.month}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        'Order #: R-${now.millisecond}',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+      await ThermalPrinter.printText(
+        '--------------------------------',
+        fontSize: 20,
+      );
+
+      // Menu Items
+      await ThermalPrinter.printText('APPETIZERS:', fontSize: 24, bold: true);
+      await ThermalPrinter.printText(
+        '2x Caesar Salad    @12.99 \$25.98',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '1x Soup of the Day         \$8.50',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      await ThermalPrinter.printText('MAIN COURSES:', fontSize: 24, bold: true);
+      await ThermalPrinter.printText(
+        '2x Grilled Salmon  @28.99 \$57.98',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '1x Ribeye Steak (Medium)  \$42.99',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '1x Vegetarian Pasta       \$22.99',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      await ThermalPrinter.printText('BEVERAGES:', fontSize: 24, bold: true);
+      await ThermalPrinter.printText(
+        '2x Red Wine        @12.00 \$24.00',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '2x Sparkling Water  @4.00  \$8.00',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      await ThermalPrinter.printText('DESSERTS:', fontSize: 24, bold: true);
+      await ThermalPrinter.printText(
+        '2x Chocolate Cake   @9.99 \$19.98',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '1x Ice Cream               \$6.99',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      // Totals
+      await ThermalPrinter.printText(
+        '--------------------------------',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        'Subtotal:             \$217.41',
+        fontSize: 22,
+      );
+      await ThermalPrinter.printText(
+        'Tax (8.5%):            \$18.48',
+        fontSize: 22,
+      );
+      await ThermalPrinter.printText(
+        '--------------------------------',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        'TOTAL:                \$235.89',
+        fontSize: 32,
+        bold: true,
+      );
+      await ThermalPrinter.printText(
+        '================================',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      // Tip suggestion
+      await ThermalPrinter.printText(
+        'SUGGESTED GRATUITY:',
+        fontSize: 22,
+        bold: true,
+      );
+      await ThermalPrinter.printText('15%: \$35.38', fontSize: 20);
+      await ThermalPrinter.printText('18%: \$42.46', fontSize: 20);
+      await ThermalPrinter.printText('20%: \$47.18', fontSize: 20);
+      await ThermalPrinter.printText('', fontSize: 20);
+
+      // Footer
+      await ThermalPrinter.printText(
+        '--------------------------------',
+        fontSize: 20,
+      );
+      await ThermalPrinter.printText(
+        '  Thank you for dining with us!',
+        fontSize: 22,
+        bold: true,
+      );
+      await ThermalPrinter.printText('', fontSize: 20);
+      await ThermalPrinter.printText(
+        'Follow us @RestaurantDeluxe',
+        fontSize: 18,
+      );
+      await ThermalPrinter.printText('www.restaurantdeluxe.com', fontSize: 18);
+      await ThermalPrinter.printText(
+        '================================',
+        fontSize: 20,
+      );
+
+      await ThermalPrinter.feedPaper(4);
+      await ThermalPrinter.cutPaper();
+
+      showSnackBar('✓ Restaurant receipt printed', Colors.green);
+    } catch (e) {
+      showSnackBar('Print error: $e', Colors.red);
+    } finally {
+      setState(() => isPrinting = false);
+    }
+  }
+
+  Future<void> testPrinter() async {
+    if (!isConnected) {
+      showSnackBar('Please connect to a printer first', Colors.orange);
+      return;
+    }
+
+    setState(() => isPrinting = true);
+
+    try {
+      await ThermalPrinter.printText(
+        '==== PRINTER TEST ====',
+        fontSize: 24,
+        bold: true,
+      );
+      // await ThermalPrinter.printText('', fontSize: 20);
+      // await ThermalPrinter.printText('Testing font sizes:', fontSize: 20);
+      // await ThermalPrinter.printText('Size 12', fontSize: 12);
+      // await ThermalPrinter.printText('Size 16', fontSize: 16);
+      // await ThermalPrinter.printText('Size 20', fontSize: 20);
+      // await ThermalPrinter.printText('Size 24', fontSize: 24);
+      await ThermalPrinter.printText(
+        'ស្វាគមន៍​មកកាន់--Normal text',
+        fontSize: 32,
+        bold: true,
+      );
+      // await ThermalPrinter.printText('', fontSize: 20);
+      // await ThermalPrinter.printText('Normal text', fontSize: 20, bold: false);
+      // await ThermalPrinter.printText('Bold text', fontSize: 20, bold: true);
+      // await ThermalPrinter.printText('', fontSize: 20);
+      await ThermalPrinter.printText(
+        'Test completed!',
+        fontSize: 24,
+        bold: true,
+      );
+      await ThermalPrinter.feedPaper(3);
+
+      showSnackBar('✓ Test print completed', Colors.green);
+    } catch (e) {
+      showSnackBar('Test error: $e', Colors.red);
+    } finally {
+      setState(() => isPrinting = false);
+    }
+  }
+
+  void showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Receipt Printer Test'),
+        actions: [
+          if (isConnected)
+            IconButton(
+              icon: Icon(Icons.power_settings_new),
+              onPressed: disconnectPrinter,
+              tooltip: 'Disconnect',
+            ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Connection Type Selector
+            Card(
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Connection Type:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: Text('Bluetooth'),
+                          selected: selectedType == ConnectionType.bluetooth,
+                          onSelected: (selected) {
+                            if (selected && !isConnected) {
+                              setState(() {
+                                selectedType = ConnectionType.bluetooth;
+                                printers.clear();
+                              });
+                            }
+                          },
+                        ),
+                        ChoiceChip(
+                          label: Text('BLE'),
+                          selected: selectedType == ConnectionType.ble,
+                          onSelected: (selected) {
+                            if (selected && !isConnected) {
+                              setState(() {
+                                selectedType = ConnectionType.ble;
+                                printers.clear();
+                              });
+                            }
+                          },
+                        ),
+                        ChoiceChip(
+                          label: Text('USB'),
+                          selected: selectedType == ConnectionType.usb,
+                          onSelected: (selected) {
+                            if (selected && !isConnected) {
+                              setState(() {
+                                selectedType = ConnectionType.usb;
+                                printers.clear();
+                              });
+                            }
+                          },
+                        ),
+                        ChoiceChip(
+                          label: Text('Network'),
+                          selected: selectedType == ConnectionType.network,
+                          onSelected: (selected) {
+                            if (selected && !isConnected) {
+                              setState(() {
+                                selectedType = ConnectionType.network;
+                                printers.clear();
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            SizedBox(height: 16),
+
+            // Network Printer Input
+            if (selectedType == ConnectionType.network && !isConnected)
+              Card(
+                child: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: ipController,
+                        decoration: InputDecoration(
+                          labelText: 'IP Address',
+                          hintText: '192.168.1.100',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.wifi),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      TextField(
+                        controller: portController,
+                        decoration: InputDecoration(
+                          labelText: 'Port',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.settings_ethernet),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                      SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        onPressed: connectNetworkPrinter,
+                        icon: Icon(Icons.link),
+                        label: Text('Connect'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size(double.infinity, 48),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Search Button
+            if (selectedType != ConnectionType.network && !isConnected)
+              ElevatedButton.icon(
+                onPressed: isSearching ? null : searchPrinters,
+                icon: isSearching
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(Icons.search),
+                label: Text(isSearching ? 'Searching...' : 'Search Printers'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                ),
+              ),
+
+            SizedBox(height: 16),
+
+            // Connection Status
+            if (isConnected)
+              Card(
+                color: Colors.green.shade50,
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green, size: 48),
+                      SizedBox(height: 8),
+                      Text(
+                        'Connected',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green.shade800,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        selectedPrinter?.name ?? 'Unknown Printer',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      Text(
+                        selectedPrinter?.type
+                                .toString()
+                                .split('.')
+                                .last
+                                .toUpperCase() ??
+                            '',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Printer List
+            if (printers.isNotEmpty && !isConnected)
+              Card(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Text(
+                        'Found ${printers.length} printer(s)',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    Divider(height: 1),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: printers.length,
+                      itemBuilder: (context, index) {
+                        final printer = printers[index];
+                        return ListTile(
+                          leading: Icon(
+                            printer.type == ConnectionType.bluetooth
+                                ? Icons.bluetooth
+                                : printer.type == ConnectionType.ble
+                                ? Icons.bluetooth_searching
+                                : Icons.usb,
+                            color: Colors.blue,
+                          ),
+                          title: Text(printer.name),
+                          subtitle: Text(printer.address),
+                          trailing: ElevatedButton(
+                            onPressed: () => connectToPrinter(printer),
+                            child: Text('Connect'),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+            // Print Buttons
+            if (isConnected) ...[
+              SizedBox(height: 16),
+              Text(
+                'Test Receipts',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 12),
+
+              ElevatedButton.icon(
+                onPressed: isPrinting ? null : testPrinter,
+                icon: Icon(Icons.print),
+                label: Text('Test Print'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey,
+                  foregroundColor: Colors.white,
+                  minimumSize: Size(double.infinity, 50),
+                ),
+              ),
+
+              SizedBox(height: 8),
+
+              ElevatedButton.icon(
+                onPressed: isPrinting ? null : printSimpleReceipt,
+                icon: Icon(Icons.receipt),
+                label: Text('Print Simple Receipt'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  minimumSize: Size(double.infinity, 50),
+                ),
+              ),
+
+              SizedBox(height: 8),
+
+              ElevatedButton.icon(
+                onPressed: isPrinting ? null : printDetailedReceipt,
+                icon: Icon(Icons.receipt_long),
+                label: Text('Print Coffee Shop Receipt'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  minimumSize: Size(double.infinity, 50),
+                ),
+              ),
+
+              SizedBox(height: 8),
+
+              ElevatedButton.icon(
+                onPressed: isPrinting ? null : printRestaurantReceipt,
+                icon: Icon(Icons.restaurant),
+                label: Text('Print Restaurant Receipt'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  minimumSize: Size(double.infinity, 50),
+                ),
+              ),
+
+              if (isPrinting) ...[
+                SizedBox(height: 16),
+                Center(
+                  child: Column(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 8),
+                      Text('Printing...'),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}

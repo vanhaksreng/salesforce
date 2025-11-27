@@ -11,11 +11,13 @@ class AddCustomerState {
   final Customer? customer;
   final int currentPage;
   final int lastPage;
+  final bool isFetching;
 
   const AddCustomerState({
     this.isLoading = false,
     this.error,
     this.isLoadingMore = false,
+    this.isFetching = false,
     this.customerAddresses,
     this.currentPage = 1,
     this.lastPage = 1,
@@ -28,6 +30,7 @@ class AddCustomerState {
     bool? isLoading,
     String? error,
     bool? isLoadingMore,
+    bool? isFetching,
     List<CustomerAddress>? customerAddresses,
     List<Customer>? customers,
     List<PosSalesHeader>? posSaleHeader,
@@ -44,6 +47,7 @@ class AddCustomerState {
       currentPage: currentPage ?? this.currentPage,
       lastPage: lastPage ?? this.lastPage,
       customer: customer ?? this.customer,
+      isFetching: isFetching ?? this.isFetching,
       posSaleHeader: posSaleHeader ?? this.posSaleHeader,
     );
   }

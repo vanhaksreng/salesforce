@@ -83,17 +83,17 @@ class ReportRepositoryImpl extends BaseAppRepositoryImpl
     int page = 1,
   }) async {
     try {
-      if (await _networkInfo.isConnected) {
-        param?['page'] = page;
-        final dailSalesSummaryReport = await _remote.getDailySalesSummaryReport(
-          param: param,
-        );
-
-        return Right(dailSalesSummaryReport);
+      if (!await _networkInfo.isConnected) {
+        return const Left(CacheFailure(errorInternetMessage));
       }
-      return const Left(CacheFailure(errorInternetMessage));
-    } on GeneralException {
-      return const Left(CacheFailure(errorInternetMessage));
+      param?['page'] = page;
+      final dailSalesSummaryReport = await _remote.getDailySalesSummaryReport(
+        param: param,
+      );
+
+      return Right(dailSalesSummaryReport);
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -103,21 +103,21 @@ class ReportRepositoryImpl extends BaseAppRepositoryImpl
     int page = 1,
   }) async {
     try {
-      if (await _networkInfo.isConnected) {
-        param?['page'] = page;
-        final data = await _remote.getItemInventoryReport(param: param);
-
-        final List<ItemInventoryReportModel> records = [];
-
-        for (var item in data["records"]) {
-          records.add(ItemInventoryReportModel.fromJson(item));
-        }
-
-        return Right({"data": records, "filter_note": data["filter_note"]});
+      if (!await _networkInfo.isConnected) {
+        return const Left(CacheFailure(errorInternetMessage));
       }
-      return const Left(CacheFailure(errorInternetMessage));
-    } on GeneralException {
-      return const Left(CacheFailure(errorInternetMessage));
+      param?['page'] = page;
+      final data = await _remote.getItemInventoryReport(param: param);
+
+      final List<ItemInventoryReportModel> records = [];
+
+      for (var item in data["records"]) {
+        records.add(ItemInventoryReportModel.fromJson(item));
+      }
+
+      return Right({"data": records, "filter_note": data["filter_note"]});
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -127,15 +127,15 @@ class ReportRepositoryImpl extends BaseAppRepositoryImpl
     int page = 1,
   }) async {
     try {
-      if (await _networkInfo.isConnected) {
-        final recordReportStockRequest = await _remote.getStockRequestReport(
-          param: param,
-        );
-        return Right(recordReportStockRequest);
+      if (!await _networkInfo.isConnected) {
+        return const Left(CacheFailure(errorInternetMessage));
       }
-      return const Left(CacheFailure(errorInternetMessage));
-    } on GeneralException {
-      return const Left(CacheFailure(errorInternetMessage));
+      final recordReportStockRequest = await _remote.getStockRequestReport(
+        param: param,
+      );
+      return Right(recordReportStockRequest);
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -143,15 +143,15 @@ class ReportRepositoryImpl extends BaseAppRepositoryImpl
   Future<Either<Failure, List<CustomerBalanceReport>>>
   getCustomerBalanceReport({Map<String, dynamic>? param, int page = 1}) async {
     try {
-      if (await _networkInfo.isConnected) {
-        final recordCustomerBalance = await _remote.getCustomerBalanceReport(
-          param: param,
-        );
-        return Right(recordCustomerBalance);
+      if (!await _networkInfo.isConnected) {
+        return const Left(CacheFailure(errorInternetMessage));
       }
-      return const Left(CacheFailure(errorInternetMessage));
-    } on GeneralException {
-      return const Left(CacheFailure(errorInternetMessage));
+      final recordCustomerBalance = await _remote.getCustomerBalanceReport(
+        param: param,
+      );
+      return Right(recordCustomerBalance);
+    } catch (e) {
+      rethrow;
     }
   }
 }

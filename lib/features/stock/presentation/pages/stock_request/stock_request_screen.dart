@@ -30,14 +30,20 @@ class StockRequestScreen extends StatefulWidget {
   State<StockRequestScreen> createState() => _StockRequestScreenState();
 }
 
-class _StockRequestScreenState extends State<StockRequestScreen> with MessageMixin {
+class _StockRequestScreenState extends State<StockRequestScreen>
+    with MessageMixin {
   final _cubit = StockRequestCubit();
   ActionState action = ActionState.init;
 
   @override
   void initState() {
     super.initState();
-    _cubit.getItemWorkSheets(param: {'quantity': '>0', 'status': 'IN {"$kStatusPending","$kStatusNew"}'});
+    _cubit.getItemWorkSheets(
+      param: {
+        'quantity': '>0',
+        'status': 'IN {"$kStatusPending","$kStatusNew"}',
+      },
+    );
   }
 
   void _onSubmitHandler() async {
@@ -111,7 +117,10 @@ class _StockRequestScreenState extends State<StockRequestScreen> with MessageMix
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBarWidget(title: greeting("stock_request"), onBack: () => Navigator.of(context).pop(action)),
+      appBar: AppBarWidget(
+        title: greeting("stock_request"),
+        onBack: () => Navigator.of(context).pop(action),
+      ),
       body: BlocBuilder<StockRequestCubit, StockRequestState>(
         bloc: _cubit,
         builder: (BuildContext context, StockRequestState state) {
@@ -132,7 +141,9 @@ class _StockRequestScreenState extends State<StockRequestScreen> with MessageMix
             }
 
             final docNo = records.first.documentNo ?? "";
-            final hasReceiveQty = records.any((e) => e.quantityShipped - e.quantityReceived > 0);
+            final hasReceiveQty = records.any(
+              (e) => e.quantityShipped - e.quantityReceived > 0,
+            );
 
             return switchBtn(state.headerStatus, docNo, hasReceiveQty);
           },
@@ -155,7 +166,10 @@ class _StockRequestScreenState extends State<StockRequestScreen> with MessageMix
         if (docNo != "")
           BoxWidget(
             rounding: 6.scale,
-            margin: EdgeInsets.symmetric(vertical: 6.scale, horizontal: scaleFontSize(appSpace8)),
+            margin: EdgeInsets.symmetric(
+              vertical: 6.scale,
+              horizontal: scaleFontSize(appSpace8),
+            ),
             padding: EdgeInsets.all(scaleFontSize(appSpace8)),
             width: double.infinity,
             child: Column(
@@ -204,7 +218,10 @@ class _StockRequestScreenState extends State<StockRequestScreen> with MessageMix
   Widget switchBtn(String status, String docNo, [bool hasReceiveQty = false]) {
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: scaleFontSize(appSpace), vertical: scaleFontSize(6)),
+        padding: EdgeInsets.symmetric(
+          horizontal: scaleFontSize(appSpace),
+          vertical: scaleFontSize(6),
+        ),
         child: Row(
           spacing: scaleFontSize(8),
           children: [
@@ -218,7 +235,11 @@ class _StockRequestScreenState extends State<StockRequestScreen> with MessageMix
             ),
             if (hasReceiveQty)
               Expanded(
-                child: BtnWidget(title: 'Receive Stock', bgColor: primary, onPressed: _onReceiveRequestHandler),
+                child: BtnWidget(
+                  title: 'Receive Stock',
+                  bgColor: primary,
+                  onPressed: _onReceiveRequestHandler,
+                ),
               ),
           ],
         ),
@@ -229,13 +250,29 @@ class _StockRequestScreenState extends State<StockRequestScreen> with MessageMix
   ActionConfig switchAction(String status) {
     switch (status) {
       case "New":
-        return ActionConfig(color: primary, name: greeting("submit"), action: _onSubmitHandler);
+        return ActionConfig(
+          color: primary,
+          name: greeting("submit"),
+          action: _onSubmitHandler,
+        );
       case "Open":
-        return ActionConfig(color: error, name: greeting("cancel_request"), action: _onCancelRequestHandler);
+        return ActionConfig(
+          color: error,
+          name: greeting("cancel_request"),
+          action: _onCancelRequestHandler,
+        );
       case "Posted":
-        return ActionConfig(color: success, name: greeting("recive_stock"), action: _onReceiveRequestHandler);
+        return ActionConfig(
+          color: success,
+          name: greeting("recive_stock"),
+          action: _onReceiveRequestHandler,
+        );
       default:
-        return ActionConfig(color: error, name: greeting("cancel_request"), action: _onCancelRequestHandler);
+        return ActionConfig(
+          color: error,
+          name: greeting("cancel_request"),
+          action: _onCancelRequestHandler,
+        );
     }
   }
 }

@@ -85,6 +85,10 @@
 	<key>UIAppFonts</key>
 	<array>
 		<string>NotoSansKhmer-Regular.ttf</string>
+		<string>NotoSansKhmer-Black.ttf</string>
+		<string>NotoSansKhmer-Bold.ttf</string>
+		<string>NotoSansKhmer-Medium.ttf</string>
+		<string>NotoSansKhmer-SemiBold.ttf</string>
 	</array>
 </dict>
 </plist>

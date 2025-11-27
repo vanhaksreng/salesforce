@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
@@ -19,7 +20,6 @@ import 'package:salesforce/features/more/presentation/pages/components/sale_hist
 import 'package:salesforce/features/more/presentation/pages/components/sale_bottomsheet_filter.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history/sale_order_history_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history/sale_order_history_state.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';

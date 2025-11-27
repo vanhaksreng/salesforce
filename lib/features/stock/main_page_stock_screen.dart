@@ -28,7 +28,8 @@ class MainPageStockScreen extends StatefulWidget {
   State<MainPageStockScreen> createState() => _MainPageStockScreenState();
 }
 
-class _MainPageStockScreenState extends State<MainPageStockScreen> with MessageMixin {
+class _MainPageStockScreenState extends State<MainPageStockScreen>
+    with MessageMixin {
   final _cubit = MainPageStockCubit();
   final ValueNotifier<bool> isFloatingBtn = ValueNotifier<bool>(false);
   final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
@@ -40,7 +41,12 @@ class _MainPageStockScreenState extends State<MainPageStockScreen> with MessageM
   @override
   void initState() {
     _cubit.getItems();
-    _cubit.getItemWorkSheets(param: {'quantity': '>0', 'status': 'IN {"$kStatusPending","$kStatusNew"}'});
+    _cubit.getItemWorkSheets(
+      param: {
+        'quantity': '>0',
+        'status': 'IN {"$kStatusPending","$kStatusNew"}',
+      },
+    );
 
     _scrollController.addListener(_handleScrolling);
     super.initState();
@@ -53,7 +59,8 @@ class _MainPageStockScreenState extends State<MainPageStockScreen> with MessageM
   }
 
   bool _shouldLoadMore() {
-    return _scrollController.position.pixels == _scrollController.position.maxScrollExtent;
+    return _scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent;
   }
 
   void _loadMoreItems() async {
@@ -64,13 +71,19 @@ class _MainPageStockScreenState extends State<MainPageStockScreen> with MessageM
   }
 
   void _onStoreStockRequest(double value, String uomCode, Item item) async {
-    await _cubit.storeStockRequest(item: item, quantity: value, itemUomCode: uomCode);
+    await _cubit.storeStockRequest(
+      item: item,
+      quantity: value,
+      itemUomCode: uomCode,
+    );
   }
 
   void _navigateToStockRequest(String docNo) {
-    Navigator.pushNamed(context, StockRequestScreen.routeName, arguments: StockRequestArg(documentNo: docNo)).then((
-      value,
-    ) async {
+    Navigator.pushNamed(
+      context,
+      StockRequestScreen.routeName,
+      arguments: StockRequestArg(documentNo: docNo),
+    ).then((value) async {
       await _cubit.getItemWorkSheets();
       if (Helpers.shouldReload(value)) {
         _handleDownload();
@@ -100,7 +113,9 @@ class _MainPageStockScreenState extends State<MainPageStockScreen> with MessageM
 
       final filter = tables.map((table) => '"$table"').toList();
 
-      final appSyncLogs = await _cubit.getAppSyncLogs({'tableName': 'IN {${filter.join(",")}}'});
+      final appSyncLogs = await _cubit.getAppSyncLogs({
+        'tableName': 'IN {${filter.join(",")}}',
+      });
 
       if (tables.isEmpty) {
         throw GeneralException("Cannot find any table related");
@@ -121,7 +136,12 @@ class _MainPageStockScreenState extends State<MainPageStockScreen> with MessageM
   }
 
   _onSearch(String value) async {
-    await _cubit.getItems(param: {"description": 'LIKE $value%'});
+    await _cubit.getItems(
+      param: {
+        "_raw_query":
+            '(description CONTAINS[c] "$value" OR no CONTAINS[c] "$value")',
+      },
+    );
   }
 
   @override
@@ -176,7 +196,9 @@ class _MainPageStockScreenState extends State<MainPageStockScreen> with MessageM
 
               double qty = 0;
               String uom = item.stockUomCode ?? "";
-              final atIndex = itemWorkSheets.indexWhere((worksheet) => worksheet.itemNo == item.no);
+              final atIndex = itemWorkSheets.indexWhere(
+                (worksheet) => worksheet.itemNo == item.no,
+              );
 
               if (atIndex != -1) {
                 qty = itemWorkSheets[atIndex].quantity;
@@ -189,8 +211,10 @@ class _MainPageStockScreenState extends State<MainPageStockScreen> with MessageM
                 qty: Helpers.formatNumberLink(qty, option: FormatType.quantity),
                 uom: uom,
                 item: item,
-                onChangedUom: (qty, uom) => _onStoreStockRequest(qty, uom, item),
-                onChangedQty: (qty, uom) => _onStoreStockRequest(qty, uom, item),
+                onChangedUom: (qty, uom) =>
+                    _onStoreStockRequest(qty, uom, item),
+                onChangedQty: (qty, uom) =>
+                    _onStoreStockRequest(qty, uom, item),
               );
             },
           );
@@ -207,7 +231,8 @@ class _MainPageStockScreenState extends State<MainPageStockScreen> with MessageM
             child: FloatingActionButton(
               backgroundColor: mainColor,
               heroTag: null,
-              onPressed: () => _navigateToStockRequest(itemRequest.first.documentNo ?? ""),
+              onPressed: () =>
+                  _navigateToStockRequest(itemRequest.first.documentNo ?? ""),
               child: Badge(
                 isLabelVisible: itemRequest.isEmpty ? false : true,
                 offset: Offset(5, -10.scale),

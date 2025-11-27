@@ -1,8 +1,9 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+// import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
+import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/row_box_text_widget.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
@@ -16,9 +17,14 @@ import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/domain/entities/device_info.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_state.dart';
+import 'package:salesforce/features/more/presentation/pages/administration/adminstatration_helper.dart';
+import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/form_connect_printer.dart';
+import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/list_device_connection.dart';
 import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_thermal_printer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/imin_device/printer_test_page.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 import 'package:salesforce/localization/trans.dart';
+import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,12 +38,13 @@ class AdministrationScreen extends StatefulWidget {
 
 class AdministrationScreenState extends State<AdministrationScreen>
     with MessageMixin {
-  late final AdministrationCubit _cubit;
+  final _cubit = AdministrationCubit();
 
   @override
   void initState() {
     super.initState();
-    _cubit = AdministrationCubit();
+    _cubit.getDevicePrinter();
+
     _initializeScreen();
   }
 
@@ -50,43 +57,13 @@ class AdministrationScreenState extends State<AdministrationScreen>
   Future<void> _initializeScreen() async {
     await _cubit.checkInforDevice();
     await checkIminDevice();
-    await _refreshBluetoothDevices();
+    await _cubit.initialize();
+    // await _refreshBluetoothDevices();
   }
 
   Future<void> checkIminDevice() async {
     final deviceInfo = DeviceInfoPlugin();
     await _cubit.checkIminDevice(deviceInfo);
-  }
-
-  Future<String?> _getStoredConnectedMac() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('connected_printer_mac');
-  }
-
-  Future<void> _refreshBluetoothDevices() async {
-    String? storedMac = await _getStoredConnectedMac();
-    print('storedMac=============${storedMac}');
-    if ((storedMac ?? "").isEmpty) {
-      return;
-    }
-    final connectedDevices = await PrintBluetoothThermal.pairedBluetooths;
-
-    final device = connectedDevices
-        .where((e) => e.macAdress == storedMac)
-        .first;
-
-    _cubit.checkBluetoothDevie(device);
-  }
-
-  Future<void> _navigateToBluetoothPage(BluetoothInfo? currentDevice) async {
-    final result = await Navigator.pushNamed(
-      context,
-      BluetoothThermalPrinterScreen.routeName,
-      arguments: currentDevice,
-    );
-    if (result == null) return;
-
-    await _refreshBluetoothDevices();
   }
 
   @override
@@ -100,6 +77,22 @@ class AdministrationScreenState extends State<AdministrationScreen>
           return _buildBody(state);
         },
       ),
+      floatingActionButton: FloatingActionButton(
+        shape: const CircleBorder(),
+        backgroundColor: mainColor,
+        child: Icon(Icons.add, color: white),
+        onPressed: () {
+          Navigator.pushNamed(context, FormConnectPrinter.routeName).then((
+            value,
+          ) {
+            if (value == null) return;
+            final action = value as ActionState;
+            if (Helpers.shouldReload(action)) {
+              _cubit.getDevicePrinter();
+            }
+          });
+        },
+      ),
     );
   }
 
@@ -109,7 +102,10 @@ class AdministrationScreenState extends State<AdministrationScreen>
       children: [
         _buildDashboardHeader(state),
         Helpers.gapH(8),
-        _buildAdminOptions(state),
+        if (!state.isIminDevice)
+          _buildBluetoothPrintingSection(state)
+        else
+          _buildAPKDeploymentSection(state),
         Helpers.gapH(8),
       ],
     );
@@ -125,23 +121,23 @@ class AdministrationScreenState extends State<AdministrationScreen>
         size: scaleFontSize(24),
         color: white,
       ),
-      child: _buildQuickStats(state),
+      // child: _buildQuickStats(state),
     );
   }
 
-  Widget _buildQuickStats(AdministrationState state) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _buildStatCard(
-          value: _getConnectedDeviceCount(state.bluetoothDevice),
-          label: "Connected Devices",
-          color: success,
-        ),
-        // _buildStatCard(value: "0", label: "Print job today", color: mainColor),
-      ],
-    );
-  }
+  // Widget _buildQuickStats(AdministrationState state) {
+  //   return Row(
+  //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //     children: [
+  //       _buildStatCard(
+  //         value: _getConnectedDeviceCount(state.bluetoothDevice),
+  //         label: "Connected Devices",
+  //         color: success,
+  //       ),
+  //       // _buildStatCard(value: "0", label: "Print job today", color: mainColor),
+  //     ],
+  //   );
+  // }
 
   Widget _buildStatCard({
     required String value,
@@ -168,38 +164,50 @@ class AdministrationScreenState extends State<AdministrationScreen>
     );
   }
 
-  Widget _buildAdminOptions(AdministrationState state) {
-    return Column(
-      children: [
-        if (!state.isIminDevice)
-          _buildBluetoothPrintingSection(state)
-        else
-          _buildAPKDeploymentSection(state),
-      ],
-    );
-  }
-
   Widget _buildBluetoothPrintingSection(AdministrationState state) {
     return HeaderWidget(
       title: "Print via Bluetooth",
       subtitle: "Manage wireless printing operations",
       bgIcon: primary,
       icon: Icon(Icons.bluetooth, color: white),
-      child: Column(
-        spacing: scaleFontSize(appSpace),
-        children: [
-          _buildBluetoothConnectionStatus(state.bluetoothDevice),
-
-          BtnWidget(
-            onPressed: () => _navigateToBluetoothPage(state.bluetoothDevice),
-            title: "Manage Bluetooth Printing",
-            gradient: linearGradient,
-            suffixIcon: const Icon(Icons.arrow_forward),
-          ),
-        ],
+      child: BluetoothDeviceList(
+        devices: state.devicePrinter,
+        selectedDevice: state.selectedDevice,
+        connectingDeviceId: state.connectingDeviceId,
+        onDeviceTap: (DevicePrinter device) async {
+          _cubit.saveSelectedPrinter(device);
+        },
+        onConnect: (DevicePrinter device) async {
+          await _cubit.connectToPrinter(device);
+        },
+        onDisconnect: (DevicePrinter device) async {
+          await _cubit.disconnectFromPrinter(device);
+        },
       ),
     );
   }
+
+  // Widget _buildBluetoothPrintingSection(AdministrationState state) {
+  //   return HeaderWidget(
+  //     title: "Print via Bluetooth",
+  //     subtitle: "Manage wireless printing operations",
+  //     bgIcon: primary,
+  //     icon: Icon(Icons.bluetooth, color: white),
+  //     child: Column(
+  //       spacing: scaleFontSize(appSpace),
+  //       children: [
+  //         _buildBluetoothConnectionStatus(state.bluetoothDevice),
+
+  //         BtnWidget(
+  //           onPressed: () => _navigateToBluetoothPage(state.bluetoothDevice),
+  //           title: "Manage Bluetooth Printing",
+  //           gradient: linearGradient,
+  //           suffixIcon: const Icon(Icons.arrow_forward),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildAPKDeploymentSection(AdministrationState state) {
     return HeaderWidget(
@@ -221,49 +229,49 @@ class AdministrationScreenState extends State<AdministrationScreen>
     );
   }
 
-  Widget _buildBluetoothConnectionStatus(BluetoothInfo? bluetoothDevice) {
-    if (!_isDeviceConnected(bluetoothDevice)) {
-      return _buildDisconnectedStatus();
-    }
-    return _buildConnectedDeviceInfo(bluetoothDevice!);
-  }
+  // Widget _buildBluetoothConnectionStatus(BluetoothInfo? bluetoothDevice) {
+  //   if (!_isDeviceConnected(bluetoothDevice)) {
+  //     return _buildDisconnectedStatus();
+  //   }
+  //   return _buildConnectedDeviceInfo(bluetoothDevice!);
+  // }
 
-  Widget _buildDisconnectedStatus() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: textColor50.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: textColor50.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.bluetooth_disabled, size: 18, color: textColor50),
-            const SizedBox(width: 8),
-            TextWidget(
-              text: "No device connected",
-              fontSize: 14,
-              color: textColor,
-              fontWeight: FontWeight.w500,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildDisconnectedStatus() {
+  //   return Align(
+  //     alignment: Alignment.centerLeft,
+  //     child: Container(
+  //       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  //       decoration: BoxDecoration(
+  //         color: textColor50.withValues(alpha: 0.1),
+  //         borderRadius: BorderRadius.circular(20),
+  //         border: Border.all(color: textColor50.withValues(alpha: 0.3)),
+  //       ),
+  //       child: Row(
+  //         mainAxisSize: MainAxisSize.min,
+  //         children: [
+  //           Icon(Icons.bluetooth_disabled, size: 18, color: textColor50),
+  //           const SizedBox(width: 8),
+  //           TextWidget(
+  //             text: "No device connected",
+  //             fontSize: 14,
+  //             color: textColor,
+  //             fontWeight: FontWeight.w500,
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  Widget _buildConnectedDeviceInfo(BluetoothInfo bluetoothDevice) {
-    return _buildInfoCard(
-      title: "Connected Printers",
-      deviceName: bluetoothDevice.name.isNotEmpty
-          ? bluetoothDevice.name
-          : "Unknown Device",
-      deviceId: bluetoothDevice.macAdress ?? "Unknown",
-    );
-  }
+  // Widget _buildConnectedDeviceInfo(BluetoothInfo bluetoothDevice) {
+  //   return _buildInfoCard(
+  //     title: "Connected Printers",
+  //     deviceName: bluetoothDevice.name.isNotEmpty
+  //         ? bluetoothDevice.name
+  //         : "Unknown Device",
+  //     deviceId: bluetoothDevice.macAdress ?? "Unknown",
+  //   );
+  // }
 
   Widget _buildDeviceInfo(DeviceInfo? deviceInfo) {
     return _buildInfoCard(
@@ -318,13 +326,13 @@ class AdministrationScreenState extends State<AdministrationScreen>
 
   // MARK: - Helper Methods
 
-  bool _isDeviceConnected(BluetoothInfo? device) {
-    return device != null && device.name.isNotEmpty;
-  }
+  // bool _isDeviceConnected(BluetoothInfo? device) {
+  //   return device != null && device.name.isNotEmpty;
+  // }
 
-  String _getConnectedDeviceCount(BluetoothInfo? device) {
-    return _isDeviceConnected(device) ? "1" : "0";
-  }
+  // String _getConnectedDeviceCount(BluetoothInfo? device) {
+  //   return _isDeviceConnected(device) ? "1" : "0";
+  // }
 
   void _showComingSoonMessage() {
     Navigator.pushNamed(context, PrinterTestScreen.routeName);

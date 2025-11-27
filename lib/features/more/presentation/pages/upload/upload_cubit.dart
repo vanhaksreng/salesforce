@@ -224,11 +224,13 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
   }
 
   Future<void> _loadCompetitorItemLedgerEntries() async {
-    await _handleResponse(() => _taskRepo.getCompetitorItemLedgetEntry(), (
-      List<CompetitorItemLedgerEntry> data,
-    ) {
-      return state.copyWith(competitorItemLedgerEntries: data);
-    });
+    await _handleResponse(
+      () =>
+          _taskRepo.getCompetitorItemLedgetEntry(param: {'is_sync': kStatusNo}),
+      (List<CompetitorItemLedgerEntry> data) {
+        return state.copyWith(competitorItemLedgerEntries: data);
+      },
+    );
   }
 
   Future<void> _loadMerchandiseSchedules() async {

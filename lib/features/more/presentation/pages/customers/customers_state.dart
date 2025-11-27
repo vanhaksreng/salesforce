@@ -11,6 +11,9 @@ class CustomersState {
   final LatLng? latLng;
   final double distanceValue;
   final bool isSortdistance;
+  final int currentPage;
+  final int lastPage;
+  final bool isFetching;
 
   const CustomersState({
     this.isLoading = false,
@@ -22,6 +25,9 @@ class CustomersState {
     this.messageCode = "",
     this.latLng,
     this.distanceValue = 0,
+    this.currentPage = 1,
+    this.lastPage = 1,
+    this.isFetching = false,
   });
 
   CustomersState copyWith({
@@ -34,6 +40,9 @@ class CustomersState {
     LatLng? latLng,
     double? distanceValue,
     bool? isSortdistance,
+    int? currentPage,
+    int? lastPage,
+    bool? isFetching,
   }) {
     return CustomersState(
       isLoading: isLoading ?? this.isLoading,
@@ -45,6 +54,9 @@ class CustomersState {
       latLng: latLng ?? this.latLng,
       distanceValue: distanceValue ?? this.distanceValue,
       isSortdistance: isSortdistance ?? this.isSortdistance,
+      currentPage: currentPage ?? this.currentPage,
+      lastPage: lastPage ?? this.lastPage,
+      isFetching: isFetching ?? this.isFetching,
     );
   }
 }

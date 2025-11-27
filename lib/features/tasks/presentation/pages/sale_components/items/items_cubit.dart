@@ -14,16 +14,26 @@ class ItemsCubit extends Cubit<ItemsState> with MessageMixin {
 
   late bool hasMorePage = true;
 
-  Future<void> getSaleLines({required String scheduleId, required String documentType}) async {
+  Future<void> getSaleLines({
+    required String scheduleId,
+    required String documentType,
+  }) async {
     try {
       emit(state.copyWith(isLoading: true));
 
-      final saleNo = Helpers.getSaleDocumentNo(scheduleId: scheduleId, documentType: documentType);
+      final saleNo = Helpers.getSaleDocumentNo(
+        scheduleId: scheduleId,
+        documentType: documentType,
+      );
 
-      final response = await _taskRepo.getPosSaleLines(params: {'document_no': saleNo, 'document_type': documentType});
+      final response = await _taskRepo.getPosSaleLines(
+        params: {'document_no': saleNo, 'document_type': documentType},
+      );
 
       response.fold((l) => throw GeneralException(l.message), (r) {
-        emit(state.copyWith(saleLines: r, cartCount: r.length, isLoading: false));
+        emit(
+          state.copyWith(saleLines: r, cartCount: r.length, isLoading: false),
+        );
       });
     } on GeneralException catch (e) {
       showWarningMessage(e.message);
@@ -33,7 +43,12 @@ class ItemsCubit extends Cubit<ItemsState> with MessageMixin {
     }
   }
 
-  Future<void> getItems({bool isLoading = true, int page = 1, Map<String, dynamic>? param}) async {
+  Future<void> getItems({
+    bool isLoading = true,
+    int page = 1,
+    Map<String, dynamic>? param,
+  }) async {
+    print(param);
     try {
       if (!hasMorePage && page > 1) {
         return;
@@ -62,7 +77,13 @@ class ItemsCubit extends Cubit<ItemsState> with MessageMixin {
         );
       });
     } catch (e) {
-      emit(state.copyWith(isLoading: false, isFetching: false, error: e.toString()));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          isFetching: false,
+          error: e.toString(),
+        ),
+      );
     }
   }
 }

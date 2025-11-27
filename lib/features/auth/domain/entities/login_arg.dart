@@ -6,6 +6,9 @@ class LoginArg {
   final AppServer server;
   final String notificationKey;
   final String source;
+  final String userAgent;
+  final String platform;
+  final String devVersion;
 
   const LoginArg({
     required this.email,
@@ -13,9 +16,19 @@ class LoginArg {
     required this.server,
     required this.notificationKey,
     this.source = "onesignal",
+    this.userAgent = "",
+    this.platform = "",
+    this.devVersion = "",
   });
 
   Map<String, dynamic> toJson() {
-    return {'username': email, 'password': password, 'notification_token': notificationKey, 'source': source};
+    return {
+      'username': email,
+      'password': password,
+      'notification_token': notificationKey,
+      'source': source,
+      "user_agent": userAgent,
+      "devVersion": devVersion,
+    };
   }
 }

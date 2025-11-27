@@ -30,7 +30,7 @@ class AppStateHandler extends StatelessWidget {
       return NoInternetScreen(onRetry: onRetry ?? () {});
     }
 
-    if ((records == null || records!.isEmpty)) {
+    if ((records == null && (records ?? []).isEmpty)) {
       return const EmptyScreen();
     }
 

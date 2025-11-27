@@ -5,6 +5,7 @@ import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/domain/entities/record_sale_header.dart';
 import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
 import 'package:salesforce/features/more/domain/entities/user_info.dart';
+import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
@@ -118,4 +119,10 @@ abstract class MoreRepository extends BaseAppRepository {
   });
 
   Future<Either<Failure, bool>> insertSale(SaleItemArg saleArg);
+  Future<Either<Failure, DevicePrinter>> storeDevicePrinter(
+    DevicePrinter customer,
+  );
+  Future<Either<Failure, List<DevicePrinter>>> getDevicePrinter({
+    Map<String, dynamic>? param,
+  });
 }

@@ -1,32 +1,76 @@
-import 'dart:async';
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
 
-import 'package:image/image.dart' as img;
-import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/khmer_text_render.dart';
-import 'package:salesforce/realm/scheme/schemas.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 
+enum ReceiptCommandType { text, image, feedPaper, cutPaper, row }
+
+// Receipt command model
+class ReceiptCommand {
+  final ReceiptCommandType type;
+  final Map<String, dynamic> params;
+
+  ReceiptCommand(this.type, this.params);
+}
+
+// Receipt builder to collect commands
 class ReceiptBuilder {
-  static Future<Uint8List?> testPrint() async {
-    try {
-      final receipt = BytesBuilder();
-      receipt.add(ESCPOSCommands.initialize());
+  final List<ReceiptCommand> _commands = [];
 
-      final testKhmer = await KhmerTextRenderer.renderESCPOS(
-        'សូមស្វាគមន៍',
-        fontSize: 24,
-      );
+  List<ReceiptCommand> get commands => List.unmodifiable(_commands);
 
-      // Check if testKhmer is not null before adding
-      if (testKhmer != null) {
-        receipt.add(testKhmer);
-      }
+  void addText(
+    String text, {
+    int fontSize = 24,
+    int maxCharPerLine = 32,
+    bool bold = false,
+    AlignStyle align = AlignStyle.left,
+  }) {
+    _commands.add(
+      ReceiptCommand(ReceiptCommandType.text, {
+        'text': text,
+        'fontSize': fontSize,
+        'bold': bold,
+        'maxCharsPerLine': maxCharPerLine,
+        'align': align.value,
+      }),
+    );
+  }
 
-      final finalData = receipt.toBytes();
-      return finalData;
-    } catch (e, stack) {
-      return null;
+  void addImage(Uint8List imageBytes, {int width = 384}) {
+    _commands.add(
+      ReceiptCommand(ReceiptCommandType.image, {
+        'imageBytes': imageBytes,
+        'width': width,
+      }),
+    );
+  }
+
+  void feedPaper(int lines) {
+    _commands.add(
+      ReceiptCommand(ReceiptCommandType.feedPaper, {'lines': lines}),
+    );
+  }
+
+  void cutPaper() {
+    _commands.add(ReceiptCommand(ReceiptCommandType.cutPaper, {}));
+  }
+
+  void clear() {
+    _commands.clear();
+  }
+
+  void addRow(List<PosColumn> columns, {int fontSize = 24}) {
+    // Validate total width
+    final totalWidth = columns.fold<int>(0, (sum, col) => sum + col.width);
+    if (totalWidth > 12) {
+      throw Exception('Total column width cannot exceed 12, got $totalWidth');
     }
+
+    _commands.add(
+      ReceiptCommand(ReceiptCommandType.row, {
+        'columns': columns.map((col) => col.toMap()).toList(),
+        'fontSize': fontSize,
+      }),
+    );
   }
 }

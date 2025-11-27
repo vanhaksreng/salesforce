@@ -47,6 +47,8 @@ class CustomersScreen extends StatefulWidget {
 class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
   final _cubit = CustomersCubit();
   final ILocationService _location = GeolocatorLocationService();
+  final ValueNotifier<int> page = ValueNotifier<int>(1);
+  final ScrollController _scrollController = ScrollController();
 
   final _codeController = TextEditingController();
   bool isValidation = false;
@@ -55,7 +57,28 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
   @override
   void initState() {
     _cubit.getCustomers(page: 1, context: context);
+    _scrollController.addListener(_handleScrolling);
     super.initState();
+  }
+
+  void _handleScrolling() {
+    if (_shouldLoadMore()) {
+      _loadMoreItems();
+    }
+  }
+
+  bool _shouldLoadMore() {
+    return _scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent;
+  }
+
+  void _loadMoreItems() async {
+    page.value++;
+    await _cubit.getCustomers(
+      page: _cubit.state.currentPage + 1,
+      context: context,
+      append: true,
+    );
   }
 
   _filter(String text) {
@@ -365,9 +388,14 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
       return const EmptyScreen();
     }
     return ListView.builder(
-      itemCount: records.length,
+      controller: _scrollController,
+      itemCount: records.length + 1,
       padding: EdgeInsets.all(scaleFontSize(appSpace)),
       itemBuilder: (context, index) {
+        if (index == state.records.length) {
+          return state.isFetching ? LoadingPageWidget() : const SizedBox();
+        }
+
         final customer = records[index];
         return CustomerCardBox(
           distance: gpsDisplay(Helpers.toDouble(customer.distance)),
