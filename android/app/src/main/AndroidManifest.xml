@@ -22,6 +22,7 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
      <!-- Scan Bluetooth -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
 
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <!-- For Android 12+ -->
@@ -36,10 +37,20 @@
     <uses-permission android:name="android.permission.USB_PERMISSION" /> -->
     <uses-permission android:name="com.imin.printerservice.permission.PRINTER" />
 
+    <uses-permission android:name="android.permission.USB_PERMISSION" />
 
-    <uses-feature 
-        android:name="android.hardware.bluetooth" 
-        android:required="true" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Declare Bluetooth hardware feature -->
+    <uses-feature
+        android:name="android.hardware.bluetooth"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.usb.host"
+        android:required="false" />
     
     <application
         android:label="Trade B2B"

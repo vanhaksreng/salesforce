@@ -38,7 +38,7 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
 
   @override
   void initState() {
-    _cubit.loadCustomers(page: 1);
+    _cubit.getCustomers(context: context, page: 1);
     _cubit.getSalePosSaleHeader();
     _scrollController.addListener(_handleScrolling);
     super.initState();
@@ -51,7 +51,11 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
   }
 
   void _loadMoreItems() {
-    _cubit.loadCustomers(page: _cubit.state.currentPage + 1, isLoading: false);
+    _cubit.getCustomers(
+      context: context,
+      page: _cubit.state.currentPage + 1,
+      append: true,
+    );
   }
 
   bool _shouldLoadMore() {
@@ -89,7 +93,8 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
       );
 
       await Future.delayed(const Duration(milliseconds: 300));
-      await _cubit.loadCustomers(page: 1, isLoading: false);
+      if (!mounted) return;
+      await _cubit.getCustomers(context: context, page: 1, append: false);
       l.hide();
     } on GeneralException catch (e) {
       l.hide();
@@ -101,7 +106,11 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
   }
 
   _onSearch(String value) {
-    _cubit.loadCustomers(page: 1, param: {"name": 'LIKE $value%'});
+    _cubit.getCustomers(
+      context: context,
+      page: 1,
+      params: {"name": 'LIKE $value%'},
+    );
   }
 
   _showError({String msg = errorMessage}) {
@@ -171,7 +180,7 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
       itemCount: customers.length + 1,
       itemBuilder: (context, index) {
         if (index == customers.length) {
-          if (state.currentPage == state.lastPage) {
+          if (!state.isFetching) {
             return const SizedBox.shrink();
           }
           return const LoadingPageWidget();

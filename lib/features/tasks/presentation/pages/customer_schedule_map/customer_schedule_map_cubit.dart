@@ -6,7 +6,8 @@ import 'package:salesforce/features/tasks/presentation/pages/customer_schedule_m
 import 'package:salesforce/injection_container.dart';
 
 class CustomerScheduleMapCubit extends Cubit<CustomerScheduleMapState> {
-  CustomerScheduleMapCubit() : super(const CustomerScheduleMapState(isLoading: true));
+  CustomerScheduleMapCubit()
+    : super(const CustomerScheduleMapState(isLoading: true));
 
   final _repos = getIt<TaskRepository>();
 
@@ -28,7 +29,10 @@ class CustomerScheduleMapCubit extends Cubit<CustomerScheduleMapState> {
     try {
       emit(state.copyWith(isLoading: isLoading));
 
-      final response = await _repos.getSchedules(date.toDateString(), requestApi: false);
+      final response = await _repos.getSchedules(
+        date.toDateString(),
+        requestApi: false,
+      );
       response.fold(
         (failure) => throw Exception(failure.message),
         (items) => emit(state.copyWith(isLoading: false, schedules: items)),
@@ -40,7 +44,8 @@ class CustomerScheduleMapCubit extends Cubit<CustomerScheduleMapState> {
 
   Future<void> getCustomer() async {
     try {
-      final response = await _repos.getCustomers();
+      final inactive = {"inactived": "No"};
+      final response = await _repos.getCustomers(params: inactive);
       response.fold(
         (failure) => throw Exception(failure.message),
         (items) => emit(state.copyWith(isLoading: false, customers: items)),

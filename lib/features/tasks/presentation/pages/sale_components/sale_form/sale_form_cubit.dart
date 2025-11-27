@@ -243,8 +243,6 @@ class SaleFormCubit extends Cubit<SaleFormState>
             uomCode: form.uomCode,
             orderQty: Helpers.toStrings(quantity),
           );
-
-          // emit(state.copyWith(saleUomCode: code));
         }
 
         return form.copyWith(quantity: quantity);
@@ -257,11 +255,12 @@ class SaleFormCubit extends Cubit<SaleFormState>
   }
 
   void updateSaleUom(String code, String uomCode) {
+
     final updatedForms = state.saleForm.map((form) {
       if (form.code == code) {
         if (code == kPromotionTypeStd) {
           _updateItemPrice(
-            uomCode: form.uomCode,
+            uomCode: uomCode,
             orderQty: Helpers.toStrings(form.quantity),
           );
         }

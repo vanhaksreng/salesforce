@@ -1137,4 +1137,28 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
       return Left(CacheFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, DevicePrinter>> storeDevicePrinter(
+    DevicePrinter device,
+  ) async {
+    try {
+      final response = await _local.storeDevicePrinter(device);
+      return Right(response);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<DevicePrinter>>> getDevicePrinter({
+    Map<String, dynamic>? param,
+  }) async {
+    try {
+      final response = await _local.getDevicePrinter(param: param);
+      return Right(response);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_helpers.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 

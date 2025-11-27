@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- This file defines which USB devices your app can connect to -->
+
+    <!-- Generic USB Printer Class -->
+    <usb-device class="7" subclass="1" protocol="1" />
+    <usb-device class="7" subclass="1" protocol="2" />
+    <usb-device class="7" subclass="1" protocol="3" />
+
+    <!-- Common Thermal Printer Vendors -->
+    <!-- Epson -->
+    <usb-device vendor-id="1208" />
+
+    <!-- Star Micronics -->
+    <usb-device vendor-id="1305" />
+
+    <!-- Bixolon -->
+    <usb-device vendor-id="5380" />
+
+    <!-- Citizen -->
+    <usb-device vendor-id="2730" />
+
+    <!-- Custom/Posiflex -->
+    <usb-device vendor-id="6790" />
+
+    <!-- Rongta -->
+    <usb-device vendor-id="34918" />
+
+    <!-- Xprinter -->
+    <usb-device vendor-id="1046" />
+
+    <!-- Goojprt -->
+    <usb-device vendor-id="4070" />
+
+    <!-- Generic fallback - allows any printer -->
+    <!-- Uncomment if needed, but less secure -->
+    <!-- <usb-device /> -->
+</resources>

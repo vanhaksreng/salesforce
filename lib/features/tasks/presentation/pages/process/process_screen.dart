@@ -49,7 +49,7 @@ class _ProcessScreenState extends State<ProcessScreen> with MessageMixin {
   void initState() {
     super.initState();
     _cubit.loadInitialData(widget.args.schedule);
-    _handleDownload();
+    // _handleDownload();
   }
 
   ProcessDtos _buildProcessModel({
@@ -237,9 +237,14 @@ class _ProcessScreenState extends State<ProcessScreen> with MessageMixin {
       const tables = [
         // "customer_ledger_entry",
         // "cash_receipt_journals",
-        "promotion_type",
-        "vat_posting_setup",
+        // "promotion_type",
+        // "vat_posting_setup",
       ];
+
+      if(tables.isEmpty) {
+        loading.hide();
+        return;
+      }
 
       final filter = tables.map((table) => '"$table"').join(',');
 

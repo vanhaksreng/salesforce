@@ -245,3 +245,18 @@ class _ItemLedgerEntry {
   late double quantity;
   late String date;
 }
+
+@MapTo('DEVICE_PRINTER')
+@RealmModel()
+class _DevicePrinter {
+  @MapTo('device_name')
+  late String deviceName;
+  late String model;
+  @MapTo('type_connection')
+  late String typeConnection;
+  @MapTo('origin_device_name')
+  late String originDeviceName;
+  @MapTo('mac_address')
+  late String macAddress;
+  late num paperSize;
+}

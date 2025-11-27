@@ -2180,3 +2180,146 @@ class ItemLedgerEntry extends _ItemLedgerEntry
   @override
   SchemaObject get objectSchema => RealmObjectBase.getSchema(this) ?? schema;
 }
+
+class DevicePrinter extends _DevicePrinter
+    with RealmEntity, RealmObjectBase, RealmObject {
+  DevicePrinter(
+    String deviceName,
+    String model,
+    String typeConnection,
+    String originDeviceName,
+    String macAddress,
+    num paperSize,
+  ) {
+    RealmObjectBase.set(this, 'device_name', deviceName);
+    RealmObjectBase.set(this, 'model', model);
+    RealmObjectBase.set(this, 'type_connection', typeConnection);
+    RealmObjectBase.set(this, 'origin_device_name', originDeviceName);
+    RealmObjectBase.set(this, 'mac_address', macAddress);
+    RealmObjectBase.set(this, 'paperSize', paperSize);
+  }
+
+  DevicePrinter._();
+
+  @override
+  String get deviceName =>
+      RealmObjectBase.get<String>(this, 'device_name') as String;
+  @override
+  set deviceName(String value) =>
+      RealmObjectBase.set(this, 'device_name', value);
+
+  @override
+  String get model => RealmObjectBase.get<String>(this, 'model') as String;
+  @override
+  set model(String value) => RealmObjectBase.set(this, 'model', value);
+
+  @override
+  String get typeConnection =>
+      RealmObjectBase.get<String>(this, 'type_connection') as String;
+  @override
+  set typeConnection(String value) =>
+      RealmObjectBase.set(this, 'type_connection', value);
+
+  @override
+  String get originDeviceName =>
+      RealmObjectBase.get<String>(this, 'origin_device_name') as String;
+  @override
+  set originDeviceName(String value) =>
+      RealmObjectBase.set(this, 'origin_device_name', value);
+
+  @override
+  String get macAddress =>
+      RealmObjectBase.get<String>(this, 'mac_address') as String;
+  @override
+  set macAddress(String value) =>
+      RealmObjectBase.set(this, 'mac_address', value);
+
+  @override
+  num get paperSize => RealmObjectBase.get<num>(this, 'paperSize') as num;
+  @override
+  set paperSize(num value) => RealmObjectBase.set(this, 'paperSize', value);
+
+  @override
+  Stream<RealmObjectChanges<DevicePrinter>> get changes =>
+      RealmObjectBase.getChanges<DevicePrinter>(this);
+
+  @override
+  Stream<RealmObjectChanges<DevicePrinter>> changesFor([
+    List<String>? keyPaths,
+  ]) => RealmObjectBase.getChangesFor<DevicePrinter>(this, keyPaths);
+
+  @override
+  DevicePrinter freeze() => RealmObjectBase.freezeObject<DevicePrinter>(this);
+
+  EJsonValue toEJson() {
+    return <String, dynamic>{
+      'device_name': deviceName.toEJson(),
+      'model': model.toEJson(),
+      'type_connection': typeConnection.toEJson(),
+      'origin_device_name': originDeviceName.toEJson(),
+      'mac_address': macAddress.toEJson(),
+      'paperSize': paperSize.toEJson(),
+    };
+  }
+
+  static EJsonValue _toEJson(DevicePrinter value) => value.toEJson();
+  static DevicePrinter _fromEJson(EJsonValue ejson) {
+    if (ejson is! Map<String, dynamic>) return raiseInvalidEJson(ejson);
+    return switch (ejson) {
+      {
+        'device_name': EJsonValue deviceName,
+        'model': EJsonValue model,
+        'type_connection': EJsonValue typeConnection,
+        'origin_device_name': EJsonValue originDeviceName,
+        'mac_address': EJsonValue macAddress,
+        'paperSize': EJsonValue paperSize,
+      } =>
+        DevicePrinter(
+          fromEJson(deviceName),
+          fromEJson(model),
+          fromEJson(typeConnection),
+          fromEJson(originDeviceName),
+          fromEJson(macAddress),
+          fromEJson(paperSize),
+        ),
+      _ => raiseInvalidEJson(ejson),
+    };
+  }
+
+  static final schema = () {
+    RealmObjectBase.registerFactory(DevicePrinter._);
+    register(_toEJson, _fromEJson);
+    return const SchemaObject(
+      ObjectType.realmObject,
+      DevicePrinter,
+      'DEVICE_PRINTER',
+      [
+        SchemaProperty(
+          'deviceName',
+          RealmPropertyType.string,
+          mapTo: 'device_name',
+        ),
+        SchemaProperty('model', RealmPropertyType.string),
+        SchemaProperty(
+          'typeConnection',
+          RealmPropertyType.string,
+          mapTo: 'type_connection',
+        ),
+        SchemaProperty(
+          'originDeviceName',
+          RealmPropertyType.string,
+          mapTo: 'origin_device_name',
+        ),
+        SchemaProperty(
+          'macAddress',
+          RealmPropertyType.string,
+          mapTo: 'mac_address',
+        ),
+        SchemaProperty('paperSize', RealmPropertyType.double),
+      ],
+    );
+  }();
+
+  @override
+  SchemaObject get objectSchema => RealmObjectBase.getSchema(this) ?? schema;
+}

@@ -1,4 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/constants/app_config.dart';
+import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/features/auth/domain/entities/user.dart';
 import 'package:salesforce/features/auth/domain/repositories/auth_repository.dart';
@@ -32,6 +34,10 @@ class MoreMainPageCubit extends Cubit<MoreMainPageState> with MessageMixin {
 
   Future<bool> logout() async {
     try {
+      if (!await _authRepo.isConnectedToNetwork()) {
+        showErrorMessage(errorInternetMessage);
+        return false;
+      }
       return await _authRepo.logout();
     } catch (e) {
       return false;

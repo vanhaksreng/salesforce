@@ -38,9 +38,9 @@ class AuthRepositoryImpl extends BaseAppRepositoryImpl
       if (await _networkInfo.isConnected) {
         final servers = await _remote.getServerLists();
 
-        if (localServers.length == servers.length) {
-          return Right(localServers);
-        }
+        // if (localServers.length == servers.length) {
+        //   return Right(localServers);
+        // }
 
         _local.storeServers(servers);
 
@@ -60,6 +60,9 @@ class AuthRepositoryImpl extends BaseAppRepositoryImpl
   @override
   Future<bool> logout() async {
     try {
+      if (!await _networkInfo.isConnected) {
+        throw GeneralException(errorInternetMessage);
+      }
       _remote.logout();
 
       LoginSession? user = await _local.getLoginSession();

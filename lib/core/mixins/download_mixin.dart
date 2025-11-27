@@ -14,13 +14,15 @@ mixin DownloadMixin {
     bool showMessageAfterSuccess = true,
   }) async {
     try {
-      await _appRepo.downloadTranData(tables: tables, onProgress: onProgress).then((response) {
-        response.fold((l) => GeneralException(l.message), (r) {
-          if (onProgress != null && showMessageAfterSuccess) {
-            Helpers.showMessage(msg: "Data is up to date");
-          }
-        });
-      });
+      await _appRepo
+          .downloadTranData(tables: tables, onProgress: onProgress)
+          .then((response) {
+            response.fold((l) => GeneralException(l.message), (r) {
+              if (onProgress != null && showMessageAfterSuccess) {
+                Helpers.showMessage(msg: "Data is up to date");
+              }
+            });
+          });
     } catch (_) {
       rethrow;
     }
