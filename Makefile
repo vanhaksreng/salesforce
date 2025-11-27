@@ -4,8 +4,6 @@ pull:
 	git pull origin rath
 
 push: 
-	git add .
-	git commit -m "Commited : $(DATE)"
 	git push origin main
 
 add: 

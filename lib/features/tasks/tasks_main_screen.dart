@@ -33,6 +33,7 @@ import 'package:salesforce/features/tasks/presentation/pages/team_schedule_histo
 import 'package:salesforce/features/tasks/presentation/pages/team_schedult/team_schedult_screen.dart';
 import 'package:salesforce/features/tasks/tasks_main_cubit.dart';
 import 'package:salesforce/features/tasks/tasks_main_state.dart';
+import 'package:salesforce/grok_print.dart';
 import 'package:salesforce/infrastructure/printer/bluetooth/bluetooth_printer_handler.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/localization/trans.dart';
@@ -281,63 +282,205 @@ class _TaskScreenState extends State<TasksMainScreen>
     );
   }
 
+  // Future<void> _runDiagnostics(BuildContext context) async {
+  //   final List<Map<String, dynamic>> foundDevices = [];
+
+  //   // Check 1: Handler registered
+  //   // devices.add('✓ Handler is registered');
+
+  //   // Helpers.showMessage(msg: 'Handler is registered');
+  //   // Check 2: Try to scan
+  //   try {
+  //     await BluetoothPrinterHandler.scanDevices();
+
+  //     // Listen for discovered devices
+  //     BluetoothPrinterHandler.setDeviceFoundCallback((device) {
+  //       print('Found: ${device['name']} - ${device['address']}');
+
+  //       if (!BluetoothPrinterHandler.isConnected &&
+  //           device['name'] == "XP-P323B-E1FE") {
+  //         BluetoothPrinterHandler.connectDevice(device['address']);
+  //       }
+  //     });
+
+  //     // await BluetoothPrinterHandler.connectDevice(
+  //     //   "EF1E250B-0E58-9D8E-AA25-D59004BE2971",
+  //     // );
+
+  //     // final previewData = await ThermalPrintHelper.createReceiptImage(
+  //     //   companyNameKhmer: 'ប្លូតិចឡូជី',
+  //     //   companyNameEnglish: 'BLUE TECHNOLOGY CO., LTD',
+  //     //   items: [
+  //     //     {'name': 'Item 1', 'qty': '2', 'price': '5.00', 'amount': '10.00'},
+  //     //     {'name': 'Item 2', 'qty': '1', 'price': '3.50', 'amount': '3.50'},
+  //     //   ],
+  //     //  method: PrintMethod.gsv
+  //     //   // useAlternativeMethod: false, // Default
+
+  //     // );
+
+  //     // if (!context.mounted) return;
+
+  //     // showDialog(
+  //     //   context: context,
+  //     //   builder: (context) => PrintPreviewDialog(
+  //     //     previewData: previewData,
+  //     //     onPrint: () async {
+  //     //       // await platform.invokeMethod('printRaw', {
+  //     //       //   'data': previewData.printCommands,
+  //     //       // });
+
+  //     //      await BluetoothPrinterHandler.printRaw(previewData.printCommands);
+  //     //     },
+  //     //   ),
+  //     // );
+
+  //     // BluetoothPrinterHandler.printRaw(previewData);
+
+  //     //EF1E250B-0E58-9D8E-AA25-D59004BE2971
+  //     //EF1E250B-0E58-9D8E-AA25-D59004BE2971
+
+  //     // messages.add('✓ Scan command sent successfully');
+  //     // Helpers.showMessage(msg: 'Scan command sent successfully');
+  //   } catch (e) {
+  //     Helpers.showMessage(msg: '✗ Scan failed: $e');
+  //     messages.add('✗ Scan failed: $e');
+  //   }
+  // }
+
   Future<void> _runDiagnostics(BuildContext context) async {
-    final messages = <String>[];
-
-    // Check 1: Handler registered
-    messages.add('✓ Handler is registered');
-
-    // Helpers.showMessage(msg: 'Handler is registered');
-    // Check 2: Try to scan
-    try {
-      await BluetoothPrinterHandler.scanDevices();
-
-      // Listen for discovered devices
-      BluetoothPrinterHandler.setDeviceFoundCallback((device) {
-        print('Found: ${device['name']} - ${device['address']}');
-
-        if (!BluetoothPrinterHandler.isConnected &&
-            device['name'] == "XP-P323B-E1FE") {
-          BluetoothPrinterHandler.connectDevice(device['address']);
-        }
-      });
-
-      messages.add('✓ Scan command sent successfully');
-      // Helpers.showMessage(msg: 'Scan command sent successfully');
-    } catch (e) {
-      Helpers.showMessage(msg: '✗ Scan failed: $e');
-      messages.add('✗ Scan failed: $e');
+    if (BluetoothPrinterHandler.isConnected) {
+      await testPrint();
+      return;
     }
 
-    final StringBuffer buffer = StringBuffer();
+    final List<Map<String, dynamic>> foundDevices = [];
 
-    // final List<int> codePageCmd = [0x1B, 0x74, 18];
-    // final codePageBytes = Uint8List.fromList(codePageCmd);
-    // final codePageString = utf8.decode(codePageBytes);
-    // buffer.write(codePageString);
+    // Declare BEFORE usage
+    StateSetter? dialogSetState;
 
-    buffer.writeln();
-    buffer.writeln('ប្លូតិចឡូជី'); // Khmer company
-    buffer.writeln('BLUE TECHNOLOGY CO., LTD');
-    buffer.writeln();
-    buffer.writeln(
-      'Description           Qty  UOM  Price  Disc  Amount',
+    // Start scanning
+    await BluetoothPrinterHandler.scanDevices();
+
+    // Listen for discovered devices
+    BluetoothPrinterHandler.setDeviceFoundCallback((device) {
+      if (!foundDevices.any((d) => d['address'] == device['address'])) {
+        foundDevices.add(device);
+      }
+    });
+
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Stop scan BEFORE opening dialog
+    // await BluetoothPrinterHandler.stopScan();
+
+    if (!context.mounted) {
+      return;
+    }
+
+    // Show dialog
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Available Printers"),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              dialogSetState = setState;
+
+              return SizedBox(
+                width: 300,
+                height: 300,
+
+                child: foundDevices.isEmpty
+                    ? const Center(child: Text("Scanning..."))
+                    : ListView.builder(
+                        itemCount: foundDevices.length,
+                        itemBuilder: (context, index) {
+                          final dev = foundDevices[index];
+                          return ListTile(
+                            key: ValueKey(dev['address']),
+                            leading: const Icon(Icons.print),
+                            title: Text(dev['name'] ?? 'Unknown'),
+                            subtitle: Text(dev['address'] ?? ''),
+                            onTap: () {
+                              Navigator.pop(context);
+                              connectPrint(dev['address'], dev['name']);
+                            },
+                          );
+                        },
+                      ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              child: const Text("Close"),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        );
+      },
     );
+  }
 
-    final rawString = buffer.toString();
-    final rawBytes = utf8.encode(rawString); // UTF-8 for Khmer
+  Future<void> connectPrint(String address, String name) async {
+    if (!BluetoothPrinterHandler.isConnected) {
+      await BluetoothPrinterHandler.connectDevice(address);
 
-    if (BluetoothPrinterHandler.isConnected) {
-      // const List<Map<String, dynamic>> items = [
-      //   {'description': 'Item 1 (ផលិតផល)', 'qty': 1, 'uom': 'EA', 'price': 10.00, 'disc': 0, 'amount': 10.00},
-      //   {'description': 'Item 2 (សៀវភៅ)', 'qty': 2, 'uom': 'PCS', 'price': 5.00, 'disc': 1.00, 'amount': 9.00},
-      // ];
+      Helpers.showMessage(
+        msg: "Connected to printer at $name",
+        status: MessageStatus.success,
+      );
+    }
+  }
 
-      if(!context.mounted) return;
-      // await ReceiptPrinter.printReceipt(context, items);
-      // ReceiptPrinter.buildReceiptWidget();
-      await BluetoothPrinterHandler.printRaw(rawBytes);
-      // await BluetoothPrinterHandler.printHtml(html);
+  Future<void> testPrint() async {
+    try {
+      // await BluetoothPrinterHandler.disconnect();
+      // await BluetoothPrinterHandler.connectDevice(address);
+
+      Helpers.showMessage(msg: "Test print", status: MessageStatus.success);
+
+      // final buffer = StringBuffer();
+      // buffer.writeln("ប្លូតិចឡូជី");
+      // buffer.writeln("BLUE TECHNOLOGY CO., LTD");
+      // buffer.writeln('Hello, សួរស្ដី');
+      // buffer.writeln();
+      // buffer.writeln('Description    Qty  Price  Amount');
+      // buffer.writeln('--------------------------------');
+      // buffer.writeln('--------------------------------');
+      // buffer.write('អរគុណ - Thank You!');
+
+      // Uint8List utf8Bytes = Uint8List.fromList(utf8.encode(buffer.toString()));
+
+      // ESC/POS: enable UTF-8
+      // final Uint8List initUtf8 = Uint8List.fromList([0x1B, 0x74, 0x00]);
+
+      // // Combine both
+      // final Uint8List finalBytes = Uint8List.fromList([
+      //   ...initUtf8,
+      //   ...utf8Bytes,
+      // ]);
+
+      // Send to printer
+      // await BluetoothPrinterHandler.printRaw(utf8Bytes);
+
+      final pngBytes = await captureKhmerReceipt(context);
+
+      Helpers.showMessage(msg: "KKKK", status: MessageStatus.success);
+
+      await BluetoothPrinterHandler.printImage(pngBytes);
+
+      Helpers.showMessage(
+        msg: "Print Successful",
+        status: MessageStatus.success,
+      );
+
+      // await BluetoothPrinterHandler.disconnect();
+    } catch (e) {
+      print(e);
+      Helpers.showMessage(msg: "Print Error: $e", status: MessageStatus.errors);
     }
   }
 

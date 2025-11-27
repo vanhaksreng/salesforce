@@ -76,6 +76,13 @@ import WebKit  // Optional: For future full HTML rendering; not used yet
                     details: nil
                 ))
             }
+        case "printImage":
+            if let args = call.arguments as? [String: Any],
+            let imageBytes = args["imageBytes"] as? FlutterStandardTypedData {
+                printImage(imageBytes.data, result: result)
+            } else {
+                result(FlutterError(code: "INVALID_ARGUMENT", message: "Image bytes required", details: nil))
+            }
         case "disconnect":
             disconnect(result: result)
             
@@ -118,6 +125,19 @@ import WebKit  // Optional: For future full HTML rendering; not used yet
         centralManager.scanForPeripherals(withServices: nil, options: [
             CBCentralManagerScanOptionAllowDuplicatesKey: false
         ])
+
+        // Add timeout to stop scanning after 10 seconds (adjust as needed)
+        // DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) { [weak self] in
+        //     guard let self = self else { return }
+        //     self.centralManager?.stopScan()
+        //     print("⏹️ Scanning stopped after timeout")
+            
+        //     // Optional: Notify Flutter that scan stopped (handle "onScanStopped" in Dart)
+        //     // self.methodChannel?.invokeMethod("onScanStopped", arguments: [
+        //     //     "code": "OK",
+        //     //     "message": "Scan completed or timed out"
+        //     // ])
+        // }
         
         result(true)
     }
@@ -148,7 +168,7 @@ import WebKit  // Optional: For future full HTML rendering; not used yet
         centralManager?.connect(peripheral, options: nil)
         
         // Set a timeout
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15.0) { [weak self] in
             guard let self = self else { return }
             
             if self.connectedPeripheral?.state != .connected {
@@ -160,6 +180,145 @@ import WebKit  // Optional: For future full HTML rendering; not used yet
                 self.connectResultCallback = nil
             }
         }
+    }
+    
+    private func printImage(_ imageData: Data, result: @escaping FlutterResult) {
+        print("🖼️ Processing image for print (\(imageData.count) bytes)")
+        
+        guard let peripheral = connectedPeripheral,
+              peripheral.state == .connected,
+              let characteristic = writeCharacteristic else {
+            result(FlutterError(code: "NOT_CONNECTED", message: "No device connected", details: nil))
+            return
+        }
+        
+        // Load UIImage from PNG data
+        guard let uiImage = UIImage(data: imageData) else {
+            result(FlutterError(code: "IMAGE_ERROR", message: "Invalid image data", details: nil))
+            return
+        }
+        
+        // Printer specs: Adjust for your model (e.g., 80mm = 576 dots wide @ 72 DPI)
+        let printerWidthDots: Int = 576  // Or 384 for 58mm
+        let printerWidthBytes = (printerWidthDots + 7) / 8  // Ceiling to bytes
+        
+        // Convert to monochrome bitmap (threshold + dither for Khmer clarity)
+        let bitmapData = createMonochromeBitmap(from: uiImage, widthDots: printerWidthDots)
+        
+        guard let bitmapData = bitmapData else {
+            result(FlutterError(code: "BITMAP_ERROR", message: "Failed to create bitmap", details: nil))
+            return
+        }
+        
+        let heightDots = bitmapData.count / printerWidthBytes  // Derived height
+        
+        // Build GS v 0 command
+        var printData = Data()
+        
+        // Printer init
+        printData.append(contentsOf: [0x1B, 0x40])  // ESC @
+        
+        // Optional: Set code table if needed (your existing)
+        printData.append(contentsOf: [0x1B, 0x74, 0xFF])  // ESC t FF (Unicode if supported)
+        
+        // GS v 0: 1D 76 30 00 xL xH yL yH
+        printData.append(contentsOf: [0x1D, 0x76, 0x30, 0x00])  // GS v 0 m=0
+        printData.append(UInt8(printerWidthBytes % 256))  // xL
+        printData.append(UInt8(printerWidthBytes / 256))  // xH (usually 0)
+        printData.append(UInt8(heightDots % 256))         // yL
+        printData.append(UInt8(heightDots / 256))         // yH
+        
+        // Append bitmap data (row-major, packed bytes)
+        printData.append(bitmapData)
+        
+        // Feed line + partial cut (your existing)
+        printData.append(0x0A)  // LF
+        printData.append(contentsOf: [0x1D, 0x56, 0x42, 0x00])  // GS V B m=0 (partial cut)
+        
+        print("📄 Sending image print data (\(printData.count) bytes)")
+        
+        // Write (prefer withoutResponse for speed)
+        if characteristic.properties.contains(.writeWithoutResponse) {
+            peripheral.writeValue(printData, for: characteristic, type: .withoutResponse)
+        } else {
+            peripheral.writeValue(printData, for: characteristic, type: .withResponse)
+        }
+        
+        result(true)
+    }
+
+    // Helper: Create 1-bit monochrome bitmap (threshold + simple packing for Khmer clarity)
+    // Returns packed bitmap Data for GS v 0 (row-major, 1 byte = 8 pixels, MSB left)
+    private func createMonochromeBitmap(from image: UIImage, widthDots: Int) -> Data? {
+        // Target size: Fixed width, proportional height
+        let aspectRatio = image.size.height / image.size.width
+        let targetSize = CGSize(width: CGFloat(widthDots), height: CGFloat(widthDots) * aspectRatio)
+        
+        // Step 1: Render to grayscale CGContext (8-bit per pixel)
+        let colorSpace = CGColorSpaceCreateDeviceGray()
+        let bytesPerPixel = 1  // Grayscale
+        let bytesPerRow = widthDots * bytesPerPixel
+        let bitmapByteCount = Int(targetSize.height) * bytesPerRow
+        
+        guard let context = CGContext(
+            data: nil,
+            width: widthDots,
+            height: Int(targetSize.height),
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.none.rawValue
+        ) else {
+            print("❌ Failed to create grayscale context")
+            return nil
+        }
+        
+        // Flip coordinate system
+        context.translateBy(x: 0, y: targetSize.height)
+        context.scaleBy(x: 1, y: -1)
+        
+        // Draw the image (scaled and clipped)
+        context.clip(to: CGRect(origin: .zero, size: targetSize))
+        context.draw(image.cgImage!, in: CGRect(origin: .zero, size: targetSize))
+        
+        // Step 2: Access raw grayscale bytes (0-255)
+        guard let grayscaleData = context.data else {
+            print("❌ No grayscale data available")
+            return nil
+        }
+        let grayscaleBytes = grayscaleData.bindMemory(to: UInt8.self, capacity: bitmapByteCount)
+        
+        // Step 3: Pack to 1-bit monochrome (threshold > 128 = white/0, else black/1)
+        // For thermal: Black=1 (print), White=0 (no print); MSB = leftmost pixel
+        let height = Int(targetSize.height)
+        let bytesPerRowPacked = (widthDots + 7) / 8  // Ceiling to full bytes
+        let packedByteCount = bytesPerRowPacked * height
+        var packedData = Data(count: packedByteCount)
+        
+        packedData.withUnsafeMutableBytes { rawBuffer in
+            let packedPtr = rawBuffer.bindMemory(to: UInt8.self).baseAddress!
+            
+            for row in 0..<height {
+                for col in 0..<widthDots {
+                    let grayscaleIndex = row * bytesPerRow + col
+                    let pixelValue = grayscaleBytes[grayscaleIndex]  // 0-255
+                    let bitValue = (pixelValue > 128) ? 0 : 1  // Threshold; adjust to 150+ for Khmer contrast
+                    
+                    let packedByteIndex = row * bytesPerRowPacked + (col / 8)
+                    let bitIndex = 7 - (col % 8)  // MSB (bit 7) = left pixel
+                    let packedByte = packedPtr + packedByteIndex
+                    
+                    if bitValue == 1 {
+                        packedByte.pointee |= (1 << bitIndex)
+                    } else {
+                        packedByte.pointee &= ~(1 << bitIndex)
+                    }
+                }
+            }
+        }
+        
+        print("✅ Created monochrome bitmap: \(widthDots)x\(height) dots (\(packedByteCount) bytes)")
+        return packedData
     }
     
     private func printText(text: String, result: @escaping FlutterResult) {
@@ -229,13 +388,18 @@ import WebKit  // Optional: For future full HTML rendering; not used yet
             return
         }
         
-        var printData = Data([0x1B, 0x40])  // ESC @ init printer
+        // ESC @ - Initialize printer
+        var printData = Data([0x1B, 0x40])
+
+        // Set character code table to support Unicode (if printer supports it)
+        // ESC t n - Select character code table
+        printData.append(contentsOf: [0x1B, 0x74, 0xFF])
+
         printData.append(rawData)
+        
         printData.append(0x0A)  // Line feed
         printData.append(contentsOf: [0x1D, 0x56, 0x42, 0x00])  // Partial cut
-        
-        print("📄 Sending raw print data (\(printData.count) bytes)")
-        
+                
         if characteristic.properties.contains(.writeWithoutResponse) {
             peripheral.writeValue(printData, for: characteristic, type: .withoutResponse)
         } else {
