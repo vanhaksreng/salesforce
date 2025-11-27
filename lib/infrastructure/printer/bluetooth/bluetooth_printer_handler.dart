@@ -109,6 +109,24 @@ class BluetoothPrinterHandler {
       throw Exception('Failed to print: ${e.message}');
     }
   }
+  /// Print text to the connected printer
+  /// Throws exception if not connected
+  static Future<void> printImage(Uint8List bytes) async {
+    if (!_isConnected) {
+      throw Exception(
+        'Not connected to any printer. Call connectDevice() first.',
+      );
+    }
+
+    try {
+      print("print called");
+      await _channel.invokeMethod('printImage', {'imageBytes': bytes});
+      print("print end");
+    } on PlatformException catch (e) {
+      print(e);
+      throw Exception('Failed to print: ${e.message}');
+    }
+  }
 
   static Future<void> printRaw(Uint8List text) async {
     if (!_isConnected) {
@@ -147,6 +165,11 @@ class BluetoothPrinterHandler {
   /// Disconnect from the current device
   static Future<void> disconnect() async {
     try {
+
+      if (!_isConnected) {
+        return;
+      }
+
       await _channel.invokeMethod('disconnect');
       _isConnected = false;
       _connectedDeviceAddress = null;
@@ -160,5 +183,59 @@ class BluetoothPrinterHandler {
     _onDeviceFound = null;
   }
 
-  
+  /// Print Khmer text with UTF-8 encoding
+  /// Ensures proper character encoding for Khmer language
+  static Future<void> printKhmerText(String khmerText) async {
+    if (!_isConnected) {
+      throw Exception(
+        'Not connected to any printer. Call connectDevice() first.',
+      );
+    }
+
+    try {
+      // Encode Khmer text as UTF-8
+      final utf8Bytes = utf8.encode(khmerText);
+      await printRaw(Uint8List.fromList(utf8Bytes));
+    } on PlatformException catch (e) {
+      throw Exception('Failed to print Khmer text: ${e.message}');
+    }
+  }
+
+  /// Wait for printer connection with timeout
+  static Future<bool> waitForConnection({
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    final startTime = DateTime.now();
+    
+    while (!_isConnected) {
+      if (DateTime.now().difference(startTime) > timeout) {
+        return false;
+      }
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+    
+    return true;
+  }
+
+  /// Auto-scan and connect to a specific printer by name
+  static Future<bool> autoScanAndConnect(String printerName) async {
+    try {
+      setDeviceFoundCallback((device) {
+        if (device['name'] == printerName && !_isConnected) {
+          connectDevice(device['address']);
+        }
+      });
+
+      await scanDevices();
+      
+      // Wait for connection
+      final result = await waitForConnection();
+      clearCallback();
+      
+      return result;
+    } catch (e) {
+      clearCallback();
+      throw Exception('Auto-scan failed: $e');
+    }
+  }
 }
