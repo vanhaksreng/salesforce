@@ -1490,7 +1490,7 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
         let sizeCommand: UInt8 = (fontSize > 30) ? 0x30 : (fontSize > 24 ? 0x11 : 0x00)
         commands.append(contentsOf: [ESC, 0x21, sizeCommand])
 //        commands.append(contentsOf: [ESC, 0x33, 0x10])
-        commands.append(contentsOf: [ESC, 0x33, 0x20])
+        commands.append(contentsOf: [ESC,0x33, 0x00])
         
         let hasBold = columns.contains { ($0["bold"] as? Bool) ?? false }
         if hasBold {
@@ -1528,7 +1528,7 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
             commands.append(0x0A)
         }
         
-//        commands.append(contentsOf: [ESC, 0x33, 0x30])
+        commands.append(contentsOf: [ESC,  0x33, 0x1E])
         
         if hasBold {
             commands.append(contentsOf: [ESC, 0x45, 0x00])
@@ -1630,7 +1630,7 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin, CBCentralManagerDele
 
         // Calculate line height
         let testFont = getFont(bold: false, size: scaledFontSize)
-        let lineHeight = ceil(testFont.lineHeight) * 1.1
+        let lineHeight = ceil(testFont.lineHeight) * 0.90
 
         // Slightly more padding
         let verticalPadding: CGFloat = 4.0
