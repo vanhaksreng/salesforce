@@ -70,23 +70,36 @@ class AdministrationScreenState extends State<AdministrationScreen>
           return _buildBody(state);
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        shape: const CircleBorder(),
-        backgroundColor: mainColor,
-        child: Icon(Icons.add, color: white),
-        onPressed: () {
-          Navigator.pushNamed(context, FormConnectPrinter.routeName).then((
-            value,
-          ) {
-            if (value == null) return;
-            final action = value as ActionState;
-            if (Helpers.shouldReload(action)) {
-              _cubit.getDevicePrinter();
-            }
-          });
-        },
-      ),
+      floatingActionButton:
+          BlocBuilder<AdministrationCubit, AdministrationState>(
+            bloc: _cubit,
+            builder: (context, state) {
+              return FloatingActionButton(
+                shape: const CircleBorder(),
+                backgroundColor: mainColor,
+                child: Icon(Icons.add, color: white),
+                onPressed: () => _pushToFormPrinter(context, state),
+              );
+            },
+          ),
     );
+  }
+
+  Future<Null> _pushToFormPrinter(
+    BuildContext context,
+    AdministrationState state,
+  ) {
+    return Navigator.pushNamed(
+      context,
+      FormConnectPrinter.routeName,
+      arguments: state.devicePrinter,
+    ).then((value) {
+      if (value == null) return;
+      final action = value as ActionState;
+      if (Helpers.shouldReload(action)) {
+        _cubit.getDevicePrinter();
+      }
+    });
   }
 
   Widget _buildBody(AdministrationState state) {
@@ -159,37 +172,42 @@ class AdministrationScreenState extends State<AdministrationScreen>
   }
 
   Widget _buildBluetoothPrintingSection(AdministrationState state) {
-    return HeaderWidget(
-      title: "Print via Bluetooth",
-      subtitle: "Manage wireless printing operations",
-      bgIcon: primary,
-      icon: Icon(Icons.bluetooth, color: white),
-      child: BluetoothDeviceList(
-        devices: state.devicePrinter,
-        selectedDevice: state.selectedDevice,
-        onDelete: (DevicePrinter device) async {
-          Helpers.showDialogAction(
-            context,
-            labelAction: "Deletee",
-            subtitle: "Do you want to delete ${device.deviceName}",
-            confirm: () {
-              Navigator.pop(context);
-              _cubit.deletePrinter(device: device);
+    return BlocBuilder<AdministrationCubit, AdministrationState>(
+      bloc: _cubit,
+      builder: (context, state) {
+        return HeaderWidget(
+          title: "Print via Bluetooth",
+          subtitle: "Manage wireless printing operations",
+          bgIcon: primary,
+          icon: Icon(Icons.bluetooth, color: white),
+          child: BluetoothDeviceList(
+            devices: state.devicePrinter,
+            selectedDevice: state.selectedDevice,
+            onDelete: (DevicePrinter device) async {
+              Helpers.showDialogAction(
+                context,
+                labelAction: "Deletee",
+                subtitle: "Do you want to delete ${device.deviceName}",
+                confirm: () async {
+                  Navigator.pop(context);
+                  await _cubit.deletePrinter(device: device);
+                },
+              );
             },
-          );
-        },
-        connectingDeviceId: state.connectingDeviceId,
-        onDeviceTap: (DevicePrinter device) async {
-          // _cubit.s(device);
-        },
-        onConnect: (DevicePrinter device) async {
-          await _cubit.connectToPrinter(device);
-        },
+            connectingDeviceId: state.connectingDeviceId,
+            onDeviceTap: (DevicePrinter device) async {
+              // _cubit.s(device);
+            },
+            onConnect: (DevicePrinter device) async {
+              await _cubit.connectToPrinter(device);
+            },
 
-        onDisconnect: (DevicePrinter device) async {
-          await _cubit.disconnectFromPrinter(device);
-        },
-      ),
+            onDisconnect: (DevicePrinter device) async {
+              await _cubit.disconnectFromPrinter(device);
+            },
+          ),
+        );
+      },
     );
   }
 

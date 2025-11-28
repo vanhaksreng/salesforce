@@ -86,19 +86,30 @@ class AdministrationCubit extends Cubit<AdministrationState>
   }
 
   Future<bool> deletePrinter({required DevicePrinter device}) async {
+    final updatedList = List<DevicePrinter>.from(state.devicePrinter);
+    final List<DevicePrinter> data = updatedList
+      ..removeWhere((e) => e.macAddress == device.macAddress);
+    emit(state.copyWith(devicePrinter: data));
+
     try {
+      emit(state.copyWith(isLoading: true));
+
       final result = await _repos.deletePrinter(device: device);
+
       return result.fold(
         (failure) {
           showErrorMessage(failure.message);
           emit(state.copyWith(isLoading: false));
           return false;
         },
-        (records) {
+        (_) {
+          emit(state.copyWith(devicePrinter: updatedList, isLoading: false));
+
           return true;
         },
       );
-    } catch (error) {
+    } catch (_) {
+      emit(state.copyWith(isLoading: false));
       return false;
     }
   }
