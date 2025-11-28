@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
-import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
@@ -94,7 +93,7 @@ class BluetoothDeviceItem extends StatelessWidget {
                 ),
                 Helpers.gapH(4),
                 TextWidget(
-                  text: device.macAddress,
+                  text: device.originDeviceName,
                   fontSize: 12,
                   color: Colors.grey[600],
                 ),
@@ -102,7 +101,7 @@ class BluetoothDeviceItem extends StatelessWidget {
               ],
             ),
           ),
-          // Connect/Disconnect Button
+
           if (isConnected)
             IconButton(
               onPressed: () => onDisconnect?.call(device),
@@ -110,10 +109,6 @@ class BluetoothDeviceItem extends StatelessWidget {
               tooltip: 'Disconnect',
             )
           else
-            // BtnWidget(
-            //   onPressed: () => onConnect?.call(device),
-            //   icon: Icon(Icons.link, color: mainColor, size: 20),
-            // ),
             IconButton(
               onPressed: () => onConnect?.call(device),
               icon: Icon(Icons.link, color: mainColor, size: 20),

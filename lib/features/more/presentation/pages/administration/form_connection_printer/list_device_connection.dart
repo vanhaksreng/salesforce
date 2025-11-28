@@ -24,8 +24,6 @@ class BluetoothDeviceList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(connectingDeviceId);
-    print(selectedDevice?.macAddress);
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),

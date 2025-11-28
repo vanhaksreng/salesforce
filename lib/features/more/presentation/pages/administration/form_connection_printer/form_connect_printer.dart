@@ -5,20 +5,21 @@ import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
+import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/presentation/widgets/text_form_field_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_state.dart';
-import 'package:salesforce/features/more/presentation/pages/administration/adminstatration_helper.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class FormConnectPrinter extends StatefulWidget {
-  const FormConnectPrinter({super.key});
+  const FormConnectPrinter({super.key, required this.devicePrinter});
   static const String routeName = "FromConnetPrinter";
+  final List<DevicePrinter> devicePrinter;
 
   @override
   State<FormConnectPrinter> createState() => _FormConnectPrinterState();
@@ -30,6 +31,7 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
   final TextEditingController _bluetoothname = TextEditingController();
   TypeConnectDevice? _character = TypeConnectDevice.bluetooth;
   final _cubit = AdministrationCubit();
+  final _formKey = GlobalKey<FormState>();
 
   List<String> list = <String>['3Inch 80mm', '2Inch 50mm'];
   String? selectedPaperWidth;
@@ -53,6 +55,26 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
   }
 
   Future<void> storeDevice() async {
+    bool isDeviceAlreadyAdded = widget.devicePrinter.any(
+      (e) => e.macAddress == selectDevice?.address,
+    );
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    if (isDeviceAlreadyAdded) {
+      Helpers.showDialogAction(
+        context,
+        labelAction: "Wuhh! 😲 Seriously?",
+        confirmText: "Okay, Let me change.",
+        canCancel: false,
+        confirm: () => Navigator.pop(context),
+        subtitle:
+            "This printer (${selectDevice?.name ?? 'Unknown'}) has been created.\nPlease choose another printer to connect.", // Corrected "other" to "another"
+      );
+      return;
+    }
+
     final deviceType = _character.toString().split('.').last;
 
     final data = DevicePrinter(
@@ -287,33 +309,58 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
   }
 
   Widget _buildBody() {
-    return ListView(
-      padding: EdgeInsets.all(scaleFontSize(16)),
-      children: [
-        TextFormFieldWidget(
-          suffixIcon: Icon(Icons.print, color: mainColor),
-          isDefaultTextForm: true,
-          fillColor: white,
-          filled: true,
-          controller: _nameDevice,
-          label: "Enter name device",
-        ),
-        Helpers.gapH(16),
-        TextFormFieldWidget(
-          fillColor: white,
-          filled: true,
-          suffixIcon: Icon(Icons.model_training, color: mainColor),
-          isDefaultTextForm: true,
-          controller: _modelPrinter,
-          label: "Enter model",
-        ),
-        Helpers.gapH(16),
-        _buildSelectOption(),
-        Helpers.gapH(16),
-        _buildSelectDevice(),
-        Helpers.gapH(16),
-        _buildPapers(),
-      ],
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: EdgeInsets.all(scaleFontSize(16)),
+        children: [
+          TextWidget(
+            text: "Please fill info below.",
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          Helpers.gapH(scaleFontSize(24)),
+          TextFormFieldWidget(
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your device name';
+              }
+              return null;
+            },
+            suffixIcon: Icon(Icons.print, color: grey),
+            isDefaultTextForm: true,
+            fillColor: white,
+            floatingLabelBehavior: FloatingLabelBehavior.always,
+            filled: true,
+            controller: _nameDevice,
+            isRequired: true,
+            label: "Enter name device",
+          ),
+          Helpers.gapH(16),
+          TextFormFieldWidget(
+            fillColor: white,
+            isRequired: true,
+            filled: true,
+            floatingLabelBehavior: FloatingLabelBehavior.always,
+            suffixIcon: Icon(Icons.bluetooth_audio, color: grey),
+            isDefaultTextForm: true,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your model device';
+              }
+              return null;
+            },
+            controller: _modelPrinter,
+            label: "Enter model",
+          ),
+          Helpers.gapH(16),
+          _buildSelectOption(),
+          Helpers.gapH(16),
+          _buildSelectDevice(),
+          Helpers.gapH(16),
+          _buildPapers(),
+        ],
+      ),
     );
   }
 
@@ -406,7 +453,7 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
     return BoxWidget(
       padding: EdgeInsets.all(scaleFontSize(16)),
       child: Column(
-        spacing: scaleFontSize(16),
+        spacing: scaleFontSize(24),
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextWidget(
@@ -414,6 +461,7 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
             color: textColor50,
             fontWeight: FontWeight.w600,
           ),
+          Hr(width: double.infinity),
           Row(
             spacing: scaleFontSize(appSpace8),
             children: [
@@ -421,10 +469,18 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
                 flex: 2,
                 child: TextFormFieldWidget(
                   readOnly: true,
-                  fillColor: grey,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'select bluetooth';
+                    }
+                    return null;
+                  },
+                  isRequired: true,
                   filled: true,
-                  hintText: "123",
-                  suffixIcon: Icon(Icons.history, color: mainColor),
+                  fillColor: primary,
+                  hintText: "",
+                  floatingLabelBehavior: FloatingLabelBehavior.always,
+                  suffixIcon: Icon(Icons.bluetooth_audio, color: grey),
                   isDefaultTextForm: true,
                   controller: _bluetoothname,
                   label: "BluetoothName",
@@ -433,7 +489,7 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
               Expanded(
                 child: BtnWidget(
                   onPressed: _showDeviceBottomSheet,
-                  icon: Icon(Icons.search),
+                  icon: Icon(Icons.refresh),
                   title: "Search",
                   gradient: linearGradient,
                 ),
