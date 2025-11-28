@@ -78,7 +78,15 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private var writeCompleted = false
     private var writeLatch: CountDownLatch? = null
 
+    enum class ImageAlignment(val value: Int) {
+        LEFT(0),
+        CENTER(1),
+        RIGHT(2);
 
+        companion object {
+            fun fromInt(value: Int) = values().firstOrNull { it.value == value } ?: CENTER
+        }
+    }
     // Pending result for async operations
     private var connectionResult: MethodChannel.Result? = null
 
@@ -165,12 +173,28 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             "printImage" -> {
                 val imageBytes = call.argument<ByteArray>("imageBytes")
                 val width = call.argument<Int>("width") ?: printerWidth
+                val align = call.argument<Int>("align") ?: 1
                 if (imageBytes != null) {
-                    printImage(imageBytes, width, result)
+                    printImage(imageBytes, width,align, result)
                 } else {
                     result.error("INVALID_ARGS", "Missing imageBytes", null)
                 }
             }
+
+            "printImageWithPadding" -> {
+                val imageBytes = call.argument<ByteArray>("imageBytes")
+                val width = call.argument<Int>("width") ?: 384
+                val align = call.argument<Int>("align") ?: 1
+                val paperWidth = call.argument<Int>("paperWidth") ?: 576
+
+                if (imageBytes == null) {
+                    result.error("INVALID_ARGUMENT", "imageBytes is required", null)
+                    return
+                }
+
+                printImageWithPadding(imageBytes, width, align, paperWidth, result)
+            }
+
 
             "feedPaper" -> {
                 val lines = call.argument<Int>("lines") ?: 1
@@ -1375,273 +1399,248 @@ private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
 
         writeDataSmooth(commands.toByteArray())
     }
-//===================================================old=======================
-//    private fun printText(
-//        text: String,
-//        fontSize: Int,
-//        bold: Boolean,
-//        align: String,
-//        maxCharsPerLine: Int,
-//        result: MethodChannel.Result
-//    ) {
-//        val startTime = System.currentTimeMillis()
-//
+
+    fun printImage(
+        imageBytes: ByteArray,
+        width: Int = 384,
+        align: Int = 1,
+        result: MethodChannel.Result
+    ) {
+        try {
+            val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+            if (bitmap == null) {
+                result.error("INVALID_IMAGE", "Cannot decode image", null)
+                return
+            }
+
+            val alignment = ImageAlignment.fromInt(align)
+            val scaledBitmap = resizeImage(bitmap, width)
+            val monochromeData = convertToMonochromeFast(scaledBitmap)
+
+            if (monochromeData == null) {
+                result.error("CONVERSION_ERROR", "Cannot convert to monochrome", null)
+                return
+            }
+
+            val commands = mutableListOf<Byte>()
+
+            // Initialize printer
+            commands.add(ESC)
+            commands.add(0x40)
+
+            // Set alignment using ESC a n command
+            commands.add(ESC)
+            commands.add(0x61)
+            commands.add(alignment.value.toByte())
+
+            // Print image command: GS v 0
+            commands.add(GS)
+            commands.add(0x76)
+            commands.add(0x30)
+            commands.add(0x00)
+
+            // Width and height in bytes
+            val widthBytes = (monochromeData.width + 7) / 8
+            commands.add((widthBytes and 0xFF).toByte())
+            commands.add(((widthBytes shr 8) and 0xFF).toByte())
+            commands.add((monochromeData.height and 0xFF).toByte())
+            commands.add(((monochromeData.height shr 8) and 0xFF).toByte())
+
+            // Image data
+            commands.addAll(monochromeData.data.toList())
+
+            // Reset alignment to left after printing
+            commands.add(ESC)
+            commands.add(0x61)
+            commands.add(0x00)
+
+            // Line feeds
+            commands.add(0x0A)
+            commands.add(0x0A)
+
+            // Send to printer
+            writeDataSmooth(commands.toByteArray())
+            result.success(true)
+
+        } catch (e: Exception) {
+            result.error("PRINT_ERROR", "Failed to print image: ${e.message}", null)
+        }
+    }
+
+    // MARK: - Print Image with Manual Padding
+    fun printImageWithPadding(
+        imageBytes: ByteArray,
+        width: Int = 384,
+        align: Int = 1,
+        paperWidth: Int = 576,
+        result: MethodChannel.Result
+    ) {
+        try {
+            val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+            if (bitmap == null) {
+                result.error("INVALID_IMAGE", "Cannot decode image", null)
+                return
+            }
+
+            val alignment = ImageAlignment.fromInt(align)
+            val scaledBitmap = resizeImage(bitmap, width)
+            val originalData = convertToMonochromeFast(scaledBitmap)
+
+            if (originalData == null) {
+                result.error("CONVERSION_ERROR", "Cannot convert to monochrome", null)
+                return
+            }
+
+            // Add padding for alignment if needed
+            val monochromeData = if (alignment != ImageAlignment.LEFT) {
+                addPaddingToMonochrome(originalData, alignment, paperWidth)
+            } else {
+                originalData
+            }
+
+            val commands = mutableListOf<Byte>()
+
+            // Initialize printer
+            commands.add(ESC)
+            commands.add(0x40)
+
+            // Print image command
+            commands.add(GS)
+            commands.add(0x76)
+            commands.add(0x30)
+            commands.add(0x00)
+
+            val widthBytes = (monochromeData.width + 7) / 8
+            commands.add((widthBytes and 0xFF).toByte())
+            commands.add(((widthBytes shr 8) and 0xFF).toByte())
+            commands.add((monochromeData.height and 0xFF).toByte())
+            commands.add(((monochromeData.height shr 8) and 0xFF).toByte())
+
+            commands.addAll(monochromeData.data.toList())
+            commands.add(0x0A)
+            commands.add(0x0A)
+
+            writeDataSmooth(commands.toByteArray())
+            result.success(true)
+
+        } catch (e: Exception) {
+            result.error("PRINT_ERROR", "Failed to print image: ${e.message}", null)
+        }
+    }
+
+    // MARK: - Resize Image
+    private fun resizeImage(bitmap: Bitmap, maxWidth: Int): Bitmap {
+        if (bitmap.width <= maxWidth) {
+            return bitmap
+        }
+
+        val ratio = maxWidth.toFloat() / bitmap.width
+        val newHeight = (bitmap.height * ratio).toInt()
+
+        return Bitmap.createScaledBitmap(bitmap, maxWidth, newHeight, true)
+    }
+
+    // MARK: - Add Padding to Monochrome Data
+    private fun addPaddingToMonochrome(
+        data: MonochromeData,
+        alignment: ImageAlignment,
+        paperWidth: Int
+    ): MonochromeData {
+        val currentWidth = data.width
+
+        // No padding needed if image is already full width
+        if (currentWidth >= paperWidth) {
+            return data
+        }
+
+        val paddingTotal = paperWidth - currentWidth
+        val leftPadding = when (alignment) {
+            ImageAlignment.LEFT -> 0
+            ImageAlignment.CENTER -> paddingTotal / 2
+            ImageAlignment.RIGHT -> paddingTotal
+        }
+        val rightPadding = paddingTotal - leftPadding
+
+        val currentWidthBytes = (currentWidth + 7) / 8
+        val newWidth = paperWidth
+        val newWidthBytes = (newWidth + 7) / 8
+
+        val newData = ByteArray(newWidthBytes * data.height)
+
+        for (y in 0 until data.height) {
+            val newRowOffset = y * newWidthBytes
+            val oldRowOffset = y * currentWidthBytes
+
+            // Left padding (already zeros)
+            val leftPaddingBytes = leftPadding / 8
+
+            // Copy original data
+            System.arraycopy(
+                data.data,
+                oldRowOffset,
+                newData,
+                newRowOffset + leftPaddingBytes,
+                currentWidthBytes
+            )
+
+            // Right padding (already zeros)
+        }
+
+        return MonochromeData(newWidth, data.height, newData)
+    }
+
+
+//    private fun printImage(imageBytes: ByteArray, width: Int, result: MethodChannel.Result) {
 //        scope.launch {
 //            printMutex.withLock {
 //                try {
-//                    if (containsComplexUnicode(text)) {
-//                        println("KOTLIN: Rendering Complex text (Image): \"${text.take(30)}...\"")
-//                        val renderStart = System.currentTimeMillis()
+//                    val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
 //
-//                        val imageData = renderTextToData(text, fontSize, bold, align, maxCharsPerLine)
-//
-//                        if (imageData == null || imageData.isEmpty()) {
-//                            withContext(Dispatchers.Main) {
-//                                result.error("RENDER_ERROR", "Failed to render or returned empty image data", null)
-//                            }
-//                            return@withLock
-//                        }
-//
-//                        val renderTime = System.currentTimeMillis() - renderStart
-//                        println(" KOTLIN: Rendered in ${renderTime}ms, size: ${imageData.size} bytes")
-//
-//                        val alignLeftCommand = byteArrayOf(ESC, 0x61.toByte(), 0x00.toByte())
-//                        val finalData = alignLeftCommand + imageData
-//
-//                        writeDataSmooth(finalData)
-//
-//                        val totalTime = System.currentTimeMillis() - startTime
-//                        println("KOTLIN: Sent, total: ${totalTime}ms")
-//
+//                    val scaledBitmap = if (bitmap.width != width) {
+//                        val ratio = width.toFloat() / bitmap.width.toFloat()
+//                        val newHeight = (bitmap.height * ratio).toInt()
+//                        Bitmap.createScaledBitmap(bitmap, width, newHeight, true)
 //                    } else {
-//                        printSimpleTextInternal(text, fontSize, bold, align, maxCharsPerLine)
-//
-//                        val totalTime = System.currentTimeMillis() - startTime
-//                        println(" KOTLIN: English printed in ${totalTime}ms")
+//                        bitmap
 //                    }
 //
-//                    // CRITICAL FIX: Add delay after text printing
-////                    delay(50)
+//                    val monoData = convertToMonochromeFast(scaledBitmap)
+//                    scaledBitmap.recycle()
+//
+//                    if (monoData == null) {
+//                        withContext(Dispatchers.Main) {
+//                            result.error("IMAGE_PROCESS_ERROR", "Failed to convert image to monochrome data", null)
+//                        }
+//                        return@withLock
+//                    }
+//
+//                    val commands = mutableListOf<Byte>()
+//                    commands.addAll(listOf(GS, 0x76, 0x30, 0x00))
+//
+//                    val widthBytes = (monoData.width + 7) / 8
+//                    commands.add((widthBytes and 0xFF).toByte())
+//                    commands.add(((widthBytes shr 8) and 0xFF).toByte())
+//                    commands.add((monoData.height and 0xFF).toByte())
+//                    commands.add(((monoData.height shr 8) and 0xFF).toByte())
+//                    commands.addAll(monoData.data.toList())
+//                    commands.add(0x0A)
+//
+//                    writeDataSmooth(commands.toByteArray())
+//
+//                    // CRITICAL FIX: Add delay after image printing
+//                    delay(100)
 //
 //                    withContext(Dispatchers.Main) {
 //                        result.success(true)
 //                    }
-//
 //                } catch (e: Exception) {
 //                    withContext(Dispatchers.Main) {
-//                        result.error("PRINT_ERROR", e.message, null)
+//                        result.error("PRINT_IMAGE_ERROR", e.message, null)
 //                    }
 //                }
 //            }
 //        }
 //    }
-//
-//    private fun renderTextToData(
-//        text: String,
-//        fontSize: Int,
-//        bold: Boolean,
-//        align: String,
-//        maxCharsPerLine: Int
-//    ): ByteArray? {
-//        try {
-//            // OPTIMIZATION 1: Reduce base font size for faster rendering
-//            val baseFontSize = 20f // Reduced from 24f
-//            val scaledFontSize = when {
-//                fontSize > 30 -> baseFontSize * 1.8f // Reduced from 2.0f
-//                fontSize > 24 -> baseFontSize * 1.3f // Reduced from 1.5f
-//                else -> baseFontSize
-//            }
-//
-//            println(" KOTLIN: fontSize=$fontSize -> scaledFontSize=$scaledFontSize")
-//
-//            val khmerTypeface = try {
-//                val assetManager = context.assets
-//                Typeface.createFromAsset(assetManager, "fonts/NotoSansKhmer-Regular.ttf")
-//            } catch (e: Exception) {
-//                println(" Failed to load Khmer font: $e")
-//                Typeface.DEFAULT
-//            }
-//
-//            val paint = Paint().apply {
-//                textSize = scaledFontSize
-//                typeface = khmerTypeface
-//                isFakeBoldText = bold
-//                // OPTIMIZATION 2: Reduce stroke width for smaller data
-//                strokeWidth = if (bold) 0.8f else 0.5f // Reduced from 1.2f/0.8f
-//                style = Paint.Style.FILL_AND_STROKE
-//                isAntiAlias = true
-//                color = Color.BLACK
-//                textAlign = when (align.lowercase()) {
-//                    "center" -> Paint.Align.CENTER
-//                    "right" -> Paint.Align.RIGHT
-//                    else -> Paint.Align.LEFT
-//                }
-//            }
-//
-//            val maxWidth = printerWidth.toFloat()
-//            val padding = 2f // Reduced from 4f
-//            val LEFT_MARGIN_OFFSET = 0f
-//
-//            val textToRender = if (maxCharsPerLine > 0) {
-//                wrapText(text, maxCharsPerLine)
-//            } else {
-//                text
-//            }
-//
-//            val lines = textToRender.split("\n")
-//
-//            // OPTIMIZATION 3: Tighter line spacing
-//            val lineHeight = paint.fontMetrics.let {
-//                (it.descent - it.ascent) * 0.9f // 10% tighter spacing
-//            }
-//            val totalHeight = (lines.size * lineHeight + padding * 2).toInt()
-//
-//            val bitmap = Bitmap.createBitmap(printerWidth, totalHeight, Bitmap.Config.ARGB_8888)
-//            val canvas = Canvas(bitmap)
-//            canvas.drawColor(Color.WHITE)
-//
-//            var y = padding - paint.fontMetrics.ascent
-//            for (line in lines) {
-//                val x = when (paint.textAlign) {
-//                    Paint.Align.CENTER -> maxWidth / 2
-//                    Paint.Align.RIGHT -> maxWidth - padding
-//                    else -> LEFT_MARGIN_OFFSET
-//                }
-//                canvas.drawText(line, x, y, paint)
-//                y += lineHeight
-//            }
-//
-//            val monoData = convertToMonochromeFast(bitmap)
-//            bitmap.recycle()
-//
-//            if (monoData == null) return null
-//
-//            val commands = mutableListOf<Byte>()
-//            // ESC/POS raster image command
-//            commands.addAll(listOf(GS, 0x76, 0x30, 0x00))
-//
-//            val widthBytes = (monoData.width + 7) / 8
-//            commands.add((widthBytes and 0xFF).toByte())
-//            commands.add(((widthBytes shr 8) and 0xFF).toByte())
-//            commands.add((monoData.height and 0xFF).toByte())
-//            commands.add(((monoData.height shr 8) and 0xFF).toByte())
-//
-//            commands.addAll(monoData.data.toList())
-//
-//            // OPTIMIZATION 4: Remove extra line feed (0x0A)
-//            // The printer will auto-feed after image
-//            // commands.add(0x0A) // REMOVED
-//
-//            return commands.toByteArray()
-//        } catch (e: Exception) {
-//            println("❌ RENDER ERROR: $e")
-//            return null
-//        }
-//    }
-//
-//
-//    // ===== OPTIMIZED SIMPLE TEXT (Already fast) =====
-//    private fun printSimpleTextInternal(
-//        text: String,
-//        fontSize: Int,
-//        bold: Boolean,
-//        align: String,
-//        maxCharsPerLine: Int
-//    ) {
-//        println("🔵 KOTLIN: Sending ASCII/Simple text via ESC/POS: \"${text.take(30)}...\"")
-//
-//        val commands = mutableListOf<Byte>()
-//
-//        // Initialize printer
-//        commands.addAll(listOf(ESC, 0x40))
-//        commands.addAll(listOf(ESC, 0x74, 0x01))
-//
-//        // Bold
-//        commands.addAll(listOf(ESC, 0x45, if (bold) 0x01 else 0x00))
-//
-//        // Alignment
-//        val alignValue = when (align.lowercase()) {
-//            "center" -> 0x01.toByte()
-//            "right" -> 0x02.toByte()
-//            else -> 0x00.toByte()
-//        }
-//        commands.addAll(listOf(ESC, 0x61, alignValue))
-//
-//        // Size
-//        val sizeCommand: Byte = when {
-//            fontSize > 30 -> 0x30.toByte()
-//            fontSize > 24 -> 0x11.toByte()
-//            else -> 0x00.toByte()
-//        }
-//        commands.addAll(listOf(ESC, 0x21, sizeCommand))
-//
-//        // Text content
-//        val wrappedText = if (maxCharsPerLine > 0) wrapText(text, maxCharsPerLine) else text
-//        commands.addAll(wrappedText.toByteArray(charset("CP437")).toList())
-//
-//        commands.add(0x0A.toByte())
-//
-//        // Reset formatting
-//        commands.addAll(listOf(ESC, 0x45, 0x00))
-//        commands.addAll(listOf(ESC, 0x61, 0x00))
-//
-//        writeDataSmooth(commands.toByteArray())
-//    }
-
-
-
-
-    private fun printImage(imageBytes: ByteArray, width: Int, result: MethodChannel.Result) {
-        scope.launch {
-            printMutex.withLock {
-                try {
-                    val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-
-                    val scaledBitmap = if (bitmap.width != width) {
-                        val ratio = width.toFloat() / bitmap.width.toFloat()
-                        val newHeight = (bitmap.height * ratio).toInt()
-                        Bitmap.createScaledBitmap(bitmap, width, newHeight, true)
-                    } else {
-                        bitmap
-                    }
-
-                    val monoData = convertToMonochromeFast(scaledBitmap)
-                    scaledBitmap.recycle()
-
-                    if (monoData == null) {
-                        withContext(Dispatchers.Main) {
-                            result.error("IMAGE_PROCESS_ERROR", "Failed to convert image to monochrome data", null)
-                        }
-                        return@withLock
-                    }
-
-                    val commands = mutableListOf<Byte>()
-                    commands.addAll(listOf(GS, 0x76, 0x30, 0x00))
-
-                    val widthBytes = (monoData.width + 7) / 8
-                    commands.add((widthBytes and 0xFF).toByte())
-                    commands.add(((widthBytes shr 8) and 0xFF).toByte())
-                    commands.add((monoData.height and 0xFF).toByte())
-                    commands.add(((monoData.height shr 8) and 0xFF).toByte())
-                    commands.addAll(monoData.data.toList())
-                    commands.add(0x0A)
-
-                    writeDataSmooth(commands.toByteArray())
-
-                    // CRITICAL FIX: Add delay after image printing
-                    delay(100)
-
-                    withContext(Dispatchers.Main) {
-                        result.success(true)
-                    }
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
-                        result.error("PRINT_IMAGE_ERROR", e.message, null)
-                    }
-                }
-            }
-        }
-    }
 
 
 
@@ -1668,7 +1667,6 @@ private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
     }
 
     // MARK: - Helper Functions
-
     private fun convertToMonochromeFast(bitmap: Bitmap): MonochromeData? {
         val width = bitmap.width
         val height = bitmap.height
@@ -1679,7 +1677,7 @@ private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
         val totalBytes = widthBytes * height
         val data = ByteArray(totalBytes)
 
-        val threshold = -0x5f5f60
+        val threshold = -0x5f5f60  // This is approximately 160 in grayscale
 
         for (y in 0 until height) {
             val bitmapRowOffset = y * widthBytes
@@ -1694,6 +1692,31 @@ private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
 
         return MonochromeData(width, height, data)
     }
+//    private fun convertToMonochromeFast(bitmap: Bitmap): MonochromeData? {
+//        val width = bitmap.width
+//        val height = bitmap.height
+//        val pixels = IntArray(width * height)
+//        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+//
+//        val widthBytes = (width + 7) / 8
+//        val totalBytes = widthBytes * height
+//        val data = ByteArray(totalBytes)
+//
+//        val threshold = -0x5f5f60
+//
+//        for (y in 0 until height) {
+//            val bitmapRowOffset = y * widthBytes
+//            for (x in 0 until width) {
+//                if (pixels[y * width + x] < threshold) {
+//                    val byteIndex = bitmapRowOffset + (x / 8)
+//                    val bitIndex = 7 - (x % 8)
+//                    data[byteIndex] = (data[byteIndex].toInt() or (1 shl bitIndex)).toByte()
+//                }
+//            }
+//        }
+//
+//        return MonochromeData(width, height, data)
+//    }
 
     private fun containsComplexUnicode(text: String): Boolean {
         for (char in text) {
@@ -1941,9 +1964,9 @@ private fun printRow(
         }
         commands.addAll(listOf(ESC, 0x21, sizeCommand))
 
-        // Line spacing (tighter)
-        commands.addAll(listOf(ESC, 0x33, 0x10)) // 16/180 inch spacing
 
+        //  INCREASED LINE SPACING for more vertical height
+        commands.addAll(listOf(ESC, 0x33, 0x20))
         // Bold if needed
         val hasBold = columns.any { it.bold }
         if (hasBold) {
@@ -1967,9 +1990,9 @@ private fun printRow(
             commands.addAll(lineText.toString().toByteArray(charset("CP437")).toList())
             commands.add(0x0A.toByte())
         }
-
-        // Reset line spacing
-        commands.addAll(listOf(ESC, 0x33, 0x30)) // Reset to default (48/180 inch)
+        commands.add(0x0A.toByte())
+//        // Reset line spacing
+//        commands.addAll(listOf(ESC, 0x33, 0x30)) // Reset to default (48/180 inch)
 
         // Reset bold
         if (hasBold) {
@@ -2047,7 +2070,7 @@ private fun printRow(
             val lineHeight = (metrics.descent - metrics.ascent) * 0.90f // Tighter spacing
 
             // OPTIMIZATION 3: Minimal padding
-            val verticalPadding = 2f
+            val verticalPadding = 4f
             val totalHeight = (lineHeight * maxLines + verticalPadding * 2).toInt()
 
             val bitmap = Bitmap.createBitmap(

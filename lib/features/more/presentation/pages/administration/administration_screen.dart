@@ -38,7 +38,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
   @override
   void initState() {
     super.initState();
-    _cubit.getDevicePrinter();
+    _cubit.startScanning();
     _cubit.initialize();
     _initializeScreen();
   }
