@@ -20,6 +20,8 @@ class _CompanyInformation {
   @PrimaryKey()
   late String id;
   late String? name;
+  @MapTo('phone_no')
+  late String? phoneNo;
   @MapTo('name_2')
   late String? name2;
   late String? address;

@@ -2,16 +2,17 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_builder.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 
 class ReceiptPreview extends StatelessWidget {
   final List<ReceiptCommand> commands;
   final double paperWidth;
 
   const ReceiptPreview({
-    Key? key,
+    super.key,
     required this.commands,
     this.paperWidth = 384,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +23,7 @@ class ReceiptPreview extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade300),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: .1),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -141,14 +142,22 @@ class ReceiptPreview extends StatelessWidget {
   Widget _buildImageCommand(Map<String, dynamic> params) {
     final imageBytes = params['imageBytes'] as Uint8List?;
     final width = (params['width'] as int? ?? 384).toDouble();
+    final align =
+        params['align'] as int? ?? 1; // ✅ Fixed: Added null safety with default
 
     if (imageBytes == null) {
       return const SizedBox.shrink();
     }
 
+    // Map alignment values to Flutter's Alignment
+    final alignment = getAlignmentImage(align);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Image.memory(imageBytes, width: width, fit: BoxFit.contain),
+      child: Align(
+        alignment: alignment,
+        child: Image.memory(imageBytes, width: width, fit: BoxFit.contain),
+      ),
     );
   }
 

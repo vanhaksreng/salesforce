@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 enum ConnectionType { bluetooth, ble, usb, network }
@@ -13,6 +14,19 @@ enum AlignStyle {
 
   @override
   String toString() => value;
+}
+
+Alignment getAlignmentImage(int align) {
+  switch (align) {
+    case 0:
+      return Alignment.centerLeft;
+    case 1:
+      return Alignment.center;
+    case 2:
+      return Alignment.centerRight;
+    default:
+      return Alignment.center;
+  }
 }
 
 class PosColumn {
@@ -132,7 +146,6 @@ class ThermalPrinter {
 
   /// Connect to a printer
   static Future<bool> connect(PrinterDeviceDiscover device) async {
-    print(device.toMap());
     try {
       final bool result = await _channel.invokeMethod(
         'connect',
@@ -203,7 +216,6 @@ class ThermalPrinter {
       });
       return result == true;
     } catch (e) {
-      print('Print row error: $e');
       return false;
     }
   }
@@ -217,6 +229,7 @@ class ThermalPrinter {
       final bool result = await _channel.invokeMethod('printImage', {
         'imageBytes': imageBytes,
         'width': width,
+        "align": 1,
       });
       return result;
     } catch (e) {

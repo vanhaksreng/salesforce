@@ -36,16 +36,16 @@ dependencies:
   camera: ^0.11.2
   geolocator: ^14.0.2
   shared_preferences: ^2.5.3
-  esc_pos_utils_plus: ^2.0.4
-  flutter_blue_plus: ^1.35.10
+  # esc_pos_utils_plus: ^2.0.4
+  # flutter_blue_plus: ^1.35.10
   device_info_plus: ^12.1.0
   realm: ^20.1.1
   pinput: ^5.0.2
   country_code_picker: ^3.4.0
   workmanager: ^0.9.0+3
-  print_bluetooth_thermal: ^1.1.7
-  app_settings: ^6.1.1
-  characters: ^1.4.0
+  # print_bluetooth_thermal: ^1.1.7
+  # app_settings: ^6.1.1
+  # characters: ^1.4.0
   # imin_printer: ^0.6.14
   # characters: ^1.4.0
 

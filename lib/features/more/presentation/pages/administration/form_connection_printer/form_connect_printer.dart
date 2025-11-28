@@ -6,6 +6,7 @@ import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/hr.dart';
+import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_form_field_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -56,7 +57,9 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
 
   Future<void> storeDevice() async {
     bool isDeviceAlreadyAdded = widget.devicePrinter.any(
-      (e) => e.macAddress == selectDevice?.address,
+      (e) =>
+          e.macAddress == selectDevice?.address &&
+          e.originDeviceName == selectDevice?.name,
     );
 
     if (!_formKey.currentState!.validate()) {
@@ -99,198 +102,6 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
     } catch (e) {
       _cubit.showErrorMessage(e.toString());
     }
-  }
-
-  void _showDeviceBottomSheet() {
-    // Start scanning when bottom sheet opens
-    _cubit.startScanning();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) =>
-          BlocBuilder<AdministrationCubit, AdministrationState>(
-            bloc: _cubit,
-            builder: (context, state) {
-              final availableDevices = state.printerDeviceDiscover;
-              final isScanning = state.isScanning;
-
-              return DraggableScrollableSheet(
-                initialChildSize: 0.6,
-                minChildSize: 0.3,
-                maxChildSize: 0.9,
-                builder: (context, scrollController) {
-                  return BoxWidget(
-                    color: Colors.white,
-                    topLeft: 16,
-                    topRight: 16,
-                    child: Column(
-                      children: [
-                        // Drag handle
-                        Container(
-                          margin: const EdgeInsets.symmetric(vertical: 12),
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-
-                        // Header
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.bluetooth,
-                                    color: mainColor,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  TextWidget(
-                                    text: "Available Devices",
-                                    fontSize: scaleFontSize(16),
-                                    fontWeight: FontWeight.bold,
-                                    color: textColor50,
-                                  ),
-                                ],
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: () => Navigator.pop(context),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Divider(),
-
-                        // Device list or loading
-                        Expanded(
-                          child: isScanning
-                              ? Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 60,
-                                        height: 60,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 4,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                mainColor,
-                                              ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 24),
-                                      TextWidget(
-                                        text: "Finding devices...",
-                                        fontSize: scaleFontSize(16),
-                                        fontWeight: FontWeight.w500,
-                                        color: textColor50,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      TextWidget(
-                                        text: "Please wait",
-                                        fontSize: scaleFontSize(14),
-                                        color: Colors.grey,
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              : availableDevices.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.bluetooth_disabled,
-                                        size: 64,
-                                        color: Colors.grey[400],
-                                      ),
-                                      const SizedBox(height: 16),
-                                      TextWidget(
-                                        text: "No devices found",
-                                        fontSize: scaleFontSize(14),
-                                        color: Colors.grey,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      TextButton.icon(
-                                        onPressed: () {
-                                          _cubit.startScanning();
-                                        },
-                                        icon: const Icon(Icons.refresh),
-                                        label: const Text("Scan Again"),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              : ListView.builder(
-                                  controller: scrollController,
-                                  itemCount: availableDevices.length,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  itemBuilder: (context, index) {
-                                    final device = availableDevices[index];
-                                    final isSelected =
-                                        selectDevice?.address == device.address;
-
-                                    return BoxWidget(
-                                      margin: const EdgeInsets.only(bottom: 8),
-                                      child: ListTile(
-                                        leading: CircleAvatar(
-                                          backgroundColor: mainColor
-                                              .withOpacity(0.1),
-                                          child: Icon(
-                                            Icons.bluetooth,
-                                            color: mainColor,
-                                          ),
-                                        ),
-                                        title: TextWidget(
-                                          text: device.name,
-                                          fontSize: scaleFontSize(14),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        subtitle: TextWidget(
-                                          text: device.address,
-                                          fontSize: scaleFontSize(12),
-                                          color: Colors.grey,
-                                        ),
-                                        trailing: isSelected
-                                            ? Icon(
-                                                Icons.check_circle,
-                                                color: mainColor,
-                                              )
-                                            : const Icon(Icons.chevron_right),
-                                        onTap: () {
-                                          setState(() {
-                                            selectDevice = device;
-                                            _bluetoothname.text = device.name;
-                                          });
-                                          Navigator.pop(context);
-                                        },
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-    );
   }
 
   @override
@@ -497,6 +308,219 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  void _showDeviceBottomSheet() {
+    _cubit.startScanning();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => BlocBuilder<AdministrationCubit, AdministrationState>(
+        bloc: _cubit,
+        builder: (context, state) {
+          final availableDevices = state.printerDeviceDiscover;
+          final isScanning = state.isScanning;
+
+          return DraggableScrollableSheet(
+            initialChildSize: 0.6,
+            minChildSize: 0.3,
+            maxChildSize: 0.9,
+            builder: (context, scrollController) {
+              return BoxWidget(
+                color: Colors.white,
+                topLeft: 16,
+                topRight: 16,
+                child: Column(
+                  children: [
+                    // Drag handle
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.bluetooth, color: mainColor, size: 24),
+                              const SizedBox(width: 8),
+                              TextWidget(
+                                text: "Available Devices",
+                                fontSize: scaleFontSize(16),
+                                fontWeight: FontWeight.bold,
+                                color: textColor50,
+                              ),
+                              // Refresh Button
+                              IconButton(
+                                icon: AnimatedRotation(
+                                  turns: isScanning ? 1 : 0,
+                                  duration: const Duration(milliseconds: 500),
+                                  child: Icon(
+                                    Icons.refresh_rounded,
+                                    color: isScanning ? Colors.grey : mainColor,
+                                  ),
+                                ),
+                                tooltip: "Refresh devices",
+                                onPressed: isScanning
+                                    ? null
+                                    : () async {
+                                        try {
+                                          await _cubit.startScanning(
+                                            forceRefresh: true,
+                                          );
+                                        } catch (e) {
+                                          if (context.mounted) {
+                                            Helpers.showMessage(
+                                              status: MessageStatus.errors,
+                                              msg:
+                                                  'Scan failed: ${e.toString()}',
+                                            );
+                                          }
+                                        }
+                                      },
+                              ),
+                            ],
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            tooltip: "Close",
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(),
+                    Expanded(
+                      child: isScanning
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  LoadingPageWidget(label: ""),
+
+                                  TextWidget(
+                                    text: "Finding devices...",
+                                    fontSize: scaleFontSize(16),
+                                    fontWeight: FontWeight.w500,
+                                    color: textColor50,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextWidget(
+                                    text: "Please wait",
+                                    fontSize: scaleFontSize(14),
+                                    color: Colors.grey,
+                                  ),
+                                ],
+                              ),
+                            )
+                          : availableDevices.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.bluetooth_disabled,
+                                    size: 64,
+                                    color: Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextWidget(
+                                    text: "No devices found",
+                                    fontSize: scaleFontSize(14),
+                                    color: Colors.grey,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      _cubit.startScanning();
+                                    },
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text("Scan Again"),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: () async {
+                                await _cubit.startScanning(forceRefresh: true);
+                              },
+                              color: mainColor,
+                              child: ListView.builder(
+                                controller: scrollController,
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                itemCount: availableDevices.length,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                itemBuilder: (context, index) {
+                                  final device = availableDevices[index];
+                                  final isSelected =
+                                      selectDevice?.address == device.address;
+
+                                  return BoxWidget(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    child: ListTile(
+                                      leading: CircleAvatar(
+                                        backgroundColor: mainColor.withValues(
+                                          alpha: .1,
+                                        ),
+                                        child: Icon(
+                                          Icons.bluetooth,
+                                          color: mainColor,
+                                        ),
+                                      ),
+                                      title: TextWidget(
+                                        text: device.name ?? 'Unknown',
+                                        fontSize: scaleFontSize(14),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      subtitle: TextWidget(
+                                        text: device.address,
+                                        fontSize: scaleFontSize(12),
+                                        color: Colors.grey,
+                                      ),
+                                      trailing: isSelected
+                                          ? Icon(
+                                              Icons.check_circle,
+                                              color: mainColor,
+                                            )
+                                          : const Icon(Icons.chevron_right),
+                                      onTap: () {
+                                        setState(() {
+                                          selectDevice = device;
+                                          _bluetoothname.text =
+                                              device.name ?? '';
+                                        });
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

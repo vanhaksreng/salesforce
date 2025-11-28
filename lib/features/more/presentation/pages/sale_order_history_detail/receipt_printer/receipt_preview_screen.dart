@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -102,32 +106,111 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     } else {
       // 80mm printer (48 chars per line at fontSize 20)
       columnWidths = [1, 4, 1, 2, 2, 2]; // Sums to 12
-      totalWidth = 51;
+      totalWidth = 49;
+    }
+  }
+
+  Future<Uint8List?> logoCompany() async {
+    final companyInfo = widget.companyInfo;
+    // Null safety checks
+    if (companyInfo == null ||
+        companyInfo.logo128 == null ||
+        companyInfo.logo128!.isEmpty) {
+      debugPrint('⚠️ No logo available');
+      return null;
+    }
+
+    try {
+      ui.Image? logoImage;
+
+      // Check if logo is a URL or base64 string
+      if (companyInfo.logo128!.startsWith('http')) {
+        debugPrint('📥 Loading logo from URL: ${companyInfo.logo128}');
+
+        // Load from URL
+        final response = await http
+            .get(
+              Uri.parse(companyInfo.logo128!),
+              headers: {'Accept': 'image/*'},
+            )
+            .timeout(
+              const Duration(seconds: 10),
+              onTimeout: () {
+                throw Exception('Logo download timeout');
+              },
+            );
+
+        if (response.statusCode == 200) {
+          final codec = await ui.instantiateImageCodec(response.bodyBytes);
+          final frame = await codec.getNextFrame();
+          logoImage = frame.image;
+          debugPrint('✅ Logo loaded from URL');
+        } else {
+          throw Exception('Failed to download logo: ${response.statusCode}');
+        }
+      } else {
+        debugPrint('📥 Loading logo from base64 string');
+
+        // Load from base64
+        String base64String = companyInfo.logo128!;
+
+        // Remove data URI prefix if present (e.g., "data:image/png;base64,")
+        if (base64String.contains(',')) {
+          base64String = base64String.split(',').last;
+        }
+
+        final bytes = base64Decode(base64String);
+        final codec = await ui.instantiateImageCodec(bytes);
+        final frame = await codec.getNextFrame();
+        logoImage = frame.image;
+        debugPrint(' Logo loaded from base64');
+      }
+
+      // Convert ui.Image to Uint8List (PNG format)
+      if (logoImage != null) {
+        final byteData = await logoImage.toByteData(
+          format: ui.ImageByteFormat.png,
+        );
+
+        if (byteData != null) {
+          final imageBytes = byteData.buffer.asUint8List();
+          debugPrint(' Logo converted to bytes: ${imageBytes.length} bytes');
+          return imageBytes;
+        }
+      }
+
+      debugPrint(' Failed to convert logo to bytes');
+      return null;
+    } catch (e, stackTrace) {
+      debugPrint(' Failed to load logo: $e');
+      debugPrint('Stack trace: $stackTrace');
+      return null;
     }
   }
 
   Future<void> _buildSampleReceipt() async {
     try {
       _builder.clear();
+      final logoBytes = await logoCompany();
+      _builder.addImage(logoBytes!, width: 200);
 
       _builder.addText(
-        widget.companyInfo?.name ?? "COMPANY NAME",
+        widget.companyInfo?.name ?? "",
         fontSize: 28,
         bold: true,
         align: AlignStyle.center,
       );
       _builder.addText(
-        widget.companyInfo?.address ?? "123 Business Street, City",
+        widget.companyInfo?.address ?? "",
         fontSize: 18,
         align: AlignStyle.center,
       );
 
       _builder.addText(
-        "Email: ${widget.companyInfo?.email ?? 'info@company.com'}",
+        widget.companyInfo?.phoneNo ?? "",
         fontSize: 18,
         align: AlignStyle.center,
       );
-      _builder.feedPaper(1);
 
       // ══════════════════════════════════════════════════════════════
       // INVOICE INFO SECTION
@@ -145,7 +228,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         align: AlignStyle.left,
       );
       _builder.addText(
-        "Customer: ${header?.customerName ?? 'Walk-in Customer'}",
+        "Customer: ${header?.customerName ?? ""}",
         fontSize: 20,
         align: AlignStyle.left,
       );
@@ -180,15 +263,9 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       // ITEMS LIST
       // ══════════════════════════════════════════════════════════════
       List<PosSalesLine> lines = widget.detail?.lines ?? [];
-      double subtotal = 0.0;
 
       for (var i = 0; i < lines.length; i++) {
         final item = lines[i];
-        final amount = double.tryParse(item.amount?.toString() ?? '0') ?? 0.0;
-        final discount =
-            double.tryParse(item.discountAmount?.toString() ?? '0') ?? 0.0;
-
-        subtotal += amount;
 
         _builder.addRow([
           PosColumn(text: '${i + 1}', width: columnWidths[0], bold: false),
@@ -207,17 +284,26 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
             width: columnWidths[2],
           ),
           PosColumn(
-            text: Helpers.toStrings(item.unitPrice),
+            text: Helpers.formatNumber(
+              item.unitPrice,
+              option: FormatType.amount,
+            ),
             width: columnWidths[3],
             bold: false,
           ),
           PosColumn(
-            text: Helpers.toStrings(discount),
+            text: Helpers.formatNumber(
+              item.discountAmount == 0.0 || item.discountAmount == null
+                  ? "-"
+                  : item.discountAmount,
+              option: FormatType.amount,
+              display: true,
+            ),
             width: columnWidths[4],
             bold: false,
           ),
           PosColumn(
-            text: Helpers.toStrings(amount),
+            text: Helpers.formatNumber(item.amount, option: FormatType.amount),
             width: columnWidths[5],
             bold: false,
           ),
@@ -235,13 +321,13 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         align: AlignStyle.center,
       );
 
-      _builder.addText(
-        "Subtotal: ${Helpers.formatNumber(subtotal, option: FormatType.amount)}",
-        fontSize: 20,
-        bold: true,
-        maxCharPerLine: 48,
-        align: AlignStyle.right,
-      );
+      // _builder.addText(
+      //   "Subtotal: ${Helpers.formatNumber(header?.amount ?? 0, option: FormatType.amount)}",
+      //   fontSize: 20,
+      //   bold: true,
+      //   maxCharPerLine: 48,
+      //   align: AlignStyle.right,
+      // );
       _builder.addText(
         "TOTAL AMOUNT: ${Helpers.formatNumber(header?.amount, option: FormatType.amount)}",
         fontSize: 20,
