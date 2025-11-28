@@ -1966,7 +1966,7 @@ private fun printRow(
 
 
         //  INCREASED LINE SPACING for more vertical height
-        commands.addAll(listOf(ESC, 0x33, 0x20))
+        commands.addAll(listOf(ESC, 0x33, 0x00))
         // Bold if needed
         val hasBold = columns.any { it.bold }
         if (hasBold) {
@@ -1990,10 +1990,10 @@ private fun printRow(
             commands.addAll(lineText.toString().toByteArray(charset("CP437")).toList())
             commands.add(0x0A.toByte())
         }
-        commands.add(0x0A.toByte())
+//        commands.add(0x0A.toByte())
 //        // Reset line spacing
 //        commands.addAll(listOf(ESC, 0x33, 0x30)) // Reset to default (48/180 inch)
-
+        commands.addAll(listOf(ESC, 0x33, 0x1E))
         // Reset bold
         if (hasBold) {
             commands.addAll(listOf(ESC, 0x45, 0x00))
