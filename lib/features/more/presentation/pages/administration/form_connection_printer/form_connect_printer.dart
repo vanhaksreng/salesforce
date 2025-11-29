@@ -34,7 +34,7 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
   final _cubit = AdministrationCubit();
   final _formKey = GlobalKey<FormState>();
 
-  List<String> list = <String>['3Inch 80mm', '2Inch 50mm'];
+  List<String> list = <String>['3Inch (80mm)', '2Inch (58mm)'];
   String? selectedPaperWidth;
   final List<String> stringType = ['Bluetooth', 'Network', 'USB'];
   final List<TypeConnectDevice> enumValues = [

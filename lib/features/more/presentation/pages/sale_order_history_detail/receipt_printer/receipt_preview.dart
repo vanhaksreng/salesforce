@@ -48,6 +48,8 @@ class ReceiptPreview extends StatelessWidget {
         return _buildFeedPaperCommand(command.params);
       case ReceiptCommandType.cutPaper:
         return _buildCutPaperCommand();
+      case ReceiptCommandType.separator:
+        return _buildCutPaperCommand();
     }
   }
 
