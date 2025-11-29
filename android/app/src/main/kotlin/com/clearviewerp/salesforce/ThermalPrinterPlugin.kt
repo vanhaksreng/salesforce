@@ -1,13 +1,7 @@
 package com.clearviewerp.salesforce
 
 import android.Manifest
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCallback
-import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothProfile
+import android.bluetooth.*
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -23,20 +17,42 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.*
-import kotlinx.coroutines.internal.synchronized
-import java.net.Socket
-import java.util.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.net.Socket
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 // ====================================================================
-// Define ESC/POS Data Class
+// Configuration
 // ====================================================================
+object PrinterConfig {
+    const val DEFAULT_PRINTER_WIDTH = 576 // 80mm
+    const val SMALL_PRINTER_WIDTH = 384 // 58mm
+    const val CONNECTION_TIMEOUT = 15000L
 
-// Data class to hold the output of monochrome conversion
-data class MonochromeData(val width: Int, val height: Int, val data: ByteArray)
+}
+
+// ====================================================================
+// Data Classes
+// ====================================================================
+data class MonochromeData(val width: Int, val height: Int, val data: ByteArray) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as MonochromeData
+        return width == other.width && height == other.height && data.contentEquals(other.data)
+    }
+
+    override fun hashCode(): Int {
+        var result = width
+        result = 31 * result + height
+        result = 31 * result + data.contentHashCode()
+        return result
+    }
+}
 
 data class PosColumn(
     val text: String,
@@ -45,7 +61,47 @@ data class PosColumn(
     val bold: Boolean
 )
 
+enum class ImageAlignment(val value: Int) {
+    LEFT(0),
+    CENTER(1),
+    RIGHT(2);
+
+    companion object {
+        fun fromInt(value: Int) = values().firstOrNull { it.value == value } ?: CENTER
+    }
+}
+
+enum class ConnectionType {
+    BLUETOOTH_CLASSIC,
+    BLUETOOTH_BLE,
+    NETWORK,
+    USB,
+    NONE
+}
+
+private var printerModel: PrinterModel = PrinterModel.UNKNOWN
+
+
+enum class PrinterModel {
+    UNKNOWN,
+    SLOW,      // Old printers (50 bytes/ms)
+    MEDIUM,    // Standard printers (80 bytes/ms)
+    FAST       // Modern printers (120 bytes/ms)
+}
+private var printerSpeed: PrinterSpeed = PrinterSpeed.UNKNOWN
+
+
+enum class PrinterSpeed {
+    UNKNOWN,
+    SLOW,      // < 3 bytes/ms
+    MEDIUM,    // 3-6 bytes/ms
+    FAST       // > 6 bytes/ms
+}
+// ====================================================================
+// Main Plugin Class
+// ====================================================================
 class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
+
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -55,7 +111,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private var bluetoothGatt: BluetoothGatt? = null
     private var writeCharacteristic: BluetoothGattCharacteristic? = null
     private var bluetoothSocket: android.bluetooth.BluetoothSocket? = null
-    private var discoveredDevices = mutableListOf<BluetoothDevice>()
+    private val discoveredDevices = Collections.synchronizedList(mutableListOf<BluetoothDevice>())
     private var discoveryReceiver: BroadcastReceiver? = null
 
     // USB
@@ -65,61 +121,403 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private var networkSocket: Socket? = null
 
     // Connection state
-    private var currentConnectionType = "bluetooth"
-    private var printerWidth = 576 // 80mm default (576px)
+    @Volatile
+    private var currentConnectionType = ConnectionType.NONE
+    private var printerWidth = PrinterConfig.DEFAULT_PRINTER_WIDTH
 
     // ESC/POS Commands
     private val ESC: Byte = 0x1B
     private val GS: Byte = 0x1D
 
-    // Coroutine scope for async operations
+    // Coroutine scope
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val printMutex = Mutex()
-    private var writeCompleted = false
+
+    // Write synchronization
+    private val writeSync = Object()
+    @Volatile private var writeCompleted = false
     private var writeLatch: CountDownLatch? = null
+    private var currentWriteDeferred: CompletableDeferred<Boolean>? = null
 
-    enum class ImageAlignment(val value: Int) {
-        LEFT(0),
-        CENTER(1),
-        RIGHT(2);
+    // Pending results (thread-safe)
+    private val pendingResults = ConcurrentHashMap<String, MethodChannel.Result>()
 
-        companion object {
-            fun fromInt(value: Int) = values().firstOrNull { it.value == value } ?: CENTER
-        }
-    }
-    // Pending result for async operations
-    private var connectionResult: MethodChannel.Result? = null
+    // Font cache
+    private val khmerTypefaceCache = ConcurrentHashMap<String, Typeface>()
+    private val receiptBuffer = mutableListOf<Byte>()
+    private var isBatchMode = false
 
+
+    // ====================================================================
+    // Plugin Lifecycle
+    // ====================================================================
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
         channel = MethodChannel(binding.binaryMessenger, "thermal_printer")
         channel.setMethodCallHandler(this)
 
-        val bluetoothManager =
-            context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
         bluetoothAdapter = bluetoothManager?.adapter
         usbManager = context.getSystemService(Context.USB_SERVICE) as? UsbManager
 
+        preloadFonts()
         println("🔵 ThermalPrinterPlugin initialized")
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
 
-        // Unregister discovery receiver if exists
+        // Cleanup connections
+        cleanupAllConnections()
+
+        // Unregister discovery receiver
         discoveryReceiver?.let {
             try {
                 context.unregisterReceiver(it)
             } catch (e: IllegalArgumentException) {
-                // Already unregistered
+                println("⚠️ Receiver already unregistered")
             }
         }
 
+        // Cancel coroutines
         scope.cancel()
+
+        // Clear caches
+        khmerTypefaceCache.clear()
+        pendingResults.clear()
     }
 
+    //=======================================test===============
+
+    private fun startBatchMode() {
+        receiptBuffer.clear()
+        isBatchMode = true
+
+        // ✅ CRITICAL: Initialize printer ONCE at the start
+        val initCommands = mutableListOf<Byte>()
+        initCommands.addAll(listOf(ESC, 0x40))           // Reset printer
+        initCommands.addAll(listOf(ESC, 0x74, 0x01))     // Set code page
+        initCommands.addAll(listOf(ESC, 0x33, 0x30))     // Set line spacing
+
+        receiptBuffer.addAll(initCommands)
+
+        println("📦 Started batch mode with initialization")
+    }
+
+    private fun endBatchMode() {
+        isBatchMode = false
+        if (receiptBuffer.isNotEmpty()) {
+            println("📤 Optimizing and sending batched receipt: ${receiptBuffer.size} bytes")
+
+            // ✅ CRITICAL: Optimize the data before sending
+            val optimizedData = optimizeLineFeeds(receiptBuffer.toByteArray())
+
+            println("✅ Optimized: ${receiptBuffer.size} → ${optimizedData.size} bytes")
+
+            writeDataSmooth(optimizedData)
+            receiptBuffer.clear()
+        }
+    }
+
+    private fun addToBuffer(data: ByteArray) {
+        if (isBatchMode) {
+            receiptBuffer.addAll(data.toList())
+            println("➕ Added ${data.size} bytes to buffer (total: ${receiptBuffer.size})")
+        } else {
+            writeDataSmooth(data)
+        }
+    }
+
+    private fun testPaperFeed(result: MethodChannel.Result) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                println("🧪 TEST 1: Paper Feed Test")
+                println("Listen for 'stuck stuck' sound...")
+
+                // Test A: Feed paper only (no printing)
+                val feedCommand = ByteArray(10) { 0x0A.toByte() } // 10 line feeds
+                writeDataSmooth(feedCommand)
+                Thread.sleep(2000)
+
+                // If "stuck stuck" happens here → PAPER PROBLEM (not code)
+                // If smooth → Code/data problem
+
+                withContext(Dispatchers.Main) {
+                    result.success(mapOf(
+                        "test" to "paper_feed",
+                        "instruction" to "Did you hear 'stuck stuck' during paper feed? YES = Paper problem, NO = Code problem"
+                    ))
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    result.error("TEST_ERROR", e.message, null)
+                }
+            }
+        }
+    }
+
+    // ====================================================================
+// DIAGNOSTIC TEST 2: Print simple text slowly
+// ====================================================================
+    private fun testSlowPrint(result: MethodChannel.Result) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                println("🧪 TEST 2: Slow Print Test")
+
+                val commands = mutableListOf<Byte>()
+                commands.addAll(listOf(ESC, 0x40)) // Initialize
+                commands.addAll("TEST LINE 1".toByteArray(charset("CP437")).toList())
+                commands.add(0x0A.toByte())
+
+                writeDataSmooth(commands.toByteArray())
+                Thread.sleep(1000) // Wait 1 second
+
+                commands.clear()
+                commands.addAll("TEST LINE 2".toByteArray(charset("CP437")).toList())
+                commands.add(0x0A.toByte())
+
+                writeDataSmooth(commands.toByteArray())
+                Thread.sleep(1000)
+
+                commands.clear()
+                commands.addAll("TEST LINE 3".toByteArray(charset("CP437")).toList())
+                commands.add(0x0A.toByte())
+
+                writeDataSmooth(commands.toByteArray())
+
+                withContext(Dispatchers.Main) {
+                    result.success(mapOf(
+                        "test" to "slow_print",
+                        "instruction" to "Was it smooth? If YES → code was too fast before, If NO → hardware issue"
+                    ))
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    result.error("TEST_ERROR", e.message, null)
+                }
+            }
+        }
+    }
+
+    // ====================================================================
+// DIAGNOSTIC TEST 3: Check printer buffer status
+// ====================================================================
+    private fun checkPrinterStatus(result: MethodChannel.Result) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                println("🧪 TEST 3: Printer Status Check")
+
+                // ESC/POS command to get printer status
+                val statusCommand = byteArrayOf(0x10, 0x04, 0x01) // DLE EOT n
+
+                writeDataSmooth(statusCommand)
+                Thread.sleep(100)
+
+                // Try to read response (if available)
+                val status = when (currentConnectionType) {
+                    ConnectionType.BLUETOOTH_CLASSIC -> {
+                        try {
+                            val inputStream = bluetoothSocket?.inputStream
+                            if (inputStream?.available() ?: 0 > 0) {
+                                val buffer = ByteArray(10)
+                                val read = inputStream?.read(buffer)
+                                "Status bytes read: $read"
+                            } else {
+                                "No response from printer"
+                            }
+                        } catch (e: Exception) {
+                            "Error reading: ${e.message}"
+                        }
+                    }
+                    else -> "Status check only available for Classic BT"
+                }
+
+                withContext(Dispatchers.Main) {
+                    result.success(mapOf(
+                        "test" to "status_check",
+                        "status" to status
+                    ))
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    result.error("TEST_ERROR", e.message, null)
+                }
+            }
+        }
+    }
+
+
+
+    // ====================================================================
+// FIX 5: Initialize printer with optimal settings
+// ====================================================================
+    private fun initializePrinterOptimal() {
+        println("🔧 Initializing printer with optimal settings...")
+
+        val commands = mutableListOf<Byte>()
+
+        // 1. Reset printer
+        commands.addAll(listOf(ESC, 0x40))
+
+        // 2. Set print mode to normal (not bold/emphasized)
+        commands.addAll(listOf(ESC, 0x21, 0x00))
+
+        // 3. Set line spacing (looser = smoother)
+        commands.addAll(listOf(ESC, 0x33, 0x40.toByte())) // 64/180 inch
+
+        // 4. Set print speed (if supported)
+        // Some printers support: GS ( K <pL> <pH> <cn> <fn> <n>
+
+        // 5. Disable double-strike mode (reduces mechanical stress)
+        commands.addAll(listOf(ESC, 0x47, 0x00))
+
+        writeDataSmooth(commands.toByteArray())
+        Thread.sleep(200) // Wait for settings to apply
+
+        println("✅ Printer initialized with smooth settings")
+    }
+
+
+    // ====================================================================
+// COMPLETE DIAGNOSTIC FLOW
+// ====================================================================
+    fun runCompleteDiagnostic(result: MethodChannel.Result) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val diagnosticResults = mutableMapOf<String, String>()
+
+                println("""
+                ═══════════════════════════════════════
+                🔍 COMPLETE PRINTER DIAGNOSTIC
+                ═══════════════════════════════════════
+            """.trimIndent())
+
+                // Test 1: Paper feed only
+                println("\n▶️ TEST 1: Paper Feed Test")
+                val feedCommand = ByteArray(5) { 0x0A.toByte() }
+                writeDataSmooth(feedCommand)
+                Thread.sleep(2000)
+                diagnosticResults["paper_feed"] = "Check if 'stuck stuck' sound occurred"
+
+                // Test 2: Single line text
+                println("\n▶️ TEST 2: Single Line Test")
+                val textCommand = "TEST LINE\n".toByteArray(charset("CP437"))
+                writeDataSmooth(textCommand)
+                Thread.sleep(2000)
+                diagnosticResults["single_line"] = "Check if smooth"
+
+                // Test 3: Multiple lines with delays
+                println("\n▶️ TEST 3: Multiple Lines (with delays)")
+                for (i in 1..3) {
+                    val line = "Line $i\n".toByteArray(charset("CP437"))
+                    writeDataSmooth(line)
+                    Thread.sleep(500) // 500ms between lines
+                }
+                diagnosticResults["multiple_lines"] = "Check if smooth with delays"
+
+                // Test 4: Multiple lines fast
+                println("\n▶️ TEST 4: Multiple Lines (fast)")
+                val fastLines = "Fast Line 1\nFast Line 2\nFast Line 3\n".toByteArray(charset("CP437"))
+                writeDataSmooth(fastLines)
+                Thread.sleep(2000)
+                diagnosticResults["fast_lines"] = "Check if 'stuck stuck' occurs when fast"
+
+                println("""
+                
+                ═══════════════════════════════════════
+                📊 DIAGNOSTIC RESULTS
+                ═══════════════════════════════════════
+                ${diagnosticResults.entries.joinToString("\n") { "${it.key}: ${it.value}" }}
+                
+                ═══════════════════════════════════════
+                📋 INTERPRETATION:
+                ═══════════════════════════════════════
+                ✅ If smooth in TEST 3 (slow) but stuck in TEST 4 (fast)
+                   → SOLUTION: Add delays between commands
+                
+                ✅ If stuck in TEST 1 (paper feed only)
+                   → PROBLEM: Paper or mechanical issue (not code)
+                   → CHECK: Paper quality, paper sensor, roller
+                
+                ✅ If stuck in all tests
+                   → PROBLEM: Printer hardware issue
+                   → CHECK: Battery, print head, motor
+                
+                ✅ If smooth in all tests
+                   → PROBLEM: Complex data causing issues
+                   → SOLUTION: Use ultra-smooth mode for images
+                ═══════════════════════════════════════
+            """.trimIndent())
+
+                withContext(Dispatchers.Main) {
+                    result.success(diagnosticResults)
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    result.error("DIAGNOSTIC_ERROR", e.message, null)
+                }
+            }
+        }
+    }
+
+
+    private fun cleanupAllConnections() {
+        try {
+            bluetoothSocket?.close()
+            bluetoothSocket = null
+
+            bluetoothGatt?.disconnect()
+            bluetoothGatt?.close()
+            bluetoothGatt = null
+            writeCharacteristic = null
+
+            networkSocket?.close()
+            networkSocket = null
+
+            currentConnectionType = ConnectionType.NONE
+            println("🧹 All connections cleaned up")
+        } catch (e: Exception) {
+            println("⚠️ Cleanup error: ${e.message}")
+        }
+    }
+
+    // ====================================================================
+    // Method Call Handler
+    // ====================================================================
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
+            "startBatch" -> {
+                startBatchMode()
+                result.success(true)
+            }
+
+            "printSeparator" -> {
+                val width = call.argument<Int>("width") ?: 48
+                printSeparator(width, result)
+            }
+
+            "endBatch" -> {
+                endBatchMode()
+                result.success(true)
+            }
+            "configureOOMAS" -> {
+                configureForOOMAS()
+                result.success(true)
+            }
+
+            "warmUpPrinter" -> {
+                warmUpPrinter()
+                result.success(true)
+            }
+
+            "testPaperFeed" -> testPaperFeed(result)
+            "testSlowPrint" -> testSlowPrint(result)
+            "checkPrinterStatus" -> checkPrinterStatus(result)
+            "runDiagnostic" -> runCompleteDiagnostic(result)
+            "initializePrinter" -> {
+                initializePrinterOptimal()
+                result.success(true)
+            }
             "discoverPrinters" -> {
                 val type = call.argument<String>("type")
                 if (type != null) {
@@ -130,6 +528,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
 
             "discoverAllPrinters" -> discoverAllPrinters(result)
+
             "connect" -> {
                 val address = call.argument<String>("address")
                 val type = call.argument<String>("type")
@@ -151,6 +550,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
 
             "disconnect" -> disconnect(result)
+
             "printText" -> {
                 val text = call.argument<String>("text")
                 val fontSize = call.argument<Int>("fontSize") ?: 24
@@ -175,7 +575,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 val width = call.argument<Int>("width") ?: printerWidth
                 val align = call.argument<Int>("align") ?: 1
                 if (imageBytes != null) {
-                    printImage(imageBytes, width,align, result)
+                    printImage(imageBytes, width, align, result)
                 } else {
                     result.error("INVALID_ARGS", "Missing imageBytes", null)
                 }
@@ -195,14 +595,15 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 printImageWithPadding(imageBytes, width, align, paperWidth, result)
             }
 
-
             "feedPaper" -> {
                 val lines = call.argument<Int>("lines") ?: 1
                 feedPaper(lines, result)
             }
 
             "cutPaper" -> cutPaper(result)
+
             "getStatus" -> getStatus(result)
+
             "setPrinterWidth" -> {
                 val width = call.argument<Int>("width")
                 if (width != null) {
@@ -213,11 +614,16 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
 
             "checkBluetoothPermission" -> checkBluetoothPermission(result)
+
             else -> result.notImplemented()
         }
     }
 
-    // MARK: - Discovery
+
+
+    // ====================================================================
+    // Discovery Methods
+    // ====================================================================
     private fun discoverPrinters(type: String, result: MethodChannel.Result) {
         when (type) {
             "bluetooth", "ble" -> discoverBluetoothPrinters(result)
@@ -234,6 +640,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
 
         discoveredDevices.clear()
+
         try {
             bluetoothAdapter?.bondedDevices?.forEach { device ->
                 discoveredDevices.add(device)
@@ -243,23 +650,25 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             return
         }
 
-        // Use mutableListOf and addAll
-        val allPrinters = discoveredDevices.mapNotNull { device ->
+        val allPrinters = mutableListOf<Map<String, Any>>()
+
+        // Add Bluetooth devices
+        discoveredDevices.forEach { device ->
             try {
                 val deviceName = device.name
                 if (!deviceName.isNullOrBlank() && deviceName != "Unknown Device") {
-                    mapOf(
-                        "name" to deviceName,
-                        "address" to device.address,
-                        "type" to "bluetooth"
+                    allPrinters.add(
+                        mapOf(
+                            "name" to deviceName,
+                            "address" to device.address,
+                            "type" to "bluetooth"
+                        )
                     )
-                } else {
-                    null
                 }
             } catch (e: SecurityException) {
-                null
+                println("⚠️ Cannot access device: ${e.message}")
             }
-        }.toMutableList()
+        }
 
         // Add USB devices
         usbManager?.deviceList?.values?.forEach { device ->
@@ -283,24 +692,16 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         discoveredDevices.clear()
 
-        // Add bonded devices first
         try {
             bluetoothAdapter?.bondedDevices?.forEach { device ->
                 discoveredDevices.add(device)
             }
-        } catch (e: SecurityException) {
-            result.error("PERMISSION_DENIED", e.message, null)
-            return
-        }
 
-        // Start discovery for unpaired devices
-        try {
             if (bluetoothAdapter?.isDiscovering == true) {
                 bluetoothAdapter?.cancelDiscovery()
             }
             bluetoothAdapter?.startDiscovery()
 
-            // Register broadcast receiver to listen for discovered devices
             registerDiscoveryReceiver(result)
         } catch (e: SecurityException) {
             result.error("PERMISSION_DENIED", e.message, null)
@@ -308,7 +709,6 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     private fun registerDiscoveryReceiver(result: MethodChannel.Result) {
-        // Unregister previous receiver if exists
         discoveryReceiver?.let {
             try {
                 context.unregisterReceiver(it)
@@ -321,8 +721,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
                     BluetoothDevice.ACTION_FOUND -> {
-                        val device: BluetoothDevice? =
-                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                        val device: BluetoothDevice? = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
                         device?.let {
                             if (!discoveredDevices.contains(it)) {
                                 discoveredDevices.add(it)
@@ -337,7 +736,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                             context?.unregisterReceiver(this)
                             discoveryReceiver = null
                         } catch (e: IllegalArgumentException) {
-                            // Receiver already unregistered
+                            // Already unregistered
                         }
                     }
                 }
@@ -381,88 +780,20 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         result.success(devices)
     }
 
-    // MARK: - Connection Helpers
-    private fun cleanupBeforeConnect() {
-        try {
-            bluetoothGatt?.let { gatt ->
-                println("🧹 Cleaning up existing connection...")
-                try {
-                    gatt.disconnect()
-                    Thread.sleep(300)
-                    gatt.close()
-                    Thread.sleep(300)
-                } catch (e: SecurityException) {
-                    println("⚠️ Security exception during cleanup: ${e.message}")
-                }
-            }
-        } catch (e: Exception) {
-            println("⚠️ Cleanup error: ${e.message}")
-        }
-        bluetoothGatt = null
-        writeCharacteristic = null
-    }
-
-    private fun isDeviceAlreadyConnected(address: String): Boolean {
-        try {
-            val bluetoothManager =
-                context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-            val connectedDevices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT)
-            return connectedDevices.any { it.address == address }
-        } catch (e: SecurityException) {
-            println("⚠️ Can't check connected devices: ${e.message}")
-            return false
-        } catch (e: Exception) {
-            println("⚠️ Error checking connected devices: ${e.message}")
-            return false
-        }
-    }
-
-    private fun checkDeviceBondState(device: BluetoothDevice): String {
-        return try {
-            when (device.bondState) {
-                BluetoothDevice.BOND_BONDED -> {
-                    println("✅ Device is paired")
-                    "bonded"
-                }
-
-                BluetoothDevice.BOND_BONDING -> {
-                    println("⏳ Device is pairing...")
-                    "bonding"
-                }
-
-                BluetoothDevice.BOND_NONE -> {
-                    println("⚠️ Device is NOT paired!")
-                    "not_bonded"
-                }
-
-                else -> "unknown"
-            }
-        } catch (e: SecurityException) {
-            println("⚠️ Can't check bond state: ${e.message}")
-            "unknown"
-        }
-    }
-
-    // MARK: - Connection
+    // ====================================================================
+    // Connection Methods
+    // ====================================================================
     private fun connect(address: String, type: String, result: MethodChannel.Result) {
-        currentConnectionType = type
         println("🔵 Connect request: address=$address, type=$type")
 
         when (type) {
-            "bluetooth" -> {
-                // Try Classic Bluetooth first (SPP)
-                connectClassicBluetooth(address, result)
-            }
-            "ble" -> {
-                // BLE connection
-                connectBLE(address, result)
-            }
+            "bluetooth" -> connectClassicBluetooth(address, result)
+            "ble" -> connectBLE(address, result)
             "usb" -> result.error("NOT_IMPLEMENTED", "USB not yet implemented", null)
             else -> result.error("INVALID_TYPE", "Unknown connection type", null)
         }
     }
 
-    // New method: Classic Bluetooth connection via SPP
     private fun connectClassicBluetooth(address: String, result: MethodChannel.Result) {
         if (!checkBluetoothPermissions()) {
             result.error("PERMISSION_DENIED", "Bluetooth permissions not granted", null)
@@ -492,7 +823,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 // Cancel discovery to improve connection
                 bluetoothAdapter?.cancelDiscovery()
 
-                // Try multiple UUIDs (some printers use different UUIDs)
+                // Try multiple UUIDs
                 val uuids = listOf(
                     "00001101-0000-1000-8000-00805F9B34FB", // SPP (Standard)
                     "00001102-0000-1000-8000-00805F9B34FB", // LAN Access Using PPP
@@ -526,6 +857,21 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 }
 
                 if (connected) {
+                    // ============================================================
+                    // ✅ ADD THIS SECTION HERE - AFTER CONNECTION SUCCESS
+                    // ============================================================
+                    currentConnectionType = ConnectionType.BLUETOOTH_CLASSIC
+
+                    // Initialize printer with smooth settings
+                    try {
+                        initializePrinterForSmoothPrinting()
+                        println("✅ Printer initialized for smooth printing")
+                    } catch (e: Exception) {
+                        println("⚠️ Could not initialize printer settings: ${e.message}")
+                        // Continue anyway - connection still works
+                    }
+                    // ============================================================
+
                     withContext(Dispatchers.Main) {
                         result.success(true)
                     }
@@ -549,7 +895,6 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
     }
 
-    // Renamed existing method for BLE
     private fun connectBLE(address: String, result: MethodChannel.Result) {
         if (!checkBluetoothPermissions()) {
             result.error("PERMISSION_DENIED", "Bluetooth permissions not granted", null)
@@ -568,490 +913,156 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 return
             }
 
-            // Check bond state
-            val bondState = checkDeviceBondState(device)
-            if (bondState == "not_bonded") {
-                result.error(
-                    "NOT_PAIRED",
-                    "Device is not paired. Please pair in Bluetooth settings first.",
-                    null
-                )
-                return
-            }
+            cleanupBeforeConnect()
 
-            // Check if already connected elsewhere
-            if (isDeviceAlreadyConnected(address)) {
-                println("⚠️ Device appears to be connected already, will try to disconnect first")
-                cleanupBeforeConnect()
-                Thread.sleep(1000)
-            }
-
-        } catch (e: SecurityException) {
-            result.error("PERMISSION_DENIED", e.message, null)
-            return
-        }
-
-        // Clean up before new connection
-        cleanupBeforeConnect()
-
-        // Now attempt BLE connection
-        connectBluetoothBLE(address, result)
-    }
-
-    // Original BLE connection method renamed
-    private fun connectBluetoothBLE(address: String, result: MethodChannel.Result) {
-        if (!checkBluetoothPermissions()) {
-            result.error("PERMISSION_DENIED", "Bluetooth permissions not granted", null)
-            return
-        }
-
-        if (bluetoothAdapter?.isEnabled != true) {
-            result.error("BLUETOOTH_OFF", "Bluetooth is turned off", null)
-            return
-        }
-
-        connectionResult = result
-
-        try {
-            val device = bluetoothAdapter?.getRemoteDevice(address)
-            if (device == null) {
-                result.error("NOT_FOUND", "Device not found", null)
-                connectionResult = null
-                return
-            }
-
-            println("🔵 Connecting to: ${device.name} ($address)")
+            val resultKey = "connection_$address"
+            pendingResults[resultKey] = result
 
             bluetoothGatt = device.connectGatt(
                 context,
                 false,
-                object : BluetoothGattCallback() {
-                    override fun onConnectionStateChange(
-                        gatt: BluetoothGatt,
-                        status: Int,
-                        newState: Int
-                    ) {
-                        println("🔵 BLE State Change: status=$status, newState=$newState")
-
-                        when (newState) {
-                            BluetoothProfile.STATE_CONNECTED -> {
-                                println("✅ BLE Connected! Status: $status")
-
-                                if (status == BluetoothGatt.GATT_SUCCESS) {
-                                    try {
-                                        Thread.sleep(600)
-                                        val discovered = gatt.discoverServices()
-                                        println("🔍 Service discovery started: $discovered")
-
-                                        if (!discovered) {
-                                            mainHandler.post {
-                                                connectionResult?.error(
-                                                    "DISCOVER_FAILED",
-                                                    "Failed to start service discovery",
-                                                    null
-                                                )
-                                                connectionResult = null
-                                                gatt.disconnect()
-                                                gatt.close()
-                                            }
-                                        }
-                                    } catch (e: SecurityException) {
-                                        println("❌ Security exception: ${e.message}")
-                                        mainHandler.post {
-                                            connectionResult?.error(
-                                                "PERMISSION_DENIED",
-                                                e.message,
-                                                null
-                                            )
-                                            connectionResult = null
-                                            gatt.disconnect()
-                                            gatt.close()
-                                        }
-                                    } catch (e: Exception) {
-                                        println("❌ Error: ${e.message}")
-                                        mainHandler.post {
-                                            connectionResult?.error("ERROR", e.message, null)
-                                            connectionResult = null
-                                            gatt.disconnect()
-                                            gatt.close()
-                                        }
-                                    }
-                                } else {
-                                    println("⚠️ Connected with error status: $status")
-                                    mainHandler.post {
-                                        connectionResult?.error(
-                                            "CONNECTION_ERROR",
-                                            "Connected but status=$status",
-                                            null
-                                        )
-                                        connectionResult = null
-                                        gatt.disconnect()
-                                        gatt.close()
-                                    }
-                                }
-                            }
-
-                            BluetoothProfile.STATE_DISCONNECTED -> {
-                                val errorMsg = when (status) {
-                                    0 -> "Disconnected normally"
-                                    8 -> "Connection timeout - device not responding"
-                                    19 -> "Connection terminated by peer device"
-                                    22 -> "Connection failed - device busy or unavailable"
-                                    133 -> "GATT error 133 - Device out of range or not ready"
-                                    else -> "Disconnected with status: $status"
-                                }
-                                println("❌ Disconnected: $errorMsg")
-
-                                mainHandler.post {
-                                    if (connectionResult != null) {
-                                        connectionResult?.error("DISCONNECTED", errorMsg, null)
-                                        connectionResult = null
-                                    }
-                                }
-                                gatt.close()
-                            }
-
-                            BluetoothProfile.STATE_CONNECTING -> {
-                                println("🔵 BLE Connecting... (status=$status)")
-                            }
-
-                            BluetoothProfile.STATE_DISCONNECTING -> {
-                                println("🔵 BLE Disconnecting...")
-                            }
-                        }
-                    }
-
-                    override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-                        println("🔍 Services discovered callback: status=$status")
-
-                        if (status != BluetoothGatt.GATT_SUCCESS) {
-                            println("❌ Service discovery failed: status=$status")
-                            mainHandler.post {
-                                connectionResult?.error(
-                                    "DISCOVER_FAILED",
-                                    "Service discovery failed: $status",
-                                    null
-                                )
-                                connectionResult = null
-                                gatt.disconnect()
-                                gatt.close()
-                            }
-                            return
-                        }
-
-                        println("📋 Found ${gatt.services.size} services")
-
-                        // Log all services and characteristics
-                        for (service in gatt.services) {
-                            println("  📦 Service: ${service.uuid}")
-                            for (char in service.characteristics) {
-                                val props = char.properties
-                                val propsStr = StringBuilder()
-                                if (props and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) propsStr.append(
-                                    "WRITE "
-                                )
-                                if (props and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) propsStr.append(
-                                    "WRITE_NO_RESP "
-                                )
-                                if (props and BluetoothGattCharacteristic.PROPERTY_READ != 0) propsStr.append(
-                                    "READ "
-                                )
-                                if (props and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) propsStr.append(
-                                    "NOTIFY "
-                                )
-                                println("    📝 Char: ${char.uuid} [${propsStr.toString().trim()}]")
-                            }
-                        }
-
-                        // Search for writable characteristic
-                        var foundCharacteristic: BluetoothGattCharacteristic? = null
-
-                        // Common thermal printer service UUIDs
-                        val printerServiceUUIDs = listOf(
-                            "000018f0-0000-1000-8000-00805f9b34fb",
-                            "49535343-fe7d-4ae5-8fa9-9fafd205e455",
-                            "0000ffe0-0000-1000-8000-00805f9b34fb",
-                            "0000fff0-0000-1000-8000-00805f9b34fb"
-                        )
-
-                        for (serviceUuidStr in printerServiceUUIDs) {
-                            try {
-                                val service =
-                                    gatt.getService(java.util.UUID.fromString(serviceUuidStr))
-                                if (service != null) {
-                                    println("✅ Found known service: $serviceUuidStr")
-                                    for (char in service.characteristics) {
-                                        val props = char.properties
-                                        if ((props and BluetoothGattCharacteristic.PROPERTY_WRITE) != 0 ||
-                                            (props and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0
-                                        ) {
-                                            foundCharacteristic = char
-                                            println("✅ Using characteristic: ${char.uuid}")
-                                            break
-                                        }
-                                    }
-                                    if (foundCharacteristic != null) break
-                                }
-                            } catch (e: Exception) {
-                                println("⚠️ Error checking service $serviceUuidStr: ${e.message}")
-                            }
-                        }
-
-                        // Search all services if not found
-                        if (foundCharacteristic == null) {
-                            println("🔍 No known service found, searching all characteristics...")
-                            for (service in gatt.services) {
-                                for (char in service.characteristics) {
-                                    val props = char.properties
-                                    if ((props and BluetoothGattCharacteristic.PROPERTY_WRITE) != 0 ||
-                                        (props and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0
-                                    ) {
-                                        foundCharacteristic = char
-                                        println("✅ Found writable char: ${char.uuid} in service ${service.uuid}")
-                                        break
-                                    }
-                                }
-                                if (foundCharacteristic != null) break
-                            }
-                        }
-
-                        if (foundCharacteristic != null) {
-                            writeCharacteristic = foundCharacteristic
-                            println("✅ CONNECTION SUCCESS! Using: ${foundCharacteristic.uuid}")
-
-                            mainHandler.post {
-                                connectionResult?.success(true)
-                                connectionResult = null
-                            }
-                        } else {
-                            println("❌ NO WRITABLE CHARACTERISTIC FOUND!")
-
-                            mainHandler.post {
-                                connectionResult?.error(
-                                    "NO_CHARACTERISTIC",
-                                    "No writable characteristic found. This device may not be a thermal printer.",
-                                    null
-                                )
-                                connectionResult = null
-                                gatt.disconnect()
-                                gatt.close()
-                            }
-                        }
-                    }
-
-                    // Inside your BluetoothGattCallback class (or wherever you handle the result)
-                    override fun onCharacteristicWrite(
-                        gatt: BluetoothGatt?,
-                        characteristic: BluetoothGattCharacteristic?,
-                        status: Int
-                    ) {
-                        if (status == BluetoothGatt.GATT_SUCCESS) {
-                            writeCompleted = true
-                            writeLatch?.countDown()
-                            currentWriteDeferred?.complete(true)
-                        } else {
-                            writeLatch?.countDown()
-                            currentWriteDeferred?.complete(false)
-                            println("⚠️ Write failed: status=$status")
-                        }
-                        currentWriteDeferred = null
-                    }
-
-                    // You would need to define this in your main plugin class:
-                    private var currentWriteDeferred: CompletableDeferred<Boolean>? = null
-                },
+                createGattCallback(resultKey),
                 BluetoothDevice.TRANSPORT_LE
             )
 
+            // Timeout handler
             mainHandler.postDelayed({
-                if (connectionResult != null) {
-                    println("⏱️ BLE Connection timeout (15s)")
-                    connectionResult?.error(
-                        "TIMEOUT",
-                        "Connection timeout. Please ensure:\n1. Printer is ON and nearby\n2. Not connected to another device\n3. Printer is in pairing mode",
-                        null
-                    )
-                    connectionResult = null
-                    try {
-                        bluetoothGatt?.disconnect()
-                        bluetoothGatt?.close()
-                        bluetoothGatt = null
-                    } catch (e: Exception) {
-                        println("⚠️ Cleanup error: ${e.message}")
-                    }
-                }
-            }, 15000)
-
-        } catch (e: SecurityException) {
-            println("❌ Security exception: ${e.message}")
-            result.error("PERMISSION_DENIED", e.message, null)
-            connectionResult = null
-        } catch (e: Exception) {
-            println("❌ Connection error: ${e.message}")
-            result.error("CONNECTION_ERROR", e.message, null)
-            connectionResult = null
-        }
-    }
-
-    private fun connectNetwork(ipAddress: String, port: Int, result: MethodChannel.Result) {
-        scope.launch {
-            try {
-                networkSocket = Socket(ipAddress, port)
-                currentConnectionType = "network"
-                withContext(Dispatchers.Main) {
-                    result.success(true)
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    result.error("CONNECTION_FAILED", e.message, null)
-                }
-            }
-        }
-    }
-
-    private fun disconnect(result: MethodChannel.Result) {
-        try {
-            when (currentConnectionType) {
-                "bluetooth", "ble" -> {
-                    // Close Classic Bluetooth socket
-                    bluetoothSocket?.close()
-                    bluetoothSocket = null
-
-                    // Close BLE connection
+                if (pendingResults.remove(resultKey) != null) {
+                    println("⏱️ BLE Connection timeout")
+                    result.error("TIMEOUT", "Connection timeout after ${PrinterConfig.CONNECTION_TIMEOUT}ms", null)
                     bluetoothGatt?.disconnect()
                     bluetoothGatt?.close()
                     bluetoothGatt = null
-                    writeCharacteristic = null
                 }
+            }, PrinterConfig.CONNECTION_TIMEOUT)
 
-                "network" -> {
-                    networkSocket?.close()
-                    networkSocket = null
-                }
-            }
-            result.success(true)
+        } catch (e: SecurityException) {
+            result.error("PERMISSION_DENIED", e.message, null)
         } catch (e: Exception) {
-            result.error("DISCONNECT_ERROR", e.message, null)
+            result.error("CONNECTION_ERROR", e.message, null)
         }
     }
 
-    // Add this at the top with other class properties
-    private var lastPrintTime = 0L
-    private val imageProcessingDelay = 150L  // Wait 150ms after sending image data
+    private fun getRequiredDelay(dataSize: Int): Long {
+        // Only add delay for LARGE data (images)
+        return when {
+            dataSize > 2000 -> when (printerSpeed) {
+                PrinterSpeed.SLOW -> 200L
+                PrinterSpeed.MEDIUM -> 100L
+                PrinterSpeed.FAST -> 50L
+                PrinterSpeed.UNKNOWN -> 100L
+            }
+            dataSize > 1000 -> 50L
+            else -> 0L  // NO DELAY for small text commands!
+        }
+    }
 
+
+    // ====================================================================
+// FIX 3: Optimized writeDataSmooth - NO unnecessary delays
+// ====================================================================
     private fun writeDataSmooth(data: ByteArray) {
         val startTime = System.currentTimeMillis()
 
-        // Calculate delay based on data size
-        val isLargeData = data.size > 2000
+        // Count line feeds to know if we need delays
+        val lineFeeds = data.count { it == 0x0A.toByte() }
+        val hasImageData = data.size > 1000
 
-        when (currentConnectionType) {
-            "bluetooth" -> {
-                val socket = bluetoothSocket
-                if (socket != null && socket.isConnected) {
-                    try {
-                        writeClassicBluetoothSmooth(socket, data)
+        try {
+            when (currentConnectionType) {
+                ConnectionType.BLUETOOTH_CLASSIC -> {
+                    bluetoothSocket?.let { socket ->
+                        if (socket.isConnected) {
+                            // Write the data
+                            writeClassicBluetoothWithLineDelay(socket, data, lineFeeds)
 
-                        // CRITICAL FIX: Wait after large data
-                        if (isLargeData) {
-                            val estimatedPrintTime = (data.size / 50).toLong() // ~50 bytes/ms print speed
-                            Thread.sleep(minOf(estimatedPrintTime, 200L)) // Max 200ms wait
-                            println("⏱️ Waited ${minOf(estimatedPrintTime, 200L)}ms for printer to process")
+                            val elapsed = System.currentTimeMillis() - startTime
+                            println("✅ Classic BT: ${data.size} bytes in ${elapsed}ms")
+                            return
                         }
-
-                        val writeTime = System.currentTimeMillis() - startTime
-                        println("✅ Classic BT: ${data.size} bytes in ${writeTime}ms")
-                        return
-                    } catch (e: Exception) {
-                        println("❌ Classic BT failed: ${e.message}")
                     }
                 }
-                writeBLEDataSmooth(data, startTime)
-            }
-            "ble" -> {
-                writeBLEDataSmooth(data, startTime)
-                if (isLargeData) {
-                    val estimatedPrintTime = (data.size / 40).toLong()
-                    Thread.sleep(minOf(estimatedPrintTime, 250L))
-                    println("⏱️ BLE: Waited ${minOf(estimatedPrintTime, 250L)}ms for printer")
+
+                ConnectionType.BLUETOOTH_BLE -> {
+                    writeBLEDataOptimized(data, startTime)
+                    // Add delay after printing if has line feeds
+                    if (lineFeeds > 0) {
+                        Thread.sleep(lineFeeds * 30L) // 30ms per line
+                    }
                 }
-            }
-            "network" -> {
-                writeNetworkSmooth(data)
-                if (isLargeData) {
-                    Thread.sleep(150L)
+
+                ConnectionType.NETWORK -> {
+                    writeNetworkOptimized(data)
+                    if (lineFeeds > 0) {
+                        Thread.sleep(lineFeeds * 30L)
+                    }
                 }
+
+                else -> println("❌ No active connection")
             }
+        } catch (e: Exception) {
+            println("❌ Write error: ${e.message}")
+            throw e
         }
     }
 
-    private fun writeNetworkSmooth(data: ByteArray) {
-        try {
-            val outputStream = networkSocket?.getOutputStream()
-            val chunkSize = if (data.size > 2000) 512 else 1024
+    private fun writeClassicBluetoothWithLineDelay(
+        socket: android.bluetooth.BluetoothSocket,
+        data: ByteArray,
+        lineFeeds: Int
+    ) {
+        val outputStream = socket.outputStream
+
+        // For data with line feeds, write byte-by-byte and pause at line feeds
+        if (lineFeeds > 0 && data.size < 500) {
+            println("📝 Writing with line feed delays (${lineFeeds} line feeds)")
+
+            for (i in data.indices) {
+                outputStream.write(data[i].toInt())
+
+                // CRITICAL FIX: Pause after each line feed
+                if (data[i] == 0x0A.toByte()) {
+                    outputStream.flush()
+                    Thread.sleep(50L) // 50ms for motor to complete paper feed
+                    println("⏸️ Line feed delay")
+                }
+            }
+            outputStream.flush()
+            return
+        }
+
+        // For large data (images), use chunking
+        if (data.size >= 500) {
+            val chunkSize = 256
             var offset = 0
 
             while (offset < data.size) {
-                val end = minOf(offset + chunkSize, data.size)
+                val end = (offset + chunkSize).coerceAtMost(data.size)
                 val chunk = data.copyOfRange(offset, end)
 
-                outputStream?.write(chunk)
-                outputStream?.flush()
-                Thread.sleep(if (data.size > 2000) 15L else 10L)
+                outputStream.write(chunk)
+                outputStream.flush()
+
+                // Small delay between chunks
+                if (end < data.size) {
+                    Thread.sleep(15L)
+                }
 
                 offset = end
             }
-
-        } catch (e: Exception) {
-            println("❌ Network error: ${e.message}")
+            return
         }
+
+        // For small data without line feeds, send all at once
+        outputStream.write(data)
+        outputStream.flush()
     }
 
 
-    // FIX 2: Classic BT with Proper Chunk Delays
-// ============================================
-    private fun writeClassicBluetoothSmooth(socket: android.bluetooth.BluetoothSocket, data: ByteArray) {
-        // Dynamic chunk size based on data size
-        val chunkSize = when {
-            data.size > 4000 -> 128  // Very large: tiny chunks
-            data.size > 2000 -> 256  // Large images: small chunks
-            data.size > 1000 -> 512  // Medium data
-            else -> 1024             // Small data: larger chunks
-        }
-
-        println("📦 Write ${data.size} bytes, chunk=$chunkSize")
-
-        var offset = 0
-        val outputStream = socket.outputStream
-        var chunkCount = 0
-
-        while (offset < data.size) {
-            val end = minOf(offset + chunkSize, data.size)
-            val chunk = data.copyOfRange(offset, end)
-
-            outputStream.write(chunk)
-            outputStream.flush()
-
-            // Dynamic delay based on chunk size
-            val delay = when {
-                data.size > 4000 -> 20L  // Large images need more time
-                data.size > 2000 -> 15L
-                chunk.size >= 512 -> 12L
-                chunk.size >= 256 -> 10L
-                else -> 8L
-            }
-
-            Thread.sleep(delay)
-            offset = end
-            chunkCount++
-        }
-
-        println("📊 Sent ${chunkCount} chunks with delays")
-    }
-
-
-
-    private fun writeBLEDataSmooth(data: ByteArray, startTime: Long) {
+    // ====================================================================
+// FIX 5: Optimized BLE - Fast for small data
+// ====================================================================
+    private fun writeBLEDataOptimized(data: ByteArray, startTime: Long) {
         val characteristic = writeCharacteristic
         val gatt = bluetoothGatt
 
@@ -1061,113 +1072,180 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
 
         try {
-            val useNoResponse = (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0
+            val useNoResponse = (characteristic.properties and
+                    BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0
 
             if (useNoResponse) {
                 characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
 
-                // Smaller chunks for large data
-                val chunkSize = if (data.size > 2000) 64 else 128
-                println("📝 BLE No-Response: ${data.size} bytes, chunk=$chunkSize")
+                // OOMAS-specific BLE settings
+                val chunkSize = 128  // OOMAS works best with 128 byte chunks for BLE
+                val delay = 8L       // Minimal delay for OOMAS BLE
 
                 var offset = 0
                 while (offset < data.size) {
-                    val end = minOf(offset + chunkSize, data.size)
+                    val end = (offset + chunkSize).coerceAtMost(data.size)
                     val chunk = data.copyOfRange(offset, end)
 
                     characteristic.value = chunk
                     gatt.writeCharacteristic(characteristic)
 
-                    // Longer delay for image data
-                    val delay = if (data.size > 2000) 30L else 15L
-                    Thread.sleep(delay)
+                    if (end < data.size) {
+                        Thread.sleep(delay)
+                    }
 
                     offset = end
                 }
             } else {
-                // WITH_RESPONSE: Must wait for acknowledgment
+                // With response mode
                 characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
                 val chunkSize = 20
-                println("📝 BLE With-Response: ${data.size} bytes")
 
                 var offset = 0
                 while (offset < data.size) {
-                    val end = minOf(offset + chunkSize, data.size)
+                    val end = (offset + chunkSize).coerceAtMost(data.size)
                     val chunk = data.copyOfRange(offset, end)
 
-                    writeLatch = CountDownLatch(1)
-                    writeCompleted = false
+                    synchronized(writeSync) {
+                        writeLatch = CountDownLatch(1)
+                        writeCompleted = false
+                    }
 
                     characteristic.value = chunk
                     gatt.writeCharacteristic(characteristic)
 
-                    // Wait for acknowledgment or timeout
                     writeLatch?.await(100, TimeUnit.MILLISECONDS)
-
                     offset = end
                 }
             }
 
-            val writeTime = System.currentTimeMillis() - startTime
-            println(" BLE: ${writeTime}ms total")
+            val elapsed = System.currentTimeMillis() - startTime
+            println("✅ BLE: ${elapsed}ms total")
 
         } catch (e: Exception) {
-            println(" BLE Error: ${e.message}")
+            println("❌ BLE Error: ${e.message}")
+            throw e
         }
     }
-//===============================================new add==========================
-// ===== FONT CACHE =====
-private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
+    private fun warmUpPrinter() {
+        println("🔥 Warming up OOMAS printer...")
 
-    private fun getKhmerTypeface(bold: Boolean): Typeface {
-        val fontKey = if (bold) "bold" else "regular"
+        // Send a small warm-up command to stabilize the motor
+        val warmUpData = byteArrayOf(
+            ESC, 0x40,           // Reset
+            0x0A.toByte(),       // One line feed
+        )
 
-        if (!khmerTypefaceCache.containsKey(fontKey)) {
-            khmerTypefaceCache[fontKey] = try {
-                val fontPath = when {
-                    bold -> {
-                        // Try Bold first, fallback to SemiBold, then Medium, finally Regular
-                        when {
-                            assetExists("fonts/NotoSansKhmer-Bold.ttf") ->
-                                "fonts/NotoSansKhmer-Bold.ttf"
-                            assetExists("fonts/NotoSansKhmer-SemiBold.ttf") ->
-                                "fonts/NotoSansKhmer-SemiBold.ttf"
-                            assetExists("fonts/NotoSansKhmer-Medium.ttf") ->
-                                "fonts/NotoSansKhmer-Medium.ttf"
-                            else -> "fonts/NotoSansKhmer-Regular.ttf"
+        try {
+            when (currentConnectionType) {
+                ConnectionType.BLUETOOTH_CLASSIC -> {
+                    bluetoothSocket?.outputStream?.let { stream ->
+                        stream.write(warmUpData)
+                        stream.flush()
+                        Thread.sleep(100)  // Let motor stabilize
+                    }
+                }
+                ConnectionType.BLUETOOTH_BLE -> {
+                    writeCharacteristic?.let { char ->
+                        bluetoothGatt?.let { gatt ->
+                            char.value = warmUpData
+                            char.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+                            gatt.writeCharacteristic(char)
+                            Thread.sleep(100)
                         }
                     }
-                    else -> "fonts/NotoSansKhmer-Regular.ttf"
                 }
+                else -> {}
+            }
+            println("✅ Printer warmed up")
+        } catch (e: Exception) {
+            println("⚠️ Warm-up failed: ${e.message}")
+        }
+    }
 
-                println("✅ Loading font: $fontPath")
-                Typeface.createFromAsset(context.assets, fontPath)
-            } catch (e: Exception) {
-                println("⚠️ Failed to load Khmer font: ${e.message}")
-                Typeface.DEFAULT
+
+
+
+    private fun printSeparator(width: Int, result: MethodChannel.Result) {
+        scope.launch {
+            printMutex.withLock {
+                try {
+                    val commands = mutableListOf<Byte>()
+
+                    // ✅ CRITICAL: Lower print density for heavy lines
+                    commands.addAll(listOf(GS, 0x28, 0x4B, 0x02, 0x00, 0x30, 0x03.toByte()))
+
+                    // Center align
+                    commands.addAll(listOf(ESC, 0x61, 0x01))
+
+                    // Smaller font size (uses less power)
+                    commands.addAll(listOf(ESC, 0x21, 0x00))
+
+                    // Print the equals signs
+                    val separator = "=".repeat(width)
+                    commands.addAll(separator.toByteArray(charset("CP437")).toList())
+                    commands.add(0x0A.toByte())
+
+                    // ✅ Reset density back to normal
+                    commands.addAll(listOf(GS, 0x28, 0x4B, 0x02, 0x00, 0x30, 0x06.toByte()))
+
+                    // Left align
+                    commands.addAll(listOf(ESC, 0x61, 0x00))
+
+                    addToBuffer(commands.toByteArray())
+
+                    withContext(Dispatchers.Main) {
+                        result.success(true)
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        result.error("SEPARATOR_ERROR", e.message, null)
+                    }
+                }
             }
         }
-
-        return khmerTypefaceCache[fontKey] ?: Typeface.DEFAULT
     }
 
-    private fun assetExists(path: String): Boolean {
-        return try {
-            context.assets.open(path).use { true }
+
+
+    // ====================================================================
+// FIX 6: Optimized Network writing
+// ====================================================================
+    private fun writeNetworkOptimized(data: ByteArray) {
+        try {
+            val outputStream = networkSocket?.getOutputStream()
+
+            if (data.size < 1000) {
+                outputStream?.write(data)
+                outputStream?.flush()
+                return
+            }
+
+            val chunkSize = 512
+            var offset = 0
+
+            while (offset < data.size) {
+                val end = (offset + chunkSize).coerceAtMost(data.size)
+                val chunk = data.copyOfRange(offset, end)
+
+                outputStream?.write(chunk)
+                outputStream?.flush()
+
+                if (end < data.size) {
+                    Thread.sleep(10L)
+                }
+
+                offset = end
+            }
         } catch (e: Exception) {
-            false
+            println("❌ Network error: ${e.message}")
+            throw e
         }
     }
 
-    // Optional: Preload fonts at startup for better performance
-    fun preloadFonts() {
-        println("🔄 Preloading fonts...")
-        getKhmerTypeface(false) // Load regular
-        getKhmerTypeface(true)  // Load bold
-        println("✅ Fonts preloaded")
-    }
-
-    // ===== MAIN PRINT FUNCTION =====
+    // ====================================================================
+// FIX 8: Updated printText - NO cooldown for small text
+// ====================================================================
     private fun printText(
         text: String,
         fontSize: Int,
@@ -1182,46 +1260,29 @@ private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
             printMutex.withLock {
                 try {
                     if (containsComplexUnicode(text)) {
-                        println("🖼️ KOTLIN: Rendering Complex text (Image): \"${text.take(30)}...\"")
-                        val renderStart = System.currentTimeMillis()
-
+                        println("🖼️ Rendering Complex text: \"${text.take(30)}...\"")
                         val imageData = renderTextToData(text, fontSize, bold, align, maxCharsPerLine)
 
                         if (imageData == null || imageData.isEmpty()) {
-                            withContext(Dispatchers.Main) {
-                                result.error("RENDER_ERROR", "Failed to render or returned empty image data", null)
-                            }
-                            return@withLock
+                            throw Exception("Failed to render text")
                         }
-
-                        val renderTime = System.currentTimeMillis() - renderStart
-                        println("✅ KOTLIN: Rendered in ${renderTime}ms, size: ${imageData.size} bytes")
 
                         val alignLeftCommand = byteArrayOf(ESC, 0x61.toByte(), 0x00.toByte())
                         val finalData = alignLeftCommand + imageData
 
-                        writeDataSmooth(finalData)
-
-                        val totalTime = System.currentTimeMillis() - startTime
-                        println("🖨️ KOTLIN: Sent, total: ${totalTime}ms")
-
+                        addToBuffer(finalData)  // ✅ Add to buffer
                     } else {
-                        printSimpleTextInternal(text, fontSize, bold, align, maxCharsPerLine)
-
-                        val totalTime = System.currentTimeMillis() - startTime
-                        println("⚡ KOTLIN: English printed in ${totalTime}ms")
+                        printSimpleTextInternalBatched(text, fontSize, bold, align, maxCharsPerLine)
                     }
 
-                    // Optional: Add small delay if printer needs it
-                    // delay(50)
+                    val elapsed = System.currentTimeMillis() - startTime
+                    println("✅ Text added to buffer in ${elapsed}ms")
 
                     withContext(Dispatchers.Main) {
                         result.success(true)
                     }
-
                 } catch (e: Exception) {
-                    println("❌ PRINT ERROR: ${e.message}")
-                    e.printStackTrace()
+                    println("❌ Print error: ${e.message}")
                     withContext(Dispatchers.Main) {
                         result.error("PRINT_ERROR", e.message, null)
                     }
@@ -1230,143 +1291,25 @@ private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
         }
     }
 
-    // ===== OPTIMIZED RENDER FUNCTION =====
-    private fun renderTextToData(
-        text: String,
-        fontSize: Int,
-        bold: Boolean,
-        align: String,
-        maxCharsPerLine: Int
-    ): ByteArray? {
-        try {
-            // OPTIMIZATION 1: Use cached typeface with proper bold font
-            val khmerTypeface = getKhmerTypeface(bold)
-
-            // OPTIMIZATION 2: Scale font conservatively
-            val baseFontSize = 24f // Reduced for smaller output
-            val scaledFontSize = when {
-                fontSize > 30 -> baseFontSize * 2.0f
-                fontSize > 24 -> baseFontSize * 1.5f
-                else -> baseFontSize
-            }
-
-            println("📏 KOTLIN: fontSize=$fontSize -> scaledFontSize=$scaledFontSize, bold=$bold")
-
-            val paint = Paint().apply {
-                textSize = scaledFontSize
-                typeface = khmerTypeface
-                isFakeBoldText = false // Don't fake bold - we have real fonts
-                strokeWidth = 0f // No stroke needed with proper fonts
-                style = Paint.Style.FILL // OPTIMIZATION 3: FILL only (faster)
-                isAntiAlias = false // OPTIMIZATION 4: Sharper for monochrome
-                color = Color.BLACK
-                textAlign = when (align.lowercase()) {
-                    "center" -> Paint.Align.CENTER
-                    "right" -> Paint.Align.RIGHT
-                    else -> Paint.Align.LEFT
-                }
-            }
-
-            val maxWidth = printerWidth.toFloat()
-            val padding = 2f // Minimal padding
-            val LEFT_MARGIN_OFFSET = when (paint.textAlign) {
-                Paint.Align.LEFT -> padding
-                else -> 0f
-            }
-
-            val textToRender = if (maxCharsPerLine > 0) {
-                wrapText(text, maxCharsPerLine)
-            } else {
-                text
-            }
-
-            val lines = textToRender.split("\n")
-
-            // OPTIMIZATION 5: Tighter line spacing
-            val lineHeight = paint.fontMetrics.let {
-                (it.descent - it.ascent) * 0.90f // 15% tighter
-            }
-            val totalHeight = (lines.size * lineHeight + padding * 2).toInt()
-
-            val bitmap = Bitmap.createBitmap(
-                printerWidth,
-                totalHeight,
-                Bitmap.Config.ARGB_8888
-            )
-            val canvas = Canvas(bitmap)
-            canvas.drawColor(Color.WHITE)
-
-            var y = padding - paint.fontMetrics.ascent
-            for (line in lines) {
-                if (line.isBlank()) {
-                    y += lineHeight
-                    continue
-                }
-
-                val x = when (paint.textAlign) {
-                    Paint.Align.CENTER -> maxWidth / 2
-                    Paint.Align.RIGHT -> maxWidth - padding
-                    else -> LEFT_MARGIN_OFFSET
-                }
-                canvas.drawText(line, x, y, paint)
-                y += lineHeight
-            }
-
-            val monoData = convertToMonochromeFast(bitmap)
-            bitmap.recycle()
-
-            if (monoData == null) {
-                println("❌ Failed to convert bitmap to monochrome")
-                return null
-            }
-
-            // OPTIMIZATION 6: Pre-allocate exact size (faster than mutableList)
-            val widthBytes = (monoData.width + 7) / 8
-            val commandSize = 8 + monoData.data.size
-            val commands = ByteArray(commandSize)
-
-            var idx = 0
-            // ESC/POS raster image command: GS v 0
-            commands[idx++] = GS
-            commands[idx++] = 0x76
-            commands[idx++] = 0x30
-            commands[idx++] = 0x00
-
-            // Width in bytes (little-endian)
-            commands[idx++] = (widthBytes and 0xFF).toByte()
-            commands[idx++] = ((widthBytes shr 8) and 0xFF).toByte()
-
-            // Height (little-endian)
-            commands[idx++] = (monoData.height and 0xFF).toByte()
-            commands[idx++] = ((monoData.height shr 8) and 0xFF).toByte()
-
-            // OPTIMIZATION 7: Use System.arraycopy (much faster than addAll)
-            System.arraycopy(monoData.data, 0, commands, idx, monoData.data.size)
-
-            return commands
-
-        } catch (e: Exception) {
-            println("❌ RENDER ERROR: ${e.message}")
-            e.printStackTrace()
-            return null
-        }
-    }
-
-    // ===== OPTIMIZED SIMPLE TEXT (Already fast) =====
-    private fun printSimpleTextInternal(
+    private fun printSimpleTextInternalBatched(
         text: String,
         fontSize: Int,
         bold: Boolean,
         align: String,
         maxCharsPerLine: Int
     ) {
-        println("🔵 KOTLIN: Sending ASCII/Simple text via ESC/POS: \"${text.take(30)}...\"")
+        println("🔵 Adding text to buffer: \"${text.take(30)}...\"")
 
         val commands = mutableListOf<Byte>()
 
-        // Initialize printer
-        commands.addAll(listOf(ESC, 0x40))
-        commands.addAll(listOf(ESC, 0x74, 0x01))
+        // ✅ CRITICAL: Detect if this is a separator line (mostly "=" characters)
+        val isSeparatorLine = text.count { it == '=' } > (text.length * 0.8)
+
+        if (isSeparatorLine) {
+            println("📏 Detected separator line - using lower density")
+            // Lower density for separator lines
+            commands.addAll(listOf(GS, 0x28, 0x4B, 0x02, 0x00, 0x30, 0x03.toByte()))
+        }
 
         // Bold
         commands.addAll(listOf(ESC, 0x45, if (bold) 0x01 else 0x00))
@@ -1379,6 +1322,111 @@ private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
         }
         commands.addAll(listOf(ESC, 0x61, alignValue))
 
+        // Size - Use smaller size for separator lines
+        val sizeCommand: Byte = if (isSeparatorLine) {
+            0x00.toByte()  // Normal size for separators (uses less power)
+        } else {
+            when {
+                fontSize > 30 -> 0x30.toByte()
+                fontSize > 24 -> 0x11.toByte()
+                else -> 0x00.toByte()
+            }
+        }
+        commands.addAll(listOf(ESC, 0x21, sizeCommand))
+
+        // Text
+        val wrappedText = if (maxCharsPerLine > 0) wrapText(text, maxCharsPerLine) else text
+        commands.addAll(wrappedText.toByteArray(charset("CP437")).toList())
+        commands.add(0x0A.toByte())
+
+        // Reset
+        commands.addAll(listOf(ESC, 0x45, 0x00))
+        commands.addAll(listOf(ESC, 0x61, 0x00))
+
+        if (isSeparatorLine) {
+            // ✅ Reset density back to normal
+            commands.addAll(listOf(GS, 0x28, 0x4B, 0x02, 0x00, 0x30, 0x06.toByte()))
+        }
+
+        addToBuffer(commands.toByteArray())
+    }
+
+    // ====================================================================
+// FIX 9: Batch printing for rows (print all at once)
+// ====================================================================
+    private fun printRow(
+        columns: List<Map<String, Any>>,
+        fontSize: Int,
+        result: MethodChannel.Result
+    ) {
+        val startTime = System.currentTimeMillis()
+
+        scope.launch {
+            printMutex.withLock {
+                try {
+                    val posColumns = columns.map { col ->
+                        PosColumn(
+                            text = col["text"] as? String ?: "",
+                            width = col["width"] as? Int ?: 6,
+                            align = col["align"] as? String ?: "left",
+                            bold = col["bold"] as? Boolean ?: false
+                        )
+                    }
+
+                    val totalWidth = posColumns.sumOf { it.width }
+                    if (totalWidth > 12) {
+                        withContext(Dispatchers.Main) {
+                            result.error("ROW_ERROR", "Total width exceeds 12: $totalWidth", null)
+                        }
+                        return@withLock
+                    }
+
+                    val hasComplexUnicode = posColumns.any { containsComplexUnicode(it.text) }
+
+                    if (hasComplexUnicode) {
+                        val imageData = renderRowToData(posColumns, fontSize)
+                        if (imageData == null || imageData.isEmpty()) {
+                            withContext(Dispatchers.Main) {
+                                result.error("RENDER_ERROR", "Failed to render row", null)
+                            }
+                            return@withLock
+                        }
+                        addToBuffer(imageData)  // ✅ Add to buffer
+                    } else {
+                        printRowUsingTextMethodBatched(posColumns, fontSize)
+                    }
+
+                    val elapsed = System.currentTimeMillis() - startTime
+                    println("✅ Row added to buffer in ${elapsed}ms")
+
+                    withContext(Dispatchers.Main) {
+                        result.success(true)
+                    }
+                } catch (e: Exception) {
+                    println("❌ Row error: ${e.message}")
+                    withContext(Dispatchers.Main) {
+                        result.error("PRINT_ROW_ERROR", e.message, null)
+                    }
+                }
+            }
+        }
+    }
+    private fun printRowUsingTextMethodBatched(columns: List<PosColumn>, fontSize: Int) {
+        val totalChars = when {
+            fontSize > 30 -> 24
+            fontSize > 24 -> 32
+            else -> 48
+        }
+
+        val columnTextLists = columns.map { column ->
+            val maxCharsPerColumn = (totalChars * column.width) / 12
+            val lines = wrapTextToList(column.text, maxCharsPerColumn)
+            Triple(lines, maxCharsPerColumn, column.align)
+        }
+
+        val maxLines = columnTextLists.maxOfOrNull { it.first.size } ?: 1
+        val commands = mutableListOf<Byte>()
+
         // Size
         val sizeCommand: Byte = when {
             fontSize > 30 -> 0x30.toByte()
@@ -1387,152 +1435,755 @@ private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
         }
         commands.addAll(listOf(ESC, 0x21, sizeCommand))
 
-        // Text content
-        val wrappedText = if (maxCharsPerLine > 0) wrapText(text, maxCharsPerLine) else text
-        commands.addAll(wrappedText.toByteArray(charset("CP437")).toList())
+        // Bold if needed
+        val hasBold = columns.any { it.bold }
+        if (hasBold) {
+            commands.addAll(listOf(ESC, 0x45, 0x01))
+        }
 
-        commands.add(0x0A.toByte())
-
-        // Reset formatting
-        commands.addAll(listOf(ESC, 0x45, 0x00))
+        // Left align
         commands.addAll(listOf(ESC, 0x61, 0x00))
 
-        writeDataSmooth(commands.toByteArray())
+        // Build all rows
+        for (lineIndex in 0 until maxLines) {
+            val lineText = StringBuilder()
+
+            for (colIndex in columnTextLists.indices) {
+                val (lines, width, align) = columnTextLists[colIndex]
+                val text = if (lineIndex < lines.size) lines[lineIndex] else ""
+                val formattedText = formatColumnText(text, width, align)
+                lineText.append(formattedText)
+            }
+
+            commands.addAll(lineText.toString().toByteArray(charset("CP437")).toList())
+            commands.add(0x0A.toByte())
+        }
+
+        // Reset
+        if (hasBold) {
+            commands.addAll(listOf(ESC, 0x45, 0x00))
+        }
+        commands.addAll(listOf(ESC, 0x61, 0x00))
+
+        addToBuffer(commands.toByteArray())  // ✅ Add to buffer
     }
 
-    fun printImage(
-        imageBytes: ByteArray,
-        width: Int = 384,
-        align: Int = 1,
-        result: MethodChannel.Result
-    ) {
-        try {
-            val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-            if (bitmap == null) {
-                result.error("INVALID_IMAGE", "Cannot decode image", null)
-                return
+
+    // ====================================================================
+// OPTIONAL: Queue system for even smoother printing
+// ====================================================================
+
+    private fun createGattCallback(resultKey: String): BluetoothGattCallback {
+        return object : BluetoothGattCallback() {
+            override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+                when (newState) {
+                    BluetoothProfile.STATE_CONNECTED -> {
+                        println("✅ BLE Connected! Status: $status")
+                        if (status == BluetoothGatt.GATT_SUCCESS) {
+                            try {
+                                Thread.sleep(600)
+                                gatt.discoverServices()
+                            } catch (e: Exception) {
+                                handleConnectionError(resultKey, "DISCOVER_FAILED", e.message)
+                                gatt.disconnect()
+                                gatt.close()
+                            }
+                        } else {
+                            handleConnectionError(resultKey, "CONNECTION_ERROR", "Status: $status")
+                            gatt.disconnect()
+                            gatt.close()
+                        }
+                    }
+
+                    BluetoothProfile.STATE_DISCONNECTED -> {
+                        val errorMsg = getDisconnectReason(status)
+                        println("❌ Disconnected: $errorMsg")
+                        handleConnectionError(resultKey, "DISCONNECTED", errorMsg)
+                        gatt.close()
+                    }
+                }
             }
 
-            val alignment = ImageAlignment.fromInt(align)
-            val scaledBitmap = resizeImage(bitmap, width)
-            val monochromeData = convertToMonochromeFast(scaledBitmap)
+            override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+                if (status != BluetoothGatt.GATT_SUCCESS) {
+                    handleConnectionError(resultKey, "DISCOVER_FAILED", "Status: $status")
+                    gatt.disconnect()
+                    gatt.close()
+                    return
+                }
 
-            if (monochromeData == null) {
-                result.error("CONVERSION_ERROR", "Cannot convert to monochrome", null)
-                return
+                val characteristic = findWritableCharacteristic(gatt)
+
+                if (characteristic != null) {
+                    writeCharacteristic = characteristic
+                    currentConnectionType = ConnectionType.BLUETOOTH_BLE
+                    println("✅ BLE Connection Success! Char: ${characteristic.uuid}")
+
+                    // ============================================================
+                    // ✅ ADD THIS SECTION HERE - AFTER BLE CONNECTION SUCCESS
+                    // ============================================================
+                    try {
+                        initializePrinterForSmoothPrinting()
+                        println("✅ Printer initialized for smooth printing")
+                    } catch (e: Exception) {
+                        println("⚠️ Could not initialize printer settings: ${e.message}")
+                    }
+                    // ============================================================
+
+                    mainHandler.post {
+                        pendingResults.remove(resultKey)?.success(true)
+                    }
+                } else {
+                    handleConnectionError(resultKey, "NO_CHARACTERISTIC", "No writable characteristic found")
+                    gatt.disconnect()
+                    gatt.close()
+                }
             }
 
-            val commands = mutableListOf<Byte>()
 
-            // Initialize printer
-            commands.add(ESC)
-            commands.add(0x40)
-
-            // Set alignment using ESC a n command
-            commands.add(ESC)
-            commands.add(0x61)
-            commands.add(alignment.value.toByte())
-
-            // Print image command: GS v 0
-            commands.add(GS)
-            commands.add(0x76)
-            commands.add(0x30)
-            commands.add(0x00)
-
-            // Width and height in bytes
-            val widthBytes = (monochromeData.width + 7) / 8
-            commands.add((widthBytes and 0xFF).toByte())
-            commands.add(((widthBytes shr 8) and 0xFF).toByte())
-            commands.add((monochromeData.height and 0xFF).toByte())
-            commands.add(((monochromeData.height shr 8) and 0xFF).toByte())
-
-            // Image data
-            commands.addAll(monochromeData.data.toList())
-
-            // Reset alignment to left after printing
-            commands.add(ESC)
-            commands.add(0x61)
-            commands.add(0x00)
-
-            // Line feeds
-            commands.add(0x0A)
-            commands.add(0x0A)
-
-            // Send to printer
-            writeDataSmooth(commands.toByteArray())
-            result.success(true)
-
-        } catch (e: Exception) {
-            result.error("PRINT_ERROR", "Failed to print image: ${e.message}", null)
+            override fun onCharacteristicWrite(
+                gatt: BluetoothGatt?,
+                characteristic: BluetoothGattCharacteristic?,
+                status: Int
+            ) {
+                synchronized(writeSync) {
+                    writeCompleted = (status == BluetoothGatt.GATT_SUCCESS)
+                    writeLatch?.countDown()
+                    currentWriteDeferred?.complete(writeCompleted)
+                    currentWriteDeferred = null
+                }
+            }
         }
     }
 
-    // MARK: - Print Image with Manual Padding
-    fun printImageWithPadding(
-        imageBytes: ByteArray,
-        width: Int = 384,
-        align: Int = 1,
-        paperWidth: Int = 576,
-        result: MethodChannel.Result
-    ) {
+    private fun findWritableCharacteristic(gatt: BluetoothGatt): BluetoothGattCharacteristic? {
+        // Known printer service UUIDs
+        val printerServiceUUIDs = listOf(
+            "000018f0-0000-1000-8000-00805f9b34fb",
+            "49535343-fe7d-4ae5-8fa9-9fafd205e455",
+            "0000ffe0-0000-1000-8000-00805f9b34fb",
+            "0000fff0-0000-1000-8000-00805f9b34fb"
+        )
+
+        for (serviceUuidStr in printerServiceUUIDs) {
+            try {
+                val service = gatt.getService(UUID.fromString(serviceUuidStr))
+                service?.characteristics?.forEach { char ->
+                    if (isWritable(char)) {
+                        println("✅ Found writable char in known service: ${char.uuid}")
+                        return char
+                    }
+                }
+            } catch (e: Exception) {
+                println("⚠️ Error checking service $serviceUuidStr: ${e.message}")
+            }
+        }
+
+        // Search all services
+        gatt.services.forEach { service ->
+            service.characteristics.forEach { char ->
+                if (isWritable(char)) {
+                    println("✅ Found writable char: ${char.uuid}")
+                    return char
+                }
+            }
+        }
+
+        return null
+    }
+
+    private fun isWritable(char: BluetoothGattCharacteristic): Boolean {
+        val props = char.properties
+        return (props and BluetoothGattCharacteristic.PROPERTY_WRITE) != 0 ||
+                (props and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0
+    }
+
+    private fun handleConnectionError(resultKey: String, code: String, message: String?) {
+        mainHandler.post {
+            pendingResults.remove(resultKey)?.error(code, message, null)
+        }
+    }
+
+    private fun getDisconnectReason(status: Int): String {
+        return when (status) {
+            0 -> "Disconnected normally"
+            8 -> "Connection timeout - device not responding"
+            19 -> "Connection terminated by peer device"
+            22 -> "Connection failed - device busy or unavailable"
+            133 -> "GATT error 133 - Device out of range or not ready"
+            else -> "Disconnected with status: $status"
+        }
+    }
+
+    private fun cleanupBeforeConnect() {
         try {
-            val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-            if (bitmap == null) {
-                result.error("INVALID_IMAGE", "Cannot decode image", null)
-                return
+            bluetoothGatt?.let { gatt ->
+                println("🧹 Cleaning up existing BLE connection...")
+                gatt.disconnect()
+                Thread.sleep(300)
+                gatt.close()
+                Thread.sleep(300)
             }
+        } catch (e: Exception) {
+            println("⚠️ Cleanup error: ${e.message}")
+        }
+        bluetoothGatt = null
+        writeCharacteristic = null
+    }
 
-            val alignment = ImageAlignment.fromInt(align)
-            val scaledBitmap = resizeImage(bitmap, width)
-            val originalData = convertToMonochromeFast(scaledBitmap)
+    private fun connectNetwork(ipAddress: String, port: Int, result: MethodChannel.Result) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                networkSocket = Socket(ipAddress, port)
+                currentConnectionType = ConnectionType.NETWORK
 
-            if (originalData == null) {
-                result.error("CONVERSION_ERROR", "Cannot convert to monochrome", null)
-                return
+                // ============================================================
+                // ✅ ADD THIS SECTION HERE - AFTER NETWORK CONNECTION SUCCESS
+                // ============================================================
+                try {
+                    initializePrinterForSmoothPrinting()
+                    println("✅ Printer initialized for smooth printing")
+                } catch (e: Exception) {
+                    println("⚠️ Could not initialize printer settings: ${e.message}")
+                }
+                // ============================================================
+
+                withContext(Dispatchers.Main) {
+                    result.success(true)
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    result.error("CONNECTION_FAILED", e.message, null)
+                }
             }
+        }
+    }
 
-            // Add padding for alignment if needed
-            val monochromeData = if (alignment != ImageAlignment.LEFT) {
-                addPaddingToMonochrome(originalData, alignment, paperWidth)
+
+    private fun disconnect(result: MethodChannel.Result) {
+        cleanupAllConnections()
+        result.success(true)
+    }
+
+
+    private fun optimizeLineFeeds(data: ByteArray): ByteArray {
+        // OOMAS printers stutter when there are too many consecutive line feeds
+        // Consolidate multiple 0x0A bytes into larger chunks
+
+        val optimized = mutableListOf<Byte>()
+        var consecutiveLineFeeds = 0
+
+        for (byte in data) {
+            if (byte == 0x0A.toByte()) {
+                consecutiveLineFeeds++
             } else {
-                originalData
+                if (consecutiveLineFeeds > 0) {
+                    // Add all line feeds at once (more efficient)
+                    for (i in 0 until consecutiveLineFeeds) {
+                        optimized.add(0x0A.toByte())
+                    }
+                    consecutiveLineFeeds = 0
+                }
+                optimized.add(byte)
             }
+        }
 
-            val commands = mutableListOf<Byte>()
+        // Add any remaining line feeds
+        if (consecutiveLineFeeds > 0) {
+            for (i in 0 until consecutiveLineFeeds) {
+                optimized.add(0x0A.toByte())
+            }
+        }
 
-            // Initialize printer
-            commands.add(ESC)
-            commands.add(0x40)
+        return optimized.toByteArray()
+    }
 
-            // Print image command
-            commands.add(GS)
-            commands.add(0x76)
-            commands.add(0x30)
-            commands.add(0x00)
+    // ====================================================================
+    // Font Management
+    // ====================================================================
+    private fun getKhmerTypeface(bold: Boolean): Typeface {
+        val fontKey = if (bold) "bold" else "regular"
 
-            val widthBytes = (monochromeData.width + 7) / 8
-            commands.add((widthBytes and 0xFF).toByte())
-            commands.add(((widthBytes shr 8) and 0xFF).toByte())
-            commands.add((monochromeData.height and 0xFF).toByte())
-            commands.add(((monochromeData.height shr 8) and 0xFF).toByte())
+        return khmerTypefaceCache.getOrPut(fontKey) {
+            try {
+                val fontPath = when {
+                    bold -> {
+                        when {
+                            assetExists("fonts/NotoSansKhmer-Bold.ttf") -> "fonts/NotoSansKhmer-Bold.ttf"
+                            assetExists("fonts/NotoSansKhmer-SemiBold.ttf") -> "fonts/NotoSansKhmer-SemiBold.ttf"
+                            assetExists("fonts/NotoSansKhmer-Medium.ttf") -> "fonts/NotoSansKhmer-Medium.ttf"
+                            else -> "fonts/NotoSansKhmer-Regular.ttf"
+                        }
+                    }
+                    else -> "fonts/NotoSansKhmer-Regular.ttf"
+                }
 
-            commands.addAll(monochromeData.data.toList())
-            commands.add(0x0A)
-            commands.add(0x0A)
-
-            writeDataSmooth(commands.toByteArray())
-            result.success(true)
-
-        } catch (e: Exception) {
-            result.error("PRINT_ERROR", "Failed to print image: ${e.message}", null)
+                println("✅ Loading font: $fontPath")
+                Typeface.createFromAsset(context.assets, fontPath)
+            } catch (e: Exception) {
+                println("⚠️ Failed to load Khmer font: ${e.message}")
+                Typeface.DEFAULT
+            }
         }
     }
 
-    // MARK: - Resize Image
-    private fun resizeImage(bitmap: Bitmap, maxWidth: Int): Bitmap {
-        if (bitmap.width <= maxWidth) {
-            return bitmap
+    private fun assetExists(path: String): Boolean {
+        return try {
+            context.assets.open(path).use { true }
+        } catch (e: Exception) {
+            false
         }
+    }
+
+    private fun preloadFonts() {
+        scope.launch(Dispatchers.IO) {
+            println("🔄 Preloading fonts...")
+            getKhmerTypeface(false)
+            getKhmerTypeface(true)
+            println("✅ Fonts preloaded")
+        }
+    }
+
+
+
+    private fun configureForOOMAS() {
+        println("⚙️ Configuring for OOMAS printer...")
+
+        val config = mutableListOf<Byte>()
+
+        // Set looser line spacing (prevents motor strain)
+        config.addAll(listOf(ESC, 0x33, 0x40.toByte()))  // 64/180 inch spacing
+
+        // Set lower print density (less heat = smoother)
+        config.addAll(listOf(GS, 0x28, 0x4B, 0x02, 0x00, 0x30, 0x05.toByte()))
+
+        // Set print speed (if supported)
+        config.addAll(listOf(GS, 0x28, 0x4B, 0x02, 0x00, 0x32, 0x00.toByte()))
+
+        writeDataSmooth(config.toByteArray())
+
+        println("✅ OOMAS configuration applied")
+    }
+
+    private fun renderTextToData(
+        text: String,
+        fontSize: Int,
+        bold: Boolean,
+        align: String,
+        maxCharsPerLine: Int
+    ): ByteArray? {
+        var bitmap: Bitmap? = null
+
+        try {
+            val khmerTypeface = getKhmerTypeface(bold)
+
+            val baseFontSize = 24f
+            val scaledFontSize = when {
+                fontSize > 30 -> baseFontSize * 2.0f
+                fontSize > 24 -> baseFontSize * 1.5f
+                else -> baseFontSize
+            }
+
+            val paint = Paint().apply {
+                textSize = scaledFontSize
+                typeface = khmerTypeface
+                isFakeBoldText = false
+                strokeWidth = 0f
+                style = Paint.Style.FILL
+                isAntiAlias = false
+                color = Color.BLACK
+                textAlign = when (align.lowercase()) {
+                    "center" -> Paint.Align.CENTER
+                    "right" -> Paint.Align.RIGHT
+                    else -> Paint.Align.LEFT
+                }
+            }
+
+            val maxWidth = printerWidth.toFloat()
+            val padding = 2f
+            val leftMarginOffset = if (paint.textAlign == Paint.Align.LEFT) padding else 0f
+
+            val textToRender = if (maxCharsPerLine > 0) {
+                wrapText(text, maxCharsPerLine)
+            } else {
+                text
+            }
+
+            val lines = textToRender.split("\n")
+            val lineHeight = paint.fontMetrics.let { (it.descent - it.ascent) * 0.90f }
+            val totalHeight = (lines.size * lineHeight + padding * 2).toInt()
+
+            bitmap = Bitmap.createBitmap(printerWidth, totalHeight, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            canvas.drawColor(Color.WHITE)
+
+            var y = padding - paint.fontMetrics.ascent
+            for (line in lines) {
+                if (line.isNotBlank()) {
+                    val x = when (paint.textAlign) {
+                        Paint.Align.CENTER -> maxWidth / 2
+                        Paint.Align.RIGHT -> maxWidth - padding
+                        else -> leftMarginOffset
+                    }
+                    canvas.drawText(line, x, y, paint)
+                }
+                y += lineHeight
+            }
+
+            val monoData = convertToMonochromeFast(bitmap)
+
+            if (monoData == null) {
+                println("❌ Failed to convert to monochrome")
+                return null
+            }
+
+            val widthBytes = (monoData.width + 7) / 8
+            val commandSize = 8 + monoData.data.size
+            val commands = ByteArray(commandSize)
+
+            var idx = 0
+            commands[idx++] = GS
+            commands[idx++] = 0x76
+            commands[idx++] = 0x30
+            commands[idx++] = 0x00
+            commands[idx++] = (widthBytes and 0xFF).toByte()
+            commands[idx++] = ((widthBytes shr 8) and 0xFF).toByte()
+            commands[idx++] = (monoData.height and 0xFF).toByte()
+            commands[idx++] = ((monoData.height shr 8) and 0xFF).toByte()
+
+            System.arraycopy(monoData.data, 0, commands, idx, monoData.data.size)
+
+            return commands
+
+        } catch (e: Exception) {
+            println("❌ Render error: ${e.message}")
+            return null
+        } finally {
+            bitmap?.recycle()
+        }
+    }
+
+    fun initializePrinterForSmoothPrinting() {
+        println("🔧 Initializing printer for smooth printing...")
+
+        val commands = mutableListOf<Byte>()
+
+        // 1. Reset printer
+        commands.addAll(listOf(ESC, 0x40))
+        Thread.sleep(100)
+
+        // 2. Set looser line spacing (prevents motor strain)
+        commands.addAll(listOf(ESC, 0x33, 0x50.toByte())) // 80/180 inch (looser)
+
+        // 3. Set lower print density (less heat = smoother)
+        commands.addAll(listOf(
+            GS, 0x28, 0x4B,
+            0x02, 0x00,
+            0x30,
+            0x06.toByte() // Density 6 (lower than default 8)
+        ))
+
+        // 4. Set print speed to slower (if supported)
+        // Note: Not all printers support this
+
+        writeDataSmooth(commands.toByteArray())
+        Thread.sleep(200)
+
+        println("✅ Printer initialized for smooth operation")
+    }
+
+    private fun renderRowToData(columns: List<PosColumn>, fontSize: Int): ByteArray? {
+        var bitmap: Bitmap? = null
+
+        try {
+            val baseFontSize = 24f
+            val scaledFontSize = when {
+                fontSize > 30 -> baseFontSize * 2.0f
+                fontSize > 24 -> baseFontSize * 1.5f
+                else -> baseFontSize
+            }
+
+            val maxWidth = printerWidth.toFloat()
+            val columnWidths = columns.map { (maxWidth * it.width) / 12 }
+
+            val totalChars = when {
+                fontSize > 30 -> 20
+                fontSize > 24 -> 28
+                else -> 42
+            }
+
+            var maxLines = 1
+            for (column in columns) {
+                val colChars = (totalChars * column.width) / 12
+                val lineCount = (column.text.length + colChars - 1) / colChars
+                if (lineCount > maxLines) maxLines = lineCount
+            }
+
+            val basePaint = Paint().apply {
+                textSize = scaledFontSize
+                isAntiAlias = false
+                color = Color.BLACK
+                style = Paint.Style.FILL
+                strokeWidth = 0f
+            }
+
+            val lineHeight = basePaint.fontMetrics.let { (it.descent - it.ascent) * 0.90f }
+            val verticalPadding = 4f
+            val totalHeight = (lineHeight * maxLines + verticalPadding * 2).toInt()
+
+            bitmap = Bitmap.createBitmap(printerWidth, totalHeight, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            canvas.drawColor(Color.WHITE)
+
+            var currentX = 0f
+            for (i in columns.indices) {
+                val column = columns[i]
+                val colWidth = columnWidths[i]
+                val colChars = (totalChars * column.width) / 12
+
+                val lines = wrapTextToList(column.text, colChars)
+                val columnTypeface = getKhmerTypeface(column.bold)
+
+                basePaint.apply {
+                    typeface = columnTypeface
+                    isFakeBoldText = false
+                    textAlign = when (column.align.lowercase()) {
+                        "center" -> Paint.Align.CENTER
+                        "right" -> Paint.Align.RIGHT
+                        else -> Paint.Align.LEFT
+                    }
+                }
+
+                for (lineIndex in lines.indices) {
+                    val line = lines[lineIndex]
+                    if (line.isBlank()) continue
+
+                    val x = when (column.align.lowercase()) {
+                        "center" -> currentX + colWidth / 2
+                        "right" -> currentX + colWidth
+                        else -> currentX
+                    }
+
+                    val y = verticalPadding - basePaint.fontMetrics.ascent + (lineHeight * lineIndex)
+                    canvas.drawText(line, x, y, basePaint)
+                }
+
+                currentX += colWidth
+            }
+
+            val monoData = convertToMonochromeFast(bitmap)
+
+            if (monoData == null) {
+                println("❌ Failed to convert row to monochrome")
+                return null
+            }
+
+            val widthBytes = (monoData.width + 7) / 8
+            val commandSize = 8 + monoData.data.size
+            val commands = ByteArray(commandSize)
+
+            var idx = 0
+            commands[idx++] = GS
+            commands[idx++] = 0x76
+            commands[idx++] = 0x30
+            commands[idx++] = 0x00
+            commands[idx++] = (widthBytes and 0xFF).toByte()
+            commands[idx++] = ((widthBytes shr 8) and 0xFF).toByte()
+            commands[idx++] = (monoData.height and 0xFF).toByte()
+            commands[idx++] = ((monoData.height shr 8) and 0xFF).toByte()
+
+            System.arraycopy(monoData.data, 0, commands, idx, monoData.data.size)
+
+            return commands
+
+        } catch (e: Exception) {
+            println("❌ Row render error: ${e.message}")
+            return null
+        } finally {
+            bitmap?.recycle()
+        }
+    }
+
+    private fun formatColumnText(text: String, width: Int, align: String): String {
+        if (text.length == width) return text
+        if (text.length > width) return text.take(width)
+
+        return when (align.lowercase()) {
+            "center" -> {
+                val totalPadding = width - text.length
+                val leftPadding = totalPadding / 2
+                text.padStart(text.length + leftPadding).padEnd(width)
+            }
+            "right" -> text.padStart(width)
+            else -> text.padEnd(width)
+        }
+    }
+
+    // ====================================================================
+    // Print Image
+    // ====================================================================
+    private fun printImage(
+        imageBytes: ByteArray,
+        width: Int,
+        align: Int,
+        result: MethodChannel.Result
+    ) {
+        scope.launch {
+            printMutex.withLock {
+                var bitmap: Bitmap? = null
+                var scaledBitmap: Bitmap? = null
+
+                try {
+                    bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                    if (bitmap == null) {
+                        withContext(Dispatchers.Main) {
+                            result.error("INVALID_IMAGE", "Cannot decode image", null)
+                        }
+                        return@withLock
+                    }
+
+                    val alignment = ImageAlignment.fromInt(align)
+                    scaledBitmap = resizeImage(bitmap, width)
+                    val monochromeData = convertToMonochromeFast(scaledBitmap)
+
+                    if (monochromeData == null) {
+                        withContext(Dispatchers.Main) {
+                            result.error("CONVERSION_ERROR", "Cannot convert to monochrome", null)
+                        }
+                        return@withLock
+                    }
+
+                    val commands = mutableListOf<Byte>()
+
+                    // Initialize
+                    commands.add(ESC)
+                    commands.add(0x40)
+
+                    // Alignment
+                    commands.add(ESC)
+                    commands.add(0x61)
+                    commands.add(alignment.value.toByte())
+
+                    // Image command
+                    commands.add(GS)
+                    commands.add(0x76)
+                    commands.add(0x30)
+                    commands.add(0x00)
+
+                    val widthBytes = (monochromeData.width + 7) / 8
+                    commands.add((widthBytes and 0xFF).toByte())
+                    commands.add(((widthBytes shr 8) and 0xFF).toByte())
+                    commands.add((monochromeData.height and 0xFF).toByte())
+                    commands.add(((monochromeData.height shr 8) and 0xFF).toByte())
+
+                    commands.addAll(monochromeData.data.toList())
+
+                    // Reset alignment
+                    commands.add(ESC)
+                    commands.add(0x61)
+                    commands.add(0x00)
+
+                    commands.add(0x0A)
+                    commands.add(0x0A)
+
+                    writeDataSmooth(commands.toByteArray())
+
+                    withContext(Dispatchers.Main) {
+                        result.success(true)
+                    }
+                } catch (e: Exception) {
+                    println("❌ Image print error: ${e.message}")
+                    withContext(Dispatchers.Main) {
+                        result.error("PRINT_ERROR", e.message, null)
+                    }
+                } finally {
+                    bitmap?.recycle()
+                    scaledBitmap?.recycle()
+                }
+            }
+        }
+    }
+
+    private fun printImageWithPadding(
+        imageBytes: ByteArray,
+        width: Int,
+        align: Int,
+        paperWidth: Int,
+        result: MethodChannel.Result
+    ) {
+        scope.launch {
+            printMutex.withLock {
+                var bitmap: Bitmap? = null
+                var scaledBitmap: Bitmap? = null
+
+                try {
+                    bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                    if (bitmap == null) {
+                        withContext(Dispatchers.Main) {
+                            result.error("INVALID_IMAGE", "Cannot decode image", null)
+                        }
+                        return@withLock
+                    }
+
+                    val alignment = ImageAlignment.fromInt(align)
+                    scaledBitmap = resizeImage(bitmap, width)
+                    val originalData = convertToMonochromeFast(scaledBitmap)
+
+                    if (originalData == null) {
+                        withContext(Dispatchers.Main) {
+                            result.error("CONVERSION_ERROR", "Cannot convert to monochrome", null)
+                        }
+                        return@withLock
+                    }
+
+                    val monochromeData = if (alignment != ImageAlignment.LEFT) {
+                        addPaddingToMonochrome(originalData, alignment, paperWidth)
+                    } else {
+                        originalData
+                    }
+
+                    val commands = mutableListOf<Byte>()
+
+                    commands.add(ESC)
+                    commands.add(0x40)
+                    commands.add(GS)
+                    commands.add(0x76)
+                    commands.add(0x30)
+                    commands.add(0x00)
+
+                    val widthBytes = (monochromeData.width + 7) / 8
+                    commands.add((widthBytes and 0xFF).toByte())
+                    commands.add(((widthBytes shr 8) and 0xFF).toByte())
+                    commands.add((monochromeData.height and 0xFF).toByte())
+                    commands.add(((monochromeData.height shr 8) and 0xFF).toByte())
+
+                    commands.addAll(monochromeData.data.toList())
+                    commands.add(0x0A)
+                    commands.add(0x0A)
+
+                    writeDataSmooth(commands.toByteArray())
+
+                    withContext(Dispatchers.Main) {
+                        result.success(true)
+                    }
+                } catch (e: Exception) {
+                    println("❌ Image padding print error: ${e.message}")
+                    withContext(Dispatchers.Main) {
+                        result.error("PRINT_ERROR", e.message, null)
+                    }
+                } finally {
+                    bitmap?.recycle()
+                    scaledBitmap?.recycle()
+                }
+            }
+        }
+    }
+
+    // ====================================================================
+    // Helper Methods
+    // ====================================================================
+    private fun resizeImage(bitmap: Bitmap, maxWidth: Int): Bitmap {
+        if (bitmap.width <= maxWidth) return bitmap
 
         val ratio = maxWidth.toFloat() / bitmap.width
         val newHeight = (bitmap.height * ratio).toInt()
@@ -1540,41 +2191,29 @@ private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
         return Bitmap.createScaledBitmap(bitmap, maxWidth, newHeight, true)
     }
 
-    // MARK: - Add Padding to Monochrome Data
     private fun addPaddingToMonochrome(
         data: MonochromeData,
         alignment: ImageAlignment,
         paperWidth: Int
     ): MonochromeData {
-        val currentWidth = data.width
+        if (data.width >= paperWidth) return data
 
-        // No padding needed if image is already full width
-        if (currentWidth >= paperWidth) {
-            return data
-        }
-
-        val paddingTotal = paperWidth - currentWidth
+        val paddingTotal = paperWidth - data.width
         val leftPadding = when (alignment) {
             ImageAlignment.LEFT -> 0
             ImageAlignment.CENTER -> paddingTotal / 2
             ImageAlignment.RIGHT -> paddingTotal
         }
-        val rightPadding = paddingTotal - leftPadding
 
-        val currentWidthBytes = (currentWidth + 7) / 8
-        val newWidth = paperWidth
-        val newWidthBytes = (newWidth + 7) / 8
-
+        val currentWidthBytes = (data.width + 7) / 8
+        val newWidthBytes = (paperWidth + 7) / 8
         val newData = ByteArray(newWidthBytes * data.height)
 
         for (y in 0 until data.height) {
             val newRowOffset = y * newWidthBytes
             val oldRowOffset = y * currentWidthBytes
-
-            // Left padding (already zeros)
             val leftPaddingBytes = leftPadding / 8
 
-            // Copy original data
             System.arraycopy(
                 data.data,
                 oldRowOffset,
@@ -1582,149 +2221,49 @@ private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
                 newRowOffset + leftPaddingBytes,
                 currentWidthBytes
             )
-
-            // Right padding (already zeros)
         }
 
-        return MonochromeData(newWidth, data.height, newData)
+        return MonochromeData(paperWidth, data.height, newData)
     }
 
-
-//    private fun printImage(imageBytes: ByteArray, width: Int, result: MethodChannel.Result) {
-//        scope.launch {
-//            printMutex.withLock {
-//                try {
-//                    val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-//
-//                    val scaledBitmap = if (bitmap.width != width) {
-//                        val ratio = width.toFloat() / bitmap.width.toFloat()
-//                        val newHeight = (bitmap.height * ratio).toInt()
-//                        Bitmap.createScaledBitmap(bitmap, width, newHeight, true)
-//                    } else {
-//                        bitmap
-//                    }
-//
-//                    val monoData = convertToMonochromeFast(scaledBitmap)
-//                    scaledBitmap.recycle()
-//
-//                    if (monoData == null) {
-//                        withContext(Dispatchers.Main) {
-//                            result.error("IMAGE_PROCESS_ERROR", "Failed to convert image to monochrome data", null)
-//                        }
-//                        return@withLock
-//                    }
-//
-//                    val commands = mutableListOf<Byte>()
-//                    commands.addAll(listOf(GS, 0x76, 0x30, 0x00))
-//
-//                    val widthBytes = (monoData.width + 7) / 8
-//                    commands.add((widthBytes and 0xFF).toByte())
-//                    commands.add(((widthBytes shr 8) and 0xFF).toByte())
-//                    commands.add((monoData.height and 0xFF).toByte())
-//                    commands.add(((monoData.height shr 8) and 0xFF).toByte())
-//                    commands.addAll(monoData.data.toList())
-//                    commands.add(0x0A)
-//
-//                    writeDataSmooth(commands.toByteArray())
-//
-//                    // CRITICAL FIX: Add delay after image printing
-//                    delay(100)
-//
-//                    withContext(Dispatchers.Main) {
-//                        result.success(true)
-//                    }
-//                } catch (e: Exception) {
-//                    withContext(Dispatchers.Main) {
-//                        result.error("PRINT_IMAGE_ERROR", e.message, null)
-//                    }
-//                }
-//            }
-//        }
-//    }
-
-
-
-    private fun feedPaper(lines: Int, result: MethodChannel.Result) {
-        val commands = mutableListOf<Byte>()
-        repeat(lines) {
-            commands.add(0x0A.toByte())
-        }
-        writeDataSmooth(commands.toByteArray())
-        result.success(true)
-    }
-
-    private fun cutPaper(result: MethodChannel.Result) {
-        val commands = mutableListOf<Byte>()
-        commands.addAll(listOf(GS, 0x56, 0x00))
-        writeDataSmooth(commands.toByteArray())
-        result.success(true)
-    }
-
-    private fun setPrinterWidth(width: Int, result: MethodChannel.Result) {
-        printerWidth = width
-        println("✅ Printer width set to $width dots.")
-        result.success(true)
-    }
-
-    // MARK: - Helper Functions
     private fun convertToMonochromeFast(bitmap: Bitmap): MonochromeData? {
-        val width = bitmap.width
-        val height = bitmap.height
-        val pixels = IntArray(width * height)
-        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+        try {
+            val width = bitmap.width
+            val height = bitmap.height
+            val pixels = IntArray(width * height)
+            bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
 
-        val widthBytes = (width + 7) / 8
-        val totalBytes = widthBytes * height
-        val data = ByteArray(totalBytes)
+            val widthBytes = (width + 7) / 8
+            val totalBytes = widthBytes * height
+            val data = ByteArray(totalBytes)
 
-        val threshold = -0x5f5f60  // This is approximately 160 in grayscale
+            val threshold = -0x5f5f60 // Approximately 160 in grayscale
 
-        for (y in 0 until height) {
-            val bitmapRowOffset = y * widthBytes
-            for (x in 0 until width) {
-                if (pixels[y * width + x] < threshold) {
-                    val byteIndex = bitmapRowOffset + (x / 8)
-                    val bitIndex = 7 - (x % 8)
-                    data[byteIndex] = (data[byteIndex].toInt() or (1 shl bitIndex)).toByte()
+            for (y in 0 until height) {
+                val bitmapRowOffset = y * widthBytes
+                for (x in 0 until width) {
+                    if (pixels[y * width + x] < threshold) {
+                        val byteIndex = bitmapRowOffset + (x / 8)
+                        val bitIndex = 7 - (x % 8)
+                        data[byteIndex] = (data[byteIndex].toInt() or (1 shl bitIndex)).toByte()
+                    }
                 }
             }
-        }
 
-        return MonochromeData(width, height, data)
+            return MonochromeData(width, height, data)
+        } catch (e: Exception) {
+            println("❌ Monochrome conversion error: ${e.message}")
+            return null
+        }
     }
-//    private fun convertToMonochromeFast(bitmap: Bitmap): MonochromeData? {
-//        val width = bitmap.width
-//        val height = bitmap.height
-//        val pixels = IntArray(width * height)
-//        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
-//
-//        val widthBytes = (width + 7) / 8
-//        val totalBytes = widthBytes * height
-//        val data = ByteArray(totalBytes)
-//
-//        val threshold = -0x5f5f60
-//
-//        for (y in 0 until height) {
-//            val bitmapRowOffset = y * widthBytes
-//            for (x in 0 until width) {
-//                if (pixels[y * width + x] < threshold) {
-//                    val byteIndex = bitmapRowOffset + (x / 8)
-//                    val bitIndex = 7 - (x % 8)
-//                    data[byteIndex] = (data[byteIndex].toInt() or (1 shl bitIndex)).toByte()
-//                }
-//            }
-//        }
-//
-//        return MonochromeData(width, height, data)
-//    }
 
     private fun containsComplexUnicode(text: String): Boolean {
         for (char in text) {
             val code = char.code
-            if (code in 0x1780..0x17FF ||
-                code in 0x0E00..0x0E7F ||
-                code in 0x4E00..0x9FFF ||
-                code in 0xAC00..0xD7AF
+            if (code in 0x1780..0x17FF ||  // Khmer
+                code in 0x0E00..0x0E7F ||  // Thai
+                code in 0x4E00..0x9FFF ||  // CJK
+                code in 0xAC00..0xD7AF     // Hangul
             ) {
                 return true
             }
@@ -1736,91 +2275,140 @@ private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
         return wrapTextToList(text, maxCharsPerLine).joinToString("\n")
     }
 
+    private fun wrapTextToList(text: String, maxCharsPerLine: Int): List<String> {
+        if (maxCharsPerLine <= 0) return listOf(text)
 
+        val lines = mutableListOf<String>()
+        val words = text.split(" ")
+        var currentLine = StringBuilder()
 
-//    private fun wrapTextToList(text: String, maxCharsPerLine: Int): List<String> {
-//        if (maxCharsPerLine <= 0) return listOf(text)
-//        if (text.isEmpty()) return listOf("")
-//
-//        val lines = mutableListOf<String>()
-//        val words = text.split(" ")
-//        var currentLine = StringBuilder()
-//
-//        for (word in words) {
-//            // Handle words longer than max width
-//            if (word.length > maxCharsPerLine) {
-//                // Save current line if not empty
-//                if (currentLine.isNotEmpty()) {
-//                    lines.add(currentLine.toString())
-//                    currentLine = StringBuilder()
-//                }
-//                // Split long word across multiple lines
-//                var remainingWord = word
-//                while (remainingWord.length > maxCharsPerLine) {
-//                    lines.add(remainingWord.take(maxCharsPerLine))
-//                    remainingWord = remainingWord.drop(maxCharsPerLine)
-//                }
-//                if (remainingWord.isNotEmpty()) {
-//                    currentLine.append(remainingWord)
-//                }
-//                continue
-//            }
-//
-//            // Check if adding this word would exceed the limit
-//            val testLine = if (currentLine.isEmpty()) {
-//                word
-//            } else {
-//                "$currentLine $word"
-//            }
-//
-//            if (testLine.length <= maxCharsPerLine) {
-//                currentLine = StringBuilder(testLine)
-//            } else {
-//                // Save current line and start new one
-//                if (currentLine.isNotEmpty()) {
-//                    lines.add(currentLine.toString())
-//                }
-//                currentLine = StringBuilder(word)
-//            }
-//        }
-//
-//        // Add the last line
-//        if (currentLine.isNotEmpty()) {
-//            lines.add(currentLine.toString())
-//        }
-//
-//        return lines.ifEmpty { listOf("") }
-//    }
+        for (word in words) {
+            // Handle words longer than max line
+            if (word.length > maxCharsPerLine) {
+                // Add current line if not empty
+                if (currentLine.isNotEmpty()) {
+                    lines.add(currentLine.toString().trim())
+                    currentLine = StringBuilder()
+                }
 
+                // Split long word
+                var remaining = word
+                while (remaining.length > maxCharsPerLine) {
+                    lines.add(remaining.take(maxCharsPerLine))
+                    remaining = remaining.drop(maxCharsPerLine)
+                }
+                if (remaining.isNotEmpty()) {
+                    currentLine.append(remaining).append(" ")
+                }
+                continue
+            }
 
+            // Check if adding word would exceed limit
+            val testLine = if (currentLine.isEmpty()) word else "$currentLine $word"
 
+            if (getVisualWidth(testLine) <= maxCharsPerLine) {
+                if (currentLine.isNotEmpty()) currentLine.append(" ")
+                currentLine.append(word)
+            } else {
+                if (currentLine.isNotEmpty()) {
+                    lines.add(currentLine.toString().trim())
+                }
+                currentLine = StringBuilder(word).append(" ")
+            }
+        }
+
+        if (currentLine.isNotEmpty()) {
+            lines.add(currentLine.toString().trim())
+        }
+
+        return lines.ifEmpty { listOf("") }
+    }
 
     private fun getVisualWidth(text: String): Double {
         var width = 0.0
         for (char in text) {
             val code = char.code
             width += when {
-                code in 0x1780..0x17FF -> 1.4  // Khmer base characters
+                code in 0x1780..0x17FF -> 1.4  // Khmer base
                 code in 0x17B4..0x17D3 -> 0.0  // Khmer combining marks
-                else -> 1.0  // ASCII
+                code in 0x0E00..0x0E7F -> 1.2  // Thai
+                code in 0x4E00..0x9FFF -> 2.0  // CJK (double width)
+                code in 0xAC00..0xD7AF -> 2.0  // Hangul (double width)
+                else -> 1.0  // ASCII/Latin
             }
         }
         return width
     }
 
-    // MARK: - Status and Permission
+    // ====================================================================
+    // Paper Control
+    // ====================================================================
+    private fun feedPaper(lines: Int, result: MethodChannel.Result) {
+        scope.launch {
+            printMutex.withLock {
+                try {
+                    val commands = ByteArray(lines) { 0x0A.toByte() }
+                    addToBuffer(commands)  // ✅ Add to buffer
 
+                    withContext(Dispatchers.Main) {
+                        result.success(true)
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        result.error("FEED_ERROR", e.message, null)
+                    }
+                }
+            }
+        }
+    }
+
+
+    private fun cutPaper(result: MethodChannel.Result) {
+        scope.launch {
+            printMutex.withLock {
+                try {
+                    val commands = byteArrayOf(GS, 0x56, 0x00)
+                    addToBuffer(commands)  // ✅ Add to buffer
+
+                    withContext(Dispatchers.Main) {
+                        result.success(true)
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        result.error("CUT_ERROR", e.message, null)
+                    }
+                }
+            }
+        }
+    }
+
+
+    private fun setPrinterWidth(width: Int, result: MethodChannel.Result) {
+        printerWidth = width
+        println("✅ Printer width set to $width dots")
+        result.success(true)
+    }
+
+    // ====================================================================
+    // Status & Permissions
+    // ====================================================================
     private fun getStatus(result: MethodChannel.Result) {
         val hasPermission = checkBluetoothPermissions()
         val isEnabled = bluetoothAdapter?.isEnabled ?: false
-        val isConnected = bluetoothGatt != null && writeCharacteristic != null
+        val isConnected = when (currentConnectionType) {
+            ConnectionType.BLUETOOTH_CLASSIC -> bluetoothSocket?.isConnected ?: false
+            ConnectionType.BLUETOOTH_BLE -> bluetoothGatt != null && writeCharacteristic != null
+            ConnectionType.NETWORK -> networkSocket?.isConnected ?: false
+            else -> false
+        }
 
         val status = mapOf(
             "status" to if (hasPermission) "authorized" else "denied",
             "enabled" to isEnabled,
             "connected" to isConnected,
-            "connectionType" to if (isConnected) currentConnectionType else "none"
+            "connectionType" to currentConnectionType.name.lowercase()
         )
+
         result.success(status)
     }
 
@@ -1839,6 +2427,7 @@ private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
                         Manifest.permission.BLUETOOTH_SCAN
                     ) == PackageManager.PERMISSION_GRANTED
         }
+
         @Suppress("DEPRECATION")
         return ActivityCompat.checkSelfPermission(
             context,
@@ -1849,658 +2438,4 @@ private val khmerTypefaceCache = mutableMapOf<String, Typeface?>()
                     Manifest.permission.BLUETOOTH_ADMIN
                 ) == PackageManager.PERMISSION_GRANTED
     }
-
-    //=============================for multi Row=============
-
-//    ================================================new==========================
-private fun printRow(
-    columns: List<Map<String, Any>>,
-    fontSize: Int,
-    result: MethodChannel.Result
-) {
-    val startTime = System.currentTimeMillis()
-
-    scope.launch {
-        printMutex.withLock {
-            try {
-                // Convert maps to PosColumn objects
-                val posColumns = columns.map { col ->
-                    PosColumn(
-                        text = col["text"] as? String ?: "",
-                        width = col["width"] as? Int ?: 6,
-                        align = col["align"] as? String ?: "left",
-                        bold = col["bold"] as? Boolean ?: false
-                    )
-                }
-
-                // Validate total width
-                val totalWidth = posColumns.sumOf { it.width }
-                if (totalWidth > 12) {
-                    withContext(Dispatchers.Main) {
-                        result.error("ROW_ERROR", "Total column width exceeds 12, got $totalWidth", null)
-                    }
-                    return@withLock
-                }
-
-                // Check if any column contains complex unicode
-                val hasComplexUnicode = posColumns.any { containsComplexUnicode(it.text) }
-
-                if (hasComplexUnicode) {
-                    println("🖼️ KOTLIN: Rendering Row with Complex text as Image")
-                    val renderStart = System.currentTimeMillis()
-
-                    val imageData = renderRowToData(posColumns, fontSize)
-
-                    if (imageData == null || imageData.isEmpty()) {
-                        withContext(Dispatchers.Main) {
-                            result.error("RENDER_ERROR", "Failed to render row", null)
-                        }
-                        return@withLock
-                    }
-
-                    val renderTime = System.currentTimeMillis() - renderStart
-                    println("✅ KOTLIN: Row rendered in ${renderTime}ms, size: ${imageData.size} bytes")
-
-                    writeDataSmooth(imageData)
-                } else {
-                    // Use text method for simple ASCII text
-                    printRowUsingTextMethod(posColumns, fontSize)
-                }
-
-                // Optional: Add delay if printer needs it
-                // delay(50)
-
-                withContext(Dispatchers.Main) {
-                    result.success(true)
-                }
-
-                val totalTime = System.currentTimeMillis() - startTime
-                println("🖨️ KOTLIN: Row printed in ${totalTime}ms")
-
-            } catch (e: Exception) {
-                println("❌ PRINT ROW ERROR: ${e.message}")
-                e.printStackTrace()
-                withContext(Dispatchers.Main) {
-                    result.error("PRINT_ROW_ERROR", e.message, null)
-                }
-            }
-        }
-    }
-}
-
-    // ===== SIMPLE TEXT ROW (ASCII/CP437) =====
-    private fun printRowUsingTextMethod(
-        columns: List<PosColumn>,
-        fontSize: Int
-    ) {
-        println("🔵 KOTLIN: Printing row with ${columns.size} columns (Simple text)")
-
-        val totalChars = when {
-            fontSize > 30 -> 24
-            fontSize > 24 -> 32
-            else -> 48
-        }
-
-        // Prepare all column lines with word wrapping
-        val columnTextLists = columns.map { column ->
-            val maxCharsPerColumn = (totalChars * column.width) / 12
-            val lines = wrapTextToList(column.text, maxCharsPerColumn)
-            Triple(lines, maxCharsPerColumn, column.align)
-        }
-
-        val maxLines = columnTextLists.maxOfOrNull { it.first.size } ?: 1
-
-        val commands = mutableListOf<Byte>()
-
-        // Initialize printer
-        commands.addAll(listOf(ESC, 0x40))
-        commands.addAll(listOf(ESC, 0x74, 0x01))
-
-        // Font size
-        val sizeCommand: Byte = when {
-            fontSize > 30 -> 0x30.toByte()
-            fontSize > 24 -> 0x11.toByte()
-            else -> 0x00.toByte()
-        }
-        commands.addAll(listOf(ESC, 0x21, sizeCommand))
-
-
-        //  INCREASED LINE SPACING for more vertical height
-        commands.addAll(listOf(ESC, 0x33, 0x00))
-        // Bold if needed
-        val hasBold = columns.any { it.bold }
-        if (hasBold) {
-            commands.addAll(listOf(ESC, 0x45, 0x01))
-        }
-
-        // Left align
-        commands.addAll(listOf(ESC, 0x61, 0x00))
-
-        // Print all lines
-        for (lineIndex in 0 until maxLines) {
-            val lineText = StringBuilder()
-
-            for (colIndex in columnTextLists.indices) {
-                val (lines, width, align) = columnTextLists[colIndex]
-                val text = if (lineIndex < lines.size) lines[lineIndex] else ""
-                val formattedText = formatColumnText(text, width, align)
-                lineText.append(formattedText)
-            }
-
-            commands.addAll(lineText.toString().toByteArray(charset("CP437")).toList())
-            commands.add(0x0A.toByte())
-        }
-//        commands.add(0x0A.toByte())
-//        // Reset line spacing
-//        commands.addAll(listOf(ESC, 0x33, 0x30)) // Reset to default (48/180 inch)
-        commands.addAll(listOf(ESC, 0x33, 0x1E))
-        // Reset bold
-        if (hasBold) {
-            commands.addAll(listOf(ESC, 0x45, 0x00))
-        }
-
-        // Reset alignment
-        commands.addAll(listOf(ESC, 0x61, 0x00))
-
-        writeDataSmooth(commands.toByteArray())
-    }
-
-    private fun formatColumnText(text: String, width: Int, align: String): String {
-        // Handle exact match or overflow
-        if (text.length == width) return text
-        if (text.length > width) return text.take(width)
-
-        // Padding logic
-        return when (align.lowercase()) {
-            "center" -> {
-                val totalPadding = width - text.length
-                val leftPadding = totalPadding / 2
-                text.padStart(text.length + leftPadding).padEnd(width)
-            }
-            "right" -> text.padStart(width)
-            else -> text.padEnd(width) // Default is left
-        }
-    }
-
-    // ===== OPTIMIZED IMAGE ROW RENDERER =====
-    private fun renderRowToData(
-        columns: List<PosColumn>,
-        fontSize: Int
-    ): ByteArray? {
-        try {
-            // OPTIMIZATION 1: Use cached typefaces with proper bold support
-            val baseFontSize = 24f // Reduced for smaller output
-            val scaledFontSize = when {
-                fontSize > 30 -> baseFontSize * 2.0f
-                fontSize > 24 -> baseFontSize * 1.5f
-                else -> baseFontSize
-            }
-
-            println("📏 KOTLIN: Row fontSize=$fontSize -> scaledFontSize=$scaledFontSize")
-
-            val maxWidth = printerWidth.toFloat()
-            val columnWidths = columns.map { (maxWidth * it.width) / 12 }
-
-            // Calculate total chars per row based on font size
-            val totalChars = when {
-                fontSize > 30 -> 20
-                fontSize > 24 -> 28
-                else -> 42
-            }
-
-            // Calculate max lines needed
-            var maxLines = 1
-            for (column in columns) {
-                val colChars = (totalChars * column.width) / 12
-                val lineCount = (column.text.length + colChars - 1) / colChars
-                if (lineCount > maxLines) maxLines = lineCount
-            }
-
-            // OPTIMIZATION 2: Create paint once with base settings
-            val basePaint = Paint().apply {
-                textSize = scaledFontSize
-                isAntiAlias = false // OPTIMIZATION: Sharper for monochrome
-                color = Color.BLACK
-                style = Paint.Style.FILL // OPTIMIZATION: FILL only
-                strokeWidth = 0f
-            }
-
-            // Calculate line height
-            val metrics = basePaint.fontMetrics
-            val lineHeight = (metrics.descent - metrics.ascent) * 0.90f // Tighter spacing
-
-            // OPTIMIZATION 3: Minimal padding
-            val verticalPadding = 4f
-            val totalHeight = (lineHeight * maxLines + verticalPadding * 2).toInt()
-
-            val bitmap = Bitmap.createBitmap(
-                printerWidth,
-                totalHeight,
-                Bitmap.Config.ARGB_8888
-            )
-            val canvas = Canvas(bitmap)
-            canvas.drawColor(Color.WHITE)
-
-            var currentX = 0f
-            for (i in columns.indices) {
-                val column = columns[i]
-                val colWidth = columnWidths[i]
-                val colChars = (totalChars * column.width) / 12
-
-                // Word wrap for this column
-                val lines = mutableListOf<String>()
-                var remaining = column.text
-                while (remaining.length > colChars) {
-                    lines.add(remaining.take(colChars))
-                    remaining = remaining.drop(colChars)
-                }
-                if (remaining.isNotEmpty()) lines.add(remaining)
-
-                // OPTIMIZATION 4: Get appropriate typeface from cache
-                val columnTypeface = getKhmerTypeface(column.bold)
-
-                // Configure paint for this column
-                basePaint.apply {
-                    typeface = columnTypeface
-                    isFakeBoldText = false // Don't fake bold - use real fonts
-                    textAlign = when (column.align.lowercase()) {
-                        "center" -> Paint.Align.CENTER
-                        "right" -> Paint.Align.RIGHT
-                        else -> Paint.Align.LEFT
-                    }
-                }
-
-                // Draw each line
-                for (lineIndex in lines.indices) {
-                    val line = lines[lineIndex]
-
-                    if (line.isBlank()) continue
-
-                    val x = when (column.align.lowercase()) {
-                        "center" -> currentX + colWidth / 2
-                        "right" -> currentX + colWidth
-                        else -> currentX
-                    }
-
-                    val y = verticalPadding - metrics.ascent + (lineHeight * lineIndex)
-                    canvas.drawText(line, x, y, basePaint)
-                }
-
-                currentX += colWidth
-            }
-
-            val monoData = convertToMonochromeFast(bitmap)
-            bitmap.recycle()
-
-            if (monoData == null) {
-                println("❌ Failed to convert row bitmap to monochrome")
-                return null
-            }
-
-            // OPTIMIZATION 5: Pre-allocate exact size
-            val widthBytes = (monoData.width + 7) / 8
-            val commandSize = 8 + monoData.data.size
-            val commands = ByteArray(commandSize)
-
-            var idx = 0
-            // ESC/POS raster image command: GS v 0
-            commands[idx++] = GS
-            commands[idx++] = 0x76
-            commands[idx++] = 0x30
-            commands[idx++] = 0x00
-
-            // Width in bytes (little-endian)
-            commands[idx++] = (widthBytes and 0xFF).toByte()
-            commands[idx++] = ((widthBytes shr 8) and 0xFF).toByte()
-
-            // Height (little-endian)
-            commands[idx++] = (monoData.height and 0xFF).toByte()
-            commands[idx++] = ((monoData.height shr 8) and 0xFF).toByte()
-
-            // OPTIMIZATION 6: Use System.arraycopy
-            System.arraycopy(monoData.data, 0, commands, idx, monoData.data.size)
-
-            return commands
-
-        } catch (e: Exception) {
-            println("❌ ROW RENDER ERROR: ${e.message}")
-            e.printStackTrace()
-            return null
-        }
-    }
-
-    // Helper function for word wrapping (if not already defined)
-    private fun wrapTextToList(text: String, maxCharsPerLine: Int): List<String> {
-        if (maxCharsPerLine <= 0) return listOf(text)
-
-        val lines = mutableListOf<String>()
-        var remaining = text
-
-        while (remaining.length > maxCharsPerLine) {
-            // Try to break at word boundary
-            var breakIndex = maxCharsPerLine
-            val lastSpace = remaining.substring(0, maxCharsPerLine).lastIndexOf(' ')
-
-            if (lastSpace > maxCharsPerLine / 2) {
-                breakIndex = lastSpace
-            }
-
-            lines.add(remaining.substring(0, breakIndex).trim())
-            remaining = remaining.substring(breakIndex).trim()
-        }
-
-        if (remaining.isNotEmpty()) {
-            lines.add(remaining)
-        }
-
-        return lines
-    }
-//===========================================================old=======================
-    // Add this new function to print a row with multiple columns
-//    private fun printRow(
-//        columns: List<Map<String, Any>>,
-//        fontSize: Int,
-//        result: MethodChannel.Result
-//    ) {
-//        val startTime = System.currentTimeMillis()
-//
-//        scope.launch {
-//            printMutex.withLock {
-//                try {
-//                    // ✅ Convert maps to PosColumn objects
-//                    val posColumns = columns.map { col ->
-//                        PosColumn(
-//                            text = col["text"] as? String ?: "",
-//                            width = col["width"] as? Int ?: 6,
-//                            align = col["align"] as? String ?: "left",
-//                            bold = col["bold"] as? Boolean ?: false
-//                        )
-//                    }
-//
-//                    // Calculate total width
-//                    val totalWidth = posColumns.sumOf { it.width }
-//                    if (totalWidth > 12) {
-//                        withContext(Dispatchers.Main) {
-//                            result.error("ROW_ERROR", "Total column width exceeds 12, got $totalWidth", null)
-//                        }
-//                        return@withLock
-//                    }
-//
-//                    // Check if any column contains complex unicode
-//                    val hasComplexUnicode = posColumns.any { containsComplexUnicode(it.text) }
-//
-//                    if (hasComplexUnicode) {
-//                        println("🔵 KOTLIN: Rendering Row with Complex text as Image")
-//                        val imageData = renderRowToData(posColumns, fontSize)
-//
-//                        if (imageData == null || imageData.isEmpty()) {
-//                            withContext(Dispatchers.Main) {
-//                                result.error("RENDER_ERROR", "Failed to render row", null)
-//                            }
-//                            return@withLock
-//                        }
-//
-////                        val alignLeftCommand = byteArrayOf(ESC, 0x61.toByte(), 0x00.toByte())
-////                        val finalData = alignLeftCommand + imageData
-//
-//                        writeDataSmooth(imageData)
-//                    } else {
-//                        // Use printText logic for simple text
-//                        printRowUsingTextMethod(posColumns, fontSize)
-//                    }
-//
-//                    delay(50)
-//
-//                    withContext(Dispatchers.Main) {
-//                        result.success(true)
-//                    }
-//
-//                    val totalTime = System.currentTimeMillis() - startTime
-//                    println("✅ KOTLIN: Row printed in ${totalTime}ms")
-//
-//                } catch (e: Exception) {
-//                    withContext(Dispatchers.Main) {
-//                        result.error("PRINT_ROW_ERROR", e.message, null)
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//
-//
-//    private fun printRowUsingTextMethod(
-//        columns: List<PosColumn>,
-//        fontSize: Int
-//    ) {
-//        println("🔵 KOTLIN: Printing row with ${columns.size} columns")
-//
-//        val totalChars = when {
-//            fontSize > 30 -> 24
-//            fontSize > 24 -> 32
-//            else -> 48
-//        }
-//
-//        // Prepare all column lines with word wrapping
-//        val columnTextLists = columns.map { column ->
-//            val maxCharsPerColumn = (totalChars * column.width) / 12
-//
-//            // ✅ Use word wrapping for better text handling
-//            val lines = wrapTextToList(column.text, maxCharsPerColumn)
-//
-//            Triple(lines, maxCharsPerColumn, column.align)
-//        }
-//
-//        val maxLines = columnTextLists.maxOfOrNull { it.first.size } ?: 1
-//
-//        val commands = mutableListOf<Byte>()
-//
-//        // Init once
-//        commands.add(ESC)
-//        commands.add(0x40)
-//        commands.add(ESC)
-//        commands.add(0x74)
-//        commands.add(0x01)
-//
-//        // Font size
-//        val sizeCommand: Byte = when {
-//            fontSize > 30 -> 0x30.toByte()
-//            fontSize > 24 -> 0x11.toByte()
-//            else -> 0x00.toByte()
-//        }
-//        commands.add(ESC)
-//        commands.add(0x21)
-//        commands.add(sizeCommand)
-//
-//
-//        commands.add(ESC)
-//        commands.add(0x33)
-//        commands.add(0x10)  // 16/180 inch spacing
-//
-//        // Bold if needed
-//        val hasBold = columns.any { it.bold }
-//        if (hasBold) {
-//            commands.add(ESC)
-//            commands.add(0x45)
-//            commands.add(0x01)
-//        }
-//
-//        // Left align
-//        commands.add(ESC)
-//        commands.add(0x61)
-//        commands.add(0x00)
-//
-//        // Print all lines
-//        for (lineIndex in 0 until maxLines) {
-//            val lineText = StringBuilder()
-//
-//            for (colIndex in columnTextLists.indices) {
-//                val (lines, width, align) = columnTextLists[colIndex]
-//                val text = if (lineIndex < lines.size) lines[lineIndex] else ""
-//                val formattedText = formatColumnText(text, width, align)
-//                lineText.append(formattedText)
-//            }
-//
-//            commands.addAll(lineText.toString().toByteArray(charset("CP437")).toList())
-//            commands.add(0x0A.toByte())
-//        }
-//
-//
-//        commands.add(ESC)
-//        commands.add(0x33)
-//        commands.add(0x30)  // Reset to default (48/180 inch)
-//
-//        if (hasBold) {
-//            commands.add(ESC)
-//            commands.add(0x45)
-//            commands.add(0x00)
-//        }
-//
-//        commands.add(ESC)
-//        commands.add(0x61)
-//        commands.add(0x00)
-//
-//        writeDataSmooth(commands.toByteArray())
-//    }
-//
-//    private fun formatColumnText(text: String, width: Int, align: String): String {
-//        // 1. Handle Exact Match or Overflow
-//        if (text.length == width) return text
-//        if (text.length > width) return text.take(width)
-//
-//        // 2. Padding Logic
-//        return when (align.lowercase()) {
-//            "center" -> {
-//                val totalPadding = width - text.length
-//                val leftPadding = totalPadding / 2
-//                text.padStart(text.length + leftPadding).padEnd(width)
-//            }
-//            "right" -> {
-//                text.padStart(width)
-//            }
-//            else -> { // Default is "left"
-//                text.padEnd(width)
-//            }
-//        }
-//    }
-//
-//    private fun renderRowToData(
-//        columns: List<PosColumn>,
-//        fontSize: Int
-//    ): ByteArray? {
-//        try {
-//            val baseFontSize = 24f
-//            val scaledFontSize = when {
-//                fontSize > 30 -> baseFontSize * 2.0f
-//                fontSize > 24 -> baseFontSize * 1.5f
-//                else -> baseFontSize
-//            }
-//
-//            val khmerTypeface = try {
-//                val assetManager = context.assets
-//                Typeface.createFromAsset(assetManager, "fonts/NotoSansKhmer-Regular.ttf")
-//            } catch (e: Exception) {
-//                println("❌ Failed to load Khmer font: $e")
-//                Typeface.DEFAULT
-//            }
-//
-//            val maxWidth = printerWidth.toFloat()
-//            val columnWidths = columns.map { (maxWidth * it.width) / 12 }
-//
-//            val paint = Paint().apply {
-//                textSize = scaledFontSize
-//                typeface = khmerTypeface
-//                isAntiAlias = true
-//                color = Color.BLACK
-//            }
-//
-//            val metrics = paint.fontMetrics
-//            val lineHeight = metrics.descent - metrics.ascent
-//
-//            val totalChars = when {
-//                fontSize > 30 -> 24
-//                fontSize > 24 -> 32
-//                else -> 48
-//            }
-//
-//            var maxLines = 1
-//            for (column in columns) {
-//                val colChars = (totalChars * column.width) / 12
-//                val lineCount = (column.text.length + colChars - 1) / colChars
-//                if (lineCount > maxLines) maxLines = lineCount
-//            }
-//
-//            // ✅ Minimal padding (1px top + 1px bottom)
-//            val verticalPadding = 1f
-//            val totalHeight = (lineHeight * maxLines + verticalPadding * 2).toInt()
-//
-//            val bitmap = Bitmap.createBitmap(printerWidth, totalHeight, Bitmap.Config.ARGB_8888)
-//            val canvas = Canvas(bitmap)
-//            canvas.drawColor(Color.WHITE)
-//
-//            var currentX = 0f
-//            for (i in columns.indices) {
-//                val column = columns[i]
-//                val colWidth = columnWidths[i]
-//                val colChars = (totalChars * column.width) / 12
-//
-//                val lines = mutableListOf<String>()
-//                var remaining = column.text
-//                while (remaining.length > colChars) {
-//                    lines.add(remaining.take(colChars))
-//                    remaining = remaining.drop(colChars)
-//                }
-//                if (remaining.isNotEmpty()) lines.add(remaining)
-//
-//                paint.apply {
-//                    isFakeBoldText = column.bold
-//                    strokeWidth = if (column.bold) 1.2f else 0.8f
-//                    style = Paint.Style.FILL_AND_STROKE
-//                    textAlign = when (column.align.lowercase()) {
-//                        "center" -> Paint.Align.CENTER
-//                        "right" -> Paint.Align.RIGHT
-//                        else -> Paint.Align.LEFT
-//                    }
-//                }
-//
-//                for (lineIndex in lines.indices) {
-//                    val line = lines[lineIndex]
-//
-//                    val x = when (column.align.lowercase()) {
-//                        "center" -> currentX + colWidth / 2
-//                        "right" -> currentX + colWidth
-//                        else -> currentX
-//                    }
-//
-//                    // ✅ Minimal vertical padding
-//                    val y = verticalPadding - metrics.ascent + (lineHeight * lineIndex)
-//                    canvas.drawText(line, x, y, paint)
-//                }
-//
-//                currentX += colWidth
-//            }
-//
-//            val monoData = convertToMonochromeFast(bitmap)
-//            bitmap.recycle()
-//
-//            if (monoData == null) return null
-//
-//            val commands = mutableListOf<Byte>()
-//            commands.addAll(listOf(GS, 0x76, 0x30, 0x00))
-//
-//            val widthBytes = (monoData.width + 7) / 8
-//            commands.add((widthBytes and 0xFF).toByte())
-//            commands.add(((widthBytes shr 8) and 0xFF).toByte())
-//            commands.add((monoData.height and 0xFF).toByte())
-//            commands.add(((monoData.height shr 8) and 0xFF).toByte())
-//
-//            commands.addAll(monoData.data.toList())
-//            commands.add(0x0A)
-//
-//            return commands.toByteArray()
-//        } catch (e: Exception) {
-//            println("❌ ROW RENDER ERROR: $e")
-//            return null
-//        }
-//    }
 }

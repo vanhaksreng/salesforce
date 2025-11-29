@@ -43,7 +43,7 @@ class PosColumn {
   });
 
   Map<String, dynamic> toMap() {
-    return {'text': text, 'width': width};
+    return {'text': text, 'width': width, 'align': align.value, 'bold': bold};
   }
 }
 
@@ -205,6 +205,24 @@ class ThermalPrinter {
     }
   }
 
+  static Future<bool> testPaperFeed() async {
+    try {
+      final bool result = await _channel.invokeMethod('testPaperFeed');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to test paper feed: $e');
+    }
+  }
+
+  static Future<bool> testSlowPrint() async {
+    try {
+      final bool result = await _channel.invokeMethod('testSlowPrint');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to test slow print: $e');
+    }
+  }
+
   static Future<bool> printRow({
     required List<Map<String, dynamic>> columns,
     int fontSize = 24,
@@ -278,7 +296,55 @@ class ThermalPrinter {
       });
       return result;
     } catch (e) {
-      throw Exception('Failed to feed paper: $e');
+      throw Exception('Failed to set printer width: $e');
+    }
+  }
+
+  static Future<bool> startBatch() async {
+    try {
+      final bool result = await _channel.invokeMethod('startBatch');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to start batch: $e');
+    }
+  }
+
+  static Future<bool> endBatch() async {
+    try {
+      final bool result = await _channel.invokeMethod('endBatch');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to end batch: $e');
+    }
+  }
+
+  static Future<bool> warmUpPrinter() async {
+    try {
+      final bool result = await _channel.invokeMethod('warmUpPrinter');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to warm up: $e');
+    }
+  }
+
+  /// Configure printer for OOMAS-specific settings
+  static Future<bool> configureOOMAS() async {
+    try {
+      final bool result = await _channel.invokeMethod('configureOOMAS');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to configure OOMAS: $e');
+    }
+  }
+
+  static Future<bool> printSeparator({int width = 48}) async {
+    try {
+      final bool result = await _channel.invokeMethod('printSeparator', {
+        'width': width,
+      });
+      return result;
+    } catch (e) {
+      throw Exception('Failed to print separator: $e');
     }
   }
 }
