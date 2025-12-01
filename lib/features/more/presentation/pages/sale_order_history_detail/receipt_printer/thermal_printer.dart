@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -106,8 +108,23 @@ class PrinterDeviceDiscover {
   }
 }
 
+/// ThermalPrinter - Complete Flutter interface for thermal printer plugin
+///
+/// ✅ SYNCHRONIZED WITH ANDROID & iOS (25 methods)
+///
+/// Features:
+/// - Bluetooth Classic, BLE, USB, Network support
+/// - 58mm & 80mm paper width support
+/// - Batch mode for optimized printing
+/// - Complex Unicode support (Khmer, Thai, CJK)
+/// - Image printing with alignment
+/// - Diagnostic tools
 class ThermalPrinter {
   static const MethodChannel _channel = MethodChannel('thermal_printer');
+
+  // ====================================================================
+  // DISCOVERY METHODS (2)
+  // ====================================================================
 
   /// Discover available thermal printers of specific type
   static Future<List<PrinterDeviceDiscover>> discoverPrinters({
@@ -143,6 +160,10 @@ class ThermalPrinter {
       throw Exception('Failed to discover printers: $e');
     }
   }
+
+  // ====================================================================
+  // CONNECTION METHODS (3)
+  // ====================================================================
 
   /// Connect to a printer
   static Future<bool> connect(PrinterDeviceDiscover device) async {
@@ -183,7 +204,37 @@ class ThermalPrinter {
     }
   }
 
-  /// Print text
+  // ====================================================================
+  // BATCH MODE METHODS (2)
+  // ====================================================================
+
+  /// Start batch mode - collects all commands in buffer
+  /// Call this before building a receipt for optimized transmission
+  static Future<bool> startBatch() async {
+    try {
+      final bool result = await _channel.invokeMethod('startBatch');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to start batch: $e');
+    }
+  }
+
+  /// End batch mode - optimizes and sends all buffered commands
+  /// Call this after all receipt commands are added
+  static Future<bool> endBatch() async {
+    try {
+      final bool result = await _channel.invokeMethod('endBatch');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to end batch: $e');
+    }
+  }
+
+  // ====================================================================
+  // PRINTING METHODS (5)
+  // ====================================================================
+
+  /// Print text with formatting options
   static Future<bool> printText(
     String text, {
     int fontSize = 24,
@@ -205,24 +256,7 @@ class ThermalPrinter {
     }
   }
 
-  static Future<bool> testPaperFeed() async {
-    try {
-      final bool result = await _channel.invokeMethod('testPaperFeed');
-      return result;
-    } catch (e) {
-      throw Exception('Failed to test paper feed: $e');
-    }
-  }
-
-  static Future<bool> testSlowPrint() async {
-    try {
-      final bool result = await _channel.invokeMethod('testSlowPrint');
-      return result;
-    } catch (e) {
-      throw Exception('Failed to test slow print: $e');
-    }
-  }
-
+  /// Print a table row with multiple columns
   static Future<bool> printRow({
     required List<Map<String, dynamic>> columns,
     int fontSize = 24,
@@ -255,6 +289,52 @@ class ThermalPrinter {
     }
   }
 
+  /// Print image with padding for proper alignment
+  ///
+  /// This method centers/aligns the image on the paper by adding padding
+  ///
+  /// [imageBytes] - Image data to print
+  /// [width] - Image width in pixels (e.g., 384 for 58mm)
+  /// [align] - Alignment: 0=left, 1=center, 2=right
+  /// [paperWidth] - Paper width in pixels (384 for 58mm, 576 for 80mm)
+  static Future<bool> printImageWithPadding(
+    Uint8List imageBytes, {
+    int width = 384,
+    int align = 1, // 0=left, 1=center, 2=right
+    int paperWidth = 576,
+  }) async {
+    try {
+      final bool result = await _channel.invokeMethod('printImageWithPadding', {
+        'imageBytes': imageBytes,
+        'width': width,
+        'align': align,
+        'paperWidth': paperWidth,
+      });
+      return result;
+    } catch (e) {
+      throw Exception('Failed to print image with padding: $e');
+    }
+  }
+
+  /// Print a separator line
+  ///
+  /// Uses lower density pattern for lines made of "=" or "-" characters
+  /// [width] - Number of characters (e.g., 48 for 80mm, 32 for 58mm)
+  static Future<bool> printSeparator({int width = 48}) async {
+    try {
+      final bool result = await _channel.invokeMethod('printSeparator', {
+        'width': width,
+      });
+      return result;
+    } catch (e) {
+      throw Exception('Failed to print separator: $e');
+    }
+  }
+
+  // ====================================================================
+  // PAPER CONTROL METHODS (2)
+  // ====================================================================
+
   /// Feed paper (move paper forward)
   static Future<bool> feedPaper(int lines) async {
     try {
@@ -277,18 +357,17 @@ class ThermalPrinter {
     }
   }
 
-  /// Check printer status
-  static Future<Map<String, dynamic>> getStatus() async {
-    try {
-      final Map<dynamic, dynamic> status = await _channel.invokeMethod(
-        'getStatus',
-      );
-      return status.cast<String, dynamic>();
-    } catch (e) {
-      throw Exception('Failed to get status: $e');
-    }
-  }
+  // ====================================================================
+  // CONFIGURATION METHODS (4)
+  // ====================================================================
 
+  /// Set printer width for 58mm or 80mm paper
+  ///
+  /// [width] - Paper width in pixels:
+  ///   - 384 for 58mm paper
+  ///   - 576 for 80mm paper
+  ///
+  /// ⚠️ CRITICAL: Must be called BEFORE printing
   static Future<bool> setPrinterWidth(int width) async {
     try {
       final bool result = await _channel.invokeMethod('setPrinterWidth', {
@@ -300,34 +379,9 @@ class ThermalPrinter {
     }
   }
 
-  static Future<bool> startBatch() async {
-    try {
-      final bool result = await _channel.invokeMethod('startBatch');
-      return result;
-    } catch (e) {
-      throw Exception('Failed to start batch: $e');
-    }
-  }
-
-  static Future<bool> endBatch() async {
-    try {
-      final bool result = await _channel.invokeMethod('endBatch');
-      return result;
-    } catch (e) {
-      throw Exception('Failed to end batch: $e');
-    }
-  }
-
-  static Future<bool> warmUpPrinter() async {
-    try {
-      final bool result = await _channel.invokeMethod('warmUpPrinter');
-      return result;
-    } catch (e) {
-      throw Exception('Failed to warm up: $e');
-    }
-  }
-
-  /// Configure printer for OOMAS-specific settings
+  /// Configure printer with OOMAS-specific settings
+  ///
+  /// Sets optimal parameters for OOMAS thermal printers
   static Future<bool> configureOOMAS() async {
     try {
       final bool result = await _channel.invokeMethod('configureOOMAS');
@@ -337,14 +391,132 @@ class ThermalPrinter {
     }
   }
 
-  static Future<bool> printSeparator({int width = 48}) async {
+  /// Warm up printer before first print
+  ///
+  /// Sends initialization commands to prepare printer
+  /// Recommended to call after connection
+  static Future<bool> warmUpPrinter() async {
     try {
-      final bool result = await _channel.invokeMethod('printSeparator', {
-        'width': width,
-      });
+      final bool result = await _channel.invokeMethod('warmUpPrinter');
       return result;
     } catch (e) {
-      throw Exception('Failed to print separator: $e');
+      throw Exception('Failed to warm up: $e');
+    }
+  }
+
+  /// Initialize printer with optimal settings
+  ///
+  /// Performs complete printer initialization sequence
+  static Future<bool> initializePrinter() async {
+    try {
+      final bool result = await _channel.invokeMethod('initializePrinter');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to initialize printer: $e');
+    }
+  }
+
+  // ====================================================================
+  // STATUS & DIAGNOSTIC METHODS (6)
+  // ====================================================================
+
+  /// Check printer connection and Bluetooth status
+  static Future<Map<String, dynamic>> getStatus() async {
+    try {
+      final Map<dynamic, dynamic> status = await _channel.invokeMethod(
+        'getStatus',
+      );
+      return status.cast<String, dynamic>();
+    } catch (e) {
+      throw Exception('Failed to get status: $e');
+    }
+  }
+
+  /// Check if Bluetooth permissions are granted
+  static Future<bool> checkBluetoothPermission() async {
+    try {
+      final bool result = await _channel.invokeMethod(
+        'checkBluetoothPermission',
+      );
+      return result;
+    } catch (e) {
+      throw Exception('Failed to check Bluetooth permission: $e');
+    }
+  }
+
+  /// Check printer status and readiness
+  ///
+  /// Returns detailed printer status including:
+  /// - Paper status
+  /// - Temperature
+  /// - Errors
+  static Future<Map<String, dynamic>> checkPrinterStatus() async {
+    try {
+      final Map<dynamic, dynamic> status = await _channel.invokeMethod(
+        'checkPrinterStatus',
+      );
+      return status.cast<String, dynamic>();
+    } catch (e) {
+      throw Exception('Failed to check printer status: $e');
+    }
+  }
+
+  /// Detect printer model and speed characteristics
+  ///
+  /// Returns: "SLOW", "MEDIUM", or "FAST"
+  /// - SLOW: Old printers (< 3 bytes/ms)
+  /// - MEDIUM: Standard printers (3-6 bytes/ms)
+  /// - FAST: Modern printers (> 6 bytes/ms)
+  static Future<String> detectPrinterModel() async {
+    try {
+      final String model = await _channel.invokeMethod('detectPrinterModel');
+      return model;
+    } catch (e) {
+      throw Exception('Failed to detect printer model: $e');
+    }
+  }
+
+  /// Test paper feed mechanism
+  ///
+  /// Performs a simple paper feed test to verify motor function
+  static Future<bool> testPaperFeed() async {
+    try {
+      final bool result = await _channel.invokeMethod('testPaperFeed');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to test paper feed: $e');
+    }
+  }
+
+  /// Test slow printing to diagnose "stuck stuck" sound
+  ///
+  /// Prints test pattern with delays to identify motor issues
+  static Future<bool> testSlowPrint() async {
+    try {
+      final bool result = await _channel.invokeMethod('testSlowPrint');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to test slow print: $e');
+    }
+  }
+
+  /// Run complete diagnostic test
+  ///
+  /// Performs comprehensive printer diagnostic including:
+  /// - Paper feed test
+  /// - Slow print test
+  /// - Status check
+  /// - Speed detection
+  ///
+  /// Returns diagnostic results with details
+  static Future<Map<String, dynamic>> runDiagnostic() async {
+    try {
+      final Map<dynamic, dynamic> result = await _channel.invokeMethod(
+        'runDiagnostic',
+      );
+      return result.cast<String, dynamic>();
+    } catch (e) {
+      throw Exception('Failed to run diagnostic: $e');
     }
   }
 }

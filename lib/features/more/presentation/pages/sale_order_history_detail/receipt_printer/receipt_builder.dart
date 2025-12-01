@@ -35,7 +35,7 @@ class ReceiptBuilder {
     );
   }
 
-  void addImage(Uint8List imageBytes, {int width = 384}) {
+  void printImage(Uint8List imageBytes, {int width = 384}) {
     _commands.add(
       ReceiptCommand(ReceiptCommandType.image, {
         'imageBytes': imageBytes,

@@ -238,7 +238,6 @@
 			isa = PBXGroup;
 			children = (
 				FAD790452ED58DA600E536D4 /* Assets */,
-				FAFBD4002ECC536D00951AE1 /* ThermalPrinterPlugin.swift */,
 				638C25EE2EC6FAF40020E8D4 /* BluetoothPrinterPlugin.swift */,
 				638C25CC2EC6D4640020E8D4 /* BluetoothPrinterHandler.swift */,
 				FAF70F132EC18E7000D5E431 /* KhmerRendererPlugin.swift */,
@@ -261,6 +260,7 @@
 				FA5FAADA2EB4743500D8C754 /* BluetoothPrinterManager.swift */,
 				FA5FAADB2EB4743500D8C754 /* ESCPOSGenerator.swift */,
 				FA4F908C2EC489C5009E7F84 /* KhmerRendererPlugin-Supporting.swift */,
+				FAFBD4002ECC536D00951AE1 /* ThermalPrinterPlugin.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
