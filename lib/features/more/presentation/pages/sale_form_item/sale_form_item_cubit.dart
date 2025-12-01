@@ -253,7 +253,7 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
       if (form.code == code) {
         if (code == kPromotionTypeStd) {
           _updateItemPrice(
-            uomCode: form.uomCode,
+            uomCode: uomCode,
             orderQty: Helpers.toStrings(form.quantity),
           );
         }
