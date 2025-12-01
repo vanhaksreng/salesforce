@@ -54,26 +54,25 @@ class AdministrationCubit extends Cubit<AdministrationState>
     bool forceRefresh = false,
   }) async {
     final isReady = await _bluetoothPermission.ensureBluetoothReady();
-    if (context.mounted) {
-      if (!isReady) {
-        if (Platform.isIOS) {
-          Helpers.showDialogAction(
-            context,
-            labelAction: "Bluetooth Required",
-            canCancel: false,
-            subtitle: 'Please enable Bluetooth in Settings to use the printer.',
-            confirmText: 'Open Settings',
-            confirm: () async {
-              Navigator.pop(context);
-              await _bluetoothPermission.openBluetoothSettings();
-            },
-          );
-        } else {
-          showErrorMessage("Please enable Bluetooth to continue");
-        }
-
-        return;
+    if (!context.mounted) return;
+    if (!isReady) {
+      if (Platform.isIOS) {
+        Helpers.showDialogAction(
+          context,
+          labelAction: "Bluetooth Required",
+          canCancel: false,
+          subtitle: 'Please enable Bluetooth in Settings to use the printer.',
+          confirmText: 'Open Settings',
+          confirm: () async {
+            Navigator.pop(context);
+            await _bluetoothPermission.openBluetoothSettings();
+          },
+        );
+      } else {
+        showErrorMessage("Please enable Bluetooth to continue");
       }
+
+      return;
     }
     await checkBluetoothStatus();
     emit(state.copyWith(hasPermission: true));

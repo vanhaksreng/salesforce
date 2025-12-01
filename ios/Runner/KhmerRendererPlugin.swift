@@ -1,102 +1,102 @@
-import Flutter
-import UIKit
-
-public class KhmerRendererPlugin: NSObject, FlutterPlugin {
-    
-    public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(
-            name: "khmer_text_renderer",
-            binaryMessenger: registrar.messenger()
-        )
-        let instance = KhmerRendererPlugin()
-        registrar.addMethodCallDelegate(instance, channel: channel)
-    }
-    
-    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any] else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Arguments missing", details: nil))
-            return
-        }
-        
-        switch call.method {
-        case "renderText":
-            handleRenderText(args: args, result: result)
-        case "checkKhmerSupport":
-            result(KhmerTextRenderer.checkKhmerSupport())
-        case "clearCache":
-            KhmerTextRenderer.clearCache()
-            result(nil)
-        default:
-            result(FlutterMethodNotImplemented)
-        }
-    }
-    
-    private func handleRenderText(args: [String: Any], result: @escaping FlutterResult) {
-        guard let text = args["text"] as? String,
-              let format = args["format"] as? String,
-              let width = args["width"] as? Double,
-              let fontSize = args["fontSize"] as? Double else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing required arguments", details: nil))
-            return
-        }
-        
-        let maxLines = args["maxLines"] as? Int ?? 0
-        let styleDict = args["style"] as? [String: Any]
-        // let padding = args["padding"] as? Double ?? 10 // Handled in ESCPOSGenerator
-        
-        // Create style object
-        let style: TextStyle
-        if let dict = styleDict {
-            style = TextStyle.from(dict: dict)
-        } else {
-            style = TextStyle()
-        }
-        style.fontSize = CGFloat(fontSize)
-        
-        if format == "escpos" {
-            print("🔄 Dynamic ESC/POS generation requested for: \(text.prefix(30))...")
-            
-            // CRITICAL: Use the dynamic handler
-            let escposData = ESCPOSGenerator.generatePrintData(
-                text,
-                style: style,
-                width: Int(width)
-            )
-
-            if escposData.isEmpty {
-                print("❌ ESC/POS conversion returned empty data")
-                result(nil)
-            } else {
-                result(FlutterStandardTypedData(bytes: escposData))
-            }
-            
-        } else if format == "png" {
-            print("🖼️ Rendering as PNG...")
-            
-            // For PNG format, return the PNG directly (using async call)
-            KhmerTextRenderer.renderText(
-                text,
-                width: CGFloat(width),
-                fontSize: CGFloat(fontSize),
-                useCache: args["useCache"] as? Bool ?? true,
-                maxLines: maxLines,
-                styleDict: styleDict
-            ) { data in
-                if let data = data {
-                    result(data)
-                } else {
-                    result(nil)
-                }
-            }
-        } else {
-            result(FlutterError(
-                code: "INVALID_FORMAT",
-                message: "Unknown format: \(format). Use 'png' or 'escpos'",
-                details: nil
-            ))
-        }
-    }
-}
+//import Flutter
+//import UIKit
+//
+//public class KhmerRendererPlugin: NSObject, FlutterPlugin {
+//    
+//    public static func register(with registrar: FlutterPluginRegistrar) {
+//        let channel = FlutterMethodChannel(
+//            name: "khmer_text_renderer",
+//            binaryMessenger: registrar.messenger()
+//        )
+//        let instance = KhmerRendererPlugin()
+//        registrar.addMethodCallDelegate(instance, channel: channel)
+//    }
+//    
+//    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+//        guard let args = call.arguments as? [String: Any] else {
+//            result(FlutterError(code: "INVALID_ARGS", message: "Arguments missing", details: nil))
+//            return
+//        }
+//        
+//        switch call.method {
+//        case "renderText":
+//            handleRenderText(args: args, result: result)
+//        case "checkKhmerSupport":
+//            result(KhmerTextRenderer.checkKhmerSupport())
+//        case "clearCache":
+//            KhmerTextRenderer.clearCache()
+//            result(nil)
+//        default:
+//            result(FlutterMethodNotImplemented)
+//        }
+//    }
+//    
+//    private func handleRenderText(args: [String: Any], result: @escaping FlutterResult) {
+//        guard let text = args["text"] as? String,
+//              let format = args["format"] as? String,
+//              let width = args["width"] as? Double,
+//              let fontSize = args["fontSize"] as? Double else {
+//            result(FlutterError(code: "INVALID_ARGS", message: "Missing required arguments", details: nil))
+//            return
+//        }
+//        
+//        let maxLines = args["maxLines"] as? Int ?? 0
+//        let styleDict = args["style"] as? [String: Any]
+//        // let padding = args["padding"] as? Double ?? 10 // Handled in ESCPOSGenerator
+//        
+//        // Create style object
+//        let style: TextStyle
+//        if let dict = styleDict {
+//            style = TextStyle.from(dict: dict)
+//        } else {
+//            style = TextStyle()
+//        }
+//        style.fontSize = CGFloat(fontSize)
+//        
+//        if format == "escpos" {
+//            print("🔄 Dynamic ESC/POS generation requested for: \(text.prefix(30))...")
+//            
+//            // CRITICAL: Use the dynamic handler
+//            let escposData = ESCPOSGenerator.generatePrintData(
+//                text,
+//                style: style,
+//                width: Int(width)
+//            )
+//
+//            if escposData.isEmpty {
+//                print("❌ ESC/POS conversion returned empty data")
+//                result(nil)
+//            } else {
+//                result(FlutterStandardTypedData(bytes: escposData))
+//            }
+//            
+//        } else if format == "png" {
+//            print("🖼️ Rendering as PNG...")
+//            
+//            // For PNG format, return the PNG directly (using async call)
+//            KhmerTextRenderer.renderText(
+//                text,
+//                width: CGFloat(width),
+//                fontSize: CGFloat(fontSize),
+//                useCache: args["useCache"] as? Bool ?? true,
+//                maxLines: maxLines,
+//                styleDict: styleDict
+//            ) { data in
+//                if let data = data {
+//                    result(data)
+//                } else {
+//                    result(nil)
+//                }
+//            }
+//        } else {
+//            result(FlutterError(
+//                code: "INVALID_FORMAT",
+//                message: "Unknown format: \(format). Use 'png' or 'escpos'",
+//                details: nil
+//            ))
+//        }
+//    }
+//}
 
 
 //import Flutter

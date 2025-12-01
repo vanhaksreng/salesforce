@@ -128,10 +128,7 @@ class BluetoothPermissionHandler {
     // Step 2: Check if Bluetooth is enabled
     final isEnabled = await isBluetoothEnabled();
     if (!isEnabled) {
-      print('⚠️ Bluetooth is OFF');
-
       if (Platform.isAndroid) {
-        print('Requesting to enable Bluetooth...');
         await enableBluetooth();
 
         // Wait a bit and check again

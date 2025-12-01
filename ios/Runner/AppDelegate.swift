@@ -367,108 +367,108 @@ import workmanager_apple
         return false
     }
 
-    // ============================================
-    // MARK: - Bluetooth Printer Handlers
-    // ============================================
+//    // ============================================
+//    // MARK: - Bluetooth Printer Handlers
+//    // ============================================
+//
+//    private func handleScanForDevices(result: @escaping FlutterResult) {
+//        print("🔍 Scanning for Bluetooth devices...")
+//        BluetoothPrinterManager.shared.scanForDevices { devices in
+//            print("✅ Found ssss \(devices.count) devices")
+//            result(devices)
+//        }
+//    }
+//
+//    private func handleConnectToDevice(call: FlutterMethodCall, result: @escaping FlutterResult) {
+//        guard let args = call.arguments as? [String: Any],
+//            let address = args["address"] as? String
+//        else {
+//            result(
+//                FlutterError(
+//                    code: "INVALID_ARGS", message: "Missing address parameter", details: nil))
+//            return
+//        }
+//
+//        print("🔌 Connecting to: \(address)")
+//        BluetoothPrinterManager.shared.connect(address: address) { success, error in
+//            if success {
+//                print("✅ Connected successfully")
+//                result(true)
+//            } else {
+//                print("❌ Connection failed: \(error ?? "Unknown")")
+//                result(FlutterError(code: "CONNECTION_FAILED", message: error, details: nil))
+//            }
+//        }
+//    }
+//
+//    private func handleDisconnectDevice(result: @escaping FlutterResult) {
+//        print("🔌 Disconnecting...")
+//        BluetoothPrinterManager.shared.disconnect()
+//        print("✅ Disconnected")
+//        result(true)
+//    }
+//
+//    private func handleGetConnectionStatus(result: @escaping FlutterResult) {
+//        let status = BluetoothPrinterManager.shared.getConnectionStatus()
+//        print("📊 Connection status: \(status)")
+//        result(status)
+//    }
 
-    private func handleScanForDevices(result: @escaping FlutterResult) {
-        print("🔍 Scanning for Bluetooth devices...")
-        BluetoothPrinterManager.shared.scanForDevices { devices in
-            print("✅ Found ssss \(devices.count) devices")
-            result(devices)
-        }
-    }
-
-    private func handleConnectToDevice(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let address = args["address"] as? String
-        else {
-            result(
-                FlutterError(
-                    code: "INVALID_ARGS", message: "Missing address parameter", details: nil))
-            return
-        }
-
-        print("🔌 Connecting to: \(address)")
-        BluetoothPrinterManager.shared.connect(address: address) { success, error in
-            if success {
-                print("✅ Connected successfully")
-                result(true)
-            } else {
-                print("❌ Connection failed: \(error ?? "Unknown")")
-                result(FlutterError(code: "CONNECTION_FAILED", message: error, details: nil))
-            }
-        }
-    }
-
-    private func handleDisconnectDevice(result: @escaping FlutterResult) {
-        print("🔌 Disconnecting...")
-        BluetoothPrinterManager.shared.disconnect()
-        print("✅ Disconnected")
-        result(true)
-    }
-
-    private func handleGetConnectionStatus(result: @escaping FlutterResult) {
-        let status = BluetoothPrinterManager.shared.getConnectionStatus()
-        print("📊 Connection status: \(status)")
-        result(status)
-    }
-
-    private func handlePrintRaw(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let data = args["data"] as? FlutterStandardTypedData
-        else {
-            result(
-                FlutterError(code: "INVALID_ARGS", message: "Missing data parameter", details: nil))
-            return
-        }
-
-        guard !data.data.isEmpty else {
-            result(FlutterError(code: "INVALID_DATA", message: "Empty data", details: nil))
-            return
-        }
-
-        print("🖨️ Printing \(data.data.count) bytes...")
-
-        // Validate data before printing
-        let previewBytes = data.data.prefix(min(20, data.data.count))
-            .map { String(format: "%02X", $0) }
-            .joined(separator: " ")
-        print("📄 First bytes: \(previewBytes)")
-
-        // Check for valid ESC/POS commands
-        var hasValidCommands = false
-        for i in 0..<min(data.data.count - 1, 100) {
-            let byte = data.data[i]
-            if byte == 0x1B || byte == 0x1D {
-                hasValidCommands = true
-                break
-            }
-        }
-
-        if !hasValidCommands {
-            print("⚠️ Warning: No ESC/POS commands detected in data")
-        }
-
-        // Check for raw UTF-8
-        if containsRawUtf8(data.data) {
-            print("⚠️ WARNING: Data contains raw UTF-8 text!")
-            print("   This will print as Chinese characters!")
-            // Don't fail, but warn
-        }
-
-        // Send to printer
-        BluetoothPrinterManager.shared.sendData(data.data) { success, error in
-            DispatchQueue.main.async {
-                if success {
-                    print("✅ Print completed successfully")
-                    result(true)
-                } else {
-                    let errorMsg = error ?? "Unknown error"
-                    print("❌ Print failed: \(errorMsg)")
-                    result(FlutterError(code: "PRINT_FAILED", message: errorMsg, details: nil))
-                }
-            }
-        }
-    }
+//    private func handlePrintRaw(call: FlutterMethodCall, result: @escaping FlutterResult) {
+//        guard let args = call.arguments as? [String: Any],
+//            let data = args["data"] as? FlutterStandardTypedData
+//        else {
+//            result(
+//                FlutterError(code: "INVALID_ARGS", message: "Missing data parameter", details: nil))
+//            return
+//        }
+//
+//        guard !data.data.isEmpty else {
+//            result(FlutterError(code: "INVALID_DATA", message: "Empty data", details: nil))
+//            return
+//        }
+//
+//        print("🖨️ Printing \(data.data.count) bytes...")
+//
+//        // Validate data before printing
+//        let previewBytes = data.data.prefix(min(20, data.data.count))
+//            .map { String(format: "%02X", $0) }
+//            .joined(separator: " ")
+//        print("📄 First bytes: \(previewBytes)")
+//
+//        // Check for valid ESC/POS commands
+//        var hasValidCommands = false
+//        for i in 0..<min(data.data.count - 1, 100) {
+//            let byte = data.data[i]
+//            if byte == 0x1B || byte == 0x1D {
+//                hasValidCommands = true
+//                break
+//            }
+//        }
+//
+//        if !hasValidCommands {
+//            print("⚠️ Warning: No ESC/POS commands detected in data")
+//        }
+//
+//        // Check for raw UTF-8
+//        if containsRawUtf8(data.data) {
+//            print("⚠️ WARNING: Data contains raw UTF-8 text!")
+//            print("   This will print as Chinese characters!")
+//            // Don't fail, but warn
+//        }
+//
+//        // Send to printer
+//        BluetoothPrinterManager.shared.sendData(data.data) { success, error in
+//            DispatchQueue.main.async {
+//                if success {
+//                    print("✅ Print completed successfully")
+//                    result(true)
+//                } else {
+//                    let errorMsg = error ?? "Unknown error"
+//                    print("❌ Print failed: \(errorMsg)")
+//                    result(FlutterError(code: "PRINT_FAILED", message: errorMsg, details: nil))
+//                }
+//            }
+//        }
+//    }
 }
