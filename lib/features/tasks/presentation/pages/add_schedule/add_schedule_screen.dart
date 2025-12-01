@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_config.dart';
+import 'package:salesforce/core/constants/app_setting.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
+import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
@@ -29,7 +32,7 @@ class AddScheduleScreen extends StatefulWidget {
   State<AddScheduleScreen> createState() => _AddScheduleScreenState();
 }
 
-class _AddScheduleScreenState extends State<AddScheduleScreen> {
+class _AddScheduleScreenState extends State<AddScheduleScreen> with AppMixin {
   final _cubit = AddScheduleCubit();
   final ValueNotifier<int> selectedCustomerCount = ValueNotifier(0);
   final ScrollController _scrollController = ScrollController();
@@ -37,13 +40,21 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> {
   @override
   void initState() {
     _cubit.loadCustomers(context: context, page: 1);
-    _cubit.getSalePersonSchedule();
+    checkDuplicateSchedule();
     _scrollController.addListener(_handleScrolling);
     super.initState();
   }
 
   _showError({String msg = errorMessage}) {
     Helpers.showMessage(msg: msg, status: MessageStatus.errors);
+  }
+
+  Future<void> checkDuplicateSchedule() async {
+    final allowDuplicate = await getSetting(kAllowDuplicateSchedule);
+
+    if (allowDuplicate == kStatusNo) {
+      await _cubit.getSalePersonSchedule();
+    }
   }
 
   void _handleScrolling() {

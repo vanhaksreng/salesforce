@@ -157,7 +157,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     if (printerWidth == 384) {
       // 58mm printer configuration
       debugPrint('📏 Configuring for 58mm paper (384 pixels)');
-      columnWidths = [1, 2, 1, 1, 1, 1]; // Adjusted for 58mm - totals to 12
+      columnWidths = [1, 3, 2, 2, 2, 2];
       totalWidth = 32; // ~32 chars per line at fontSize 20
     } else {
       // 80mm printer configuration
@@ -201,7 +201,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
           final codec = await ui.instantiateImageCodec(response.bodyBytes);
           final frame = await codec.getNextFrame();
           logoImage = frame.image;
-          debugPrint('✅ Logo loaded from URL');
+          debugPrint(' Logo loaded from URL');
         } else {
           throw Exception('Failed to download logo: ${response.statusCode}');
         }
@@ -246,15 +246,14 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
   }
 
   // ====================================================================
-  // ✅ UPDATED: Build receipt with 58mm support
+  //  UPDATED: Build receipt with 58mm support
   // ====================================================================
   Future<void> _buildSampleReceipt() async {
     try {
       _builder.clear();
+      // Uint8List? imageBytes = await logoCompany();
+      // _builder.printImage(imageBytes!);
 
-      // ====================================================================
-      // HEADER SECTION - Adjusted font sizes for 58mm
-      // ====================================================================
       _builder.addText(
         maxCharPerLine: lengText(),
         widget.companyInfo?.name ?? "",
@@ -502,65 +501,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     }
   }
 
-  // ====================================================================
-  // ALTERNATIVE: Slow printing for problematic printers
-  // ====================================================================
-  // Future<void> _printReceiptSlow() async {
-  //   if (!isConnected()) {
-  //     Helpers.showMessage(
-  //       status: MessageStatus.errors,
-  //       msg: "No printer connected! Please connect in Administration.",
-  //     );
-  //     return;
-  //   }
-
-  //   setState(() => isPrinting = true);
-
-  //   final l = LoadingOverlay.of(context);
-  //   try {
-  //     if (mounted) {
-  //       l.show();
-  //     }
-
-  //     // ✅ Set width first
-  //     await ThermalPrinter.setPrinterWidth(printerWidth);
-  //     debugPrint('📏 Printer width set to $printerWidth for slow print');
-
-  //     debugPrint('🐌 Starting SLOW smooth print...');
-
-  //     // Use longer delays for problematic printers
-  //     await _builder.executeSmooth(
-  //       ThermalPrinter,
-  //       delayBetweenCommands: const Duration(milliseconds: 50),
-  //       delayAfterImage: const Duration(milliseconds: 100),
-  //     );
-
-  //     debugPrint('✅ Print completed successfully!');
-
-  //     if (mounted) {
-  //       l.hide();
-  //       Helpers.showMessage(
-  //         status: MessageStatus.success,
-  //         msg: "Receipt printed successfully! 🎉",
-  //       );
-  //     }
-  //   } catch (e) {
-  //     debugPrint('❌ Print failed: $e');
-
-  //     if (mounted) {
-  //       l.hide();
-  //       Helpers.showMessage(
-  //         status: MessageStatus.errors,
-  //         msg: "Print failed: $e",
-  //       );
-  //     }
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() => isPrinting = false);
-  //     }
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -570,7 +510,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
           'Receipt Preview (${printerWidth == 384 ? "58mm" : "80mm"})',
         ),
         actions: [
-          // ✅ OPTIONAL: Add paper size indicator
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Center(
