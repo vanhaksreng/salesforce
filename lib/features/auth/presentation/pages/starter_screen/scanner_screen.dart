@@ -64,7 +64,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
         enableAudio: false,
         imageFormatGroup: Platform.isAndroid
             ? ImageFormatGroup.nv21
-            : ImageFormatGroup.yuv420,
+            : ImageFormatGroup.bgra8888, // Changed for iOS
       );
       await cameraController!.initialize();
 
@@ -126,6 +126,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
     final rotationCompensation = _orientations[deviceOrientation] ?? 0;
 
     InputImageRotation rotation;
+
     if (Platform.isIOS) {
       rotation =
           InputImageRotationValue.fromRawValue(sensorOrientation) ??
@@ -144,21 +145,25 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
     }
 
     try {
+      // Validate image planes
+      if (image.planes.isEmpty) {
+        print("Error: No image planes available");
+        return null;
+      }
+
       if (Platform.isIOS) {
-        // Fixed iOS implementation
+        // iOS BGRA8888 handling
         return _createInputImageForIOS(image, rotation);
       } else {
-        Uint8List bytes;
-        InputImageFormat format;
-        bytes = convertYUV420ToNV21(image);
-        format = InputImageFormat.nv21;
+        // Android NV21 handling (already in correct format)
+        final Uint8List bytes = image.planes[0].bytes;
 
         return InputImage.fromBytes(
           bytes: bytes,
           metadata: InputImageMetadata(
             size: Size(image.width.toDouble(), image.height.toDouble()),
             rotation: rotation,
-            format: format,
+            format: InputImageFormat.nv21,
             bytesPerRow: image.planes[0].bytesPerRow,
           ),
         );
@@ -175,55 +180,25 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
   ) {
     try {
       if (image.planes.isEmpty) {
+        print("Error: No image planes available for iOS");
         return null;
       }
 
       final plane = image.planes.first;
 
-      // Create metadata with correct format
-      final metadata = InputImageMetadata(
-        size: Size(image.width.toDouble(), image.height.toDouble()),
-        rotation: rotation,
-        format: InputImageFormat.yuv420,
-        bytesPerRow: plane.bytesPerRow,
+      return InputImage.fromBytes(
+        bytes: plane.bytes,
+        metadata: InputImageMetadata(
+          size: Size(image.width.toDouble(), image.height.toDouble()),
+          rotation: rotation,
+          format: InputImageFormat.bgra8888,
+          bytesPerRow: plane.bytesPerRow,
+        ),
       );
-
-      return InputImage.fromBytes(bytes: plane.bytes, metadata: metadata);
     } catch (e) {
+      print("Error creating iOS InputImage: $e");
       return null;
     }
-  }
-
-  Uint8List convertYUV420ToNV21(CameraImage image) {
-    final int width = image.width;
-    final int height = image.height;
-    final int uvRowStride = image.planes[1].bytesPerRow;
-    final int uvPixelStride = image.planes[1].bytesPerPixel!;
-
-    final ySize = width * height;
-    final uvSize = width * height ~/ 2;
-
-    final nv21 = Uint8List(ySize + uvSize);
-
-    // Copy Y plane
-    final yPlane = image.planes[0].bytes;
-    nv21.setRange(0, ySize, yPlane);
-
-    // Copy UV planes interleaved as VU
-    int uvIndex = ySize;
-    final uPlane = image.planes[1].bytes;
-    final vPlane = image.planes[2].bytes;
-
-    for (int i = 0; i < height ~/ 2; i++) {
-      for (int j = 0; j < width ~/ 2; j++) {
-        final uPos = i * uvRowStride + j * uvPixelStride;
-        final vPos = i * uvRowStride + j * uvPixelStride;
-        nv21[uvIndex++] = vPlane[vPos];
-        nv21[uvIndex++] = uPlane[uPos];
-      }
-    }
-
-    return nv21;
   }
 
   bool isURL(String result) {

@@ -1,8 +1,7 @@
 import 'dart:typed_data';
-
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 
-enum ReceiptCommandType { text, image, feedPaper, cutPaper, row }
+enum ReceiptCommandType { text, image, feedPaper, cutPaper, row, separator }
 
 // Receipt command model
 class ReceiptCommand {
@@ -73,4 +72,264 @@ class ReceiptBuilder {
       }),
     );
   }
+
+  void addSeparator({int width = 48}) {
+    _commands.add(
+      ReceiptCommand(ReceiptCommandType.separator, {'width': width}),
+    );
+  }
+}
+
+// ====================================================================
+// SMOOTH PRINTING EXTENSION
+// ====================================================================
+
+extension SmoothPrinting on ReceiptBuilder {
+  /// Execute commands with delays between each operation for smooth printing
+  ///
+  /// This prevents the "stuck stuck" sound by giving the printer motor
+  /// time to complete each paper feed before the next command arrives.
+  Future<void> executeSmooth(
+    Type printerClass, {
+    Duration delayBetweenCommands = const Duration(milliseconds: 250),
+    Duration delayAfterImage = const Duration(milliseconds: 200),
+  }) async {
+    print('🖨️ Starting smooth print job with ${_commands.length} commands...');
+
+    for (int i = 0; i < _commands.length; i++) {
+      final command = _commands[i];
+
+      try {
+        switch (command.type) {
+          case ReceiptCommandType.text:
+            await ThermalPrinter.printText(
+              command.params['text'] as String,
+              fontSize: command.params['fontSize'] as int? ?? 24,
+              bold: command.params['bold'] as bool? ?? false,
+              align: command.params['align'] as String? ?? 'left',
+              maxCharPerLine: command.params['maxCharsPerLine'] as int? ?? 0,
+            );
+            break;
+
+          case ReceiptCommandType.image:
+            await ThermalPrinter.printImage(
+              command.params['imageBytes'] as Uint8List,
+              width: command.params['width'] as int? ?? 384,
+            );
+            // Extra delay after images
+            await Future.delayed(delayAfterImage);
+            break;
+
+          case ReceiptCommandType.feedPaper:
+            await ThermalPrinter.feedPaper(command.params['lines'] as int);
+            break;
+
+          case ReceiptCommandType.cutPaper:
+            await ThermalPrinter.cutPaper();
+            break;
+
+          case ReceiptCommandType.row:
+            await ThermalPrinter.printRow(
+              columns: command.params['columns'] as List<Map<String, dynamic>>,
+              fontSize: command.params['fontSize'] as int? ?? 24,
+            );
+            break;
+
+          case ReceiptCommandType.separator:
+            await ThermalPrinter.printSeparator(
+              width: command.params['width'] as int,
+            );
+            break;
+        }
+
+        // CRITICAL: Wait between commands to prevent motor overload
+        if (i < _commands.length - 1) {
+          await Future.delayed(delayBetweenCommands);
+        }
+
+        print('✅ Command ${i + 1}/${_commands.length} completed');
+      } catch (e) {
+        print('❌ Error executing command ${i + 1}: $e');
+        rethrow;
+      }
+    }
+
+    print('🎉 Print job completed successfully!');
+  }
+
+  /// Execute commands in batches with delays between batches
+  /// Useful for very large receipts
+  Future<void> executeBatched(
+    Type printerClass, {
+    int batchSize = 5,
+    Duration delayBetweenBatches = const Duration(milliseconds: 200),
+  }) async {
+    print('🖨️ Starting batched print with ${_commands.length} commands...');
+
+    for (
+      int batchStart = 0;
+      batchStart < _commands.length;
+      batchStart += batchSize
+    ) {
+      final batchEnd = (batchStart + batchSize).clamp(0, _commands.length);
+      final batch = _commands.sublist(batchStart, batchEnd);
+
+      print('📦 Processing batch ${(batchStart ~/ batchSize) + 1}...');
+
+      for (final command in batch) {
+        switch (command.type) {
+          case ReceiptCommandType.text:
+            await ThermalPrinter.printText(
+              command.params['text'] as String,
+              fontSize: command.params['fontSize'] as int? ?? 24,
+              bold: command.params['bold'] as bool? ?? false,
+              align: command.params['align'] as String? ?? 'left',
+              maxCharPerLine: command.params['maxCharsPerLine'] as int? ?? 0,
+            );
+            break;
+
+          case ReceiptCommandType.image:
+            await ThermalPrinter.printImage(
+              command.params['imageBytes'] as Uint8List,
+              width: command.params['width'] as int? ?? 384,
+            );
+            break;
+
+          case ReceiptCommandType.feedPaper:
+            await ThermalPrinter.feedPaper(command.params['lines'] as int);
+            break;
+
+          case ReceiptCommandType.cutPaper:
+            await ThermalPrinter.cutPaper();
+            break;
+
+          case ReceiptCommandType.row:
+            await ThermalPrinter.printRow(
+              columns: command.params['columns'] as List<Map<String, dynamic>>,
+              fontSize: command.params['fontSize'] as int? ?? 24,
+            );
+            break;
+          case ReceiptCommandType.separator:
+            await ThermalPrinter.printSeparator(
+              width: command.params['width'] as int,
+            );
+            break;
+        }
+      }
+
+      // Delay between batches
+      if (batchEnd < _commands.length) {
+        print('⏸️ Pausing between batches...');
+        await Future.delayed(delayBetweenBatches);
+      }
+    }
+
+    print('🎉 Batched print completed!');
+  }
+
+  Future<void> executeBatch(Type printerClass) async {
+    print('📦 Starting BATCH print with ${_commands.length} commands...');
+
+    try {
+      // Start batch mode
+      await ThermalPrinter.startBatch();
+      print('✅ Batch mode started - building receipt...');
+
+      // Add ALL commands to buffer (they don't send yet!)
+      for (int i = 0; i < _commands.length; i++) {
+        final command = _commands[i];
+
+        try {
+          switch (command.type) {
+            case ReceiptCommandType.text:
+              await ThermalPrinter.printText(
+                command.params['text'] as String,
+                fontSize: command.params['fontSize'] as int? ?? 24,
+                bold: command.params['bold'] as bool? ?? false,
+                align: command.params['align'] as String? ?? 'left',
+                maxCharPerLine: command.params['maxCharsPerLine'] as int? ?? 0,
+              );
+              break;
+
+            case ReceiptCommandType.image:
+              await ThermalPrinter.printImage(
+                command.params['imageBytes'] as Uint8List,
+                width: command.params['width'] as int? ?? 384,
+              );
+              break;
+
+            case ReceiptCommandType.feedPaper:
+              await ThermalPrinter.feedPaper(command.params['lines'] as int);
+              break;
+
+            case ReceiptCommandType.cutPaper:
+              await ThermalPrinter.cutPaper();
+              break;
+
+            case ReceiptCommandType.row:
+              await ThermalPrinter.printRow(
+                columns:
+                    command.params['columns'] as List<Map<String, dynamic>>,
+                fontSize: command.params['fontSize'] as int? ?? 24,
+              );
+              break;
+            case ReceiptCommandType.separator:
+              await ThermalPrinter.printSeparator(
+                width: command.params['width'] as int,
+              );
+              break;
+          }
+
+          print('✅ Command ${i + 1}/${_commands.length} added to buffer');
+        } catch (e) {
+          print('❌ Error adding command ${i + 1}: $e');
+          rethrow;
+        }
+      }
+
+      print('📤 Sending entire receipt in ONE operation...');
+
+      // ✅ CRITICAL: Send EVERYTHING at once!
+      await ThermalPrinter.endBatch();
+
+      print('🎉 BATCH print completed - Sent as single operation!');
+    } catch (e) {
+      print('❌ Batch print failed: $e');
+      // Try to end batch even on error
+      try {
+        await ThermalPrinter.endBatch();
+      } catch (_) {}
+      rethrow;
+    }
+  }
+}
+
+// ====================================================================
+// CONFIGURATION PRESETS
+// ====================================================================
+
+class PrintConfig {
+  // Fast printing (may cause stuck sound on slow printers)
+  static const fast = (
+    delayBetweenCommands: Duration(milliseconds: 30),
+    delayAfterImage: Duration(milliseconds: 50),
+  );
+
+  // Normal printing (recommended for most printers)
+  static const normal = (
+    delayBetweenCommands: Duration(milliseconds: 50),
+    delayAfterImage: Duration(milliseconds: 100),
+  );
+
+  // Slow printing (guaranteed smooth for all printers)
+  static const slow = (
+    delayBetweenCommands: Duration(milliseconds: 100),
+    delayAfterImage: Duration(milliseconds: 200),
+  );
+
+  // Ultra slow (for very old/problematic printers)
+  static const ultraSlow = (
+    delayBetweenCommands: Duration(milliseconds: 150),
+    delayAfterImage: Duration(milliseconds: 300),
+  );
 }

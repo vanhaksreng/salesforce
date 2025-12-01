@@ -159,6 +159,7 @@ Future<void> setCompanyInjection(CompanyInformation? company) async {
     company.id,
     name2: company.name2,
     name: company.name,
+    phoneNo: company.phoneNo,
     address: company.address,
     address2: company.address2,
     logo128: company.logo128,

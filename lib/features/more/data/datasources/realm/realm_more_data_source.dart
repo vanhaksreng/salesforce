@@ -37,4 +37,5 @@ abstract class RealmMoreDataSource extends BaseRealmDataSource {
   });
   Future<DevicePrinter> storeDevicePrinter(DevicePrinter customer);
   Future<List<DevicePrinter>> getDevicePrinter({Map<String, dynamic>? param});
+  Future<void> deletePrinter(DevicePrinter device);
 }

@@ -133,6 +133,7 @@ class CompanyInformation extends _CompanyInformation
   CompanyInformation(
     String id, {
     String? name,
+    String? phoneNo,
     String? name2,
     String? address,
     String? address2,
@@ -141,6 +142,7 @@ class CompanyInformation extends _CompanyInformation
   }) {
     RealmObjectBase.set(this, 'id', id);
     RealmObjectBase.set(this, 'name', name);
+    RealmObjectBase.set(this, 'phone_no', phoneNo);
     RealmObjectBase.set(this, 'name_2', name2);
     RealmObjectBase.set(this, 'address', address);
     RealmObjectBase.set(this, 'address_2', address2);
@@ -159,6 +161,12 @@ class CompanyInformation extends _CompanyInformation
   String? get name => RealmObjectBase.get<String>(this, 'name') as String?;
   @override
   set name(String? value) => RealmObjectBase.set(this, 'name', value);
+
+  @override
+  String? get phoneNo =>
+      RealmObjectBase.get<String>(this, 'phone_no') as String?;
+  @override
+  set phoneNo(String? value) => RealmObjectBase.set(this, 'phone_no', value);
 
   @override
   String? get name2 => RealmObjectBase.get<String>(this, 'name_2') as String?;
@@ -205,6 +213,7 @@ class CompanyInformation extends _CompanyInformation
     return <String, dynamic>{
       'id': id.toEJson(),
       'name': name.toEJson(),
+      'phone_no': phoneNo.toEJson(),
       'name_2': name2.toEJson(),
       'address': address.toEJson(),
       'address_2': address2.toEJson(),
@@ -220,6 +229,7 @@ class CompanyInformation extends _CompanyInformation
       {'id': EJsonValue id} => CompanyInformation(
         fromEJson(id),
         name: fromEJson(ejson['name']),
+        phoneNo: fromEJson(ejson['phone_no']),
         name2: fromEJson(ejson['name_2']),
         address: fromEJson(ejson['address']),
         address2: fromEJson(ejson['address_2']),
@@ -240,6 +250,12 @@ class CompanyInformation extends _CompanyInformation
       [
         SchemaProperty('id', RealmPropertyType.string, primaryKey: true),
         SchemaProperty('name', RealmPropertyType.string, optional: true),
+        SchemaProperty(
+          'phoneNo',
+          RealmPropertyType.string,
+          mapTo: 'phone_no',
+          optional: true,
+        ),
         SchemaProperty(
           'name2',
           RealmPropertyType.string,
