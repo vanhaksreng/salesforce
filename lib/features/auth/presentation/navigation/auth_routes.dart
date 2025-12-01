@@ -5,6 +5,7 @@ import 'package:salesforce/features/auth/presentation/pages/forget_password/forg
 import 'package:salesforce/features/auth/presentation/pages/login/login_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/verify_phone_number/verify_phone_number_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/form_connect_printer.dart';
+import 'package:salesforce/realm/scheme/general_schemas.dart';
 
 Route<dynamic>? authOnGenerateRoute(RouteSettings settings) {
   switch (settings.name) {
@@ -40,7 +41,8 @@ Route<dynamic>? authOnGenerateRoute(RouteSettings settings) {
     case FormConnectPrinter.routeName:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          return FormConnectPrinter();
+          final datas = settings.arguments as List<DevicePrinter>;
+          return FormConnectPrinter(devicePrinter: datas);
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);

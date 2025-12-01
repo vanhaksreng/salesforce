@@ -12,6 +12,7 @@ class BluetoothDeviceItem extends StatelessWidget {
   final Function(DevicePrinter)? onTap;
   final Function(DevicePrinter)? onConnect;
   final Function(DevicePrinter)? onDisconnect;
+  final Function(DevicePrinter)? onDelete;
   final bool isConnected;
   final bool isConnecting;
 
@@ -21,14 +22,17 @@ class BluetoothDeviceItem extends StatelessWidget {
     this.onTap,
     this.onConnect,
     this.onDisconnect,
+    this.onDelete,
     this.isConnected = false,
     this.isConnecting = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    print("=========dd===========${isConnected}");
     return BoxWidget(
+      onLongPress: () {
+        onDelete?.call(device);
+      },
       onPress: () {
         onTap?.call(device);
       },
@@ -89,7 +93,7 @@ class BluetoothDeviceItem extends StatelessWidget {
                 ),
                 Helpers.gapH(4),
                 TextWidget(
-                  text: device.macAddress,
+                  text: device.originDeviceName,
                   fontSize: 12,
                   color: Colors.grey[600],
                 ),
@@ -97,7 +101,7 @@ class BluetoothDeviceItem extends StatelessWidget {
               ],
             ),
           ),
-          // Connect/Disconnect Button
+
           if (isConnected)
             IconButton(
               onPressed: () => onDisconnect?.call(device),

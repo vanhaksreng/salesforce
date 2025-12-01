@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 enum ConnectionType { bluetooth, ble, usb, network }
@@ -15,6 +16,19 @@ enum AlignStyle {
   String toString() => value;
 }
 
+Alignment getAlignmentImage(int align) {
+  switch (align) {
+    case 0:
+      return Alignment.centerLeft;
+    case 1:
+      return Alignment.center;
+    case 2:
+      return Alignment.centerRight;
+    default:
+      return Alignment.center;
+  }
+}
+
 class PosColumn {
   final String text;
   final int width; // Width out of 12 (12 = full width)
@@ -29,7 +43,7 @@ class PosColumn {
   });
 
   Map<String, dynamic> toMap() {
-    return {'text': text, 'width': width};
+    return {'text': text, 'width': width, 'align': align.value, 'bold': bold};
   }
 }
 
@@ -132,7 +146,6 @@ class ThermalPrinter {
 
   /// Connect to a printer
   static Future<bool> connect(PrinterDeviceDiscover device) async {
-    print(device.toMap());
     try {
       final bool result = await _channel.invokeMethod(
         'connect',
@@ -192,6 +205,24 @@ class ThermalPrinter {
     }
   }
 
+  static Future<bool> testPaperFeed() async {
+    try {
+      final bool result = await _channel.invokeMethod('testPaperFeed');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to test paper feed: $e');
+    }
+  }
+
+  static Future<bool> testSlowPrint() async {
+    try {
+      final bool result = await _channel.invokeMethod('testSlowPrint');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to test slow print: $e');
+    }
+  }
+
   static Future<bool> printRow({
     required List<Map<String, dynamic>> columns,
     int fontSize = 24,
@@ -203,7 +234,6 @@ class ThermalPrinter {
       });
       return result == true;
     } catch (e) {
-      print('Print row error: $e');
       return false;
     }
   }
@@ -217,6 +247,7 @@ class ThermalPrinter {
       final bool result = await _channel.invokeMethod('printImage', {
         'imageBytes': imageBytes,
         'width': width,
+        "align": 1,
       });
       return result;
     } catch (e) {
@@ -265,7 +296,55 @@ class ThermalPrinter {
       });
       return result;
     } catch (e) {
-      throw Exception('Failed to feed paper: $e');
+      throw Exception('Failed to set printer width: $e');
+    }
+  }
+
+  static Future<bool> startBatch() async {
+    try {
+      final bool result = await _channel.invokeMethod('startBatch');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to start batch: $e');
+    }
+  }
+
+  static Future<bool> endBatch() async {
+    try {
+      final bool result = await _channel.invokeMethod('endBatch');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to end batch: $e');
+    }
+  }
+
+  static Future<bool> warmUpPrinter() async {
+    try {
+      final bool result = await _channel.invokeMethod('warmUpPrinter');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to warm up: $e');
+    }
+  }
+
+  /// Configure printer for OOMAS-specific settings
+  static Future<bool> configureOOMAS() async {
+    try {
+      final bool result = await _channel.invokeMethod('configureOOMAS');
+      return result;
+    } catch (e) {
+      throw Exception('Failed to configure OOMAS: $e');
+    }
+  }
+
+  static Future<bool> printSeparator({int width = 48}) async {
+    try {
+      final bool result = await _channel.invokeMethod('printSeparator', {
+        'width': width,
+      });
+      return result;
+    } catch (e) {
+      throw Exception('Failed to print separator: $e');
     }
   }
 }

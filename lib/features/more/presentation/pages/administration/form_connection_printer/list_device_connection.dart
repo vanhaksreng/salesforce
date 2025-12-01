@@ -7,6 +7,7 @@ class BluetoothDeviceList extends StatelessWidget {
   final Function(DevicePrinter)? onDeviceTap;
   final Function(DevicePrinter)? onConnect;
   final Function(DevicePrinter)? onDisconnect;
+  final Function(DevicePrinter)? onDelete;
   final DevicePrinter? selectedDevice;
   final String? connectingDeviceId;
 
@@ -17,13 +18,12 @@ class BluetoothDeviceList extends StatelessWidget {
     this.onConnect,
     this.onDisconnect,
     this.selectedDevice,
+    this.onDelete,
     this.connectingDeviceId,
   });
 
   @override
   Widget build(BuildContext context) {
-    print(connectingDeviceId);
-    print(selectedDevice?.macAddress);
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -35,6 +35,7 @@ class BluetoothDeviceList extends StatelessWidget {
           onTap: onDeviceTap,
           onConnect: onConnect,
           onDisconnect: onDisconnect,
+          onDelete: onDelete,
           isConnected: selectedDevice?.macAddress == device.macAddress,
           isConnecting: connectingDeviceId == device.macAddress,
         );

@@ -51,6 +51,7 @@ class TextFormFieldWidget extends TextFormField {
     String label = "",
     String? hintText,
     this.isOption = false,
+    FloatingLabelBehavior? floatingLabelBehavior,
     this.isRequired = false,
   }) : super(
          inputFormatters: [NoEmojiTextInputFormatter(), ...?inputFormatters],
@@ -83,6 +84,7 @@ class TextFormFieldWidget extends TextFormField {
            suffix: suffix,
            filled: filled,
            label: label,
+           floatingLabelBehavior: floatingLabelBehavior,
            hintText: hintText,
            focusNode: focusNode ?? FocusNode(),
            readOnly: readOnly,
@@ -108,6 +110,7 @@ class TextFormFieldWidget extends TextFormField {
     InputBorder? enabledBorder,
     InputBorder? focusedBorder,
     Widget? prefixIcon,
+    FloatingLabelBehavior? floatingLabelBehavior,
     bool? isDense,
     Widget? suffix,
     bool? filled,
@@ -119,7 +122,7 @@ class TextFormFieldWidget extends TextFormField {
   }) {
     final defaultBorder = OutlineInputBorder(
       borderSide: BorderSide(
-        color: mainColor.withValues(alpha: 0.5),
+        color: primary.withValues(alpha: 0.5),
         width: scaleFontSize(1),
       ),
       borderRadius: BorderRadius.circular(scaleFontSize(8)),
@@ -137,6 +140,7 @@ class TextFormFieldWidget extends TextFormField {
     return InputDecoration(
       alignLabelWithHint: true,
       maintainHintSize: true,
+      floatingLabelBehavior: floatingLabelBehavior,
       constraints: BoxConstraints(
         minWidth: scaleFontSize(45),
         minHeight: scaleFontSize(45),

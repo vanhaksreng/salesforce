@@ -5,6 +5,7 @@ extension CompanyInformationExtension on CompanyInformation {
     return CompanyInformation(
       json['id'].toString(),
       name: json['name'] ?? "",
+      phoneNo: json['phone_no'] ?? "",
       name2: json['name_2'] ?? "",
       address: json['address'] ?? "",
       address2: json['address_2'] ?? "",

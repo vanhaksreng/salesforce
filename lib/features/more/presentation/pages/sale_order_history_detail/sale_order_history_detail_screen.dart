@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+// import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
-import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+// import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
@@ -47,7 +47,7 @@ class _SaleOrderHistoryDetailScreenState
     with MessageMixin {
   final _cubit = SaleOrderHistoryDetailCubit();
 
-  List<BluetoothInfo> devices = [];
+  // List<BluetoothInfo> devices = [];
   bool connected = false;
   String? connectedMac;
   String? connectingMac;
@@ -57,7 +57,7 @@ class _SaleOrderHistoryDetailScreenState
   void initState() {
     super.initState();
     loadData();
-    _initializePrinter();
+    // _initializePrinter();
   }
 
   Future<void> loadData() async {
@@ -76,120 +76,120 @@ class _SaleOrderHistoryDetailScreenState
     }
   }
 
-  Future<void> _initializePrinter() async {
-    try {
-      await scanDevices();
-      await checkExistingConnection();
+  // Future<void> _initializePrinter() async {
+  //   try {
+  //     await scanDevices();
+  //     await checkExistingConnection();
 
-      if (!connected && devices.isNotEmpty) {
-        final storedMac = await _getStoredConnectedMac();
-        if (storedMac != null && devices.any((d) => d.macAdress == storedMac)) {
-          await connect(storedMac);
-        }
-      }
-    } catch (e) {
-      debugPrint("Initialization failed: $e");
-      if (mounted) {
-        setState(() => statusMessage = "Failed to initialize printer");
-      }
-    }
-  }
+  //     if (!connected && devices.isNotEmpty) {
+  //       final storedMac = await _getStoredConnectedMac();
+  //       if (storedMac != null && devices.any((d) => d.macAdress == storedMac)) {
+  //         await connect(storedMac);
+  //       }
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Initialization failed: $e");
+  //     if (mounted) {
+  //       setState(() => statusMessage = "Failed to initialize printer");
+  //     }
+  //   }
+  // }
 
-  Future<void> scanDevices() async {
-    try {
-      final result = await PrintBluetoothThermal.pairedBluetooths;
-      if (mounted) {
-        setState(() => devices = result);
-      }
-    } catch (e) {
-      debugPrint("Scan error: $e");
-    }
-  }
+  // Future<void> scanDevices() async {
+  //   try {
+  //     final result = await PrintBluetoothThermal.pairedBluetooths;
+  //     if (mounted) {
+  //       setState(() => devices = result);
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Scan error: $e");
+  //   }
+  // }
 
-  Future<void> checkExistingConnection() async {
-    try {
-      final isConnected = await PrintBluetoothThermal.connectionStatus;
-      if (isConnected) {
-        final storedMac = await _getStoredConnectedMac();
-        if (storedMac != null) {
-          setState(() {
-            connected = true;
-            connectedMac = storedMac;
-            statusMessage = "Already connected ";
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint("Check connection error: $e");
-    }
-  }
+  // Future<void> checkExistingConnection() async {
+  //   try {
+  //     final isConnected = await PrintBluetoothThermal.connectionStatus;
+  //     if (isConnected) {
+  //       final storedMac = await _getStoredConnectedMac();
+  //       if (storedMac != null) {
+  //         setState(() {
+  //           connected = true;
+  //           connectedMac = storedMac;
+  //           statusMessage = "Already connected ";
+  //         });
+  //       }
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Check connection error: $e");
+  //   }
+  // }
 
-  Future<void> connect(String mac) async {
-    if (connectingMac != null) return;
+  // Future<void> connect(String mac) async {
+  //   if (connectingMac != null) return;
 
-    setState(() {
-      connectingMac = mac;
-      statusMessage = "Connecting...";
-    });
+  //   setState(() {
+  //     connectingMac = mac;
+  //     statusMessage = "Connecting...";
+  //   });
 
-    try {
-      if (connected) {
-        await PrintBluetoothThermal.disconnect;
-        await Future.delayed(const Duration(milliseconds: 500));
-      }
+  //   try {
+  //     if (connected) {
+  //       await PrintBluetoothThermal.disconnect;
+  //       await Future.delayed(const Duration(milliseconds: 500));
+  //     }
 
-      final success = await PrintBluetoothThermal.connect(
-        macPrinterAddress: mac,
-      ).timeout(const Duration(seconds: 10), onTimeout: () => false);
+  //     final success = await PrintBluetoothThermal.connect(
+  //       macPrinterAddress: mac,
+  //     ).timeout(const Duration(seconds: 10), onTimeout: () => false);
 
-      if (!success) throw Exception("Connection failed");
+  //     if (!success) throw Exception("Connection failed");
 
-      await Future.delayed(const Duration(milliseconds: 500));
-      final stillConnected = await PrintBluetoothThermal.connectionStatus;
-      if (!stillConnected) throw Exception("Lost connection");
+  //     await Future.delayed(const Duration(milliseconds: 500));
+  //     final stillConnected = await PrintBluetoothThermal.connectionStatus;
+  //     if (!stillConnected) throw Exception("Lost connection");
 
-      await _saveConnectedMac(mac);
-      if (mounted) {
-        setState(() {
-          connected = true;
-          connectedMac = mac;
-          statusMessage = "Connected ";
-        });
-      }
+  //     await _saveConnectedMac(mac);
+  //     if (mounted) {
+  //       setState(() {
+  //         connected = true;
+  //         connectedMac = mac;
+  //         statusMessage = "Connected ";
+  //       });
+  //     }
 
-      // test printer
-      final profile = await CapabilityProfile.load();
-      final generator = Generator(PaperSize.mm80, profile);
-      await PrintBluetoothThermal.writeBytes(generator.reset());
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          connected = false;
-          connectedMac = null;
-          statusMessage = "Connection failed ";
-        });
-      }
-    } finally {
-      if (mounted) setState(() => connectingMac = null);
-    }
-  }
+  //     // test printer
+  //     final profile = await CapabilityProfile.load();
+  //     final generator = Generator(PaperSize.mm80, profile);
+  //     await PrintBluetoothThermal.writeBytes(generator.reset());
+  //   } catch (e) {
+  //     if (mounted) {
+  //       setState(() {
+  //         connected = false;
+  //         connectedMac = null;
+  //         statusMessage = "Connection failed ";
+  //       });
+  //     }
+  //   } finally {
+  //     if (mounted) setState(() => connectingMac = null);
+  //   }
+  // }
 
-  Future<void> disconnect() async {
-    try {
-      await PrintBluetoothThermal.disconnect;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('connected_printer_mac');
-      if (mounted) {
-        setState(() {
-          connected = false;
-          connectedMac = null;
-          statusMessage = "Disconnected";
-        });
-      }
-    } catch (e) {
-      debugPrint("Disconnect error: $e");
-    }
-  }
+  // Future<void> disconnect() async {
+  //   try {
+  //     await PrintBluetoothThermal.disconnect;
+  //     final prefs = await SharedPreferences.getInstance();
+  //     await prefs.remove('connected_printer_mac');
+  //     if (mounted) {
+  //       setState(() {
+  //         connected = false;
+  //         connectedMac = null;
+  //         statusMessage = "Disconnected";
+  //       });
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Disconnect error: $e");
+  //   }
+  // }
 
   Future<void> _saveConnectedMac(String mac) async {
     final prefs = await SharedPreferences.getInstance();
@@ -319,62 +319,62 @@ class _SaleOrderHistoryDetailScreenState
   //   }
   // }
 
-  Future<void> printReceipt({
-    required SaleDetail? detail,
-    required CompanyInformation? companyInfo,
-  }) async {
-    // Navigator.push(
-    //   context,
-    //   // MaterialPageRoute(builder: (context) => ReceiptPrinterApp()),
-    //   MaterialPageRoute(
-    //     builder: (context) =>
-    //         ReceiptPreviewScreen(companyInfo: companyInfo, detail: detail),
-    //   ),
-    // );
-    return;
-    try {
-      debugPrint(" Starting print job...");
+  // Future<void> printReceipt({
+  //   required SaleDetail? detail,
+  //   required CompanyInformation? companyInfo,
+  // }) async {
+  //   // Navigator.push(
+  //   //   context,
+  //   //   // MaterialPageRoute(builder: (context) => ReceiptPrinterApp()),
+  //   //   MaterialPageRoute(
+  //   //     builder: (context) =>
+  //   //         ReceiptPreviewScreen(companyInfo: companyInfo, detail: detail),
+  //   //   ),
+  //   // );
+  //   // return;
+  //   try {
+  //     debugPrint(" Starting print job...");
 
-      bool isConnected = await PrintBluetoothThermal.connectionStatus;
+  //     bool isConnected = await PrintBluetoothThermal.connectionStatus;
 
-      if (!isConnected) {
-        debugPrint(" Printer not connected");
-        showErrorMessage("Printer not connected!");
+  //     if (!isConnected) {
+  //       debugPrint(" Printer not connected");
+  //       showErrorMessage("Printer not connected!");
 
-        if (connectedMac != null) {
-          debugPrint(" Attempting to reconnect...");
-          await connect(connectedMac!);
-          isConnected = await PrintBluetoothThermal.connectionStatus;
-          if (!isConnected) return;
-        } else {
-          return;
-        }
-      }
+  //       if (connectedMac != null) {
+  //         debugPrint(" Attempting to reconnect...");
+  //         await connect(connectedMac!);
+  //         isConnected = await PrintBluetoothThermal.connectionStatus;
+  //         if (!isConnected) return;
+  //       } else {
+  //         return;
+  //       }
+  //     }
 
-      final profile = await CapabilityProfile.load();
-      final generator = Generator(PaperSize.mm80, profile);
+  //     final profile = await CapabilityProfile.load();
+  //     final generator = Generator(PaperSize.mm80, profile);
 
-      List<int> bytes = [];
-      bytes += generator.reset();
-      debugPrint("Creating receipt image...");
-      final receiptImage = await _createReceiptImage(
-        detail: detail,
-        companyInfo: companyInfo,
-      );
+  //     List<int> bytes = [];
+  //     bytes += generator.reset();
+  //     debugPrint("Creating receipt image...");
+  //     final receiptImage = await _createReceiptImage(
+  //       detail: detail,
+  //       companyInfo: companyInfo,
+  //     );
 
-      debugPrint(" Converting to printer bytes...");
-      bytes += generator.imageRaster(receiptImage);
-      bytes += generator.cut();
+  //     debugPrint(" Converting to printer bytes...");
+  //     bytes += generator.imageRaster(receiptImage);
+  //     bytes += generator.cut();
 
-      debugPrint(" Sending ${bytes.length} bytes to printer...");
-      await PrintBluetoothThermal.writeBytes(bytes);
+  //     debugPrint(" Sending ${bytes.length} bytes to printer...");
+  //     await PrintBluetoothThermal.writeBytes(bytes);
 
-      showSuccessMessage("Sending to Printer!");
-    } catch (e) {
-      debugPrint("Print error: $e");
-      showErrorMessage("Print failed: $e");
-    }
-  }
+  //     showSuccessMessage("Sending to Printer!");
+  //   } catch (e) {
+  //     debugPrint("Print error: $e");
+  //     showErrorMessage("Print failed: $e");
+  //   }
+  // }
 
   Future<img.Image> _createReceiptImage({
     required SaleDetail? detail,
