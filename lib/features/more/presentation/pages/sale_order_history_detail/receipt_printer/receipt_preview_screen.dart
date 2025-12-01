@@ -251,8 +251,8 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
   Future<void> _buildSampleReceipt() async {
     try {
       _builder.clear();
-      // Uint8List? imageBytes = await logoCompany();
-      // _builder.printImage(imageBytes!);
+      Uint8List? imageBytes = await logoCompany();
+      _builder.printImage(imageBytes!);
 
       _builder.addText(
         maxCharPerLine: lengText(),
@@ -418,7 +418,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         });
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ Error building receipt: $e');
+      debugPrint('Error building receipt: $e');
       debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
@@ -448,7 +448,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     try {
       if (mounted) l.show();
 
-      // ✅ CRITICAL: Set printer width before printing
       if (!_isPrinterWarmedUp) {
         debugPrint('🔥 Warming up printer before first print...');
 

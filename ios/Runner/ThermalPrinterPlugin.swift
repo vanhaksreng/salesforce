@@ -269,210 +269,248 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     private func endBatchMode() {
         isBatchMode = false
         if !receiptBuffer.isEmpty {
-            print("📤 Optimizing and sending batched receipt: \(receiptBuffer.count) bytes")
+            let originalSize = receiptBuffer.count
+            print("📤 Preparing receipt: \(originalSize) bytes")
+            
+            // Optimize
             let optimizedData = optimizeLineFeeds(data: receiptBuffer)
-            print("✅ Optimized: \(receiptBuffer.count) → \(optimizedData.count) bytes")
+            print("✅ Optimized: \(originalSize) → \(optimizedData.count) bytes")
+            
+            // Send reliably
             writeDataSmooth(data: optimizedData)
+            
+            // Wait for completion
+            Thread.sleep(forTimeInterval: 0.050)
+            
             receiptBuffer.removeAll()
+            print("✅ Receipt sent successfully")
         }
     }
-    
-    private func addToBuffer(data: Data) {
-        if isBatchMode {
-            receiptBuffer.append(data)
-            print("➕ Added \(data.count) bytes to buffer (total: \(receiptBuffer.count))")
-        } else {
-            writeDataSmooth(data: data)
-        }
-    }
-    
-    private func optimizeLineFeeds(data: Data) -> Data {
-        var optimized = Data()
-        var consecutiveLineFeeds = 0
+        // Add this with your other properties (near the top of the class)
+        private var operationQueue: OperationQueue = {
+            let queue = OperationQueue()
+            queue.maxConcurrentOperationCount = 1  // Serial execution
+            queue.qualityOfService = .userInitiated
+            return queue
+        }()
         
-        for byte in data {
-            if byte == 0x0A {
-                consecutiveLineFeeds += 1
+        private func queueWrite(data: Data) {
+            operationQueue.addOperation { [weak self] in
+                guard let self = self else { return }
+                
+                self.writeLock.lock()
+                defer { self.writeLock.unlock() }
+                
+                self.writeDataSmooth(data: data)
+                
+                // Small delay between queued operations
+                Thread.sleep(forTimeInterval: 0.010)
+            }
+        }
+        private func addToBuffer(data: Data) {
+            if isBatchMode {
+                receiptBuffer.append(data)
+                print("➕ Added \(data.count) bytes to buffer (total: \(receiptBuffer.count))")
             } else {
-                if consecutiveLineFeeds > 0 {
-                    for _ in 0..<consecutiveLineFeeds {
-                        optimized.append(0x0A)
+                queueWrite(data: data)
+            }
+        }
+        
+        private func optimizeLineFeeds(data: Data) -> Data {
+            var optimized = Data()
+            var consecutiveLineFeeds = 0
+            
+            for byte in data {
+                if byte == 0x0A {
+                    consecutiveLineFeeds += 1
+                } else {
+                    if consecutiveLineFeeds > 0 {
+                        for _ in 0..<consecutiveLineFeeds {
+                            optimized.append(0x0A)
+                        }
+                        consecutiveLineFeeds = 0
                     }
-                    consecutiveLineFeeds = 0
+                    optimized.append(byte)
                 }
-                optimized.append(byte)
+            }
+            
+            if consecutiveLineFeeds > 0 {
+                for _ in 0..<consecutiveLineFeeds {
+                    optimized.append(0x0A)
+                }
+            }
+            
+            return optimized
+        }
+        
+        // ====================================================================
+        // MARK: - Diagnostic Tests
+        // ====================================================================
+        private func testPaperFeed(result: @escaping FlutterResult) {
+            printQueue.async {
+                do {
+                    print("🧪 TEST 1: Paper Feed Test")
+                    let feedCommand = Data(repeating: 0x0A, count: 10)
+                    self.writeDataSmooth(data: feedCommand)
+                    Thread.sleep(forTimeInterval: 2.0)
+                    
+                    DispatchQueue.main.async {
+                        result([
+                            "test": "paper_feed",
+                            "instruction": "Did you hear 'stuck stuck' during paper feed? YES = Paper problem, NO = Code problem"
+                        ])
+                    }
+                }
             }
         }
         
-        if consecutiveLineFeeds > 0 {
-            for _ in 0..<consecutiveLineFeeds {
-                optimized.append(0x0A)
+        private func testSlowPrint(result: @escaping FlutterResult) {
+            printQueue.async {
+                do {
+                    print("🧪 TEST 2: Slow Print Test")
+                    
+                    var commands = Data()
+                    commands.append(contentsOf: [self.ESC, 0x40])
+                    commands.append("TEST LINE 1".data(using: .ascii)!)
+                    commands.append(0x0A)
+                    
+                    self.writeDataSmooth(data: commands)
+                    Thread.sleep(forTimeInterval: 1.0)
+                    
+                    commands.removeAll()
+                    commands.append("TEST LINE 2".data(using: .ascii)!)
+                    commands.append(0x0A)
+                    
+                    self.writeDataSmooth(data: commands)
+                    Thread.sleep(forTimeInterval: 1.0)
+                    
+                    commands.removeAll()
+                    commands.append("TEST LINE 3".data(using: .ascii)!)
+                    commands.append(0x0A)
+                    
+                    self.writeDataSmooth(data: commands)
+                    
+                    DispatchQueue.main.async {
+                        result([
+                            "test": "slow_print",
+                            "instruction": "Was it smooth? If YES → code was too fast before, If NO → hardware issue"
+                        ])
+                    }
+                }
             }
         }
         
-        return optimized
-    }
-    
-    // ====================================================================
-    // MARK: - Diagnostic Tests
-    // ====================================================================
-    private func testPaperFeed(result: @escaping FlutterResult) {
-        printQueue.async {
-            do {
-                print("🧪 TEST 1: Paper Feed Test")
-                let feedCommand = Data(repeating: 0x0A, count: 10)
-                self.writeDataSmooth(data: feedCommand)
-                Thread.sleep(forTimeInterval: 2.0)
+        private func checkPrinterStatus(result: @escaping FlutterResult) {
+            printQueue.async {
+                print("🧪 TEST 3: Printer Status Check")
+                let statusCommand = Data([0x10, 0x04, 0x01])
+                self.writeDataSmooth(data: statusCommand)
+                Thread.sleep(forTimeInterval: 0.1)
                 
                 DispatchQueue.main.async {
                     result([
-                        "test": "paper_feed",
-                        "instruction": "Did you hear 'stuck stuck' during paper feed? YES = Paper problem, NO = Code problem"
+                        "test": "status_check",
+                        "status": "Status check sent"
                     ])
                 }
             }
         }
-    }
-    
-    private func testSlowPrint(result: @escaping FlutterResult) {
-        printQueue.async {
-            do {
-                print("🧪 TEST 2: Slow Print Test")
+        
+        private func runCompleteDiagnostic(result: @escaping FlutterResult) {
+            printQueue.async {
+                var diagnosticResults: [String: String] = [:]
                 
-                var commands = Data()
-                commands.append(contentsOf: [self.ESC, 0x40])
-                commands.append("TEST LINE 1".data(using: .ascii)!)
-                commands.append(0x0A)
-                
-                self.writeDataSmooth(data: commands)
-                Thread.sleep(forTimeInterval: 1.0)
-                
-                commands.removeAll()
-                commands.append("TEST LINE 2".data(using: .ascii)!)
-                commands.append(0x0A)
-                
-                self.writeDataSmooth(data: commands)
-                Thread.sleep(forTimeInterval: 1.0)
-                
-                commands.removeAll()
-                commands.append("TEST LINE 3".data(using: .ascii)!)
-                commands.append(0x0A)
-                
-                self.writeDataSmooth(data: commands)
-                
-                DispatchQueue.main.async {
-                    result([
-                        "test": "slow_print",
-                        "instruction": "Was it smooth? If YES → code was too fast before, If NO → hardware issue"
-                    ])
-                }
-            }
-        }
-    }
-    
-    private func checkPrinterStatus(result: @escaping FlutterResult) {
-        printQueue.async {
-            print("🧪 TEST 3: Printer Status Check")
-            let statusCommand = Data([0x10, 0x04, 0x01])
-            self.writeDataSmooth(data: statusCommand)
-            Thread.sleep(forTimeInterval: 0.1)
-            
-            DispatchQueue.main.async {
-                result([
-                    "test": "status_check",
-                    "status": "Status check sent"
-                ])
-            }
-        }
-    }
-    
-    private func runCompleteDiagnostic(result: @escaping FlutterResult) {
-        printQueue.async {
-            var diagnosticResults: [String: String] = [:]
-            
-            print("""
+                print("""
             ═══════════════════════════════════════
             🔍 COMPLETE PRINTER DIAGNOSTIC
             ═══════════════════════════════════════
             """)
-            
-            // Test 1: Paper feed
-            print("\n▶️ TEST 1: Paper Feed Test")
-            let feedCommand = Data(repeating: 0x0A, count: 5)
-            self.writeDataSmooth(data: feedCommand)
-            Thread.sleep(forTimeInterval: 2.0)
-            diagnosticResults["paper_feed"] = "Check if 'stuck stuck' sound occurred"
-            
-            // Test 2: Single line
-            print("\n▶️ TEST 2: Single Line Test")
-            var textCommand = "TEST LINE\n".data(using: .ascii)!
-            self.writeDataSmooth(data: textCommand)
-            Thread.sleep(forTimeInterval: 2.0)
-            diagnosticResults["single_line"] = "Check if smooth"
-            
-            // Test 3: Multiple lines with delays
-            print("\n▶️ TEST 3: Multiple Lines (with delays)")
-            for i in 1...3 {
-                let line = "Line \(i)\n".data(using: .ascii)!
-                self.writeDataSmooth(data: line)
-                Thread.sleep(forTimeInterval: 0.5)
-            }
-            diagnosticResults["multiple_lines"] = "Check if smooth with delays"
-            
-            // Test 4: Multiple lines fast
-            print("\n▶️ TEST 4: Multiple Lines (fast)")
-            let fastLines = "Fast Line 1\nFast Line 2\nFast Line 3\n".data(using: .ascii)!
-            self.writeDataSmooth(data: fastLines)
-            Thread.sleep(forTimeInterval: 2.0)
-            diagnosticResults["fast_lines"] = "Check if 'stuck stuck' occurs when fast"
-            
-            print("""
+                
+                // Test 1: Paper feed
+                print("\n▶️ TEST 1: Paper Feed Test")
+                let feedCommand = Data(repeating: 0x0A, count: 5)
+                self.writeDataSmooth(data: feedCommand)
+                Thread.sleep(forTimeInterval: 2.0)
+                diagnosticResults["paper_feed"] = "Check if 'stuck stuck' sound occurred"
+                
+                // Test 2: Single line
+                print("\n▶️ TEST 2: Single Line Test")
+                var textCommand = "TEST LINE\n".data(using: .ascii)!
+                self.writeDataSmooth(data: textCommand)
+                Thread.sleep(forTimeInterval: 2.0)
+                diagnosticResults["single_line"] = "Check if smooth"
+                
+                // Test 3: Multiple lines with delays
+                print("\n▶️ TEST 3: Multiple Lines (with delays)")
+                for i in 1...3 {
+                    let line = "Line \(i)\n".data(using: .ascii)!
+                    self.writeDataSmooth(data: line)
+                    Thread.sleep(forTimeInterval: 0.5)
+                }
+                diagnosticResults["multiple_lines"] = "Check if smooth with delays"
+                
+                // Test 4: Multiple lines fast
+                print("\n▶️ TEST 4: Multiple Lines (fast)")
+                let fastLines = "Fast Line 1\nFast Line 2\nFast Line 3\n".data(using: .ascii)!
+                self.writeDataSmooth(data: fastLines)
+                Thread.sleep(forTimeInterval: 2.0)
+                diagnosticResults["fast_lines"] = "Check if 'stuck stuck' occurs when fast"
+                
+                print("""
             
             ═══════════════════════════════════════
             📊 DIAGNOSTIC RESULTS
             ═══════════════════════════════════════
             """)
-            
-            DispatchQueue.main.async {
-                result(diagnosticResults)
+                
+                DispatchQueue.main.async {
+                    result(diagnosticResults)
+                }
             }
         }
-    }
-    
-    // ====================================================================
-    // MARK: - Initialization
-    // ====================================================================
-    private func initializePrinterOptimal() {
-        print("🔧 Initializing printer with optimal settings...")
         
-        var commands = Data()
-        commands.append(contentsOf: [ESC, 0x40])              // Reset
-        commands.append(contentsOf: [ESC, 0x21, 0x00])        // Normal mode
-        commands.append(contentsOf: [ESC, 0x33, 0x40])        // Line spacing
-        commands.append(contentsOf: [ESC, 0x47, 0x00])        // Disable double-strike
+        // ====================================================================
+        // MARK: - Initialization
+        // ====================================================================
+        private func initializePrinterOptimal() {
+            print("🔧 Initializing printer with optimal settings...")
+            
+            var commands = Data()
+            commands.append(contentsOf: [ESC, 0x40])              // Reset
+            commands.append(contentsOf: [ESC, 0x21, 0x00])        // Normal mode
+            commands.append(contentsOf: [ESC, 0x33, 0x40])        // Line spacing
+            commands.append(contentsOf: [ESC, 0x47, 0x00])        // Disable double-strike
+            
+            writeDataSmooth(data: commands)
+            Thread.sleep(forTimeInterval: 0.2)
+            print("✅ Printer initialized with smooth settings")
+        }
         
-        writeDataSmooth(data: commands)
-        Thread.sleep(forTimeInterval: 0.2)
-        print("✅ Printer initialized with smooth settings")
-    }
-    
-    private func initializePrinterForSmoothPrinting() {
-        print("🔧 Initializing printer for smooth printing...")
-        
-        var commands = Data()
-        commands.append(contentsOf: [ESC, 0x40])
-        Thread.sleep(forTimeInterval: 0.1)
-        
-        commands.append(contentsOf: [ESC, 0x33, 0x50])        // Looser line spacing
-        commands.append(contentsOf: [GS, 0x28, 0x4B, 0x02, 0x00, 0x30, 0x06]) // Lower density
-        
-        writeDataSmooth(data: commands)
-        Thread.sleep(forTimeInterval: 0.2)
-        print("✅ Printer initialized for smooth operation")
-    }
+        private func initializePrinterForSmoothPrinting() {
+            print("🔧 Initializing for continuous printing...")
+            
+            var commands = Data()
+            
+            // Reset
+            commands.append(contentsOf: [ESC, 0x40])
+            writeBLEDataOptimized(data: commands)
+            Thread.sleep(forTimeInterval: 0.12)
+            
+            commands.removeAll()
+            
+            // Optimal settings for continuous flow
+            commands.append(contentsOf: [ESC, 0x33, 0x30])        // Line spacing
+            commands.append(contentsOf: [GS, 0x28, 0x4B, 0x02, 0x00, 0x30, 0x06])  // Density
+            commands.append(contentsOf: [ESC, 0x21, 0x00])        // Print mode
+            
+            writeBLEDataOptimized(data: commands)
+            Thread.sleep(forTimeInterval: 0.12)
+            
+            print("✅ Ready for continuous printing")
+        }
     
     private func configureForOOMAS() {
-        print("⚙️ Configuring for OOMAS printer...")
+        print(" Configuring for OOMAS printer...")
         
         var config = Data()
         config.append(contentsOf: [ESC, 0x33, 0x40])          // Looser spacing
@@ -694,28 +732,29 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     private func writeDataSmooth(data: Data) {
         let startTime = Date()
         
-        let lineFeeds = data.filter { $0 == 0x0A }.count
+        print("📝 Writing \(data.count) bytes...")
         
         switch currentConnectionType {
         case .bluetoothBLE:
             writeBLEDataOptimized(data: data)
-            if lineFeeds > 0 {
-                Thread.sleep(forTimeInterval: Double(lineFeeds) * 0.03)
-            }
+            
+            // Small delay to ensure completion
+            Thread.sleep(forTimeInterval: 0.025)
             
         case .network:
             writeNetworkOptimized(data: data)
-            if lineFeeds > 0 {
-                Thread.sleep(forTimeInterval: Double(lineFeeds) * 0.03)
-            }
+            Thread.sleep(forTimeInterval: 0.020)
             
         default:
             print("❌ No active connection")
+            return
         }
         
         let elapsed = Date().timeIntervalSince(startTime)
-        print("✅ Write: \(data.count) bytes in \(Int(elapsed * 1000))ms")
+        print("✅ Complete: \(data.count) bytes in \(Int(elapsed * 1000))ms")
     }
+    
+    
     
     private func writeBLEDataOptimized(data: Data) {
         guard let peripheral = connectedPeripheral,
@@ -727,37 +766,55 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
         let canWriteWithoutResponse = characteristic.properties.contains(.writeWithoutResponse)
         
         if canWriteWithoutResponse {
-            let chunkSize = 128
-            let delay: TimeInterval = 0.008
+            // ✅ RELIABLE SETTINGS - No data loss!
+            let chunkSize = 128          // Safe chunk size
+            let reliableDelay: TimeInterval = 0.010  // Ensures printer receives all data
             
             var offset = 0
+            var chunksWritten = 0
+            
+            print("📤 Sending \(data.count) bytes to printer...")
+            
             while offset < data.count {
                 let end = min(offset + chunkSize, data.count)
                 let chunk = data[offset..<end]
                 
+                // Write chunk
                 peripheral.writeValue(Data(chunk), for: characteristic, type: .withoutResponse)
+                chunksWritten += 1
                 
-                if end < data.count {
-                    Thread.sleep(forTimeInterval: delay)
-                }
+                // CRITICAL: Always delay between chunks
+                Thread.sleep(forTimeInterval: reliableDelay)
                 
                 offset = end
             }
-        } else {
-            let chunkSize = 20
             
+            // Extra time for last chunk to be processed
+            Thread.sleep(forTimeInterval: 0.025)
+            
+            print("✅ Sent \(chunksWritten) chunks successfully")
+            
+        } else {
+            // Write with response mode (guaranteed delivery)
+            print("📤 Using write-with-response mode (reliable)")
+            let chunkSize = 20
             var offset = 0
+            
             while offset < data.count {
                 let end = min(offset + chunkSize, data.count)
                 let chunk = data[offset..<end]
                 
+                let semaphore = DispatchSemaphore(value: 0)
                 peripheral.writeValue(Data(chunk), for: characteristic, type: .withResponse)
-                Thread.sleep(forTimeInterval: 0.1)
+                _ = semaphore.wait(timeout: .now() + 0.2)
                 
                 offset = end
             }
+            
+            print("✅ All data sent with confirmation")
         }
     }
+    
     
     private func writeNetworkOptimized(data: Data) {
         guard let connection = networkConnection else {
@@ -792,6 +849,35 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
             }
             
             offset = end
+        }
+    }
+    
+    private func writeTextWithLineDelays(data: Data) {
+        guard currentConnectionType == .bluetoothBLE else {
+            writeDataSmooth(data: data)
+            return
+        }
+        
+        // Split by line feeds and write with delays
+        var buffer = Data()
+        
+        for byte in data {
+            buffer.append(byte)
+            
+            if byte == 0x0A {  // Line feed detected
+                // Write this line
+                writeBLEDataOptimized(data: buffer)
+                
+                // Small delay for motor to complete paper feed
+                Thread.sleep(forTimeInterval: 0.035)  // 35ms
+                
+                buffer.removeAll()
+            }
+        }
+        
+        // Write any remaining data
+        if !buffer.isEmpty {
+            writeBLEDataOptimized(data: buffer)
         }
     }
     

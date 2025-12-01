@@ -289,7 +289,6 @@ extension SmoothPrinting on ReceiptBuilder {
 
       print('📤 Sending entire receipt in ONE operation...');
 
-      // ✅ CRITICAL: Send EVERYTHING at once!
       await ThermalPrinter.endBatch();
 
       print('🎉 BATCH print completed - Sent as single operation!');
