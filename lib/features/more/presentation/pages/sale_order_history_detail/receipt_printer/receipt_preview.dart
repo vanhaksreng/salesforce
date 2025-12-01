@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_builder.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 
@@ -30,6 +32,7 @@ class ReceiptPreview extends StatelessWidget {
         ],
       ),
       child: Column(
+        spacing: scaleFontSize(6),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: commands.map((cmd) => _buildCommand(cmd)).toList(),
       ),
@@ -112,15 +115,23 @@ class ReceiptPreview extends StatelessWidget {
   }
 
   Widget _buildTextCommand(Map<String, dynamic> params) {
-    // ✅ FIXED: Add null safety checks
+    late int maxCharsExtra;
+    late String output;
+
     final text = params['text'] as String? ?? '';
     final fontSize = (params['fontSize'] as int? ?? 24).toDouble();
     final bold = params['bold'] as bool? ?? false;
     final align = params['align'] as String? ?? 'left';
     final maxChars = params['maxCharsPerLine'] as int? ?? 48;
 
-    // Wrap text based on maxCharsPerLine
-    final wrappedLines = _wrapText(text, maxChars);
+    if (text.trim().replaceAll('-', '').isEmpty) {
+      maxCharsExtra = Helpers.toInt(scaleFontSize(70));
+      output = List.filled(maxCharsExtra, '-').join();
+    } else {
+      maxCharsExtra = maxChars;
+      output = text;
+    }
+    final wrappedLines = _wrapText(output, maxCharsExtra);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -128,7 +139,7 @@ class ReceiptPreview extends StatelessWidget {
         crossAxisAlignment: _getAlignment(align),
         children: wrappedLines.map((line) {
           return Text(
-            line,
+            "$line   ",
             style: TextStyle(
               fontSize: fontSize * 0.6, // Scale down for preview
               fontWeight: bold ? FontWeight.bold : FontWeight.normal,
@@ -143,15 +154,13 @@ class ReceiptPreview extends StatelessWidget {
 
   Widget _buildImageCommand(Map<String, dynamic> params) {
     final imageBytes = params['imageBytes'] as Uint8List?;
-    final width = (params['width'] as int? ?? 384).toDouble();
-    final align =
-        params['align'] as int? ?? 1; // ✅ Fixed: Added null safety with default
+    final width = (params['width'] as int? ?? 75).toDouble();
+    final align = params['align'] as int? ?? 1;
 
     if (imageBytes == null) {
       return const SizedBox.shrink();
     }
 
-    // Map alignment values to Flutter's Alignment
     final alignment = getAlignmentImage(align);
 
     return Padding(
