@@ -2,6 +2,7 @@ name: salesforce
 description: "Trade B2B"
 publish_to: 'none'
 version: 1.0.0+1
+  # ios : 38
 
 environment:
   sdk: ^3.8.1
