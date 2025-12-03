@@ -113,12 +113,17 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     
     // MARK: - Initialization
     private func initialize() {
-        centralManager = CBCentralManager(delegate: self, queue: nil)
+//        centralManager = CBCentralManager(delegate: self, queue: nil)
         networkQueue = DispatchQueue(label: "com.clearviewerp.network_queue")
         preloadFonts()
         print("🔵 ThermalPrinterPlugin initialized")
     }
-    
+    private func ensureBluetoothManager() {
+        if centralManager == nil {
+            print("🔵 Initializing Bluetooth manager on demand...")
+            centralManager = CBCentralManager(delegate: self, queue: nil)
+        }
+    }
     // MARK: - Method Call Handler
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         let args = call.arguments as? [String: Any]
@@ -537,6 +542,7 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     // MARK: - Discovery
     // ====================================================================
     private func discoverPrinters(type: String, result: @escaping FlutterResult) {
+        ensureBluetoothManager()
         switch type {
         case "bluetooth", "ble":
             discoverBluetoothPrinters(result: result)
@@ -550,6 +556,7 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     }
     
     private func discoverAllPrinters(result: @escaping FlutterResult) {
+        ensureBluetoothManager()
         var allPrinters: [[String: Any]] = []
         
         // Add discovered Bluetooth devices
@@ -577,6 +584,7 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     }
     
     private func discoverBluetoothPrinters(result: @escaping FlutterResult) {
+        ensureBluetoothManager()
         guard let manager = centralManager else {
             result(FlutterError(code: "BT_NOT_READY", message: "Bluetooth not ready", details: nil))
             return
@@ -599,13 +607,17 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     private func stopDiscovery() {
         centralManager?.stopScan()
         
-        let printers = discoveredDevices.map { peripheral in
-            return [
-                "name": peripheral.name ?? "Unknown Device",
-                "address": peripheral.identifier.uuidString,
-                "type": "bluetooth"
-            ]
-        }
+        let printers = discoveredDevices
+                .compactMap { peripheral -> [String: Any]? in
+                    guard let name = peripheral.name, !name.isEmpty else {
+                        return nil  // Skip devices without names
+                    }
+                    return [
+                        "name": name,  // ✅ Always has a valid name now
+                        "address": peripheral.identifier.uuidString,
+                        "type": "bluetooth"
+                    ]
+                }
         
         if let result = discoveryResult {
             result(printers)
@@ -1651,6 +1663,7 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     }
     
     private func checkBluetoothPermission(result: @escaping FlutterResult) {
+        ensureBluetoothManager()
         result(true)
     }
 }
