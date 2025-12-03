@@ -250,7 +250,9 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     try {
       _builder.clear();
       Uint8List? imageBytes = await logoCompany();
-      _builder.printImage(imageBytes!, width: 120);
+      if (imageBytes != null) {
+        _builder.printImage(imageBytes, width: 120);
+      }
 
       _builder.addText(
         maxCharPerLine: lengText(),
