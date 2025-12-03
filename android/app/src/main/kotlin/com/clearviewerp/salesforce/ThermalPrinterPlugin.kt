@@ -723,14 +723,20 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     BluetoothDevice.ACTION_FOUND -> {
                         val device: BluetoothDevice? = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
                         device?.let {
-                            if (!discoveredDevices.contains(it)) {
+                            val deviceName = it.name
+                            // ✅ Skip if name is null, empty, or "Unknown"
+                            if (!deviceName.isNullOrEmpty() && 
+                                deviceName != "Unknown" && 
+                                !discoveredDevices.contains(it)) {
                                 discoveredDevices.add(it)
-                                println("📱 Found device: ${it.name ?: "Unknown"} (${it.address})")
+                                println("📱 Found device: $deviceName (${it.address})")
+                            } else {
+                                println("⏭️ Skipped device: ${deviceName ?: "null"} (${it.address})")
                             }
                         }
                     }
                     BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
-                        println("🔍 Discovery finished. Total devices: ${discoveredDevices.size}")
+                        println("🔍 Discovery finished. Named devices: ${discoveredDevices.size}")
                         returnDiscoveredDevices(result)
                         try {
                             context?.unregisterReceiver(this)
@@ -739,7 +745,28 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                             // Already unregistered
                         }
                     }
-                }
+}
+                // when (intent?.action) {
+                //     BluetoothDevice.ACTION_FOUND -> {
+                //         val device: BluetoothDevice? = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                //         device?.let {
+                //             if (!discoveredDevices.contains(it)) {
+                //                 discoveredDevices.add(it)
+                //                 println("📱 Found device: ${it.name ?: "Unknown"} (${it.address})")
+                //             }
+                //         }
+                //     }
+                //     BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                //         println("🔍 Discovery finished. Total devices: ${discoveredDevices.size}")
+                //         returnDiscoveredDevices(result)
+                //         try {
+                //             context?.unregisterReceiver(this)
+                //             discoveryReceiver = null
+                //         } catch (e: IllegalArgumentException) {
+                //             // Already unregistered
+                //         }
+                //     }
+                // }
             }
         }
 

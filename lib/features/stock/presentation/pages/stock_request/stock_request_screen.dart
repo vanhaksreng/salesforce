@@ -18,6 +18,7 @@ import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
+import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
@@ -44,6 +45,7 @@ class _StockRequestScreenState extends State<StockRequestScreen>
         'status': 'IN {"$kStatusPending","$kStatusNew"}',
       },
     );
+    _cubit.getItems();
   }
 
   void _onSubmitHandler() async {
@@ -154,11 +156,11 @@ class _StockRequestScreenState extends State<StockRequestScreen>
 
   Widget buildBody(StockRequestState state) {
     final records = state.itemWorkSheet;
+    final items = state.items;
 
     if (records.isEmpty) {
       return const EmptyScreen();
     }
-
     final docNo = records.first.documentNo ?? "";
 
     return Column(
@@ -200,10 +202,15 @@ class _StockRequestScreenState extends State<StockRequestScreen>
             itemCount: records.length,
             itemBuilder: (context, index) {
               final record = records[index];
-
+              final item = items.firstWhere(
+                (e) => e.no == record.itemNo,
+                orElse: () =>
+                    throw Exception('Item ${record.itemNo} not found'),
+              );
               return StockBoxRequest(
                 key: ValueKey(index),
                 record: record,
+                item: item,
                 onDelete: () => _onDelete(record),
                 onChangedQty: (value) => _onChangeReceiveQty(value, record),
                 readonly: docNo.isNotEmpty,
