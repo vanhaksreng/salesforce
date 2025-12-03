@@ -16,7 +16,29 @@ class StockRequestCubit extends Cubit<StockRequestState> with MessageMixin {
       final response = await repos.getItemRequestWorksheets(param: param);
       response.fold(
         (l) => throw GeneralException(l.message),
-        (r) => emit(state.copyWith(isLoading: false, itemWorkSheet: r.records, headerStatus: r.headerSatatus)),
+        (r) => emit(
+          state.copyWith(
+            isLoading: false,
+            itemWorkSheet: r.records,
+            headerStatus: r.headerSatatus,
+          ),
+        ),
+      );
+    } on GeneralException catch (e) {
+      showWarningMessage(e.message);
+    } catch (error) {
+      showErrorMessage(error.toString());
+    } finally {
+      emit(state.copyWith(isLoading: false));
+    }
+  }
+
+  Future<void> getItems({Map<String, dynamic>? param}) async {
+    try {
+      final response = await repos.getItems(param: param);
+      response.fold(
+        (l) => throw GeneralException(l.message),
+        (r) => emit(state.copyWith(isLoading: false, items: r)),
       );
     } on GeneralException catch (e) {
       showWarningMessage(e.message);
@@ -89,7 +111,13 @@ class StockRequestCubit extends Cubit<StockRequestState> with MessageMixin {
           }
         }
 
-        emit(state.copyWith(isLoading: false, itemWorkSheet: ows, headerStatus: r.headerSatatus));
+        emit(
+          state.copyWith(
+            isLoading: false,
+            itemWorkSheet: ows,
+            headerStatus: r.headerSatatus,
+          ),
+        );
       });
     } on GeneralException catch (e) {
       showWarningMessage(e.message);
@@ -105,7 +133,13 @@ class StockRequestCubit extends Cubit<StockRequestState> with MessageMixin {
       final response = await repos.cancelStockRequest();
       response.fold(
         (l) => throw GeneralException(l.message),
-        (r) => emit(state.copyWith(isLoading: false, itemWorkSheet: r.records, headerStatus: r.headerSatatus)),
+        (r) => emit(
+          state.copyWith(
+            isLoading: false,
+            itemWorkSheet: r.records,
+            headerStatus: r.headerSatatus,
+          ),
+        ),
       );
     } on GeneralException catch (e) {
       showWarningMessage(e.message);
@@ -116,10 +150,16 @@ class StockRequestCubit extends Cubit<StockRequestState> with MessageMixin {
     }
   }
 
-  Future<void> onChangeReceiveQty(double qty, ItemStockRequestWorkSheet record) async {
+  Future<void> onChangeReceiveQty(
+    double qty,
+    ItemStockRequestWorkSheet record,
+  ) async {
     try {
       List<ItemStockRequestWorkSheet> ows = state.itemWorkSheet;
-      final response = await repos.onChangeReceiveQty(quantityToReceive: qty, record: record);
+      final response = await repos.onChangeReceiveQty(
+        quantityToReceive: qty,
+        record: record,
+      );
 
       response.fold((l) => throw GeneralException(l.message), (result) {
         final index = ows.indexWhere((e) => e.id == result.id);

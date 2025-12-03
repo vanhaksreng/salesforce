@@ -11,6 +11,7 @@ import 'package:salesforce/core/presentation/widgets/dot_line_widget.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/features/stock/presentation/pages/stock_component/qty_input.dart';
+import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
@@ -21,12 +22,14 @@ class StockBoxRequest extends StatefulWidget {
     required this.onChangedQty,
     this.onDelete,
     this.readonly = false,
+    this.item,
   });
 
   final ItemStockRequestWorkSheet record;
   final void Function()? onDelete;
   final void Function(double value)? onChangedQty;
   final bool readonly;
+  final Item? item;
 
   @override
   State<StockBoxRequest> createState() => _StockBoxRequestState();
@@ -50,12 +53,16 @@ class _StockBoxRequestState extends State<StockBoxRequest> {
 
   @override
   Widget build(BuildContext context) {
-    final receiveQty = widget.record.quantityShipped - widget.record.quantityReceived;
+    final receiveQty =
+        widget.record.quantityShipped - widget.record.quantityReceived;
 
     return BoxWidget(
       key: widget.key,
       margin: EdgeInsets.symmetric(vertical: scaleFontSize(4)),
-      padding: EdgeInsets.symmetric(vertical: scaleFontSize(appSpace8), horizontal: scaleFontSize(appSpace)),
+      padding: EdgeInsets.symmetric(
+        vertical: scaleFontSize(appSpace8),
+        horizontal: scaleFontSize(appSpace),
+      ),
       isBoxShadow: false,
       child: Row(
         spacing: scaleFontSize(appSpace8),
@@ -64,7 +71,7 @@ class _StockBoxRequestState extends State<StockBoxRequest> {
             key: ValueKey(widget.record.itemNo),
             image: ImageNetWorkWidget(
               key: ValueKey(widget.record.itemNo),
-              imageUrl: '', //TODO: Add image URL from item
+              imageUrl: widget.item?.picture ?? "",
               height: 60.scale,
               fit: BoxFit.scaleDown,
               width: 60.scale,
@@ -78,7 +85,10 @@ class _StockBoxRequestState extends State<StockBoxRequest> {
               children: [
                 _buildRowTitle(),
                 if ((widget.record.description2 ?? "").isNotEmpty)
-                  TextWidget(text: widget.record.description2 ?? '', color: textColor50),
+                  TextWidget(
+                    text: widget.record.description2 ?? '',
+                    color: textColor50,
+                  ),
                 DotLine(color: grey.withValues(alpha: 0.5)),
                 SizedBox(height: scaleFontSize(4)),
                 Row(
@@ -89,11 +99,19 @@ class _StockBoxRequestState extends State<StockBoxRequest> {
                         children: <TextSpan>[
                           TextSpan(
                             text: widget.record.quantity.toString(),
-                            style: TextStyle(fontWeight: FontWeight.bold, color: primary, fontSize: scaleFontSize(14)),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: primary,
+                              fontSize: scaleFontSize(14),
+                            ),
                           ),
                           TextSpan(
                             text: " / ${widget.record.unitOfMeasureCode}",
-                            style: TextStyle(fontWeight: FontWeight.bold, color: primary, fontSize: scaleFontSize(14)),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: primary,
+                              fontSize: scaleFontSize(14),
+                            ),
                           ),
                         ],
                       ),
@@ -110,7 +128,10 @@ class _StockBoxRequestState extends State<StockBoxRequest> {
                             border: Border.all(width: 0.5, color: grey),
                           ),
                           child: TextWidget(
-                            text: Helpers.formatNumber(widget.record.quantityToReceive, option: FormatType.quantity),
+                            text: Helpers.formatNumber(
+                              widget.record.quantityToReceive,
+                              option: FormatType.quantity,
+                            ),
                             color: primary,
                           ),
                         ),
@@ -118,12 +139,23 @@ class _StockBoxRequestState extends State<StockBoxRequest> {
                     if (receiveQty <= 0 && widget.record.quantityReceived > 0)
                       RichText(
                         text: TextSpan(
-                          style: TextStyle(color: textColor50, fontSize: scaleFontSize(14)),
+                          style: TextStyle(
+                            color: textColor50,
+                            fontSize: scaleFontSize(14),
+                          ),
                           children: <TextSpan>[
                             const TextSpan(text: "Received : "),
-                            TextSpan(text: Helpers.formatNumber(widget.record.quantityReceived)),
+                            TextSpan(
+                              text: Helpers.formatNumber(
+                                widget.record.quantityReceived,
+                              ),
+                            ),
                             const TextSpan(text: " / "),
-                            TextSpan(text: Helpers.formatNumber(widget.record.quantity)),
+                            TextSpan(
+                              text: Helpers.formatNumber(
+                                widget.record.quantity,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -142,7 +174,9 @@ class _StockBoxRequestState extends State<StockBoxRequest> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: TextWidget(text: widget.record.description ?? '', maxLines: 2)),
+        Expanded(
+          child: TextWidget(text: widget.record.description ?? '', maxLines: 2),
+        ),
         // switchStatus(),
       ],
     );
@@ -177,18 +211,25 @@ class _StockBoxRequestState extends State<StockBoxRequest> {
       enableDrag: true,
       showDragHandle: false,
       isDismissible: true,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(scaleFontSize(16)))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(scaleFontSize(16)),
+        ),
+      ),
       builder: (BuildContext context) {
         return SafeArea(
           child: SingleChildScrollView(
             child: AnimatedPadding(
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeOut,
-              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
               child: QtyInput(
                 key: const ValueKey("qty"),
                 initialQty: Helpers.formatNumber(
-                  widget.record.quantityShipped - widget.record.quantityReceived,
+                  widget.record.quantityShipped -
+                      widget.record.quantityReceived,
                   option: FormatType.quantity,
                 ),
                 onChanged: _applyQty,
