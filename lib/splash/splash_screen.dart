@@ -66,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen> {
         return;
       }
 
-      List<String> tables = ["promotion_type", "vat_posting_setup"];
+      List<String> tables = ["company_information", "distribution_setup"];
 
       final filter = tables.map((table) => '"$table"').toList();
 

@@ -93,8 +93,8 @@ class RealmConfig {
         DevicePrinter.schema,
       ],
       path: realmPath,
-      schemaVersion: 1,
-      shouldDeleteIfMigrationNeeded: true,
+      schemaVersion: 2,
+      shouldDeleteIfMigrationNeeded: false,
       migrationCallback: _performMigration,
     );
 
@@ -114,7 +114,14 @@ class RealmConfig {
   }
 
   static void _migrateToVersion2(Migration migration) {
-    //
+    final oldCompanies = migration.newRealm.all<CompanyInformation>();
+
+    for (var company in oldCompanies) {
+      // Only set if not already set (in case migration runs multiple times)
+      if (company.phoneNo == null || company.phoneNo!.isEmpty) {
+        company.phoneNo = ''; // Set your default value
+      }
+    }
   }
 
   static void _migrateToVersion3(Migration migration) {}
