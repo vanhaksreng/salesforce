@@ -1,8 +1,3 @@
-// ====================================================================
-// FILE 3: receipt_preview_screen.dart
-// UPDATED WITH 58MM PAPER WIDTH SUPPORT
-// ====================================================================
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -63,16 +58,8 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     _warmUpPrinterIfNeeded();
   }
 
-  // ====================================================================
-  // ✅ PAPER WIDTH CONFIGURATION - CHANGE THIS FOR YOUR PRINTER
-  // ====================================================================
-  // Option 1: Set to 58mm (384 pixels)
-  // int printerWidth = 384; // 58mm printer
-
-  // Option 2: Set to 80mm (576 pixels)
   int printerWidth = 576; // 80mm printer
   int textLength = 32; // 80mm printer
-  // ====================================================================
 
   int lengText() {
     if (printerWidth == 384) {
@@ -149,9 +136,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     }
   }
 
-  // ====================================================================
-  //  UPDATED: Configure printer size based on paper width
-  // ====================================================================
   void _configurePrinterSize() {
     if (printerWidth == 384) {
       // 58mm printer configuration
@@ -253,9 +237,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     }
   }
 
-  // ====================================================================
-  //  UPDATED: Build receipt with 58mm support
-  // ====================================================================
   Future<void> _buildSampleReceipt() async {
     try {
       _builder.clear();
@@ -313,9 +294,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         align: AlignStyle.left,
       );
 
-      // ====================================================================
-      // SEPARATOR - Adjusted width for paper size
-      // ====================================================================
       _builder.addText(
         maxCharPerLine: lengText(),
         "-" * (lengText() - 1),
@@ -395,9 +373,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         align: AlignStyle.center,
       );
 
-      // ====================================================================
-      // ITEMS - Adjusted font size for 58mm
-      // ====================================================================
       List<PosSalesLine> lines = widget.detail?.lines ?? [];
       for (var i = 0; i < lines.length; i++) {
         final item = lines[i];
