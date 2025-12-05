@@ -76,7 +76,6 @@ class ReceiptBuilder {
     if (autoAdjust && totalWidth != 12) {
       // Auto-adjust column widths proportionally
       finalColumns = _adjustColumnWidths(columns);
-      print('📏 Auto-adjusted column widths from $totalWidth to 12');
     } else if (totalWidth != 12) {
       throw Exception(
         'Total column width must equal 12, got $totalWidth. '
@@ -129,21 +128,6 @@ class ReceiptBuilder {
     return adjustedColumns;
   }
 
-  // void addRow(List<PosColumn> columns, {int fontSize = 22}) {
-  //   // Validate total width
-  //   final totalWidth = columns.fold<int>(0, (sum, col) => sum + col.width);
-  //   if (totalWidth > 12) {
-  //     throw Exception('Total column width cannot exceed 12, got $totalWidth');
-  //   }
-
-  //   _commands.add(
-  //     ReceiptCommand(ReceiptCommandType.row, {
-  //       'columns': columns.map((col) => col.toMap()).toList(),
-  //       'fontSize': fontSize,
-  //     }),
-  //   );
-  // }
-
   void addSeparator({int width = 48}) {
     _commands.add(
       ReceiptCommand(ReceiptCommandType.separator, {'width': width}),
@@ -151,22 +135,12 @@ class ReceiptBuilder {
   }
 }
 
-// ====================================================================
-// SMOOTH PRINTING EXTENSION
-// ====================================================================
-
 extension SmoothPrinting on ReceiptBuilder {
-  /// Execute commands with delays between each operation for smooth printing
-  ///
-  /// This prevents the "stuck stuck" sound by giving the printer motor
-  /// time to complete each paper feed before the next command arrives.
   Future<void> executeSmooth(
     Type printerClass, {
     Duration delayBetweenCommands = const Duration(milliseconds: 250),
     Duration delayAfterImage = const Duration(milliseconds: 200),
   }) async {
-    print('🖨️ Starting smooth print job with ${_commands.length} commands...');
-
     for (int i = 0; i < _commands.length; i++) {
       final command = _commands[i];
 
@@ -217,10 +191,7 @@ extension SmoothPrinting on ReceiptBuilder {
         if (i < _commands.length - 1) {
           await Future.delayed(delayBetweenCommands);
         }
-
-        print('✅ Command ${i + 1}/${_commands.length} completed');
       } catch (e) {
-        print('❌ Error executing command ${i + 1}: $e');
         rethrow;
       }
     }
@@ -235,8 +206,6 @@ extension SmoothPrinting on ReceiptBuilder {
     int batchSize = 5,
     Duration delayBetweenBatches = const Duration(milliseconds: 200),
   }) async {
-    print('🖨️ Starting batched print with ${_commands.length} commands...');
-
     for (
       int batchStart = 0;
       batchStart < _commands.length;
@@ -244,8 +213,6 @@ extension SmoothPrinting on ReceiptBuilder {
     ) {
       final batchEnd = (batchStart + batchSize).clamp(0, _commands.length);
       final batch = _commands.sublist(batchStart, batchEnd);
-
-      print('📦 Processing batch ${(batchStart ~/ batchSize) + 1}...');
 
       for (final command in batch) {
         switch (command.type) {
@@ -290,23 +257,15 @@ extension SmoothPrinting on ReceiptBuilder {
 
       // Delay between batches
       if (batchEnd < _commands.length) {
-        print('⏸️ Pausing between batches...');
         await Future.delayed(delayBetweenBatches);
       }
     }
-
-    print('🎉 Batched print completed!');
   }
 
   Future<void> executeBatch(Type printerClass) async {
-    print('📦 Starting BATCH print with ${_commands.length} commands...');
-
     try {
-      // Start batch mode
       await ThermalPrinter.startBatch();
-      print('✅ Batch mode started - building receipt...');
 
-      // Add ALL commands to buffer (they don't send yet!)
       for (int i = 0; i < _commands.length; i++) {
         final command = _commands[i];
 
@@ -350,22 +309,13 @@ extension SmoothPrinting on ReceiptBuilder {
               );
               break;
           }
-
-          print('✅ Command ${i + 1}/${_commands.length} added to buffer');
         } catch (e) {
-          print('❌ Error adding command ${i + 1}: $e');
           rethrow;
         }
       }
 
-      print('📤 Sending entire receipt in ONE operation...');
-
       await ThermalPrinter.endBatch();
-
-      print('🎉 BATCH print completed - Sent as single operation!');
     } catch (e) {
-      print('❌ Batch print failed: $e');
-      // Try to end batch even on error
       try {
         await ThermalPrinter.endBatch();
       } catch (_) {}

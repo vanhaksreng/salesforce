@@ -140,7 +140,7 @@ class ReceiptPreview extends StatelessWidget {
           return Text(
             line,
             style: TextStyle(
-              height: 1.5,
+              height: 1,
               fontSize: fontSize * 0.6, // Scale down for preview
               fontWeight: bold ? FontWeight.w700 : FontWeight.normal,
               fontFamily: 'NotoSansKhmer',
