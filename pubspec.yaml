@@ -67,8 +67,14 @@ flutter:
 
     - family: NotoSansKhmer
       fonts:
-        - asset: assets/fonts/NotoSansKhmer-Regular.ttf      
-        - asset: assets/fonts/NotoSansKhmer-Black.ttf      
-        - asset: assets/fonts/NotoSansKhmer-Bold.ttf      
-        - asset: assets/fonts/NotoSansKhmer-Medium.ttf     
+        - asset: assets/fonts/NotoSansKhmer-Regular.ttf
+          weight: 400  # Regular
+        - asset: assets/fonts/NotoSansKhmer-Medium.ttf
+          weight: 500  # Medium
         - asset: assets/fonts/NotoSansKhmer-SemiBold.ttf
+          weight: 600  # SemiBold
+        - asset: assets/fonts/NotoSansKhmer-Bold.ttf
+          weight: 700  # Bold
+        - asset: assets/fonts/NotoSansKhmer-Black.ttf
+          weight: 900  # Black
+        
