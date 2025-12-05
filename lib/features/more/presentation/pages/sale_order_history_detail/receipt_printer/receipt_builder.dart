@@ -195,8 +195,6 @@ extension SmoothPrinting on ReceiptBuilder {
         rethrow;
       }
     }
-
-    print('🎉 Print job completed successfully!');
   }
 
   /// Execute commands in batches with delays between batches
