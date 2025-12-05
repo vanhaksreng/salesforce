@@ -1804,10 +1804,10 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         try {
             val khmerTypeface = getKhmerTypeface(bold)
 
-            val baseFontSize = 24f
+            val baseFontSize = 20f
             val scaledFontSize = when {
                 fontSize > 30 -> baseFontSize * 2.0f
-                fontSize > 24 -> baseFontSize * 1.5f
+                fontSize > 20 -> baseFontSize * 1.5f
                 else -> baseFontSize
             }
 
@@ -1817,7 +1817,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 isFakeBoldText = false
                 strokeWidth = 0f
                 style = Paint.Style.FILL
-                isAntiAlias = false
+                isAntiAlias = true
                 color = Color.BLACK
                 textAlign = when (align.lowercase()) {
                     "center" -> Paint.Align.CENTER
@@ -1921,7 +1921,6 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     private fun renderRowToData(columns: List<PosColumn>, fontSize: Int): ByteArray? {
         var bitmap: Bitmap? = null
-
         try {
             val baseFontSize = 24f
             val scaledFontSize = when {
@@ -1936,7 +1935,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val totalChars = when {
                 fontSize > 30 -> 20
                 fontSize > 24 -> 28
-                else -> 42
+                else -> 48
             }
 
             var maxLines = 1
@@ -2091,6 +2090,11 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     commands.add(0x61)
                     commands.add(alignment.value.toByte())
 
+                    // Set line spacing to minimum (optional - reduces space between lines)
+                    commands.add(ESC)
+                    commands.add(0x33)
+                    commands.add(0x00) // 0 dots line spacing
+
                     // Image command
                     commands.add(GS)
                     commands.add(0x76)
@@ -2105,13 +2109,19 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                     commands.addAll(monochromeData.data.toList())
 
+                    // Reset line spacing to default
+                    commands.add(ESC)
+                    commands.add(0x33)
+                    commands.add(0x1E) // Default spacing (30 dots)
+
                     // Reset alignment
                     commands.add(ESC)
                     commands.add(0x61)
                     commands.add(0x00)
 
-                    commands.add(0x0A)
-                    commands.add(0x0A)
+                    // Remove these lines - they add extra space!
+                    // commands.add(0x0A)  // <- REMOVE THIS
+                    // commands.add(0x0A)  // <- REMOVE THIS
 
                     writeDataSmooth(commands.toByteArray())
 
@@ -2253,36 +2263,111 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         return MonochromeData(paperWidth, data.height, newData)
     }
 
+
     private fun convertToMonochromeFast(bitmap: Bitmap): MonochromeData? {
         try {
             val width = bitmap.width
             val height = bitmap.height
+            val widthBytes = (width + 7) / 8
+            val data = ByteArray(widthBytes * height)
+
+            // Get all pixels
             val pixels = IntArray(width * height)
             bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
 
-            val widthBytes = (width + 7) / 8
-            val totalBytes = widthBytes * height
-            val data = ByteArray(totalBytes)
+            // Convert to grayscale with proper luminance calculation
+            val grayscale = FloatArray(width * height)
+            for (i in pixels.indices) {
+                val pixel = pixels[i]
+                val r = Color.red(pixel)
+                val g = Color.green(pixel)
+                val b = Color.blue(pixel)
+                // Standard luminance formula
+                grayscale[i] = (0.299f * r + 0.587f * g + 0.114f * b)
+            }
 
-            val threshold = -0x5f5f60 // Approximately 160 in grayscale
-
+            // Floyd-Steinberg dithering for better quality
             for (y in 0 until height) {
-                val bitmapRowOffset = y * widthBytes
                 for (x in 0 until width) {
-                    if (pixels[y * width + x] < threshold) {
-                        val byteIndex = bitmapRowOffset + (x / 8)
+                    val index = y * width + x
+                    val oldPixel = grayscale[index]
+
+                    // Threshold at 128 (middle gray)
+                    val newPixel = if (oldPixel > 128f) 255f else 0f
+                    grayscale[index] = newPixel
+
+                    // Calculate and distribute error
+                    val error = oldPixel - newPixel
+
+                    // Distribute error to neighboring pixels
+                    if (x + 1 < width) {
+                        grayscale[index + 1] += error * 7f / 16f
+                    }
+                    if (y + 1 < height) {
+                        if (x > 0) {
+                            grayscale[index + width - 1] += error * 3f / 16f
+                        }
+                        grayscale[index + width] += error * 5f / 16f
+                        if (x + 1 < width) {
+                            grayscale[index + width + 1] += error * 1f / 16f
+                        }
+                    }
+                }
+            }
+
+            // Convert to byte array (pack 8 pixels per byte)
+            for (y in 0 until height) {
+                for (x in 0 until width) {
+                    val index = y * width + x
+
+                    // If pixel is black (0), set the bit to 1
+                    if (grayscale[index] < 128f) {
+                        val byteIndex = y * widthBytes + (x / 8)
                         val bitIndex = 7 - (x % 8)
                         data[byteIndex] = (data[byteIndex].toInt() or (1 shl bitIndex)).toByte()
                     }
                 }
             }
 
+            println("✅ Converted to monochrome: ${width}x${height}, ${data.size} bytes")
             return MonochromeData(width, height, data)
+
         } catch (e: Exception) {
             println("❌ Monochrome conversion error: ${e.message}")
+            e.printStackTrace()
             return null
         }
     }
+//    private fun convertToMonochromeFast(bitmap: Bitmap): MonochromeData? {
+//        try {
+//            val width = bitmap.width
+//            val height = bitmap.height
+//            val pixels = IntArray(width * height)
+//            bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+//
+//            val widthBytes = (width + 7) / 8
+//            val totalBytes = widthBytes * height
+//            val data = ByteArray(totalBytes)
+//
+//            val threshold = -0x5f5f60 // Approximately 160 in grayscale
+//
+//            for (y in 0 until height) {
+//                val bitmapRowOffset = y * widthBytes
+//                for (x in 0 until width) {
+//                    if (pixels[y * width + x] < threshold) {
+//                        val byteIndex = bitmapRowOffset + (x / 8)
+//                        val bitIndex = 7 - (x % 8)
+//                        data[byteIndex] = (data[byteIndex].toInt() or (1 shl bitIndex)).toByte()
+//                    }
+//                }
+//            }
+//
+//            return MonochromeData(width, height, data)
+//        } catch (e: Exception) {
+//            println("❌ Monochrome conversion error: ${e.message}")
+//            return null
+//        }
+//    }
 
     private fun containsComplexUnicode(text: String): Boolean {
         for (char in text) {

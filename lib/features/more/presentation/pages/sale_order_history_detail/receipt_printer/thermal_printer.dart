@@ -31,10 +31,28 @@ Alignment getAlignmentImage(int align) {
   }
 }
 
+// class PosColumn {
+//   final String text;
+//   final int width; // Width out of 12 (12 = full width)
+//   final AlignStyle align; // 'left', 'center', 'right'
+//   final bool bold;
+
+//   PosColumn({
+//     required this.text,
+//     required this.width,
+//     this.align = AlignStyle.left,
+//     this.bold = false,
+//   });
+
+//   Map<String, dynamic> toMap() {
+//     return {'text': text, 'width': width, 'align': align.value, 'bold': bold};
+//   }
+// }
+
 class PosColumn {
   final String text;
-  final int width; // Width out of 12 (12 = full width)
-  final AlignStyle align; // 'left', 'center', 'right'
+  final int width;
+  final AlignStyle align;
   final bool bold;
 
   PosColumn({
@@ -46,6 +64,21 @@ class PosColumn {
 
   Map<String, dynamic> toMap() {
     return {'text': text, 'width': width, 'align': align.value, 'bold': bold};
+  }
+
+  // ✅ Add this method
+  PosColumn copyWith({
+    String? text,
+    int? width,
+    AlignStyle? align,
+    bool? bold,
+  }) {
+    return PosColumn(
+      text: text ?? this.text,
+      width: width ?? this.width,
+      align: align ?? this.align,
+      bold: bold ?? this.bold,
+    );
   }
 }
 

@@ -165,8 +165,9 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     lengText();
   }
 
-  Future<Uint8List?> logoCompany() async {
+  Future<Uint8List?> logoCompany({int? targetWidth, int? targetHeight}) async {
     final companyInfo = widget.companyInfo;
+
     // Null safety checks
     if (companyInfo == null ||
         companyInfo.logo128 == null ||
@@ -196,10 +197,14 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
             );
 
         if (response.statusCode == 200) {
-          final codec = await ui.instantiateImageCodec(response.bodyBytes);
+          final codec = await ui.instantiateImageCodec(
+            response.bodyBytes,
+            targetWidth: targetWidth,
+            targetHeight: targetHeight,
+          );
           final frame = await codec.getNextFrame();
           logoImage = frame.image;
-          debugPrint(' Logo loaded from URL');
+          debugPrint('✅ Logo loaded from URL');
         } else {
           throw Exception('Failed to download logo: ${response.statusCode}');
         }
@@ -215,7 +220,11 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         }
 
         final bytes = base64Decode(base64String);
-        final codec = await ui.instantiateImageCodec(bytes);
+        final codec = await ui.instantiateImageCodec(
+          bytes,
+          targetWidth: targetWidth,
+          targetHeight: targetHeight,
+        );
         final frame = await codec.getNextFrame();
         logoImage = frame.image;
         debugPrint('✅ Logo loaded from base64');
@@ -230,6 +239,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         if (byteData != null) {
           final imageBytes = byteData.buffer.asUint8List();
           debugPrint('✅ Logo converted to bytes: ${imageBytes.length} bytes');
+          debugPrint('📐 Logo size: ${logoImage.width}x${logoImage.height}');
           return imageBytes;
         }
       }
@@ -249,9 +259,12 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
   Future<void> _buildSampleReceipt() async {
     try {
       _builder.clear();
-      Uint8List? imageBytes = await logoCompany();
+      Uint8List? imageBytes = await logoCompany(
+        targetWidth: 250,
+        targetHeight: 250,
+      );
       if (imageBytes != null) {
-        _builder.printImage(imageBytes, width: 120);
+        _builder.printImage(imageBytes, width: 250);
       }
 
       _builder.addText(
@@ -270,30 +283,32 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       );
       _builder.addText(
         maxCharPerLine: lengText(),
-        "Phone:${widget.companyInfo?.phoneNo ?? ""}",
+        "Phone: ${widget.companyInfo?.phoneNo ?? ""}",
         fontSize: printerWidth == 384 ? 12 : 18, // Smaller for 58mm
         align: AlignStyle.center,
       );
+
+      _builder.feedPaper(1);
 
       PosSalesHeader? header = widget.detail?.header;
 
       _builder.addText(
         maxCharPerLine: lengText(),
-        "Invoice #: ${header?.no ?? 'N/A'}",
+        "Invoice   : ${header?.no ?? 'N/A'}",
         fontSize: printerWidth == 384 ? 12 : 18,
         align: AlignStyle.left,
       );
 
       _builder.addText(
         maxCharPerLine: lengText(),
-        "Date: ${header?.orderDate ?? DateTime.now().toString().split(' ')[0]}",
+        "Date      : ${header?.orderDate ?? DateTime.now().toString().split(' ')[0]}",
         fontSize: printerWidth == 384 ? 12 : 18,
         align: AlignStyle.left,
       );
 
       _builder.addText(
         maxCharPerLine: lengText(),
-        "Customer: ${header?.customerName ?? ""}",
+        "Customer  : ${header?.customerName ?? ""}",
         fontSize: printerWidth == 384 ? 12 : 18,
         align: AlignStyle.left,
       );
@@ -311,22 +326,41 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       // TABLE HEADER - Adjusted column widths
       // ====================================================================
 
-      _builder.addRow([
-        PosColumn(text: 'ល.រ', width: columnWidths[0], bold: false),
-        PosColumn(text: 'ឈ្មោះទំនិញ', width: columnWidths[1], bold: false),
-        PosColumn(
-          text: 'បរិមាណ',
-          width: columnWidths[2],
-          bold: false,
-          align: AlignStyle.center,
-        ),
-        PosColumn(text: 'តម្លៃ', width: columnWidths[3], bold: false),
-        PosColumn(text: 'បញ្ចុះតម្លៃ', width: columnWidths[4], bold: false),
-        PosColumn(text: 'សរុប', width: columnWidths[5], bold: false),
-      ], fontSize: printerWidth == 384 ? 8 : 16); // Smaller font for 58mm
+      _builder.addRow(
+        [
+          PosColumn(text: 'ល.រ', width: columnWidths[0], bold: false),
+          PosColumn(text: 'ឈ្មោះទំនិញ', width: columnWidths[1], bold: false),
+          PosColumn(
+            text: 'ចំនួន',
+            width: columnWidths[2],
+            bold: false,
+            align: AlignStyle.center,
+          ),
+          PosColumn(
+            text: 'តម្លៃ',
+            width: columnWidths[3],
+            bold: false,
+            align: AlignStyle.center,
+          ),
+          PosColumn(
+            text: 'ចុះតម្លៃ',
+            width: columnWidths[4],
+            bold: false,
+            align: AlignStyle.center,
+          ),
+          PosColumn(
+            text: 'សរុប',
+            width: columnWidths[5],
+            bold: false,
+            align: AlignStyle.center,
+          ),
+        ],
+        fontSize: 20,
+        autoAdjust: true,
+      ); // Smaller font for 58mm
 
       _builder.addRow([
-        PosColumn(text: '#', width: columnWidths[0], bold: true),
+        PosColumn(text: 'No.', width: columnWidths[0], bold: true),
         PosColumn(text: 'Item', width: columnWidths[1], bold: true),
         PosColumn(
           text: 'Qty',
@@ -334,10 +368,25 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
           bold: true,
           align: AlignStyle.center,
         ),
-        PosColumn(text: 'Price', width: columnWidths[3], bold: true),
-        PosColumn(text: 'Disc', width: columnWidths[4], bold: true),
-        PosColumn(text: 'Total', width: columnWidths[5], bold: true),
-      ], fontSize: printerWidth == 384 ? 8 : 18); // Smaller font for 58mm
+        PosColumn(
+          text: 'Price',
+          width: columnWidths[3],
+          bold: true,
+          align: AlignStyle.center,
+        ),
+        PosColumn(
+          text: 'Disc',
+          width: columnWidths[4],
+          bold: true,
+          align: AlignStyle.center,
+        ),
+        PosColumn(
+          text: 'Total',
+          width: columnWidths[5],
+          bold: true,
+          align: AlignStyle.center,
+        ),
+      ], fontSize: printerWidth == 384 ? 8 : 16); // Smaller font for 58mm
 
       // Another separator
       _builder.addText(
@@ -373,39 +422,41 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
             text: Helpers.formatNumber(
               item.unitPrice,
               option: FormatType.amount,
+              display: false,
             ),
+            align: AlignStyle.center,
             width: columnWidths[3],
             bold: false,
           ),
+
           PosColumn(
-            text: Helpers.formatNumber(
-              item.discountAmount == 0.0 || item.discountAmount == null
-                  ? "-"
-                  : item.discountAmount,
-              option: FormatType.amount,
-              display: true,
+            text: discountValue(
+              disAmount: item.discountAmount,
+              disPer: item.discountPercentage,
             ),
+
+            align: AlignStyle.center,
             width: columnWidths[4],
             bold: false,
           ),
           PosColumn(
-            text: Helpers.formatNumber(item.amount, option: FormatType.amount),
+            text: Helpers.formatNumber(
+              item.amount,
+              option: FormatType.amount,
+              display: false,
+            ),
+            align: AlignStyle.center,
             width: columnWidths[5],
             bold: false,
           ),
         ], fontSize: printerWidth == 384 ? 14 : 16); // Smaller for 58mm
+        _builder.addText(
+          "-" * (lengText() - 1),
+          maxCharPerLine: 48,
+          align: AlignStyle.center,
+        );
       }
 
-      // Total separator
-      _builder.addText(
-        "-" * (lengText() - 1),
-        maxCharPerLine: 48,
-        align: AlignStyle.center,
-      );
-
-      // ====================================================================
-      // TOTAL SECTION
-      // ====================================================================
       _builder.addText(
         "TOTAL AMOUNT: ${Helpers.formatNumber(header?.amount, option: FormatType.amount)}",
         fontSize: printerWidth == 384 ? 16 : 20, // Adjusted for 58mm
@@ -415,9 +466,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
 
       _builder.feedPaper(1);
 
-      // ====================================================================
-      // FOOTER
-      // ====================================================================
       _builder.addText(
         'Thank you for your business!',
         fontSize: printerWidth == 384 ? 18 : 20, // Adjusted for 58mm
@@ -453,9 +501,14 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     }
   }
 
-  // ====================================================================
-  // ✅ UPDATED: Print function with width setting
-  // ====================================================================
+  discountValue({double? disAmount, double? disPer}) {
+    return (disAmount != null && disAmount != 0.0)
+        ? Helpers.formatNumber(disAmount, option: FormatType.amount)
+        : (disPer != null && disPer != 0)
+        ? Helpers.formatNumber(disPer, option: FormatType.percentage)
+        : " ";
+  }
+
   Future<void> _printReceipt() async {
     if (!isConnected()) {
       Helpers.showMessage(
