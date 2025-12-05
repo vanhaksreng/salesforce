@@ -1163,8 +1163,15 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
             }
             
             var commands = Data()
-            commands.append(contentsOf: [self.ESC, 0x40])       // Reset
-            commands.append(contentsOf: [self.ESC, 0x61, UInt8(alignment.rawValue)]) // Align
+            
+            // Initialize
+            commands.append(contentsOf: [self.ESC, 0x40])
+            
+            // Alignment
+            commands.append(contentsOf: [self.ESC, 0x61, UInt8(alignment.rawValue)])
+            
+            // Set line spacing to minimum (optional - reduces space between lines)
+            commands.append(contentsOf: [self.ESC, 0x33, 0x00]) // 0 dots line spacing
             
             // Image command
             commands.append(contentsOf: [self.GS, 0x76, 0x30, 0x00])
@@ -1177,9 +1184,13 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
             
             commands.append(monochromeData.data)
             
+            // Reset line spacing to default
+            commands.append(contentsOf: [self.ESC, 0x33, 0x1E]) // Default spacing (30 dots)
+            
             // Reset alignment
             commands.append(contentsOf: [self.ESC, 0x61, 0x00])
-            commands.append(contentsOf: [0x0A, 0x0A])
+            
+            // REMOVED: commands.append(contentsOf: [0x0A, 0x0A]) ← This was adding extra space!
             
             self.writeDataSmooth(data: commands)
             
@@ -1188,6 +1199,54 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
             }
         }
     }
+//    private func printImage(imageBytes: Data, width: Int, align: Int, result: @escaping FlutterResult) {
+//        printQueue.async {
+//            self.writeLock.lock()
+//            defer { self.writeLock.unlock() }
+//            
+//            guard let image = UIImage(data: imageBytes) else {
+//                DispatchQueue.main.async {
+//                    result(FlutterError(code: "INVALID_IMAGE", message: "Cannot decode image", details: nil))
+//                }
+//                return
+//            }
+//            
+//            let alignment = ImageAlignment.from(align)
+//            let scaledImage = self.resizeImage(image: image, maxWidth: width)
+//            
+//            guard let monochromeData = self.convertToMonochrome(image: scaledImage) else {
+//                DispatchQueue.main.async {
+//                    result(FlutterError(code: "CONVERSION_ERROR", message: "Cannot convert to monochrome", details: nil))
+//                }
+//                return
+//            }
+//            
+//            var commands = Data()
+//            commands.append(contentsOf: [self.ESC, 0x40])       // Reset
+//            commands.append(contentsOf: [self.ESC, 0x61, UInt8(alignment.rawValue)]) // Align
+//            
+//            // Image command
+//            commands.append(contentsOf: [self.GS, 0x76, 0x30, 0x00])
+//            
+//            let widthBytes = (monochromeData.width + 7) / 8
+//            commands.append(UInt8(widthBytes & 0xFF))
+//            commands.append(UInt8((widthBytes >> 8) & 0xFF))
+//            commands.append(UInt8(monochromeData.height & 0xFF))
+//            commands.append(UInt8((monochromeData.height >> 8) & 0xFF))
+//            
+//            commands.append(monochromeData.data)
+//            
+//            // Reset alignment
+//            commands.append(contentsOf: [self.ESC, 0x61, 0x00])
+//            commands.append(contentsOf: [0x0A, 0x0A])
+//            
+//            self.writeDataSmooth(data: commands)
+//            
+//            DispatchQueue.main.async {
+//                result(true)
+//            }
+//        }
+//    }
     
     private func printImageWithPadding(imageBytes: Data, width: Int, align: Int, paperWidth: Int, result: @escaping FlutterResult) {
         printQueue.async {
@@ -1275,24 +1334,98 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
         
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
         
+        // Convert to Float array for dithering calculations
+        var grayscale = pixels.map { Float($0) }
+        
+        // Floyd-Steinberg dithering for better quality
+        for y in 0..<height {
+            for x in 0..<width {
+                let index = y * width + x
+                let oldPixel = grayscale[index]
+                
+                // Threshold at 128 (middle gray)
+                let newPixel: Float = oldPixel > 128.0 ? 255.0 : 0.0
+                grayscale[index] = newPixel
+                
+                // Calculate and distribute error
+                let error = oldPixel - newPixel
+                
+                // Distribute error to neighboring pixels
+                if x + 1 < width {
+                    grayscale[index + 1] += error * 7.0 / 16.0
+                }
+                if y + 1 < height {
+                    if x > 0 {
+                        grayscale[index + width - 1] += error * 3.0 / 16.0
+                    }
+                    grayscale[index + width] += error * 5.0 / 16.0
+                    if x + 1 < width {
+                        grayscale[index + width + 1] += error * 1.0 / 16.0
+                    }
+                }
+            }
+        }
+        
+        // Convert to byte array (pack 8 pixels per byte)
         let widthBytes = (width + 7) / 8
         var data = Data(count: widthBytes * height)
-        let threshold: UInt8 = 128
         
         for y in 0..<height {
-            let rowOffset = y * widthBytes
             for x in 0..<width {
-                let pixelValue = pixels[y * width + x]
-                if pixelValue < threshold {
-                    let byteIndex = rowOffset + (x / 8)
+                let index = y * width + x
+                
+                // If pixel is black (0), set the bit to 1
+                if grayscale[index] < 128.0 {
+                    let byteIndex = y * widthBytes + (x / 8)
                     let bitIndex = 7 - (x % 8)
                     data[byteIndex] |= (1 << bitIndex)
                 }
             }
         }
         
+        print("✅ Converted to monochrome: \(width)x\(height), \(data.count) bytes")
         return MonochromeData(width: width, height: height, data: data)
     }
+    
+//    private func convertToMonochrome(image: UIImage) -> MonochromeData? {
+//        guard let cgImage = image.cgImage else { return nil }
+//        
+//        let width = cgImage.width
+//        let height = cgImage.height
+//        
+//        let colorSpace = CGColorSpaceCreateDeviceGray()
+//        var pixels = [UInt8](repeating: 0, count: width * height)
+//        
+//        guard let context = CGContext(
+//            data: &pixels,
+//            width: width,
+//            height: height,
+//            bitsPerComponent: 8,
+//            bytesPerRow: width,
+//            space: colorSpace,
+//            bitmapInfo: CGImageAlphaInfo.none.rawValue
+//        ) else { return nil }
+//        
+//        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+//        
+//        let widthBytes = (width + 7) / 8
+//        var data = Data(count: widthBytes * height)
+//        let threshold: UInt8 = 128
+//        
+//        for y in 0..<height {
+//            let rowOffset = y * widthBytes
+//            for x in 0..<width {
+//                let pixelValue = pixels[y * width + x]
+//                if pixelValue < threshold {
+//                    let byteIndex = rowOffset + (x / 8)
+//                    let bitIndex = 7 - (x % 8)
+//                    data[byteIndex] |= (1 << bitIndex)
+//                }
+//            }
+//        }
+//        
+//        return MonochromeData(width: width, height: height, data: data)
+//    }
     
     private func addPaddingToMonochrome(data: MonochromeData, alignment: ImageAlignment, paperWidth: Int) -> MonochromeData {
         guard data.width < paperWidth else { return data }
@@ -1397,7 +1530,7 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
         
         let totalChars: Int
         switch fontSize {
-        case ...24: totalChars = 42
+        case ...24: totalChars = 48
         case 25...30: totalChars = 28
         default: totalChars = 20
         }

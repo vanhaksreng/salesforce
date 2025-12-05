@@ -71,7 +71,7 @@ class ReceiptPreview extends StatelessWidget {
     }).toList();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: columns.map((column) {
@@ -88,7 +88,7 @@ class ReceiptPreview extends StatelessWidget {
             child: Text(
               text,
               style: TextStyle(
-                fontSize: fontSize * 0.6,
+                fontSize: fontSize * 0.7,
                 fontFamily: 'NotoSansKhmer',
                 fontWeight: bold ? FontWeight.bold : FontWeight.normal,
               ),
@@ -115,40 +115,84 @@ class ReceiptPreview extends StatelessWidget {
   }
 
   Widget _buildTextCommand(Map<String, dynamic> params) {
-    late int maxCharsExtra;
-    late String output;
-
     final text = params['text'] as String? ?? '';
     final fontSize = (params['fontSize'] as int? ?? 24).toDouble();
     final bold = params['bold'] as bool? ?? false;
     final align = params['align'] as String? ?? 'left';
     final maxChars = params['maxCharsPerLine'] as int? ?? 48;
 
-    if (text.trim().replaceAll('-', '').isEmpty) {
-      maxCharsExtra = Helpers.toInt(scaleFontSize(70));
-      output = List.filled(maxCharsExtra, '-').join();
-    } else {
-      maxCharsExtra = maxChars;
-      output = text;
+    // Check if it's a separator line (only special chars)
+    final isSeparator = _isSeparatorLine(text);
+
+    if (isSeparator) {
+      // For separator lines, use responsive dash rendering
+      return _buildSeparatorLine(text, fontSize);
     }
-    final wrappedLines = _wrapText(output, maxCharsExtra);
+
+    // Regular text - wrap based on maxChars
+    final wrappedLines = _wrapText(text, maxChars);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       child: Column(
         crossAxisAlignment: _getAlignment(align),
         children: wrappedLines.map((line) {
           return Text(
-            "$line   ",
+            line,
             style: TextStyle(
+              height: 1.5,
               fontSize: fontSize * 0.6, // Scale down for preview
-              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+              fontWeight: bold ? FontWeight.w700 : FontWeight.normal,
               fontFamily: 'NotoSansKhmer',
             ),
             textAlign: _getTextAlign(align),
           );
         }).toList(),
       ),
+    );
+  }
+
+  /// Check if text is a separator line (only contains -, =, ─, ═, or spaces)
+  bool _isSeparatorLine(String text) {
+    final cleaned = text
+        .trim()
+        .replaceAll('-', '')
+        .replaceAll('═', '')
+        .replaceAll('─', '')
+        .replaceAll('=', '');
+    return cleaned.isEmpty && text.trim().isNotEmpty;
+  }
+
+  /// Build a visual separator line using dashes that scales with container width
+  Widget _buildSeparatorLine(String text, double fontSize) {
+    // Determine separator character
+    final char = text.trim().isNotEmpty ? text.trim()[0] : '-';
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final displayFontSize = fontSize * 0.6;
+        final charWidth = displayFontSize * 0.32;
+        final availableWidth = constraints.maxWidth;
+        final charCount = (availableWidth / charWidth).floor();
+
+        // Build the separator string with calculated count
+        final separator = char * charCount;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+          child: Text(
+            separator,
+            style: TextStyle(
+              fontSize: displayFontSize,
+              fontFamily: 'NotoSansKhmer',
+              height: 1.0,
+              letterSpacing: 0,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.visible,
+          ),
+        );
+      },
     );
   }
 

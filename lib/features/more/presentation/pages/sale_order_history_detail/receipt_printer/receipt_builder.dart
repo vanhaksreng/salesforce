@@ -58,20 +58,91 @@ class ReceiptBuilder {
     _commands.clear();
   }
 
-  void addRow(List<PosColumn> columns, {int fontSize = 24}) {
-    // Validate total width
+  void addRow(
+    List<PosColumn> columns, {
+    int fontSize = 22,
+    bool autoAdjust = false, // Auto-adjust widths to equal 12
+  }) {
+    // Validate columns is not empty
+    if (columns.isEmpty) {
+      throw Exception('Columns list cannot be empty');
+    }
+
+    List<PosColumn> finalColumns = columns;
+
+    // Calculate total width
     final totalWidth = columns.fold<int>(0, (sum, col) => sum + col.width);
-    if (totalWidth > 12) {
-      throw Exception('Total column width cannot exceed 12, got $totalWidth');
+
+    if (autoAdjust && totalWidth != 12) {
+      // Auto-adjust column widths proportionally
+      finalColumns = _adjustColumnWidths(columns);
+      print('📏 Auto-adjusted column widths from $totalWidth to 12');
+    } else if (totalWidth != 12) {
+      throw Exception(
+        'Total column width must equal 12, got $totalWidth. '
+        'Current widths: ${columns.map((c) => c.width).join(", ")}. '
+        'Set autoAdjust: true to fix automatically.',
+      );
+    }
+
+    // Validate individual column widths
+    for (var i = 0; i < finalColumns.length; i++) {
+      final col = finalColumns[i];
+      if (col.width <= 0 || col.width > 12) {
+        throw Exception(
+          'Column $i width must be between 1 and 12, got ${col.width}',
+        );
+      }
     }
 
     _commands.add(
       ReceiptCommand(ReceiptCommandType.row, {
-        'columns': columns.map((col) => col.toMap()).toList(),
+        'columns': finalColumns.map((col) => col.toMap()).toList(),
         'fontSize': fontSize,
       }),
     );
   }
+
+  // Helper method to adjust column widths proportionally
+  List<PosColumn> _adjustColumnWidths(List<PosColumn> columns) {
+    final totalWidth = columns.fold<int>(0, (sum, col) => sum + col.width);
+
+    if (totalWidth == 12) return columns;
+
+    final adjustedColumns = <PosColumn>[];
+    var remainingWidth = 12;
+
+    for (var i = 0; i < columns.length; i++) {
+      final col = columns[i];
+
+      if (i == columns.length - 1) {
+        // Last column gets remaining width
+        adjustedColumns.add(col.copyWith(width: remainingWidth));
+      } else {
+        // Proportional adjustment
+        final newWidth = ((col.width / totalWidth) * 12).round().clamp(1, 12);
+        adjustedColumns.add(col.copyWith(width: newWidth));
+        remainingWidth -= newWidth;
+      }
+    }
+
+    return adjustedColumns;
+  }
+
+  // void addRow(List<PosColumn> columns, {int fontSize = 22}) {
+  //   // Validate total width
+  //   final totalWidth = columns.fold<int>(0, (sum, col) => sum + col.width);
+  //   if (totalWidth > 12) {
+  //     throw Exception('Total column width cannot exceed 12, got $totalWidth');
+  //   }
+
+  //   _commands.add(
+  //     ReceiptCommand(ReceiptCommandType.row, {
+  //       'columns': columns.map((col) => col.toMap()).toList(),
+  //       'fontSize': fontSize,
+  //     }),
+  //   );
+  // }
 
   void addSeparator({int width = 48}) {
     _commands.add(
