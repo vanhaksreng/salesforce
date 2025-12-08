@@ -30,6 +30,7 @@ class MainActivity : FlutterActivity(){
     private val locationPermissionRequestCode = 101
     private val PERMISSION_REQUEST_CODE = 1001
     private val BLUETOOTH_ENABLE_REQUEST = 1002
+    private val bluetoothPermissionChannel = "bluetooth_permissions"
 
     private var permissionChannel: MethodChannel? = null
     private var pendingPermissionResult: MethodChannel.Result? = null
@@ -50,8 +51,6 @@ class MainActivity : FlutterActivity(){
             requestPermissions("always")
         }
 
-        // Automatically request Bluetooth permissions on startup
-        requestBluetoothPermissionsIfNeeded()
     }
     
     override fun onResume() {
@@ -75,6 +74,7 @@ class MainActivity : FlutterActivity(){
         setupHtmlToPdfChannel(flutterEngine)
         setupLocationService(flutterEngine)
         setupIminPrinterChannel(flutterEngine)
+        setupBluetoothPermissionChannel(flutterEngine) 
     }
 
     override fun onDestroy() {
@@ -85,6 +85,36 @@ class MainActivity : FlutterActivity(){
     override fun detachFromFlutterEngine() {
         LocationService.onFlutterEngineDestroyed()
         super.detachFromFlutterEngine()
+    }
+
+    private fun setupBluetoothPermissionChannel(flutterEngine: FlutterEngine) {
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, bluetoothPermissionChannel)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "requestBluetoothPermissions" -> {
+                        requestBluetoothPermissionsIfNeeded()
+                        result.success(true)
+                    }
+                    "checkBluetoothPermissions" -> {
+                        val hasPermissions = checkBluetoothPermissions()
+                        result.success(hasPermissions)
+                    }
+                    "enableBluetooth" -> {
+                        ensureBluetoothEnabled()
+                        result.success(true)
+                    }
+                    "isBluetoothEnabled" -> {
+                        val isEnabled = isBluetoothEnabled()
+                        result.success(isEnabled)
+                    }
+                  
+                    "getBluetoothStatus" -> {
+                        val status = getBluetoothStatus()
+                        result.success(status)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
     }
 
     private fun setupLocationService(flutterEngine: FlutterEngine) {
@@ -248,10 +278,10 @@ class MainActivity : FlutterActivity(){
                     grantResults.all { it == PackageManager.PERMISSION_GRANTED }
 
             if (allGranted) {
-                println("✅ All Bluetooth permissions granted")
+                println("All Bluetooth permissions granted")
                 ensureBluetoothEnabled()
             } else {
-                println("❌ Some Bluetooth permissions denied")
+                println("Some Bluetooth permissions denied")
             }
         }
     }
@@ -634,6 +664,29 @@ class MainActivity : FlutterActivity(){
         }
     }
 
+     private fun isBluetoothEnabled(): Boolean {
+        val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager
+        val bluetoothAdapter = bluetoothManager?.adapter
+        
+        return bluetoothAdapter?.isEnabled ?: false
+    }
+
+    private fun getBluetoothStatus(): Map<String, Any> {
+        val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager
+        val bluetoothAdapter = bluetoothManager?.adapter
+        
+        val hasPermissions = checkBluetoothPermissions()
+        val isEnabled = bluetoothAdapter?.isEnabled ?: false
+        val isSupported = bluetoothAdapter != null
+        
+        return mapOf(
+            "hasPermissions" to hasPermissions,
+            "isEnabled" to isEnabled,
+            "isSupported" to isSupported,
+            "canUse" to (hasPermissions && isEnabled)
+        )
+    }
+
     private fun checkBluetoothPermissions(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             ContextCompat.checkSelfPermission(
@@ -680,7 +733,7 @@ class MainActivity : FlutterActivity(){
                 startActivityForResult(enableBtIntent, BLUETOOTH_ENABLE_REQUEST)
             }
         } else {
-            println("✅ Bluetooth is already enabled")
+            println("Bluetooth is already enabled")
         }
     }
 
@@ -689,12 +742,14 @@ class MainActivity : FlutterActivity(){
 
         if (requestCode == BLUETOOTH_ENABLE_REQUEST) {
             if (resultCode == RESULT_OK) {
-                println("✅ Bluetooth enabled by user")
+                println(" Bluetooth enabled by user")
             } else {
-                println("❌ User declined to enable Bluetooth")
+                println("User declined to enable Bluetooth")
             }
         }
     }
+
+    
 
 //=========================================new printer sdk=========================================
     // private fun setupIminPrinterChannel(flutterEngine: FlutterEngine) {

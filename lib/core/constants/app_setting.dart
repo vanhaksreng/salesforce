@@ -20,3 +20,4 @@ const kGpsRealTimeTrackingSaturDay = "gps_realtime_tracking_saturday";
 const kGpsRealTimeTrackingSunday = "gps_realtime_tracking_sunday";
 const kGpsRealTimeTrackingInterval = "gps_realtime_tracking_interval";
 const kHidePaymentInv = "hide_payment_inv";
+const kAllowDuplicateSchedule = "allow_duplicate_schedule";
