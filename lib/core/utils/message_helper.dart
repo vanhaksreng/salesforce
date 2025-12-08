@@ -120,7 +120,7 @@ class MessageHelper {
                 child: Container(
                   padding: EdgeInsets.all(scaleFontSize(6)),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withOpacity(0.2), //TODO : check deprecate
                     borderRadius: BorderRadius.circular(scaleFontSize(12)),
                   ),
                   child: Icon(

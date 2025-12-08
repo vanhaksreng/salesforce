@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:path/path.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/logger.dart';

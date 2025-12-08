@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:salesforce/crash_report.dart';
 import 'package:salesforce/features/worker_manager/auto_upload_manager.dart';
 import 'package:salesforce/data/services/onesignal_notification.dart';
 import 'package:salesforce/app/app_router.dart';
@@ -29,23 +30,29 @@ void callbackDispatcher() {
 }
 
 void main() async {
-  try {
-    WidgetsFlutterBinding.ensureInitialized();
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
 
-    await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
-    HttpOverrides.global = MyHttpOverrides();
-    await AutoUploadManager.initialize();
-    await _initializeApp();
-    await di.getItInit();
+      await Workmanager().initialize(callbackDispatcher);
+      HttpOverrides.global = MyHttpOverrides();
+      await AutoUploadManager.initialize();
+      await _initializeApp();
+      await di.getItInit();
 
-    // BluetoothPrinterHandler.register();
+      runApp(const TradeB2b());
 
-    runApp(const TradeB2b());
+      OneSignalNotificationService.initialize();
+    },
+    (error, stackTrace) {
+      debugPrint('Initialization error: $error');
 
-    OneSignalNotificationService.initialize();
-  } catch (e) {
-    debugPrint('Initialization error: $e');
-  }
+      CrashReport.sendCrashReport(
+        error.toString(),
+        stackTrace: stackTrace.toString(),
+      );
+    },
+  );
 }
 
 Future<void> _initializeApp() async {

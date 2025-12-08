@@ -189,7 +189,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
     int page = 1,
     Map<String, dynamic>? params,
   }) async {
-    print(params);
+    
     try {
       final customer = await _local.getCustomers(page: page, params: params);
       return Right(customer);

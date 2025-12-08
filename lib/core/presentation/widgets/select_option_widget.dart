@@ -22,12 +22,12 @@ class SelectOptionWidget extends StatefulWidget {
   final String? groupLabel;
 
   const SelectOptionWidget({
-    Key? key,
+    super.key,
     required this.options,
     this.selectedValue,
     this.onChanged,
     this.groupLabel,
-  }) : super(key: key);
+  });
 
   @override
   State<SelectOptionWidget> createState() => _SelectOptionWidgetState();
@@ -55,7 +55,7 @@ class _SelectOptionWidgetState extends State<SelectOptionWidget> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
-        ...widget.options.map((option) => _buildSelectOption(option)).toList(),
+        ...widget.options.map((option) => _buildSelectOption(option)),
       ],
     );
   }
@@ -74,7 +74,7 @@ class _SelectOptionWidgetState extends State<SelectOptionWidget> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.05), //TODO : check deprecate
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -82,7 +82,7 @@ class _SelectOptionWidgetState extends State<SelectOptionWidget> {
       ),
       child: RadioListTile<String>(
         value: option.id,
-        groupValue: _selectedValue,
+        groupValue: _selectedValue, //TODO : check deprecate
         onChanged: (String? value) {
           setState(() {
             _selectedValue = value;
