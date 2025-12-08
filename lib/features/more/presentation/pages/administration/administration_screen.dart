@@ -18,6 +18,7 @@ import 'package:salesforce/features/more/presentation/pages/administration/admin
 import 'package:salesforce/features/more/presentation/pages/administration/administration_state.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/form_connect_printer.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/list_device_connection.dart';
+import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_permission_handler.dart';
 import 'package:salesforce/features/more/presentation/pages/imin_device/printer_test_page.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
@@ -38,7 +39,9 @@ class AdministrationScreenState extends State<AdministrationScreen>
   @override
   void initState() {
     super.initState();
-    _cubit.startScanning();
+    _cubit.checkBluetoothStatus();
+    _cubit.checkListenIOSBluetooth();
+    _cubit.startScanning(context);
     _cubit.initialize();
     _initializeScreen();
   }

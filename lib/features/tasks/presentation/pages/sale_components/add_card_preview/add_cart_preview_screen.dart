@@ -357,7 +357,7 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen>
                           key: ValueKey(line.id),
                           image: ImageNetWorkWidget(
                             key: ValueKey(line.id),
-                            imageUrl: item?.avatar128 ?? "",
+                            imageUrl: item?.picture ?? "",
                             width: scaleFontSize(60),
                             height: scaleFontSize(60),
                           ),

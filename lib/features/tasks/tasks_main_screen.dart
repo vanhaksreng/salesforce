@@ -33,11 +33,8 @@ import 'package:salesforce/features/tasks/presentation/pages/team_schedule_histo
 import 'package:salesforce/features/tasks/presentation/pages/team_schedult/team_schedult_screen.dart';
 import 'package:salesforce/features/tasks/tasks_main_cubit.dart';
 import 'package:salesforce/features/tasks/tasks_main_state.dart';
-import 'package:salesforce/grok_print.dart';
-import 'package:salesforce/infrastructure/printer/bluetooth/bluetooth_printer_handler.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/localization/trans.dart';
-import 'package:salesforce/testprint.dart';
 import 'package:salesforce/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 

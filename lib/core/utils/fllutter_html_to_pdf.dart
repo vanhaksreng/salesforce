@@ -10,13 +10,23 @@ class FlutterHtmlToPdf {
 
   /// Creates PDF Document from HTML content
   /// Can throw a [PlatformException] or (unlikely) a [MissingPluginException] converting html to pdf
-  static Future<File> convertFromHtmlContent(String htmlContent, String targetDirectory, String targetName) async {
+  static Future<File> convertFromHtmlContent(
+    String htmlContent,
+    String targetDirectory,
+    String targetName,
+  ) async {
     final temporaryCreatedHtmlFile = await Helpers.createFileWithStringContent(
       htmlContent,
       "$targetDirectory/$targetName.html",
     );
-    final generatedPdfFilePath = await _convertFromHtmlFilePath(temporaryCreatedHtmlFile.path);
-    final generatedPdfFile = Helpers.copyAndDeleteOriginalFile(generatedPdfFilePath, targetDirectory, targetName);
+    final generatedPdfFilePath = await _convertFromHtmlFilePath(
+      temporaryCreatedHtmlFile.path,
+    );
+    final generatedPdfFile = Helpers.copyAndDeleteOriginalFile(
+      generatedPdfFilePath,
+      targetDirectory,
+      targetName,
+    );
     temporaryCreatedHtmlFile.delete();
 
     return generatedPdfFile;
@@ -24,25 +34,44 @@ class FlutterHtmlToPdf {
 
   /// Creates PDF Document from File that contains HTML content
   /// Can throw a [PlatformException] or (unlikely) a [MissingPluginException] converting html to pdf
-  static Future<File> convertFromHtmlFile(File htmlFile, String targetDirectory, String targetName) async {
+  static Future<File> convertFromHtmlFile(
+    File htmlFile,
+    String targetDirectory,
+    String targetName,
+  ) async {
     final generatedPdfFilePath = await _convertFromHtmlFilePath(htmlFile.path);
-    final generatedPdfFile = Helpers.copyAndDeleteOriginalFile(generatedPdfFilePath, targetDirectory, targetName);
+    final generatedPdfFile = Helpers.copyAndDeleteOriginalFile(
+      generatedPdfFilePath,
+      targetDirectory,
+      targetName,
+    );
 
     return generatedPdfFile;
   }
 
   /// Creates PDF Document from path to File that contains HTML content
   /// Can throw a [PlatformException] or (unlikely) a [MissingPluginException] converting html to pdf
-  static Future<File> convertFromHtmlFilePath(String htmlFilePath, String targetDirectory, String targetName) async {
+  static Future<File> convertFromHtmlFilePath(
+    String htmlFilePath,
+    String targetDirectory,
+    String targetName,
+  ) async {
     final generatedPdfFilePath = await _convertFromHtmlFilePath(htmlFilePath);
-    final generatedPdfFile = Helpers.copyAndDeleteOriginalFile(generatedPdfFilePath, targetDirectory, targetName);
+    final generatedPdfFile = Helpers.copyAndDeleteOriginalFile(
+      generatedPdfFilePath,
+      targetDirectory,
+      targetName,
+    );
 
     return generatedPdfFile;
   }
 
   /// Assumes the invokeMethod call will return successfully
   static Future<String> _convertFromHtmlFilePath(String htmlFilePath) async {
-    final result = await _channel.invokeMethod('convertHtmlToPdf', <String, dynamic>{'htmlFilePath': htmlFilePath});
+    final result = await _channel.invokeMethod(
+      'convertHtmlToPdf',
+      <String, dynamic>{'htmlFilePath': htmlFilePath},
+    );
     return result as String;
   }
 }

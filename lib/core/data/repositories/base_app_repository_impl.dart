@@ -205,7 +205,10 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
     int page = 1,
   }) async {
     try {
-      final items = await _local.getItems(page: page, param: param);
+      final inactive = {"inactived": kStatusNo};
+      final mergedParams = {...inactive, if (param != null) ...param};
+
+      final items = await _local.getItems(page: page, param: mergedParams);
       return Right(items);
     } catch (e) {
       rethrow;

@@ -50,7 +50,7 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
   void initState() {
     selectedPaperWidth = list.first;
     if (_cubit.state.printerDeviceDiscover.isEmpty) {
-      _cubit.startScanning();
+      _cubit.startScanning(context);
     }
     super.initState();
   }
@@ -313,7 +313,7 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
   }
 
   void _showDeviceBottomSheet() {
-    _cubit.startScanning();
+    _cubit.startScanning(context);
 
     showModalBottomSheet(
       context: context,
@@ -382,6 +382,7 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
                                     : () async {
                                         try {
                                           await _cubit.startScanning(
+                                            context,
                                             forceRefresh: true,
                                           );
                                         } catch (e) {
@@ -448,7 +449,7 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
                                   const SizedBox(height: 8),
                                   TextButton.icon(
                                     onPressed: () {
-                                      _cubit.startScanning();
+                                      _cubit.startScanning(context);
                                     },
                                     icon: const Icon(Icons.refresh),
                                     label: const Text("Scan Again"),
@@ -458,7 +459,10 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
                             )
                           : RefreshIndicator(
                               onRefresh: () async {
-                                await _cubit.startScanning(forceRefresh: true);
+                                await _cubit.startScanning(
+                                  context,
+                                  forceRefresh: true,
+                                );
                               },
                               color: mainColor,
                               child: ListView.builder(

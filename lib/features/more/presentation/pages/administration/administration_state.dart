@@ -1,5 +1,6 @@
 // import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:salesforce/features/more/domain/entities/device_info.dart';
+import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_permission_handler.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 
@@ -8,7 +9,8 @@ class AdministrationState {
   final bool isFetching;
   final String? error;
   final DeviceInfo? deviceInfo;
-  // final BluetoothInfo? bluetoothDevice;
+  final bool hasPermission;
+  final BluetoothStatus? status;
   final bool isScanning;
   final DateTime? lastScanTime;
   final bool isIminDevice;
@@ -21,6 +23,8 @@ class AdministrationState {
     this.isLoading = false,
     this.isFetching = false,
     this.isScanning = false,
+    this.status,
+    this.hasPermission = false,
     this.error,
     this.lastScanTime,
     this.deviceInfo,
@@ -36,6 +40,8 @@ class AdministrationState {
     bool? isLoading,
     bool? isFetching,
     String? error,
+    BluetoothStatus? status,
+    bool? hasPermission,
     DateTime? lastScanTime,
     DeviceInfo? deviceInfo,
     // BluetoothInfo? bluetoothDevice,
@@ -50,9 +56,11 @@ class AdministrationState {
   }) {
     return AdministrationState(
       isLoading: isLoading ?? this.isLoading,
+      status: status ?? this.status,
       isFetching: isFetching ?? this.isFetching,
       devicePrinter: devicePrinter ?? this.devicePrinter,
       error: error ?? this.error,
+      hasPermission: hasPermission ?? this.hasPermission,
       isScanning: isScanning ?? this.isScanning,
       deviceInfo: deviceInfo ?? this.deviceInfo,
       lastScanTime: lastScanTime ?? this.lastScanTime,
