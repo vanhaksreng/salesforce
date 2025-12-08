@@ -74,7 +74,7 @@ class _SelectOptionWidgetState extends State<SelectOptionWidget> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05), //TODO : check deprecate
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),

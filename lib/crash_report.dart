@@ -34,12 +34,12 @@ class CrashReport {
       final appInfo = await _getAppInfo();
 
       final User? user = getAuth();
-      final CompanyInformation? company = getCompany();
+      final CompanyInformation? company = await getCompany();
       final AppServer? connection = await getConnection();
 
       String userInfo = "";
       if (user != null) {
-        userInfo = "Email: ${user.email} Username: ${user.userName}";
+        userInfo = "Email: ${user.email}, Username: ${user.userName}";
       }
 
       final String message = "🔥 *${appInfo.appName} App*\n\n"

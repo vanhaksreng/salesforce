@@ -77,6 +77,10 @@ Future<void> _initializeApp() async {
     return;
   }
 
+  if(auth != null) {
+    await setCompanyInjection(await storage.getFirst<CompanyInformation>());
+  }
+
   getIt.registerSingleton<ApplicationSetup>(appSetup);
 }
 
@@ -169,7 +173,15 @@ Future<void> setCompanyInjection(CompanyInformation? company) async {
   getIt.registerSingleton<CompanyInformation>(com);
 }
 
-CompanyInformation? getCompany() {
+// CompanyInformation? getCompany() {
+//   if (getIt.isRegistered<CompanyInformation>()) {
+//     return getIt<CompanyInformation>();
+//   }
+
+//   return null;
+// }
+
+Future<CompanyInformation?> getCompany() async {
   if (getIt.isRegistered<CompanyInformation>()) {
     return getIt<CompanyInformation>();
   }

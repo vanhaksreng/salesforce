@@ -35,7 +35,7 @@ void main() async {
       WidgetsFlutterBinding.ensureInitialized();
 
       await Workmanager().initialize(callbackDispatcher);
-      HttpOverrides.global = MyHttpOverrides();
+      // HttpOverrides.global = MyHttpOverrides();
       await AutoUploadManager.initialize();
       await _initializeApp();
       await di.getItInit();
@@ -43,10 +43,15 @@ void main() async {
       runApp(const TradeB2b());
 
       OneSignalNotificationService.initialize();
+
+      CrashReport.sendCrashReport(
+        "Testing",
+        
+      );
+
     },
     (error, stackTrace) {
       debugPrint('Initialization error: $error');
-
       CrashReport.sendCrashReport(
         error.toString(),
         stackTrace: stackTrace.toString(),
@@ -116,11 +121,11 @@ class _TradeB2bState extends State<TradeB2b> {
   }
 }
 
-class MyHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback =
-          (X509Certificate cert, String host, int port) => true;
-  }
-}
+// class MyHttpOverrides extends HttpOverrides {
+//   @override
+//   HttpClient createHttpClient(SecurityContext? context) {
+//     return super.createHttpClient(context)
+//       ..badCertificateCallback =
+//           (X509Certificate cert, String host, int port) => true;
+//   }
+// }
