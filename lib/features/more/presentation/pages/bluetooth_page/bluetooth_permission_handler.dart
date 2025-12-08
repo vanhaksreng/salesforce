@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 
@@ -21,7 +22,7 @@ class BluetoothPermissionHandler {
         final bool isEnabled = call.arguments['isEnabled'] as bool? ?? false;
         final String state = call.arguments['state'] as String? ?? 'unknown';
 
-        print('📱 Bluetooth state changed: $state (enabled: $isEnabled)');
+        debugPrint('Bluetooth state changed: $state (enabled: $isEnabled)');
 
         // Call callback if set
         onBluetoothStateChanged?.call(isEnabled);
@@ -37,7 +38,7 @@ class BluetoothPermissionHandler {
       );
       return hasPermission;
     } catch (e) {
-      print('Error checking Bluetooth permissions: $e');
+      debugPrint('Error checking Bluetooth permissions: $e');
       return false;
     }
   }
@@ -47,7 +48,7 @@ class BluetoothPermissionHandler {
     try {
       final bool alreadyGranted = await hasPermissions();
       if (alreadyGranted) {
-        print('✅ Bluetooth permissions already granted');
+        debugPrint('✅ Bluetooth permissions already granted');
         return true;
       }
 
@@ -56,7 +57,7 @@ class BluetoothPermissionHandler {
 
       return await hasPermissions();
     } catch (e) {
-      print('Error requesting Bluetooth permissions: $e');
+      debugPrint('Error requesting Bluetooth permissions: $e');
       return false;
     }
   }
@@ -67,7 +68,7 @@ class BluetoothPermissionHandler {
       final bool isEnabled = await _channel.invokeMethod('isBluetoothEnabled');
       return isEnabled;
     } catch (e) {
-      print('Error checking Bluetooth status: $e');
+      debugPrint('Error checking Bluetooth status: $e');
       return false;
     }
   }
@@ -87,7 +88,7 @@ class BluetoothPermissionHandler {
         state: status['state'] as String? ?? 'unknown',
       );
     } catch (e) {
-      print('Error getting Bluetooth status: $e');
+      debugPrint('Error getting Bluetooth status: $e');
       return BluetoothStatus(
         hasPermissions: false,
         isEnabled: false,
@@ -103,7 +104,7 @@ class BluetoothPermissionHandler {
     try {
       await _channel.invokeMethod('enableBluetooth');
     } catch (e) {
-      print('Error enabling Bluetooth: $e');
+      debugPrint('Error enabling Bluetooth: $e');
     }
   }
 
@@ -121,7 +122,7 @@ class BluetoothPermissionHandler {
     // Step 1: Check/request permissions
     final hasPermission = await ensurePermissions();
     if (!hasPermission) {
-      print('❌ Bluetooth permission denied');
+      debugPrint('❌ Bluetooth permission denied');
       return false;
     }
 
@@ -136,12 +137,12 @@ class BluetoothPermissionHandler {
         return await isBluetoothEnabled();
       } else {
         // iOS: User must enable in Settings
-        print('Please enable Bluetooth in Settings');
+        debugPrint('Please enable Bluetooth in Settings');
         return false;
       }
     }
 
-    print('✅ Bluetooth is ready');
+    debugPrint('✅ Bluetooth is ready');
     return true;
   }
 
@@ -156,7 +157,7 @@ class BluetoothPermissionHandler {
         return false;
       }
     } catch (e) {
-      print('Error opening settings: $e');
+      debugPrint('Error opening settings: $e');
       return false;
     }
   }
@@ -174,7 +175,7 @@ class BluetoothPermissionHandler {
         return false;
       }
     } catch (e) {
-      print('Error opening Bluetooth settings: $e');
+      debugPrint('Error opening Bluetooth settings: $e');
       return false;
     }
   }

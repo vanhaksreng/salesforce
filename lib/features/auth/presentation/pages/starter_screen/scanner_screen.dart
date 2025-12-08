@@ -147,7 +147,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
     try {
       // Validate image planes
       if (image.planes.isEmpty) {
-        print("Error: No image planes available");
+        debugPrint("Error: No image planes available");
         return null;
       }
 
@@ -180,7 +180,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
   ) {
     try {
       if (image.planes.isEmpty) {
-        print("Error: No image planes available for iOS");
+        debugPrint("Error: No image planes available for iOS");
         return null;
       }
 
@@ -196,7 +196,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
         ),
       );
     } catch (e) {
-      print("Error creating iOS InputImage: $e");
+      debugPrint("Error creating iOS InputImage: $e");
       return null;
     }
   }

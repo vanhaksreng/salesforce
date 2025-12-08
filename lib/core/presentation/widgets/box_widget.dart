@@ -100,6 +100,6 @@ class BoxWidget extends StatelessWidget {
 
     return onPress == null
         ? container
-        : InkWell(onTap: onPress, child: container, onLongPress: onLongPress);
+        : InkWell(onTap: onPress, onLongPress: onLongPress, child: container);
   }
 }

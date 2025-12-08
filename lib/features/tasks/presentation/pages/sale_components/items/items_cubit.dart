@@ -48,7 +48,7 @@ class ItemsCubit extends Cubit<ItemsState> with MessageMixin {
     int page = 1,
     Map<String, dynamic>? param,
   }) async {
-    print(param);
+   
     try {
       if (!hasMorePage && page > 1) {
         return;

@@ -35,12 +35,12 @@ class AdministrationCubit extends Cubit<AdministrationState>
     final status = await _bluetoothPermission.getBluetoothStatus();
     emit(state.copyWith(status: status));
 
-    print('📱 Bluetooth Status: $status');
+    debugPrint('Bluetooth Status: $status');
   }
 
   checkListenIOSBluetooth() {
     _bluetoothPermission.onBluetoothStateChanged = (isEnabled) {
-      print('📱 Bluetooth state changed: $isEnabled');
+      debugPrint('Bluetooth state changed: $isEnabled');
       checkBluetoothStatus();
     };
   }

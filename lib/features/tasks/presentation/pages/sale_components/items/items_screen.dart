@@ -122,6 +122,7 @@ class _ItemScreenState extends State<ItemScreen>
     } else if (status == kOutOfStock) {
       return '< 1';
     }
+
     return '';
   }
 
@@ -173,7 +174,7 @@ class _ItemScreenState extends State<ItemScreen>
   }
 
   void _navigateToProcessForm(Item item) {
-    if (widget.documentType != kSaleCreditMemo &&
+    if (item.preventNegativeInventory == kStatusYes && widget.documentType == kSaleInvoice &&
         Helpers.toDouble(item.inventory) <= 0) {
       showWarningMessage("No stock left.");
       return;
