@@ -26,7 +26,6 @@ class TeamScheduleHistoryCubit extends Cubit<TeamScheduleHistoryState>
       );
       response.fold(
         (failure) {
-          print("================${failure.message}");
           emit(
             state.copyWith(
               isLoading: false,

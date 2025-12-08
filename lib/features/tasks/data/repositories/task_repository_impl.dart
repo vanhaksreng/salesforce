@@ -1775,7 +1775,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
   }
 
   void _updateRemainingAmount(CustomerLedgerEntry cEntry) async {
-    print("===============dd=======${cEntry.documentNo}");
     final journal = await _local.getCashReceiptJournals({
       "apply_to_doc_no": cEntry.documentNo,
     });

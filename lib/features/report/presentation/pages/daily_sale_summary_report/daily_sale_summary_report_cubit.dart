@@ -22,7 +22,6 @@ class DailySaleSummaryReportCubit extends Cubit<DailySaleSummaryReportState>
         param: param,
       );
       result.fold((l) {
-        print("====ddd======asdf===========${l.message}");
         emit(state.copyWith(isLoading: false, error: l.message));
       }, (records) => emit(state.copyWith(isLoading: false, records: records)));
     } catch (error) {
