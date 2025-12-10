@@ -100,7 +100,10 @@ class ScheduleCard extends StatelessWidget with MessageMixin {
                             ),
                           ),
                           const TextSpan(text: " - "),
-                          TextSpan(text: "$distance"),
+                          TextSpan(
+                            text: "$distance",
+                            style: TextStyle(fontSize: 13.scale),
+                          ),
                         ],
                       ),
                     ),
