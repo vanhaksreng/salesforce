@@ -57,7 +57,9 @@ Route<dynamic>? reportOnGenerateRoute(RouteSettings settings) {
       return PageRouteBuilder(
         fullscreenDialog: true,
         pageBuilder: (context, animation, secondaryAnimation) {
-          return BuildSelectedSaleperson(arg: settings.arguments as BuildSelectedSalepersonArg);
+          return BuildSelectedSaleperson(
+            arg: settings.arguments as BuildSelectedSalepersonArg,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);
@@ -77,7 +79,9 @@ Route<dynamic>? reportOnGenerateRoute(RouteSettings settings) {
       return PageRouteBuilder(
         fullscreenDialog: true,
         pageBuilder: (context, animation, secondaryAnimation) {
-          return StockRequestDetailsReportScreen(args: settings.arguments as StockRequestArg);
+          return StockRequestDetailsReportScreen(
+            args: settings.arguments as StockRequestArg,
+          );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return RouteST.st(animation, child, begin: 1, end: 0);

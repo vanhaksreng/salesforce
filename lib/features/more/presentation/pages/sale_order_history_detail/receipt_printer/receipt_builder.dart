@@ -70,16 +70,21 @@ class ReceiptBuilder {
 
     List<PosColumn> finalColumns = columns;
 
+    // Pad Khmer text to prevent breaking at printer level
+    finalColumns = finalColumns.map((col) {
+      return col.copyWith(text: _padKhmerText(col.text));
+    }).toList();
+
     // Calculate total width
-    final totalWidth = columns.fold<int>(0, (sum, col) => sum + col.width);
+    final totalWidth = finalColumns.fold<int>(0, (sum, col) => sum + col.width);
 
     if (autoAdjust && totalWidth != 12) {
       // Auto-adjust column widths proportionally
-      finalColumns = _adjustColumnWidths(columns);
+      finalColumns = _adjustColumnWidths(finalColumns);
     } else if (totalWidth != 12) {
       throw Exception(
         'Total column width must equal 12, got $totalWidth. '
-        'Current widths: ${columns.map((c) => c.width).join(", ")}. '
+        'Current widths: ${finalColumns.map((c) => c.width).join(", ")}. '
         'Set autoAdjust: true to fix automatically.',
       );
     }
@@ -94,10 +99,16 @@ class ReceiptBuilder {
       }
     }
 
+    // Reduce font size slightly for Khmer text to prevent overflow
+    int finalFontSize = fontSize;
+    if (finalColumns.any((col) => _containsKhmer(col.text))) {
+      finalFontSize = (fontSize * 0.9).round(); // 10% smaller
+    }
+
     _commands.add(
       ReceiptCommand(ReceiptCommandType.row, {
         'columns': finalColumns.map((col) => col.toMap()).toList(),
-        'fontSize': fontSize,
+        'fontSize': finalFontSize,
       }),
     );
   }
@@ -126,6 +137,20 @@ class ReceiptBuilder {
     }
 
     return adjustedColumns;
+  }
+
+  // Check if text contains Khmer characters
+  bool _containsKhmer(String text) {
+    return text.codeUnits.any((code) => code >= 0x1780 && code <= 0x17FF);
+  }
+
+  // Pad Khmer text with spaces to prevent breaking
+  String _padKhmerText(String text) {
+    if (_containsKhmer(text)) {
+      // Add space after Khmer text and ensure it doesn't end at column edge
+      return '$text  '; // Two spaces for safety
+    }
+    return text;
   }
 
   void addSeparator({int width = 48}) {

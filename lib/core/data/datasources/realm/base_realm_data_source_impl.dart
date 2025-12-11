@@ -28,12 +28,15 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   BaseRealmDataSourceImpl({required ILocalStorage ils}) : _storage = ils;
 
   @override
-  Future<void> storeAppSyncLog() async {
-    _storage.writeTransaction((realm) {
-      realm.deleteMany(realm.all<AppSyncLog>().toList());
+  Future<void> storeAppSyncLog(List<AppSyncLog> logs) async {
+    // await _storage.writeTransaction((realm) {
+    //   for (var log in logs) {
+    //     realm.add(log, update: true);
+    //     print("Inserted log: ${log.tableName}, ${log.displayName}");
+    //   }
+    // });
 
-      realm.addAll(appSyncLogs);
-    });
+    _storage.addAll(logs);
   }
 
   @override
@@ -637,6 +640,7 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
       realm.deleteMany(realm.all<Permission>().toList());
       realm.deleteMany(realm.all<DistributionSetUp>().toList());
       realm.deleteMany(realm.all<CompetitorItemLedgerEntry>().toList());
+      realm.deleteMany(realm.all<AppSyncLog>().toList());
       return true;
     });
   }

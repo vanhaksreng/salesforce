@@ -19,6 +19,7 @@ import 'package:salesforce/features/auth/presentation/pages/login/login_cubit.da
 import 'package:salesforce/features/auth/presentation/pages/login/login_state.dart';
 import 'package:salesforce/features/auth/presentation/pages/starter_screen/starter_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/verify_phone_number/verify_phone_number_screen.dart';
+import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/text_form_field_widget.dart';
@@ -73,6 +74,7 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
       );
       return;
     }
+
     final DeviceInfoPlugin device = DeviceInfoPlugin();
     String deviceId = "";
     String platform = "";
@@ -89,10 +91,12 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
       platform = "ios";
       devVersion = ios.systemVersion;
     }
+
     if (!mounted) return;
 
     final l = LoadingOverlay.of(context);
     l.show();
+
     try {
       await _cubit.login(
         arg: LoginArg(
@@ -106,8 +110,8 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
         ),
       );
 
-      await _cubit.storeAppSyncLog();
       l.hide();
+
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
         context,
@@ -117,9 +121,11 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
     } on GeneralException catch (e) {
       l.hide();
       showWarningMessage(e.message);
+      setAuthInjection(null);
     } on Exception catch (e) {
       l.hide();
       showErrorMessage(e.toString());
+      setAuthInjection(null);
     }
   }
 

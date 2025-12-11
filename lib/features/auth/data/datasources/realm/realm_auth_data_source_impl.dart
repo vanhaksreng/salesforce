@@ -5,7 +5,8 @@ import 'package:salesforce/features/auth/data/datasources/realm/realm_auth_data_
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
-class RealmAuthDataSourceImpl extends BaseRealmDataSourceImpl implements RealmAuthDataSource {
+class RealmAuthDataSourceImpl extends BaseRealmDataSourceImpl
+    implements RealmAuthDataSource {
   final ILocalStorage _storage;
 
   RealmAuthDataSourceImpl({required super.ils}) : _storage = ils;
@@ -27,7 +28,9 @@ class RealmAuthDataSourceImpl extends BaseRealmDataSourceImpl implements RealmAu
 
   @override
   Future<LoginSession> login(String email, String token) async {
-    final auth = await _storage.getFirst<LoginSession>(args: {"email": email, "access_token": token});
+    final auth = await _storage.getFirst<LoginSession>(
+      args: {"email": email, "access_token": token},
+    );
 
     if (auth == null) {
       throw GeneralException("Login failed");
