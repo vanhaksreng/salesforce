@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:salesforce/crash_report.dart';
@@ -43,14 +44,15 @@ void main() async {
       runApp(const TradeB2b());
 
       OneSignalNotificationService.initialize();
-
     },
     (error, stackTrace) {
       debugPrint('Initialization error: $error');
-      CrashReport.sendCrashReport(
-        error.toString(),
-        stackTrace: stackTrace.toString(),
-      );
+      if (!kDebugMode) {
+        CrashReport.sendCrashReport(
+          error.toString(),
+          stackTrace: stackTrace.toString(),
+        );
+      }
     },
   );
 }
