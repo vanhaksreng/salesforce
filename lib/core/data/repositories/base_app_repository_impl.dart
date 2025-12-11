@@ -34,9 +34,9 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
        _networkInfo = networkInfo;
 
   @override
-  Future<void> storeAppSyncLog() async {
+  Future<void> storeAppSyncLog(List<AppSyncLog> logs) async {
     try {
-      await _local.storeAppSyncLog();
+      await _local.storeAppSyncLog(logs);
     } catch (e) {
       rethrow;
     }
@@ -132,7 +132,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
           onProgress(percent, countTables, textMsg, errorText);
         }
 
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 300));
       }
 
       return const Right(true);
@@ -189,7 +189,6 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
     int page = 1,
     Map<String, dynamic>? params,
   }) async {
-    
     try {
       final customer = await _local.getCustomers(page: page, params: params);
       return Right(customer);

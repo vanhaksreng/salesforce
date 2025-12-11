@@ -96,7 +96,7 @@ class BuildMore extends StatelessWidget {
       final canContinue = await checkUploadData(context);
 
       if (!canContinue || !context.mounted) return;
-      if (!context.mounted) return;
+      // if (!context.mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
