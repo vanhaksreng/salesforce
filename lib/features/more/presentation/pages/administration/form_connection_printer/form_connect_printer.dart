@@ -42,7 +42,7 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
     TypeConnectDevice.network,
     TypeConnectDevice.usb,
   ];
-  double paperWidth = 576; //80mm
+
   PrinterDeviceDiscover? selectDevice;
   ActionState actionState = ActionState.create;
 
@@ -53,6 +53,13 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
       _cubit.startScanning(context);
     }
     super.initState();
+  }
+
+  double getPaperWidget() {
+    if (selectedPaperWidth == "3Inch (80mm)") {
+      return 576;
+    }
+    return 384;
   }
 
   Future<void> storeDevice() async {
@@ -86,7 +93,7 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
       deviceType,
       selectDevice?.name ?? "Unknown",
       selectDevice?.address ?? "Unknown",
-      paperWidth,
+      getPaperWidget(),
     );
 
     try {
