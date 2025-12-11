@@ -139,25 +139,9 @@ class PrinterDeviceDiscover {
   }
 }
 
-/// ThermalPrinter - Complete Flutter interface for thermal printer plugin
-///
-/// ✅ SYNCHRONIZED WITH ANDROID & iOS (25 methods)
-///
-/// Features:
-/// - Bluetooth Classic, BLE, USB, Network support
-/// - 58mm & 80mm paper width support
-/// - Batch mode for optimized printing
-/// - Complex Unicode support (Khmer, Thai, CJK)
-/// - Image printing with alignment
-/// - Diagnostic tools
 class ThermalPrinter {
   static const MethodChannel _channel = MethodChannel('thermal_printer');
 
-  // ====================================================================
-  // DISCOVERY METHODS (2)
-  // ====================================================================
-
-  /// Discover available thermal printers of specific type
   static Future<List<PrinterDeviceDiscover>> discoverPrinters({
     ConnectionType type = ConnectionType.bluetooth,
   }) async {

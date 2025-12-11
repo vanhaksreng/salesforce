@@ -13,21 +13,23 @@ import 'package:salesforce/features/more/presentation/pages/administration/bleto
 import 'package:salesforce/features/more/presentation/pages/administration/device_printer_mixin.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_builder.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_preview.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_preview_58mm.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
-class ReceiptPreviewScreen extends StatefulWidget {
-  const ReceiptPreviewScreen({super.key, this.detail, this.companyInfo});
+class ReceiptPreview58mmScreen extends StatefulWidget {
+  const ReceiptPreview58mmScreen({super.key, this.detail, this.companyInfo});
 
   final SaleDetail? detail;
   final CompanyInformation? companyInfo;
 
   @override
-  State<ReceiptPreviewScreen> createState() => _ReceiptPreviewScreenState();
+  State<ReceiptPreview58mmScreen> createState() =>
+      _ReceiptPreview58mmScreenState();
 }
 
-class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
+class _ReceiptPreview58mmScreenState extends State<ReceiptPreview58mmScreen>
     with SingleTickerProviderStateMixin, DevicePrinterMixin {
   final ReceiptBuilder _builder = ReceiptBuilder();
   final _bluetoothService = BluetoothPrinterService();
@@ -40,8 +42,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
   late Animation<double> _pulseAnimation;
 
   late List<int> columnWidths;
-  int printerWidth = 576; // 80mm printer
-  int textLength = 32; // 80mm printer
 
   @override
   void initState() {
@@ -60,12 +60,8 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     _warmUpPrinterIfNeeded();
   }
 
-  int lengText() {
-    if (printerWidth == 384) {
-      return 32;
-    }
-    return 48;
-  }
+  static const int printerWidth = 384; // 58mm printer
+  static const int textLength = 32; // 58mm printer
 
   Future<void> _warmUpPrinterIfNeeded() async {
     // Wait a bit for connection to be ready
@@ -77,9 +73,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
 
         // ✅ SET PRINTER WIDTH FIRST (CRITICAL!)
         await ThermalPrinter.setPrinterWidth(printerWidth);
-        debugPrint(
-          '📏 Printer width set to $printerWidth (${printerWidth == 384 ? "58mm" : "80mm"})',
-        );
+        debugPrint('📏 Printer width set to $printerWidth (58mm)');
 
         await ThermalPrinter.warmUpPrinter();
         await Future.delayed(const Duration(milliseconds: 100));
@@ -88,9 +82,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         await Future.delayed(const Duration(milliseconds: 100));
 
         _isPrinterWarmedUp = true;
-        debugPrint(
-          '✅ Printer warmed up and configured for ${printerWidth == 384 ? "58mm" : "80mm"} paper',
-        );
+        debugPrint('✅ Printer warmed up and configured for 58mm paper');
       } catch (e) {
         debugPrint('⚠️ Warmup failed: $e');
       }
@@ -135,17 +127,10 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     }
   }
 
-  void _configurePrinterSize() async {
-    if (printerWidth == 384) {
-      // 58mm printer configuration
-      debugPrint(' Configuring for 58mm paper (384 pixels)');
-      columnWidths = [1, 3, 2, 2, 2, 2];
-    } else {
-      // 80mm printer configuration
-      debugPrint(' Configuring for 80mm paper (576 pixels)');
-      columnWidths = [1, 3, 2, 2, 2, 2]; // Standard layout - totals to 12
-    }
-    lengText();
+  void _configurePrinterSize() {
+    // 58mm printer configuration
+    debugPrint('📄 Configuring for 58mm paper (384 pixels)');
+    columnWidths = [1, 3, 2, 2, 2, 2];
   }
 
   Future<Uint8List?> logoCompany({int? targetWidth, int? targetHeight}) async {
@@ -240,31 +225,31 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     try {
       _builder.clear();
       Uint8List? imageBytes = await logoCompany(
-        targetWidth: 250,
-        targetHeight: 250,
+        targetWidth: 200,
+        targetHeight: 200,
       );
       if (imageBytes != null) {
-        _builder.printImage(imageBytes, width: 250);
+        _builder.printImage(imageBytes, width: 200);
       }
 
       _builder.addText(
-        maxCharPerLine: lengText(),
+        maxCharPerLine: textLength,
         widget.companyInfo?.name ?? "",
-        fontSize: printerWidth == 384 ? 14 : 28, // Smaller for 58mm
+        fontSize: 16,
         bold: true,
         align: AlignStyle.center,
       );
 
       _builder.addText(
-        maxCharPerLine: lengText(),
+        maxCharPerLine: textLength,
         widget.companyInfo?.address ?? "",
-        fontSize: printerWidth == 384 ? 12 : 18, // Smaller for 58mm
+        fontSize: 12,
         align: AlignStyle.center,
       );
       _builder.addText(
-        maxCharPerLine: lengText(),
+        maxCharPerLine: textLength,
         "Phone: ${widget.companyInfo?.phoneNo ?? ""}",
-        fontSize: printerWidth == 384 ? 12 : 18, // Smaller for 58mm
+        fontSize: 16,
         align: AlignStyle.center,
       );
 
@@ -273,34 +258,33 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       PosSalesHeader? header = widget.detail?.header;
 
       _builder.addText(
-        maxCharPerLine: lengText(),
+        maxCharPerLine: textLength,
         "Invoice   : ${header?.no ?? 'N/A'}",
-        fontSize: printerWidth == 384 ? 12 : 18,
+        fontSize: 16,
         align: AlignStyle.left,
       );
 
       _builder.addText(
-        maxCharPerLine: lengText(),
+        maxCharPerLine: textLength,
         "Date      : ${header?.orderDate ?? DateTime.now().toString().split(' ')[0]}",
-        fontSize: printerWidth == 384 ? 12 : 18,
+        fontSize: 16,
         align: AlignStyle.left,
       );
 
       _builder.addText(
-        maxCharPerLine: lengText(),
+        maxCharPerLine: textLength,
         "Customer  : ${header?.customerName ?? ""}",
-        fontSize: printerWidth == 384 ? 12 : 18,
+        fontSize: 16,
         align: AlignStyle.left,
       );
-
       _builder.addText(
-        maxCharPerLine: lengText(),
-        "-" * (lengText() - 1),
+        maxCharPerLine: textLength,
+        "-" * (textLength - 1),
         align: AlignStyle.center,
       );
 
       // ====================================================================
-      // TABLE HEADER - Adjusted column widths
+      // TABLE HEADER
       // ====================================================================
 
       _builder.addRow(
@@ -332,9 +316,9 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
             align: AlignStyle.center,
           ),
         ],
-        fontSize: 18,
+        fontSize: 14,
         autoAdjust: true,
-      ); // Smaller font for 58mm
+      );
 
       _builder.addRow([
         PosColumn(text: 'No.', width: columnWidths[0], bold: true),
@@ -363,12 +347,12 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
           bold: true,
           align: AlignStyle.center,
         ),
-      ], fontSize: printerWidth == 384 ? 12 : 14); // Smaller font for 58mm
+      ], fontSize: 14);
 
       // Another separator
       _builder.addText(
-        maxCharPerLine: lengText(),
-        "-" * (lengText() - 1),
+        maxCharPerLine: textLength,
+        "-" * (textLength - 1),
         align: AlignStyle.center,
       );
 
@@ -402,13 +386,11 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
             width: columnWidths[3],
             bold: false,
           ),
-
           PosColumn(
             text: discountValue(
               disAmount: item.discountAmount,
               disPer: item.discountPercentage,
             ),
-
             align: AlignStyle.center,
             width: columnWidths[4],
             bold: false,
@@ -423,17 +405,17 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
             width: columnWidths[5],
             bold: false,
           ),
-        ], fontSize: printerWidth == 384 ? 12 : 14); // Smaller for 58mm
+        ], fontSize: 14);
         _builder.addText(
-          "-" * (lengText() - 1),
-          maxCharPerLine: 48,
+          "-" * (textLength - 1),
+          maxCharPerLine: textLength,
           align: AlignStyle.center,
         );
       }
 
       _builder.addText(
         "TOTAL AMOUNT: ${Helpers.formatNumber(header?.amount, option: FormatType.amount)}",
-        fontSize: printerWidth == 384 ? 16 : 20, // Adjusted for 58mm
+        fontSize: 16,
         bold: true,
         align: AlignStyle.right,
       );
@@ -442,14 +424,14 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
 
       _builder.addText(
         'Thank you for your business!',
-        fontSize: printerWidth == 384 ? 18 : 20, // Adjusted for 58mm
+        fontSize: 16,
         bold: true,
         align: AlignStyle.center,
       );
 
       _builder.addText(
         'Please come again',
-        fontSize: printerWidth == 384 ? 16 : 18, // Adjusted for 58mm
+        fontSize: 16,
         align: AlignStyle.center,
       );
 
@@ -502,9 +484,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         debugPrint('🔥 Warming up printer before first print...');
 
         await ThermalPrinter.setPrinterWidth(printerWidth);
-        debugPrint(
-          '📏 Printer width set to $printerWidth (${printerWidth == 384 ? "58mm" : "80mm"})',
-        );
+        debugPrint('📏 Printer width set to $printerWidth (58mm)');
 
         await ThermalPrinter.warmUpPrinter();
         await Future.delayed(const Duration(milliseconds: 250));
@@ -515,9 +495,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         _isPrinterWarmedUp = true;
       }
 
-      debugPrint(
-        '🖨️ Starting BATCH print for ${printerWidth == 384 ? "58mm" : "80mm"} paper...',
-      );
+      debugPrint('🖨️ Starting BATCH print for 58mm paper...');
 
       // ✅ Use batch mode
       await _builder.executeBatch(ThermalPrinter);
@@ -528,8 +506,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         l.hide();
         Helpers.showMessage(
           status: MessageStatus.success,
-          msg:
-              "Receipt printed successfully on ${printerWidth == 384 ? "58mm" : "80mm"} paper! 🎉",
+          msg: "Receipt printed successfully on 58mm paper! 🎉",
         );
       }
     } catch (e, stackTrace) {
@@ -555,9 +532,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        title: Text(
-          'Receipt Preview (${printerWidth == 384 ? "58mm" : "80mm"})',
-        ),
+        title: const Text('Receipt Preview (58mm)'),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -571,9 +546,9 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                   color: Colors.blue.shade700,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  printerWidth == 384 ? '58mm' : '80mm',
-                  style: const TextStyle(
+                child: const Text(
+                  '58mm',
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -649,9 +624,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
           ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Optional: Add a button to test slow printing
                 if (isConnected())
-                  // Main print button
                   FloatingActionButton.extended(
                     heroTag: 'print',
                     onPressed: isPrinting ? null : _printReceipt,
@@ -732,7 +705,10 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            child: ReceiptPreview(commands: _builder.commands, paperWidth: 576),
+            child: ReceiptPreview58mm(
+              commands: _builder.commands,
+              paperWidth: 384,
+            ),
           ),
         ),
       ],

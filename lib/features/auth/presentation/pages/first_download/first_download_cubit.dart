@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/data/models/realm_until.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
@@ -12,6 +13,16 @@ class FirstDownloadCubit extends Cubit<FirstDownloadState> with MessageMixin {
 
   final _repos = getIt<BaseAppRepository>();
   final _taskRepos = getIt<TaskRepository>();
+
+  Future<void> storeAppSyncLog() async {
+    try {
+      await _repos.storeAppSyncLog(appSyncLogs);
+    } on GeneralException catch (e) {
+      showWarningMessage(e.message);
+    } on Exception {
+      showErrorMessage();
+    }
+  }
 
   Future<void> getAppSyncLog() async {
     try {
@@ -66,7 +77,14 @@ class FirstDownloadCubit extends Cubit<FirstDownloadState> with MessageMixin {
             errors.add(errorMsg);
           }
 
-          emit(state.copyWith(progressValue: progressValue, textLoading: tableName, totalValue: total, errors: errors));
+          emit(
+            state.copyWith(
+              progressValue: progressValue,
+              textLoading: tableName,
+              totalValue: total,
+              errors: errors,
+            ),
+          );
         },
       );
     } on GeneralException catch (e) {
@@ -80,7 +98,10 @@ class FirstDownloadCubit extends Cubit<FirstDownloadState> with MessageMixin {
 
   Future<void> getSchedules() async {
     try {
-      await _taskRepos.getSchedules(DateTime.now().toDateString(), requestApi: true);
+      await _taskRepos.getSchedules(
+        DateTime.now().toDateString(),
+        requestApi: true,
+      );
     } catch (error) {
       emit(state.copyWith(isLoading: false));
     }
