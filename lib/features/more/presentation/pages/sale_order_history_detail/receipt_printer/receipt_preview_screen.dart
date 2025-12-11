@@ -46,11 +46,14 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
   @override
   void initState() {
     super.initState();
+
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
-
+    print(
+      "=============sdf============${_bluetoothService.connectedDevice?.paperSize}",
+    );
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
@@ -76,7 +79,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         debugPrint('🔥 Warming up printer...');
 
         // ✅ SET PRINTER WIDTH FIRST (CRITICAL!)
-        await ThermalPrinter.setPrinterWidth(printerWidth);
+        await ThermalPrinter.setPrinterWidth(Helpers.toInt(printerWidth));
         debugPrint(
           '📏 Printer width set to $printerWidth (${printerWidth == 384 ? "58mm" : "80mm"})',
         );
@@ -136,6 +139,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
   }
 
   void _configurePrinterSize() async {
+    printerWidth = Helpers.toInt(_bluetoothService.connectedDevice?.paperSize);
     if (printerWidth == 384) {
       // 58mm printer configuration
       debugPrint(' Configuring for 58mm paper (384 pixels)');
@@ -332,7 +336,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
             align: AlignStyle.center,
           ),
         ],
-        fontSize: 18,
+        fontSize: printerWidth == 384 ? 14 : 18,
         autoAdjust: true,
       ); // Smaller font for 58mm
 
@@ -423,7 +427,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
             width: columnWidths[5],
             bold: false,
           ),
-        ], fontSize: printerWidth == 384 ? 12 : 14); // Smaller for 58mm
+        ], fontSize: printerWidth == 384 ? 12 : 16); // Smaller for 58mm
         _builder.addText(
           "-" * (lengText() - 1),
           maxCharPerLine: 48,
@@ -732,7 +736,12 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            child: ReceiptPreview(commands: _builder.commands, paperWidth: 576),
+            child: Center(
+              child: ReceiptPreview(
+                commands: _builder.commands,
+                paperWidth: printerWidth,
+              ),
+            ),
           ),
         ),
       ],

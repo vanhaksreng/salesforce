@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:salesforce/core/utils/helpers.dart';
 import 'dart:typed_data';
 
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_builder.dart';
 
 class ReceiptPreview extends StatelessWidget {
   final List<ReceiptCommand> commands;
-  final double paperWidth;
+  final int paperWidth;
   final Color paperColor;
   final Color textColor;
 
@@ -20,7 +21,7 @@ class ReceiptPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: paperWidth,
+      width: Helpers.toDouble(paperWidth == 384 ? 300 : 576),
       decoration: BoxDecoration(
         color: paperColor,
         boxShadow: [
@@ -60,24 +61,22 @@ class ReceiptPreview extends StatelessWidget {
 
       case ReceiptCommandType.cutPaper:
         return _buildCutPaper();
-
-      default:
-        return const SizedBox.shrink();
     }
   }
 
   Widget _buildText(Map<String, dynamic> params) {
-    final text = params['text'] as String? ?? '';
+    String text = params['text'] as String? ?? '';
     final fontSize = params['fontSize'] as int? ?? 24;
     final bold = params['bold'] as bool? ?? false;
     final align = params['align'] as String? ?? 'left';
     final maxCharsPerLine = params['maxCharsPerLine'] as int? ?? 32;
 
-    // Thermal printer uses monospace, map font size to actual display size
-    // Base calculation: 58mm paper width ≈ 32 chars for font size 24
+    if (text == "-" * 31) {
+      text = List.filled(2, "-" * 18).join(); // repeat "-" 20 times
+    }
     double displayFontSize;
     if (fontSize <= 20) {
-      displayFontSize = 13.0;
+      displayFontSize = 12.0;
     } else if (fontSize <= 24) {
       displayFontSize = 12.0;
     } else if (fontSize <= 28) {
@@ -177,7 +176,7 @@ class ReceiptPreview extends StatelessWidget {
     // Map font size to display size
     double displayFontSize;
     if (fontSize <= 20) {
-      displayFontSize = 9.0;
+      displayFontSize = 7;
     } else if (fontSize <= 24) {
       displayFontSize = 11.0;
     } else if (fontSize <= 28) {
