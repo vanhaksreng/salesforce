@@ -27,9 +27,9 @@ class RealmConfig {
     final documents = await getApplicationDocumentsDirectory();
     String realmPath = path.join(documents.path, 'ClearViewSalesforce.realm');
 
-    if (kDebugMode && Platform.isIOS && kDbPath.isNotEmpty) {
-      realmPath = kDbPath; //TODO
-    }
+    // if (kDebugMode && Platform.isIOS && kDbPath.isNotEmpty) {
+    //   realmPath = kDbPath; //TODO
+    // }
 
     var config = Configuration.local(
       [
