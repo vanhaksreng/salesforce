@@ -44,11 +44,6 @@ void main() async {
 
       OneSignalNotificationService.initialize();
 
-      CrashReport.sendCrashReport(
-        "Testing",
-        
-      );
-
     },
     (error, stackTrace) {
       debugPrint('Initialization error: $error');
