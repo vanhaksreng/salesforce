@@ -1,3 +1,4 @@
+import 'package:dartz/dartz_unsafe.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/data/datasources/handlers/table_handler_factory.dart';
 import 'package:salesforce/core/data/datasources/realm/base_realm_data_source.dart';
@@ -7,6 +8,7 @@ import 'package:salesforce/core/data/models/extension/company_info_extension.dar
 import 'package:salesforce/core/data/models/extension/distribution_setup_extention.dart';
 import 'package:salesforce/core/data/models/extension/org_extension.dart';
 import 'package:salesforce/core/data/models/extension/permission_extension.dart';
+import 'package:salesforce/core/data/models/extension/table_log_extension.dart';
 import 'package:salesforce/core/data/models/extension/user_setup_extenstion.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -14,7 +16,6 @@ import 'package:salesforce/infrastructure/storage/i_local_storage.dart';
 import 'package:realm/realm.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/utils/logger.dart';
-import 'package:salesforce/core/data/models/realm_until.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
@@ -28,11 +29,9 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   BaseRealmDataSourceImpl({required ILocalStorage ils}) : _storage = ils;
 
   @override
-  Future<void> storeAppSyncLog() async {
-    _storage.writeTransaction((realm) {
-      realm.deleteMany(realm.all<AppSyncLog>().toList());
-
-      realm.addAll(appSyncLogs);
+  Future<void> storeAppSyncLog(List<AppSyncLog> logs) async {
+    await _storage.writeTransaction((realm) {
+      realm.addAll(logs, update: true);
     });
   }
 
@@ -43,6 +42,7 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
 
   @override
   Future<void> storeInitAppData(Map<String, dynamic> args) async {
+    final List<AppSyncLog> tableLogs = [];
     return _storage.writeTransaction((realm) {
       final appSetup = ApplicationSetupExtension.fromMap(args["app_setup"]);
       final company = CompanyInformationExtension.fromMap(args["company"]);
@@ -64,6 +64,21 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
         settings.add(AppSettingExtension.fromMap(setting));
       }
 
+      try {
+        for (var log in args["table_logs"]) {
+          final isExisted = realm.find<AppSyncLog>(log['key']);
+          if (isExisted != null) {
+            isExisted.displayName = log["displayName"];
+            realm.add(isExisted, update: true);
+            continue;
+          }
+
+          tableLogs.add(AppSyncLogExtension.fromMap(log));
+        }
+      } catch (e) {
+        ///
+      }
+
       realm.add(org, update: true);
       realm.add(appSetup, update: true);
       realm.add(company, update: true);
@@ -71,6 +86,7 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
       realm.addAll(permissions, update: true);
       realm.addAll(distributionSetUp, update: true);
       realm.addAll(settings, update: true);
+      realm.addAll(tableLogs, update: true);
     });
   }
 
@@ -637,6 +653,8 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
       realm.deleteMany(realm.all<Permission>().toList());
       realm.deleteMany(realm.all<DistributionSetUp>().toList());
       realm.deleteMany(realm.all<CompetitorItemLedgerEntry>().toList());
+      realm.deleteMany(realm.all<ItemStockRequestWorkSheet>().toList());
+
       return true;
     });
   }

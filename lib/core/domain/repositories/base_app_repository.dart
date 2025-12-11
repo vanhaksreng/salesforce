@@ -19,7 +19,7 @@ abstract class BaseAppRepository {
   Future<bool> hasPermission(String name);
   Future<String> getSetting(String settingKey);
 
-  Future<void> storeAppSyncLog();
+  Future<void> storeAppSyncLog(List<AppSyncLog> logs);
   Future<Either<Failure, List<AppSyncLog>>> getAppSyncLogs({
     Map<String, dynamic>? arg,
   });

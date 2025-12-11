@@ -248,7 +248,7 @@ class CollectionsScreenState extends State<CollectionsScreen>
                           },
                         ),
                         color: warning,
-                        fontSize: 12.scale,
+                        fontSize: 12,
                       ),
                     ),
                 ],

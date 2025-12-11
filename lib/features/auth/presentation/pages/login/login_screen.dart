@@ -13,12 +13,14 @@ import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
+import 'package:salesforce/env.dart';
 import 'package:salesforce/features/auth/domain/entities/login_arg.dart';
 import 'package:salesforce/features/auth/presentation/pages/first_download/first_download_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/login/login_cubit.dart';
 import 'package:salesforce/features/auth/presentation/pages/login/login_state.dart';
 import 'package:salesforce/features/auth/presentation/pages/starter_screen/starter_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/verify_phone_number/verify_phone_number_screen.dart';
+import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/text_form_field_widget.dart';
@@ -57,12 +59,12 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
     _cubit.getCompanyInfo();
     if (kDebugMode) {
       if (server.id == "local") {
-        nameController.text = "012222222";
+        nameController.text = kAccountNo; //012222222
       } else if (server.id == "smb") {
         nameController.text = "5555";
       }
 
-      passwordController.text = "123456"; //TODO : will remove on production
+      passwordController.text = kAccountPass; //TODO : will remove on production
     }
   }
 
@@ -73,6 +75,7 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
       );
       return;
     }
+
     final DeviceInfoPlugin device = DeviceInfoPlugin();
     String deviceId = "";
     String platform = "";
@@ -89,10 +92,12 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
       platform = "ios";
       devVersion = ios.systemVersion;
     }
+
     if (!mounted) return;
 
     final l = LoadingOverlay.of(context);
     l.show();
+
     try {
       await _cubit.login(
         arg: LoginArg(
@@ -107,7 +112,9 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
       );
 
       await _cubit.storeAppSyncLog();
+
       l.hide();
+
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
         context,
@@ -117,9 +124,11 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
     } on GeneralException catch (e) {
       l.hide();
       showWarningMessage(e.message);
+      setAuthInjection(null);
     } on Exception catch (e) {
       l.hide();
       showErrorMessage(e.toString());
+      setAuthInjection(null);
     }
   }
 

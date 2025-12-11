@@ -6,6 +6,7 @@ import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/auth/presentation/pages/first_download/first_download_cubit.dart';
 import 'package:salesforce/features/auth/presentation/pages/first_download/first_download_state.dart';
+import 'package:salesforce/features/auth/presentation/pages/login/login_screen.dart';
 import 'package:salesforce/features/main_tap_screen.dart';
 import 'package:salesforce/core/presentation/widgets/build_logo_header_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
@@ -32,15 +33,22 @@ class _FirstDownloadScreenState extends State<FirstDownloadScreen> {
 
   Future<void> _handleDownload() async {
     try {
+      
+      await Future.delayed(Duration(seconds: 1));
+
       await _cubit.getAppSyncLog();
 
-      await _cubit.cleanAllData();
+      if (_cubit.state.tableLogs.isEmpty) {
+        await setAuthInjection(null);
+        _navigateToLogin();
+        return;
+      }
 
+      await _cubit.cleanAllData();
+      await _cubit.downloadMasterData();
       await _cubit.downLoadAppSetting();
 
       await _cubit.getSchedules();
-
-      await _cubit.downloadMasterData();
 
       await setApplicationSetupInjectionIfNeed();
 
@@ -51,6 +59,8 @@ class _FirstDownloadScreenState extends State<FirstDownloadScreen> {
       }
     } catch (e) {
       Logger.log(e);
+      setAuthInjection(null);
+      Navigator.pop(context);
     }
   }
 
@@ -58,6 +68,14 @@ class _FirstDownloadScreenState extends State<FirstDownloadScreen> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => MainTapScreen()),
+      (route) => false,
+    );
+  }
+
+  void _navigateToLogin() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => LoginScreen()),
       (route) => false,
     );
   }

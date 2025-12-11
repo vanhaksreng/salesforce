@@ -19,6 +19,7 @@ import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
 import 'package:salesforce/features/more/presentation/pages/components/sale_history_detail_box.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_preview_58mm_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_preview_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_cubit.dart';
 import 'package:salesforce/localization/trans.dart';
@@ -764,6 +765,12 @@ class _SaleOrderHistoryDetailScreenState
                 onPressed: () {
                   Navigator.push(
                     context,
+                    // MaterialPageRoute(
+                    //   builder: (context) => ReceiptPreview58mmScreen(
+                    //     companyInfo: company,
+                    //     detail: detail,
+                    //   ),
+                    // ),
                     MaterialPageRoute(
                       builder: (context) => ReceiptPreviewScreen(
                         companyInfo: company,

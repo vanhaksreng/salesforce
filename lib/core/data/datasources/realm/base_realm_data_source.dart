@@ -9,7 +9,7 @@ import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 abstract class BaseRealmDataSource {
   Future<void> storeAppSetting(List<AppSetting> settings);
 
-  Future<void> storeAppSyncLog();
+  Future<void> storeAppSyncLog(List<AppSyncLog> logs);
   Future<List<AppSyncLog>> getAppSyncLogs({Map<String, dynamic>? arg});
 
   Future<LoginSession?> getLoginSession();

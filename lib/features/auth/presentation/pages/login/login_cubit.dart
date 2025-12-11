@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/data/models/realm_until.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/app_mixin.dart';
@@ -20,7 +21,7 @@ class LoginCubit extends Cubit<LoginState> with MessageMixin, AppMixin {
 
   Future<void> storeAppSyncLog() async {
     try {
-      await _repos.storeAppSyncLog();
+      await _repos.storeAppSyncLog(appSyncLogs);
     } on GeneralException catch (e) {
       showWarningMessage(e.message);
     } on Exception {

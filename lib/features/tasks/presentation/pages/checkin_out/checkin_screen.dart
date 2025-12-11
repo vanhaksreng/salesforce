@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -356,16 +357,13 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
                     label: greeting("Camera"),
                     subTitle: greeting("Take photo by using camera."),
                   ),
-                  // if (kDebugMode)
-                  //   ListTitleWidget(
-                  //     leading: const Icon(
-                  //       Icons.photo,
-                  //       color: mainColor,
-                  //     ),
-                  //     onTap: () => _pickImage(ImageSource.gallery),
-                  //     label: greeting("gallery"),
-                  //     subTitle: greeting("Take photo from gallery."),
-                  //   ),
+                  if (kDebugMode)
+                    ListTitleWidget(
+                      leading: const Icon(Icons.photo, color: mainColor),
+                      onTap: () => _pickImage(ImageSource.gallery),
+                      label: greeting("gallery"),
+                      subTitle: greeting("Take photo from gallery."),
+                    ),
                 ],
               ),
             ),
