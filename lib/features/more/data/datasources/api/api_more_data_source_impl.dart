@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:salesforce/core/data/datasources/api/base_api_data_source_impl.dart';
 import 'package:salesforce/core/data/models/extension/pos_sale_header_extension.dart';
 import 'package:salesforce/core/data/models/extension/pos_sale_line_extension.dart';
+import 'package:salesforce/core/data/models/extension/sale_header_extension.dart';
 import 'package:salesforce/core/data/models/extension/sale_line_extension.dart';
 import 'package:salesforce/env.dart';
 import 'package:salesforce/features/more/data/datasources/api/api_more_data_source.dart';
@@ -49,6 +50,24 @@ class ApiMoreDataSourceImpl extends BaseApiDataSourceImpl
   }
 
   @override
+  Future<List<SalesLine>> getSaleLinesV2({Map<String, dynamic>? data}) async {
+    try {
+      final response = await apiClient.post(
+        'v2/get-sale-lines-v2',
+        body: await getParams(params: data),
+      );
+      final List<SalesLine> records = [];
+      for (var item in response["records"]) {
+        records.add(SalesLineExtension.fromMap(item));
+      }
+
+      return records;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<SaleDetail> getSaleDetails({Map<String, dynamic>? data}) async {
     try {
       final response = await apiClient.post(
@@ -56,13 +75,13 @@ class ApiMoreDataSourceImpl extends BaseApiDataSourceImpl
         body: await getParams(params: data),
       );
 
-      final List<PosSalesLine> records = [];
+      final List<SalesLine> records = [];
       for (var item in response["lines"]) {
-        records.add(PosSalesLineExtension.fromMap(item));
+        records.add(SalesLineExtension.fromMap(item));
       }
 
       return SaleDetail(
-        header: PosSalesHeaderExtension.fromMap(response["header"]),
+        header: SalesHeaderExtension.fromMap(response["header"]),
         lines: records,
       );
     } catch (e) {

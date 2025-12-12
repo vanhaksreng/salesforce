@@ -30,7 +30,7 @@ class BuildMore extends StatelessWidget {
     String routeName = listActionMore[index].routeName;
 
     if (routeName == "logout") {
-      _confrimLogout(context);
+      _confirmLogout(context);
       return;
     }
 
@@ -41,19 +41,23 @@ class BuildMore extends StatelessWidget {
     );
   }
 
-  void _confrimLogout(BuildContext context) {
+  void _confirmLogout(BuildContext context) {
     Helpers.showDialogAction(
       context,
       confirmText: "Yes, Log Out",
       cancelText: "No, Stay Logged In",
-      confirm: () => _processLogout(context),
+      confirm: () => _processLogout(context), // This is fine as it's a callback
     );
   }
 
-  Future<bool> checkUploadData(BuildContext context) async {
-    final UploadCubit upload = UploadCubit();
+  Future<bool> checkUploadData(
+    BuildContext context,
+    LoadingOverlay overlay,
+  ) async {
+    final upload = UploadCubit();
     await upload.loadInitialData(DateTime.now());
-    UploadState state = upload.state;
+    final state = upload.state;
+
     bool nothingToUpload =
         state.salesHeaders.isEmpty &&
         state.cashReceiptJournals.isEmpty &&
@@ -62,47 +66,51 @@ class BuildMore extends StatelessWidget {
         state.merchandiseSchedules.isEmpty &&
         state.redemptions.isEmpty;
 
-    if (!context.mounted) return false;
-
     if (!nothingToUpload) {
-      Helpers.showDialogAction(
-        context,
-        labelAction: "Upload Data",
-        confirmText: "Go to upload",
-        cancelText: "No, Cancel",
-        confirm: () {
-          Navigator.pop(context);
-          Navigator.pushNamed(context, UploadScreen.routeName);
-        },
-        subtitle:
-            "Looks like you still have data to upload. Please upload it before logging out.",
-      );
+      overlay.hide();
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Helpers.showDialogAction(
+          context,
+          labelAction: "Upload Data",
+          confirmText: "Go to upload",
+          cancelText: "No, Cancel",
+          confirm: () {
+            Navigator.pop(context);
+            Navigator.pushNamed(context, UploadScreen.routeName);
+          },
+          subtitle:
+              "Looks like you still have data to upload. Please upload it before logging out.",
+        );
+      });
       return false;
     }
+
     return true;
   }
 
-  void _processLogout(BuildContext context) async {
+  Future<void> _processLogout(BuildContext context) async {
+    final overlay = LoadingOverlay.of(context);
     Navigator.pop(context);
 
-    final l = LoadingOverlay.of(context);
-    l.show();
-    final result = await context.read<MoreMainPageCubit>().logout();
+    overlay.show();
 
-    l.hide();
-    if (!context.mounted) return;
+    final canContinue = await checkUploadData(context, overlay);
 
-    if (result) {
-      final canContinue = await checkUploadData(context);
+    if (canContinue) {
+      if (!context.mounted) return;
 
-      if (!canContinue || !context.mounted) return;
-      // if (!context.mounted) return;
+      final cubit = context.read<MoreMainPageCubit>();
+      final result = await cubit.logout();
+
+      if (!result || !context.mounted) {
+        overlay.hide();
+        return;
+      }
+
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (_) => LoginScreen(),
-          // const LoggedinHistoryScreen()
-        ),
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
         (route) => false,
       );
     }

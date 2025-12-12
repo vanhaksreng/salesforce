@@ -13,11 +13,17 @@ abstract class ApiMoreDataSource extends BaseApiDataSource {
 
   Future<Map<String, dynamic>> updateCustomer({Map<String, dynamic>? data});
 
-  Future<Map<String, dynamic>> createNewCustomerAddress({Map<String, dynamic>? data});
+  Future<Map<String, dynamic>> createNewCustomerAddress({
+    Map<String, dynamic>? data,
+  });
 
-  Future<Map<String, dynamic>> updateCustomerAddress({Map<String, dynamic>? data});
+  Future<Map<String, dynamic>> updateCustomerAddress({
+    Map<String, dynamic>? data,
+  });
 
-  Future<Map<String, dynamic>> deleteCustomerAddress({Map<String, dynamic>? data});
+  Future<Map<String, dynamic>> deleteCustomerAddress({
+    Map<String, dynamic>? data,
+  });
 
   Future<Map<String, dynamic>> getAddressFromLatLng(double lat, double lng);
 
@@ -26,4 +32,5 @@ abstract class ApiMoreDataSource extends BaseApiDataSource {
   Future<Map<String, dynamic>> logout({Map<String, dynamic>? data});
 
   Future<Map<String, dynamic>> getInvoiceHtml({Map<String, dynamic>? data});
+  Future<List<SalesLine>> getSaleLinesV2({Map<String, dynamic>? data});
 }

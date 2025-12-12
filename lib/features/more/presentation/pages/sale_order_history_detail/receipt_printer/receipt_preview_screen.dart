@@ -274,7 +274,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
 
       _builder.feedPaper(1);
 
-      PosSalesHeader? header = widget.detail?.header;
+      SalesHeader? header = widget.detail?.header;
 
       _builder.addText(
         maxCharPerLine: lengText(),
@@ -376,7 +376,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         align: AlignStyle.center,
       );
 
-      List<PosSalesLine> lines = widget.detail?.lines ?? [];
+      List<SalesLine> lines = widget.detail?.lines ?? [];
       for (var i = 0; i < lines.length; i++) {
         final item = lines[i];
         _builder.addRow([

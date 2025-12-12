@@ -51,6 +51,43 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
        _local = local,
        _networkInfo = networkInfo;
 
+  // @override
+  // Future<Either<Failure, RecordSaleHeader>> getSaleHeaders({
+  //   Map<String, dynamic>? param,
+  //   int page = 1,
+  //   bool fetchingApi = true,
+  // }) async {
+  //   try {
+  //     final localSale = await _local.getSaleHeaders(args: param);
+
+  //     if (fetchingApi && await _networkInfo.isConnected) {
+  //       param?['page'] = page;
+  //       final Map<String, dynamic> cloudSales = await _remote.getSaleHeaders(
+  //         data: param,
+  //       );
+
+  //       final List<SalesHeader> records = [];
+  //       for (var item in cloudSales["records"] ?? []) {
+  //         records.add(SalesHeaderExtension.fromMap(item));
+  //       }
+
+  //       return Right(
+  //         RecordSaleHeader(
+  //           saleHeaders: records,
+  //           currentPage: cloudSales["currentPage"] ?? 1,
+  //           lastPage: cloudSales["lastPage"] ?? 1,
+  //         ),
+  //       );
+  //     }
+
+  //     return Right(RecordSaleHeader(saleHeaders: localSale));
+  //   } on GeneralException catch (e) {
+  //     return Left(CacheFailure(e.message));
+  //   } catch (_) {
+  //     rethrow;
+  //   }
+  // }
+
   @override
   Future<Either<Failure, RecordSaleHeader>> getSaleHeaders({
     Map<String, dynamic>? param,
@@ -58,44 +95,16 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
-      final localSale = await _local.getSaleHeaders(args: param);
-
-      if (fetchingApi && await _networkInfo.isConnected) {
+      final localSale = await _local.getSaleHeaders(args: param, page: page);
+      if (await _networkInfo.isConnected) {
         param?['page'] = page;
-        final Map<String, dynamic> cloudSales = await _remote.getSaleHeaders(
-          data: param,
-        );
+        final cloudSales = await _remote.getSaleHeaders(data: param);
 
-        // if (localSale.length == cloudSales.length) {
-        //   return Right(
-        //     RecordSaleHeader(
-        //       saleHeaders: localSale,
-        //       currentPage: cloudSales["currentPage"] ?? 1,
-        //       lastPage: cloudSales["lastPage"] ?? 1,
-        //     ),
-        //   );
-        // }
-
-        // final localIds = localSale.map((e) => e.id).toSet();
-
-        // final newSales = cloudSales.where((s) {
-        //   return !localIds.contains(s.id);
-        // }).toList();
-
-        // _local.storeSaleHeaders(newSales);
-
-        final List<SalesHeader> records = [];
+        final List<SalesHeader> cloudRecords = [];
         for (var item in cloudSales["records"] ?? []) {
-          records.add(SalesHeaderExtension.fromMap(item));
+          cloudRecords.add(SalesHeaderExtension.fromMap(item));
         }
-
-        return Right(
-          RecordSaleHeader(
-            saleHeaders: records,
-            currentPage: cloudSales["currentPage"] ?? 1,
-            lastPage: cloudSales["lastPage"] ?? 1,
-          ),
-        );
+        await _local.storeSaleHeaders(saleHeader: cloudRecords);
       }
 
       return Right(RecordSaleHeader(saleHeaders: localSale));
@@ -119,13 +128,7 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
         param?['page'] = page;
         final saleLineCloud = await _remote.getSaleLines(data: param);
 
-        // final localIds = localeSaleLines.map((e) => e.id).toSet();
-
-        // final newSaleLines = saleLineCloud.where((s) {
-        //   return !localIds.contains(s.id);
-        // }).toList();
-
-        // _local.storeLines(newSaleLines);
+        _local.storeSaleLine(saleLine: saleLineCloud);
         return Right(saleLineCloud);
       }
 
@@ -142,21 +145,26 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     Map<String, dynamic>? param,
   }) async {
     try {
+      String isSync = param?["isSync"];
       if (await _networkInfo.isConnected) {
-        final sales = await _remote.getSaleDetails(data: param);
-        return Right(sales);
-      } else {
-        param = {"no": param?.values.first};
-        final header = await _local.getPosSaleHeader(param: param);
+        final List<SalesLine> lines = await _remote.getSaleLinesV2(data: param);
 
-        final lines = await _local.getPosSaleLines(
-          param: {"document_no": header?.no},
-        );
-
-        final saleDetail = SaleDetail(header: header!, lines: lines);
-
-        return Right(saleDetail);
+        if (isSync == kStatusYes) {
+          await _local.storeSaleLine(saleLine: lines);
+        }
       }
+
+      final header = await _local.getSaleHeader(
+        args: {"no": param?["document_no"]},
+      );
+
+      final lines = await _local.getSaleLines(
+        args: {"document_no": header?.no},
+      );
+
+      final saleDetail = SaleDetail(header: header!, lines: lines);
+
+      return Right(saleDetail);
     } on GeneralException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (_) {
@@ -1026,12 +1034,10 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
               option: FormatType.price,
             );
 
-            if(unitPrice == 0) {
+            if (unitPrice == 0) {
               unitPrice = item.unitPrice ?? 0;
             }
-
           } else {
-            
             manualPrice = Helpers.formatNumberDb(
               saleArg.manualPrice,
               option: FormatType.price,

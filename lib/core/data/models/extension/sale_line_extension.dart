@@ -17,6 +17,7 @@ extension SalesLineExtension on SalesLine {
         json['quantity'],
         option: FormatType.quantity,
       ),
+      imgUrl: json['item_picture'] as String? ?? '',
       outstandingQuantity: Helpers.formatNumberDb(
         json['outstanding_quantity'] ?? 0,
         option: FormatType.quantity,

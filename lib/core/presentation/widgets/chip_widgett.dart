@@ -42,7 +42,10 @@ class ChipWidget extends StatelessWidget {
       onDeleted: onDeleted,
       deleteIconColor: colorText,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      padding: EdgeInsets.symmetric(vertical: scaleFontSize(vertical), horizontal: scaleFontSize(horizontal)),
+      padding: EdgeInsets.symmetric(
+        vertical: scaleFontSize(vertical),
+        horizontal: scaleFontSize(horizontal),
+      ),
       backgroundColor: bgColor,
       shadowColor: ishadowColor ? bgColor.withValues(alpha: .3) : null,
       color: WidgetStatePropertyAll(bgColor),
@@ -62,15 +65,25 @@ class ChipWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         // mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          TextWidget(text: label, fontWeight: fontWeight, fontSize: fontSize, color: colorText),
+          TextWidget(
+            text: label,
+            fontWeight: fontWeight,
+            fontSize: fontSize,
+            color: colorText,
+          ),
           if (child != null) ...[child!],
         ],
       );
     } else if (label.isNotEmpty && child == null) {
-      return TextWidget(text: label, fontWeight: fontWeight, fontSize: fontSize, color: colorText);
+      return TextWidget(
+        text: label,
+        fontWeight: fontWeight,
+        fontSize: fontSize,
+        color: colorText,
+      );
     }
 
-    return child!;
+    return child ?? SizedBox.shrink();
   }
 
   OutlinedBorder borderShape(bool isCircle) {

@@ -62,12 +62,12 @@ class _UploadScreenState extends State<UploadScreen> {
     );
   }
 
-  void _processUploadNow() {
+  void _processUploadNow() async {
     final l = LoadingOverlay.of(context);
     l.show();
 
-    _cubit.processUpload();
-
+    await _cubit.processUpload();
+    if (!context.mounted) return;
     l.hide();
   }
 
@@ -519,17 +519,22 @@ class _UploadScreenState extends State<UploadScreen> {
       return _buildEmptyBox();
     }
 
+    schedules.add(SalespersonSchedule("", name: "Non Schedule"));
+
     return ListView.separated(
       shrinkWrap: true,
       padding: EdgeInsets.zero,
       physics: const NeverScrollableScrollPhysics(),
       separatorBuilder: (context, index) {
-        if (index + 1 >= schedules.length) return const SizedBox.shrink();
+        if (index + 1 >= schedules.length) {
+          return const SizedBox.shrink();
+        }
 
         final nextSchedule = schedules[index + 1];
         final nextStockRecords = salesHeaders
             .where((e) => e.sourceNo == nextSchedule.id)
             .toList();
+
         if (nextStockRecords.isEmpty) {
           return const SizedBox.shrink();
         }
@@ -552,6 +557,7 @@ class _UploadScreenState extends State<UploadScreen> {
         final saleRecords = salesHeaders
             .where((e) => e.sourceNo == schedule.id)
             .toList();
+
         if (saleRecords.isEmpty) {
           return const SizedBox.shrink();
         }
@@ -560,6 +566,7 @@ class _UploadScreenState extends State<UploadScreen> {
           key: ValueKey(schedule.id),
           children: [
             Row(
+              spacing: scaleFontSize(appSpace8),
               key: ValueKey("row${schedule.id}"),
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -572,7 +579,7 @@ class _UploadScreenState extends State<UploadScreen> {
                   radius: 8.scale,
                   label: _getScheduleText(schedule),
                 ),
-                _getDateBox(schedule.scheduleDate ?? ""),
+                Expanded(child: _getDateBox(schedule.scheduleDate ?? "")),
               ],
             ),
             ListView.builder(
@@ -580,9 +587,9 @@ class _UploadScreenState extends State<UploadScreen> {
               padding: EdgeInsets.only(bottom: 15.scale),
               physics: const NeverScrollableScrollPhysics(),
               key: ValueKey("list${schedule.id}"),
-              itemCount: salesHeaders.length,
+              itemCount: saleRecords.length,
               itemBuilder: (context, index) {
-                final salesHeader = salesHeaders[index];
+                final salesHeader = saleRecords[index];
                 final totalSaleAmt = _cubit.state.salesLines
                     .where((line) => line.documentNo == salesHeader.no)
                     .fold<double>(

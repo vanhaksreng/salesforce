@@ -20,7 +20,6 @@ import 'package:salesforce/features/more/presentation/pages/components/sale_bott
 import 'package:salesforce/features/more/presentation/pages/components/sale_history_card_box.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_invoice_history/sale_invoice_history_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_invoice_history/sale_invoice_history_state.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen_old.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
@@ -51,13 +50,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
   void initState() {
     initialFromDate = DateTime.now().firstDayOfWeek();
     initialToDate = DateTime.now().endDayOfWeek();
-    _cubit.getSaleInvoice(
-      param: {
-        'document_type': kSaleInvoice,
-        "posting_date":
-            "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
-      },
-    );
+    _getSaleInvoice();
     _scrollController.addListener(_handleScrolling);
     super.initState();
   }
@@ -80,7 +73,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
 
   void _loadMoreItems() async {
     int pages = _cubit.state.currentPage + 1;
-    await _cubit.getSaleInvoice(page: pages);
+    _getSaleInvoice(page: pages);
   }
 
   void _onApplyFilter(Map<String, dynamic> param, BuildContext context) {
@@ -118,7 +111,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     param.remove("date");
     param.remove("isFilter");
 
-    _cubit.getSaleInvoice(param: param, page: 1, fetchingApi: true);
+    _getSaleInvoice();
 
     Navigator.of(context).pop();
   }
@@ -131,7 +124,11 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     return Navigator.pushNamed(
       context,
       SaleOrderHistoryDetailScreen.routeName,
-      arguments: {'documentNo': records[index].no, "docType": "Invoice"},
+      arguments: {
+        'documentNo': records[index].no,
+        "docType": "Invoice",
+        "isSync": records[index].isSync,
+      },
     );
   }
 
@@ -148,8 +145,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
         "customer_name": "LIKE %$text%",
       };
     }
-
-    _cubit.getSaleInvoice(param: param, page: 1, fetchingApi: true);
+    _getSaleInvoice();
   }
 
   Future<void> shareSaleOrder(String documentNo) async {
@@ -214,8 +210,9 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     _getSaleInvoice();
   }
 
-  Future<void> _getSaleInvoice() async {
+  Future<void> _getSaleInvoice({int page = 1}) async {
     return await _cubit.getSaleInvoice(
+      page: page,
       param: {
         'document_type': kSaleInvoice,
         "posting_date":
