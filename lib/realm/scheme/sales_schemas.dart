@@ -441,6 +441,8 @@ class _SalesLine {
   double? discountAmount;
   @MapTo('amount')
   double? amount;
+  @MapTo('imgUrl')
+  String? imgUrl;
   @MapTo('amount_lcy')
   double? amountLcy;
   @MapTo('amount_including_vat')

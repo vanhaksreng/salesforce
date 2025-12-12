@@ -156,4 +156,14 @@ class RealmMoreDataSourceImpl extends BaseRealmDataSourceImpl
   Future<void> deletePrinter(DevicePrinter device) async {
     return await ils.delete<DevicePrinter>(device);
   }
+
+  @override
+  Future<void> storeSaleHeaders({required List<SalesHeader> saleHeader}) async {
+    return await ils.addAll<SalesHeader>(saleHeader);
+  }
+
+  @override
+  Future<void> storeSaleLine({required List<SalesLine> saleLine}) async {
+    return await ils.addAll<SalesLine>(saleLine);
+  }
 }

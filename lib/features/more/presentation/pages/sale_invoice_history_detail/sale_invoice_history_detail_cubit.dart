@@ -5,8 +5,10 @@ import 'package:salesforce/injection_container.dart';
 
 part 'sale_invoice_history_detail_state.dart';
 
-class SaleInvoiceHistoryDetailCubit extends Cubit<SaleInvoiceHistoryDetailState> {
-  SaleInvoiceHistoryDetailCubit() : super(const SaleInvoiceHistoryDetailState(isLoading: true));
+class SaleInvoiceHistoryDetailCubit
+    extends Cubit<SaleInvoiceHistoryDetailState> {
+  SaleInvoiceHistoryDetailCubit()
+    : super(const SaleInvoiceHistoryDetailState(isLoading: true));
   final MoreRepository appRepos = getIt<MoreRepository>();
 
   Future<void> getSaleDetails({required String no}) async {

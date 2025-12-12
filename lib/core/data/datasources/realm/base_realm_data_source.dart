@@ -94,7 +94,10 @@ abstract class BaseRealmDataSource {
   Future<SalesLine?> getSaleLine({Map<String, dynamic>? args});
   Future<SalesHeader?> getSaleHeader({Map<String, dynamic>? args});
   Future<List<SalesLine>> getSaleLines({Map<String, dynamic>? args});
-  Future<List<SalesHeader>> getSaleHeaders({Map<String, dynamic>? args});
+  Future<List<SalesHeader>> getSaleHeaders({
+    int page = 1,
+    Map<String, dynamic>? args,
+  });
 
   Future<List<SalesHeader>> updateSales({
     required List<SalesHeader> saleHeaders,

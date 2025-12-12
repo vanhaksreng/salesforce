@@ -141,7 +141,11 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
     return Navigator.pushNamed(
       context,
       SaleOrderHistoryDetailScreen.routeName,
-      arguments: {'documentNo': records[index].no, "docType": "Credit Memo"},
+      arguments: {
+        'documentNo': records[index].no,
+        "docType": "Credit Memo",
+        "isSync": records[index].isSync,
+      },
     );
   }
 

@@ -529,8 +529,18 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
-  Future<List<SalesHeader>> getSaleHeaders({Map<String, dynamic>? args}) async {
-    return await _storage.getAll<SalesHeader>(args: args);
+  Future<List<SalesHeader>> getSaleHeaders({
+    int page = 1,
+    List<dynamic>? sortBy,
+    Map<String, dynamic>? args,
+  }) async {
+    return await _storage.getWithPagination<SalesHeader>(
+      args: args,
+      sortBy: [
+        {"posting_date": "desc"},
+      ],
+      page: page,
+    );
   }
 
   @override

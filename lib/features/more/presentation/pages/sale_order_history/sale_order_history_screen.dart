@@ -4,6 +4,8 @@ import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/upload/upload_screen.dart';
+import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
@@ -52,13 +54,8 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     initialFromDate = DateTime.now().firstDayOfWeek();
     initialToDate = DateTime.now().endDayOfWeek();
     getShowAddCustomer();
-    _cubit.getSaleOrders(
-      param: {
-        'document_type': kSaleOrder,
-        "posting_date":
-            "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
-      },
-    );
+    _getSaleOrder();
+
     _scrollController.addListener(_handleScrolling);
   }
 
@@ -80,7 +77,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
 
   void _loadMoreItems() async {
     int pages = _cubit.state.currentPage + 1;
-    await _cubit.getSaleOrders(page: pages);
+    await _getSaleOrder(pages);
   }
 
   void _onSearch({String? text}) {
@@ -96,15 +93,18 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     _cubit.getSaleOrders(param: param, page: 1, fetchingApi: true);
   }
 
-  Future<Object?> navigatorToSaleHistoryList(
+  Future<Object?> navigatorToSaleCard(
     BuildContext context,
-    List<dynamic> records,
-    int index,
+    SalesHeader record,
   ) {
     return Navigator.pushNamed(
       context,
       SaleOrderHistoryDetailScreen.routeName,
-      arguments: {'documentNo': records[index].no, "docType": kSaleOrder},
+      arguments: {
+        'documentNo': record.no,
+        "docType": kSaleOrder,
+        "isSync": record.isSync,
+      },
     );
   }
 
@@ -185,8 +185,9 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     }
   }
 
-  Future<void> _getSaleOrder() {
+  Future<void> _getSaleOrder([int page = 1]) {
     return _cubit.getSaleOrders(
+      page: page,
       param: {
         'document_type': kSaleOrder,
         "posting_date":
@@ -232,6 +233,15 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
       appBar: AppBarWidget(
         title: greeting("sale_orders"),
         actions: [
+          // BtnIconCircleWidget(
+          //   isShowBadge: true,
+          //   onPressed: () {
+          //     Navigator.pushNamed(context, UploadScreen.routeName);
+          //   },
+          //   icons: Icon(Icons.upload, color: white),
+          //   rounded: appBtnRound,
+          // ),
+          Helpers.gapW(appSpace8),
           if (isShowAddCustomer == kStatusYes) ...[
             BtnIconCircleWidget(
               onPressed: () => pushToAddCustomer(),
@@ -303,7 +313,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
       itemBuilder: (context, index) => SaleHistoryCardBox(
         header: records[index],
         onTapShare: () => shareSaleOrder(records[index].no ?? ""),
-        onTap: () => navigatorToSaleHistoryList(context, records, index),
+        onTap: () => navigatorToSaleCard(context, records[index]),
       ),
       itemCount: records.length,
     );

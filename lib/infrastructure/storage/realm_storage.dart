@@ -13,15 +13,24 @@ class RealmStorage implements ILocalStorage {
     _realm.close();
   }
 
-  String _buildSortClause(List? sortBy, bool ascending) {
+  String _buildSortClause(List<dynamic>? sortBy, bool ascending) {
     if (sortBy == null || sortBy.isEmpty) return '';
 
     final sortClauses = sortBy
         .map((sort) {
-          if (sort is! Map<String, String>) return '';
-          final field = sort['field'];
-          final order =
-              sort['order']?.toUpperCase() ?? (ascending ? 'ASC' : 'DESC');
+          // Expect: {"fieldName": "asc/desc"}
+          if (sort is! Map) return '';
+
+          if (sort.isEmpty) return '';
+
+          final field = sort.keys.first;
+          final rawOrder = (sort.values.first ?? '').toString().toUpperCase();
+
+          // If order missing → use default
+          final order = rawOrder.isEmpty
+              ? (ascending ? 'ASC' : 'DESC')
+              : rawOrder;
+
           return '$field $order';
         })
         .where((clause) => clause.isNotEmpty)

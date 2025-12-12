@@ -11,11 +11,16 @@ class SaleOrderHistoryDetailCubit extends Cubit<SaleOrderHistoryDetailState> {
     : super(const SaleOrderHistoryDetailState(isLoading: true));
   final MoreRepository appRepos = getIt<MoreRepository>();
 
-  Future<void> getSaleDetails({required String no}) async {
+  Future<void> getSaleDetails({
+    required String no,
+    required String isSync,
+  }) async {
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
-      final result = await appRepos.getSaleDetails(param: {'document_no': no});
+      final result = await appRepos.getSaleDetails(
+        param: {'document_no': no, "isSync": isSync},
+      );
 
       result.fold(
         (failure) => emit(state.copyWith(error: failure.message)),

@@ -3073,6 +3073,7 @@ class SalesLine extends _SalesLine
     double? discountPercentage,
     double? discountAmount,
     double? amount,
+    String? imgUrl,
     double? amountLcy,
     double? amountIncludingVat,
     double? amountIncludingVatLcy,
@@ -3156,6 +3157,7 @@ class SalesLine extends _SalesLine
     RealmObjectBase.set(this, 'discount_percentage', discountPercentage);
     RealmObjectBase.set(this, 'discount_amount', discountAmount);
     RealmObjectBase.set(this, 'amount', amount);
+    RealmObjectBase.set(this, 'imgUrl', imgUrl);
     RealmObjectBase.set(this, 'amount_lcy', amountLcy);
     RealmObjectBase.set(this, 'amount_including_vat', amountIncludingVat);
     RealmObjectBase.set(
@@ -3466,6 +3468,11 @@ class SalesLine extends _SalesLine
   set amount(double? value) => RealmObjectBase.set(this, 'amount', value);
 
   @override
+  String? get imgUrl => RealmObjectBase.get<String>(this, 'imgUrl') as String?;
+  @override
+  set imgUrl(String? value) => RealmObjectBase.set(this, 'imgUrl', value);
+
+  @override
   double? get amountLcy =>
       RealmObjectBase.get<double>(this, 'amount_lcy') as double?;
   @override
@@ -3746,6 +3753,7 @@ class SalesLine extends _SalesLine
       'discount_percentage': discountPercentage.toEJson(),
       'discount_amount': discountAmount.toEJson(),
       'amount': amount.toEJson(),
+      'imgUrl': imgUrl.toEJson(),
       'amount_lcy': amountLcy.toEJson(),
       'amount_including_vat': amountIncludingVat.toEJson(),
       'amount_including_vat_lcy': amountIncludingVatLcy.toEJson(),
@@ -3828,6 +3836,7 @@ class SalesLine extends _SalesLine
         discountPercentage: fromEJson(ejson['discount_percentage']),
         discountAmount: fromEJson(ejson['discount_amount']),
         amount: fromEJson(ejson['amount']),
+        imgUrl: fromEJson(ejson['imgUrl']),
         amountLcy: fromEJson(ejson['amount_lcy']),
         amountIncludingVat: fromEJson(ejson['amount_including_vat']),
         amountIncludingVatLcy: fromEJson(ejson['amount_including_vat_lcy']),
@@ -4072,6 +4081,7 @@ class SalesLine extends _SalesLine
         optional: true,
       ),
       SchemaProperty('amount', RealmPropertyType.double, optional: true),
+      SchemaProperty('imgUrl', RealmPropertyType.string, optional: true),
       SchemaProperty(
         'amountLcy',
         RealmPropertyType.double,

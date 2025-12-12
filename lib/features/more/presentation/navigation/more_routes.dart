@@ -152,9 +152,11 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
           final args = settings.arguments as Map<String, dynamic>;
           final documentNo = args["documentNo"] as String;
           final docType = args["docType"] as String;
+          final isSync = args["isSync"] as String;
           return SaleOrderHistoryDetailScreen(
             documentNo: documentNo,
             typeDoc: docType,
+            isSync: isSync,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

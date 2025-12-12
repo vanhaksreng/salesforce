@@ -77,7 +77,7 @@ Future<void> _initializeApp() async {
     return;
   }
 
-  if(auth != null) {
+  if (auth != null) {
     await setCompanyInjection(await storage.getFirst<CompanyInformation>());
   }
 

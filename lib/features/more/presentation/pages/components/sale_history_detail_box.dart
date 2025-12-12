@@ -19,8 +19,8 @@ import 'package:salesforce/theme/app_colors.dart';
 
 class SaleHistoryDetailBox extends StatelessWidget {
   const SaleHistoryDetailBox({super.key, this.header, required this.lines});
-  final PosSalesHeader? header;
-  final List<PosSalesLine> lines;
+  final SalesHeader? header;
+  final List<SalesLine> lines;
 
   @override
   Widget build(BuildContext context) {
