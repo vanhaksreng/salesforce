@@ -1,10 +1,8 @@
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
-import 'package:salesforce/core/presentation/row_box_text_widget.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
@@ -18,7 +16,6 @@ import 'package:salesforce/features/more/presentation/pages/administration/admin
 import 'package:salesforce/features/more/presentation/pages/administration/administration_state.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/form_connect_printer.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/list_device_connection.dart';
-import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_permission_handler.dart';
 import 'package:salesforce/features/more/presentation/pages/imin_device/printer_test_page.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
@@ -58,8 +55,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
   }
 
   Future<void> checkIminDevice() async {
-    final deviceInfo = DeviceInfoPlugin();
-    await _cubit.checkIminDevice(deviceInfo);
+    await _cubit.checkIminDevice();
   }
 
   @override
@@ -77,6 +73,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
           BlocBuilder<AdministrationCubit, AdministrationState>(
             bloc: _cubit,
             builder: (context, state) {
+              if (state.isIminDevice) return SizedBox.shrink();
               return FloatingActionButton(
                 shape: const CircleBorder(),
                 backgroundColor: mainColor,
@@ -111,11 +108,10 @@ class AdministrationScreenState extends State<AdministrationScreen>
       children: [
         _buildDashboardHeader(state),
         Helpers.gapH(8),
-        _buildBluetoothPrintingSection(state),
-        // if (!state.isIminDevice)
-        //   _buildBluetoothPrintingSection(state)
-        // else
-        //   _buildAPKDeploymentSection(state),
+        if (!state.isIminDevice)
+          _buildBluetoothPrintingSection(state)
+        else
+          _buildAPKDeploymentSection(state),
         Helpers.gapH(8),
       ],
     );
@@ -130,46 +126,6 @@ class AdministrationScreenState extends State<AdministrationScreen>
         Icons.check_circle_rounded,
         size: scaleFontSize(24),
         color: white,
-      ),
-      // child: _buildQuickStats(state),
-    );
-  }
-
-  // Widget _buildQuickStats(AdministrationState state) {
-  //   return Row(
-  //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //     children: [
-  //       _buildStatCard(
-  //         value: _getConnectedDeviceCount(state.bluetoothDevice),
-  //         label: "Connected Devices",
-  //         color: success,
-  //       ),
-  //       // _buildStatCard(value: "0", label: "Print job today", color: mainColor),
-  //     ],
-  //   );
-  // }
-
-  Widget _buildStatCard({
-    required String value,
-    required String label,
-    required Color color,
-  }) {
-    return Expanded(
-      child: BoxWidget(
-        isBoxShadow: false,
-        color: color.withValues(alpha: 0.1),
-        padding: EdgeInsets.all(scaleFontSize(8)),
-        child: RowBoxTextWidget(
-          crossAxisAlignment1: CrossAxisAlignment.center,
-          lable1: value,
-          value1: label.toUpperCase(),
-          label1FontWeight: FontWeight.bold,
-          fontSizeLable: 18,
-          fontSizeValue: 12,
-          lable1Color: color,
-          value1Color: textColor50,
-          value1FontWeight: FontWeight.normal,
-        ),
       ),
     );
   }
@@ -214,91 +170,27 @@ class AdministrationScreenState extends State<AdministrationScreen>
     );
   }
 
-  // Widget _buildBluetoothPrintingSection(AdministrationState state) {
-  //   return HeaderWidget(
-  //     title: "Print via Bluetooth",
-  //     subtitle: "Manage wireless printing operations",
-  //     bgIcon: primary,
-  //     icon: Icon(Icons.bluetooth, color: white),
-  //     child: Column(
-  //       spacing: scaleFontSize(appSpace),
-  //       children: [
-  //         _buildBluetoothConnectionStatus(state.bluetoothDevice),
-
-  //         BtnWidget(
-  //           onPressed: () => _navigateToBluetoothPage(state.bluetoothDevice),
-  //           title: "Manage Bluetooth Printing",
-  //           gradient: linearGradient,
-  //           suffixIcon: const Icon(Icons.arrow_forward),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   Widget _buildAPKDeploymentSection(AdministrationState state) {
     return HeaderWidget(
-      title: "Individual via APK",
-      subtitle: "Distribute applications to individual devices",
+      title: "iMin Printer",
+      subtitle: "Built-in thermal printer management",
       bgIcon: warning,
-      icon: Icon(Icons.mobile_friendly, color: white),
+      icon: Icon(Icons.print, color: white),
       child: Column(
+        spacing: scaleFontSize(appSpace),
         children: [
           _buildDeviceInfo(state.deviceInfo),
+
           BtnWidget(
-            onPressed: _showComingSoonMessage,
-            title: "Running on iMin",
+            onPressed: () => _cubit.testIminPrinter(),
+            title: "Test Print",
             gradient: linearGradient,
-            suffixIcon: const Icon(Icons.upload),
+            suffixIcon: Icon(Icons.print),
           ),
         ],
       ),
     );
   }
-
-  // Widget _buildBluetoothConnectionStatus(BluetoothInfo? bluetoothDevice) {
-  //   if (!_isDeviceConnected(bluetoothDevice)) {
-  //     return _buildDisconnectedStatus();
-  //   }
-  //   return _buildConnectedDeviceInfo(bluetoothDevice!);
-  // }
-
-  // Widget _buildDisconnectedStatus() {
-  //   return Align(
-  //     alignment: Alignment.centerLeft,
-  //     child: Container(
-  //       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-  //       decoration: BoxDecoration(
-  //         color: textColor50.withValues(alpha: 0.1),
-  //         borderRadius: BorderRadius.circular(20),
-  //         border: Border.all(color: textColor50.withValues(alpha: 0.3)),
-  //       ),
-  //       child: Row(
-  //         mainAxisSize: MainAxisSize.min,
-  //         children: [
-  //           Icon(Icons.bluetooth_disabled, size: 18, color: textColor50),
-  //           const SizedBox(width: 8),
-  //           TextWidget(
-  //             text: "No device connected",
-  //             fontSize: 14,
-  //             color: textColor,
-  //             fontWeight: FontWeight.w500,
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  // Widget _buildConnectedDeviceInfo(BluetoothInfo bluetoothDevice) {
-  //   return _buildInfoCard(
-  //     title: "Connected Printers",
-  //     deviceName: bluetoothDevice.name.isNotEmpty
-  //         ? bluetoothDevice.name
-  //         : "Unknown Device",
-  //     deviceId: bluetoothDevice.macAdress ?? "Unknown",
-  //   );
-  // }
 
   Widget _buildDeviceInfo(DeviceInfo? deviceInfo) {
     return _buildInfoCard(

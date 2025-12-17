@@ -51,9 +51,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
-    print(
-      "=============sdf============${_bluetoothService.connectedDevice?.paperSize}",
-    );
+
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
@@ -71,18 +69,11 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
   }
 
   Future<void> _warmUpPrinterIfNeeded() async {
-    // Wait a bit for connection to be ready
     await Future.delayed(const Duration(milliseconds: 500));
 
     if (isConnected() && !_isPrinterWarmedUp) {
       try {
-        debugPrint('🔥 Warming up printer...');
-
-        // ✅ SET PRINTER WIDTH FIRST (CRITICAL!)
         await ThermalPrinter.setPrinterWidth(Helpers.toInt(printerWidth));
-        debugPrint(
-          '📏 Printer width set to $printerWidth (${printerWidth == 384 ? "58mm" : "80mm"})',
-        );
 
         await ThermalPrinter.warmUpPrinter();
         await Future.delayed(const Duration(milliseconds: 100));
@@ -91,11 +82,8 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         await Future.delayed(const Duration(milliseconds: 100));
 
         _isPrinterWarmedUp = true;
-        debugPrint(
-          '✅ Printer warmed up and configured for ${printerWidth == 384 ? "58mm" : "80mm"} paper',
-        );
       } catch (e) {
-        debugPrint('⚠️ Warmup failed: $e');
+        debugPrint(' Warmup failed: $e');
       }
     }
   }
@@ -120,10 +108,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
           );
         }
       }
-    } catch (e, stackTrace) {
-      debugPrint('❌ Initialize error: $e');
-      debugPrint('Stack trace: $stackTrace');
-
+    } catch (e) {
       if (mounted) {
         setState(() {
           buildError = e.toString();
@@ -155,22 +140,17 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
   Future<Uint8List?> logoCompany({int? targetWidth, int? targetHeight}) async {
     final companyInfo = widget.companyInfo;
 
-    // Null safety checks
     if (companyInfo == null ||
         companyInfo.logo128 == null ||
         companyInfo.logo128!.isEmpty) {
-      debugPrint('⚠️ No logo available');
       return null;
     }
 
     try {
       ui.Image? logoImage;
 
-      // Check if logo is a URL or base64 string
-      if (companyInfo.logo128!.startsWith('http')) {
-        debugPrint('📥 Loading logo from URL: ${companyInfo.logo128}');
-
-        // Load from URL
+      if (companyInfo.logo128!.startsWith('http') ||
+          companyInfo.logo128!.startsWith('https')) {
         final response = await http
             .get(
               Uri.parse(companyInfo.logo128!),
@@ -191,14 +171,10 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
           );
           final frame = await codec.getNextFrame();
           logoImage = frame.image;
-          debugPrint('✅ Logo loaded from URL');
         } else {
           throw Exception('Failed to download logo: ${response.statusCode}');
         }
       } else {
-        debugPrint('📥 Loading logo from base64 string');
-
-        // Load from base64
         String base64String = companyInfo.logo128!;
 
         // Remove data URI prefix if present (e.g., "data:image/png;base64,")
@@ -214,28 +190,20 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         );
         final frame = await codec.getNextFrame();
         logoImage = frame.image;
-        debugPrint('✅ Logo loaded from base64');
       }
 
-      // Convert ui.Image to Uint8List (PNG format)
-      if (logoImage != null) {
-        final byteData = await logoImage.toByteData(
-          format: ui.ImageByteFormat.png,
-        );
+      final byteData = await logoImage.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
 
-        if (byteData != null) {
-          final imageBytes = byteData.buffer.asUint8List();
-          debugPrint('✅ Logo converted to bytes: ${imageBytes.length} bytes');
-          debugPrint('📐 Logo size: ${logoImage.width}x${logoImage.height}');
-          return imageBytes;
-        }
+      if (byteData != null) {
+        final imageBytes = byteData.buffer.asUint8List();
+
+        return imageBytes;
       }
 
-      debugPrint('⚠️ Failed to convert logo to bytes');
       return null;
-    } catch (e, stackTrace) {
-      debugPrint('❌ Failed to load logo: $e');
-      debugPrint('Stack trace: $stackTrace');
+    } catch (e) {
       return null;
     }
   }
@@ -244,11 +212,11 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     try {
       _builder.clear();
       Uint8List? imageBytes = await logoCompany(
-        targetWidth: 250,
-        targetHeight: 250,
+        targetWidth: 120,
+        targetHeight: 120,
       );
       if (imageBytes != null) {
-        _builder.printImage(imageBytes, width: 250);
+        _builder.printImage(imageBytes, width: 120);
       }
 
       _builder.addText(
@@ -519,14 +487,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         _isPrinterWarmedUp = true;
       }
 
-      debugPrint(
-        '🖨️ Starting BATCH print for ${printerWidth == 384 ? "58mm" : "80mm"} paper...',
-      );
-
-      // ✅ Use batch mode
       await _builder.executeBatch(ThermalPrinter);
-
-      debugPrint('✅ Print completed successfully!');
 
       if (mounted) {
         l.hide();
@@ -537,7 +498,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
         );
       }
     } catch (e, stackTrace) {
-      debugPrint('❌ Print failed: $e');
       debugPrint('Stack trace: $stackTrace');
 
       if (mounted) {

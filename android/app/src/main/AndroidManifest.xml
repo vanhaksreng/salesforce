@@ -35,6 +35,8 @@
     <!-- <uses-permission android:name="android.permission.ACCESS_SUPERUSER" />
     <uses-feature android:name="android.hardware.usb.host" />
     <uses-permission android:name="android.permission.USB_PERMISSION" /> -->
+    <!-- For SPI communication -->
+    <uses-permission android:name="android.permission.ACCESS_SUPERUSER"/>
     <uses-permission android:name="com.imin.printerservice.permission.PRINTER" />
 
     <uses-permission android:name="android.permission.USB_PERMISSION" />

@@ -1,4 +1,4 @@
-import org.gradle.internal.declarativedsl.parsing.main
+
 import java.util.Properties
 
 plugins {
@@ -59,8 +59,8 @@ android {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
-            // signingConfig = signingConfigs.getByName("debug")
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("debug")
+            // signingConfig = signingConfigs.getByName("release")
         }
     }
 }
@@ -70,13 +70,14 @@ flutter {
 }
 
 dependencies {
-
+    implementation(files("libs/iminPrinterSDK.jar"))
+    implementation(files("libs/IminLibs1.0.15.jar"))
+//    implementation("com.github.mik3y:usb-serial-for-android:3.7.2")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation ("androidx.work:work-runtime-ktx:2.10.3")
-    implementation(files("libs/IminLibs1.0.15.jar"))
-    implementation(files("libs/iminPrinterSDK.jar"))
     implementation ("io.reactivex.rxjava2:rxjava:2.2.21")
     implementation ("io.reactivex.rxjava2:rxandroid:2.1.1")
+
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
    
 }

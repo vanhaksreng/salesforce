@@ -49,7 +49,7 @@ data class PrinterSettings(
     val paddingSmall: Float,
     val paddingMedium: Float,
     val paddingLarge: Float,
-    // ✅ NEW: Khmer-specific settings
+    //  NEW: Khmer-specific settings
     val khmerLineSpacingMultiplier: Float = 1.2f,
     val khmerPaddingMultiplier: Float = 1.5f
 )
@@ -217,7 +217,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         usbManager = context.getSystemService(Context.USB_SERVICE) as? UsbManager
 
         preloadFonts()
-        println("🔵 ThermalPrinterPlugin initialized")
+        println(" ThermalPrinterPlugin initialized")
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -231,7 +231,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             try {
                 context.unregisterReceiver(it)
             } catch (e: IllegalArgumentException) {
-                println("⚠️ Receiver already unregistered")
+                println(" Receiver already unregistered")
             }
         }
 
@@ -250,7 +250,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         receiptBuffer.clear()
         isBatchMode = true
 
-        // ✅ CRITICAL: Initialize printer ONCE at the start
+        //  CRITICAL: Initialize printer ONCE at the start
         val initCommands = mutableListOf<Byte>()
         initCommands.addAll(listOf(ESC, 0x40))           // Reset printer
         initCommands.addAll(listOf(ESC, 0x74, 0x01))     // Set code page
@@ -258,18 +258,18 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         receiptBuffer.addAll(initCommands)
 
-        println("📦 Started batch mode with initialization (${if (printerWidth == 384) "58mm" else "80mm"})")
+        println(" Started batch mode with initialization (${if (printerWidth == 384) "58mm" else "80mm"})")
     }
 
     private fun endBatchMode() {
         isBatchMode = false
         if (receiptBuffer.isNotEmpty()) {
-            println("📤 Optimizing and sending batched receipt: ${receiptBuffer.size} bytes")
+            println(" Optimizing and sending batched receipt: ${receiptBuffer.size} bytes")
 
-            // ✅ CRITICAL: Optimize the data before sending
+            //  CRITICAL: Optimize the data before sending
             val optimizedData = optimizeLineFeeds(receiptBuffer.toByteArray())
 
-            println("✅ Optimized: ${receiptBuffer.size} → ${optimizedData.size} bytes")
+            println(" Optimized: ${receiptBuffer.size} → ${optimizedData.size} bytes")
 
             writeDataSmooth(optimizedData)
             receiptBuffer.clear()
@@ -322,7 +322,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private fun testPaperFeed(result: MethodChannel.Result) {
         scope.launch(Dispatchers.IO) {
             try {
-                println("🧪 TEST 1: Paper Feed Test")
+                println(" TEST 1: Paper Feed Test")
                 println("Listen for 'stuck stuck' sound...")
 
                 // Test A: Feed paper only (no printing)
@@ -347,7 +347,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private fun testSlowPrint(result: MethodChannel.Result) {
         scope.launch(Dispatchers.IO) {
             try {
-                println("🧪 TEST 2: Slow Print Test")
+                println(" TEST 2: Slow Print Test")
 
                 val commands = mutableListOf<Byte>()
                 commands.addAll(listOf(ESC, 0x40)) // Initialize
@@ -387,7 +387,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private fun checkPrinterStatus(result: MethodChannel.Result) {
         scope.launch(Dispatchers.IO) {
             try {
-                println("🧪 TEST 3: Printer Status Check")
+                println(" TEST 3: Printer Status Check")
 
                 val statusCommand = byteArrayOf(0x10, 0x04, 0x01) // DLE EOT n
 
@@ -433,26 +433,26 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                 println("""
                 ═══════════════════════════════════════
-                🔍 COMPLETE PRINTER DIAGNOSTIC
+                 COMPLETE PRINTER DIAGNOSTIC
                 ═══════════════════════════════════════
             """.trimIndent())
 
                 // Test 1: Paper feed only
-                println("\n▶️ TEST 1: Paper Feed Test")
+                println("\n TEST 1: Paper Feed Test")
                 val feedCommand = ByteArray(5) { 0x0A.toByte() }
                 writeDataSmooth(feedCommand)
                 Thread.sleep(2000)
                 diagnosticResults["paper_feed"] = "Check if 'stuck stuck' sound occurred"
 
                 // Test 2: Single line text
-                println("\n▶️ TEST 2: Single Line Test")
+                println("\n TEST 2: Single Line Test")
                 val textCommand = "TEST LINE\n".toByteArray(charset("CP437"))
                 writeDataSmooth(textCommand)
                 Thread.sleep(2000)
                 diagnosticResults["single_line"] = "Check if smooth"
 
                 // Test 3: Multiple lines with delays
-                println("\n▶️ TEST 3: Multiple Lines (with delays)")
+                println("\nTEST 3: Multiple Lines (with delays)")
                 for (i in 1..3) {
                     val line = "Line $i\n".toByteArray(charset("CP437"))
                     writeDataSmooth(line)
@@ -461,7 +461,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 diagnosticResults["multiple_lines"] = "Check if smooth with delays"
 
                 // Test 4: Multiple lines fast
-                println("\n▶️ TEST 4: Multiple Lines (fast)")
+                println("\n TEST 4: Multiple Lines (fast)")
                 val fastLines = "Fast Line 1\nFast Line 2\nFast Line 3\n".toByteArray(charset("CP437"))
                 writeDataSmooth(fastLines)
                 Thread.sleep(2000)
@@ -470,25 +470,25 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 println("""
                 
                 ═══════════════════════════════════════
-                📊 DIAGNOSTIC RESULTS
+                 DIAGNOSTIC RESULTS
                 ═══════════════════════════════════════
                 ${diagnosticResults.entries.joinToString("\n") { "${it.key}: ${it.value}" }}
                 
                 ═══════════════════════════════════════
-                📋 INTERPRETATION:
+                INTERPRETATION:
                 ═══════════════════════════════════════
-                ✅ If smooth in TEST 3 (slow) but stuck in TEST 4 (fast)
+                 If smooth in TEST 3 (slow) but stuck in TEST 4 (fast)
                    → SOLUTION: Add delays between commands
                 
-                ✅ If stuck in TEST 1 (paper feed only)
+                 If stuck in TEST 1 (paper feed only)
                    → PROBLEM: Paper or mechanical issue (not code)
                    → CHECK: Paper quality, paper sensor, roller
                 
-                ✅ If stuck in all tests
+                 If stuck in all tests
                    → PROBLEM: Printer hardware issue
                    → CHECK: Battery, print head, motor
                 
-                ✅ If smooth in all tests
+                If smooth in all tests
                    → PROBLEM: Complex data causing issues
                    → SOLUTION: Use ultra-smooth mode for images
                 ═══════════════════════════════════════
@@ -518,7 +518,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         writeDataSmooth(commands.toByteArray())
         Thread.sleep(200)
 
-        println("✅ Printer initialized with smooth settings")
+        println(" Printer initialized with smooth settings")
     }
 
     private fun cleanupAllConnections() {
@@ -535,9 +535,9 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             networkSocket = null
 
             currentConnectionType = ConnectionType.NONE
-            println("🧹 All connections cleaned up")
+            println(" All connections cleaned up")
         } catch (e: Exception) {
-            println("⚠️ Cleanup error: ${e.message}")
+            println(" Cleanup error: ${e.message}")
         }
     }
 
@@ -725,7 +725,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     )
                 }
             } catch (e: SecurityException) {
-                println("⚠️ Cannot access device: ${e.message}")
+                println(" Cannot access device: ${e.message}")
             }
         }
 
@@ -786,14 +786,14 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                                 deviceName != "Unknown" &&
                                 !discoveredDevices.contains(it)) {
                                 discoveredDevices.add(it)
-                                println("📱 Found device: $deviceName (${it.address})")
+                                println(" Found device: $deviceName (${it.address})")
                             } else {
-                                println("⏭️ Skipped device: ${deviceName ?: "null"} (${it.address})")
+                                println("Skipped device: ${deviceName ?: "null"} (${it.address})")
                             }
                         }
                     }
                     BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
-                        println("🔍 Discovery finished. Named devices: ${discoveredDevices.size}")
+                        println(" Discovery finished. Named devices: ${discoveredDevices.size}")
                         returnDiscoveredDevices(result)
                         try {
                             context?.unregisterReceiver(this)
@@ -813,7 +813,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         discoveryReceiver = receiver
         context.registerReceiver(receiver, filter)
-        println("🔍 Starting Bluetooth discovery...")
+        println(" Starting Bluetooth discovery...")
     }
 
     private fun returnDiscoveredDevices(result: MethodChannel.Result) {
@@ -847,7 +847,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     // Connection Methods
     // ====================================================================
     private fun connect(address: String, type: String, result: MethodChannel.Result) {
-        println("🔵 Connect request: address=$address, type=$type")
+        println(" Connect request: address=$address, type=$type")
 
         when (type) {
             "bluetooth" -> connectClassicBluetooth(address, result)
@@ -878,7 +878,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     return@launch
                 }
 
-                println("🔵 Connecting via Classic Bluetooth: ${device.name} ($address)")
+                println(" Connecting via Classic Bluetooth: ${device.name} ($address)")
 
                 bluetoothSocket?.close()
                 bluetoothAdapter?.cancelDiscovery()
@@ -895,20 +895,20 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 for (uuidString in uuids) {
                     try {
                         val uuid = UUID.fromString(uuidString)
-                        println("🔵 Trying UUID: $uuidString")
+                        println(" Trying UUID: $uuidString")
 
                         bluetoothSocket = device.createRfcommSocketToServiceRecord(uuid)
 
-                        println("🔵 Attempting SPP connection...")
+                        println("Attempting SPP connection...")
                         bluetoothSocket?.connect()
 
                         if (bluetoothSocket?.isConnected == true) {
-                            println("✅ Classic Bluetooth Connected with UUID: $uuidString!")
+                            println("Classic Bluetooth Connected with UUID: $uuidString!")
                             connected = true
                             break
                         }
                     } catch (e: Exception) {
-                        println("❌ Failed with UUID $uuidString: ${e.message}")
+                        println(" Failed with UUID $uuidString: ${e.message}")
                         lastException = e
                         bluetoothSocket?.close()
                         bluetoothSocket = null
@@ -920,9 +920,9 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                     try {
                         initializePrinterForSmoothPrinting()
-                        println("✅ Printer initialized for smooth printing")
+                        println(" Printer initialized for smooth printing")
                     } catch (e: Exception) {
-                        println("⚠️ Could not initialize printer settings: ${e.message}")
+                        println(" Could not initialize printer settings: ${e.message}")
                     }
 
                     withContext(Dispatchers.Main) {
@@ -932,14 +932,14 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     throw lastException ?: Exception("Failed to connect with all UUIDs")
                 }
             } catch (e: SecurityException) {
-                println("❌ Security exception: ${e.message}")
+                println(" Security exception: ${e.message}")
                 withContext(Dispatchers.Main) {
                     result.error("PERMISSION_DENIED", e.message, null)
                 }
             } catch (e: Exception) {
-                println("❌ Classic Bluetooth connection failed: ${e.message}")
-                println("📋 Stack trace: ${e.stackTraceToString()}")
-                println("🔄 Falling back to BLE connection...")
+                println(" Classic Bluetooth connection failed: ${e.message}")
+                println("Stack trace: ${e.stackTraceToString()}")
+                println(" Falling back to BLE connection...")
                 withContext(Dispatchers.Main) {
                     connectBLE(address, result)
                 }
@@ -979,7 +979,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
             mainHandler.postDelayed({
                 if (pendingResults.remove(resultKey) != null) {
-                    println("⏱️ BLE Connection timeout")
+                    println(" BLE Connection timeout")
                     result.error("TIMEOUT", "Connection timeout after ${PrinterConfig.CONNECTION_TIMEOUT}ms", null)
                     bluetoothGatt?.disconnect()
                     bluetoothGatt?.close()
@@ -1002,9 +1002,9 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                 try {
                     initializePrinterForSmoothPrinting()
-                    println("✅ Printer initialized for smooth printing")
+                    println(" Printer initialized for smooth printing")
                 } catch (e: Exception) {
-                    println("⚠️ Could not initialize printer settings: ${e.message}")
+                    println(" Could not initialize printer settings: ${e.message}")
                 }
 
                 withContext(Dispatchers.Main) {
@@ -1028,7 +1028,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
                 when (newState) {
                     BluetoothProfile.STATE_CONNECTED -> {
-                        println("✅ BLE Connected! Status: $status")
+                        println(" BLE Connected! Status: $status")
                         if (status == BluetoothGatt.GATT_SUCCESS) {
                             try {
                                 Thread.sleep(600)
@@ -1047,7 +1047,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                     BluetoothProfile.STATE_DISCONNECTED -> {
                         val errorMsg = getDisconnectReason(status)
-                        println("❌ Disconnected: $errorMsg")
+                        println(" Disconnected: $errorMsg")
                         handleConnectionError(resultKey, "DISCONNECTED", errorMsg)
                         gatt.close()
                     }
@@ -1067,13 +1067,13 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 if (characteristic != null) {
                     writeCharacteristic = characteristic
                     currentConnectionType = ConnectionType.BLUETOOTH_BLE
-                    println("✅ BLE Connection Success! Char: ${characteristic.uuid}")
+                    println("BLE Connection Success! Char: ${characteristic.uuid}")
 
                     try {
                         initializePrinterForSmoothPrinting()
-                        println("✅ Printer initialized for smooth printing")
+                        println("Printer initialized for smooth printing")
                     } catch (e: Exception) {
-                        println("⚠️ Could not initialize printer settings: ${e.message}")
+                        println(" Could not initialize printer settings: ${e.message}")
                     }
 
                     mainHandler.post {
@@ -1114,19 +1114,19 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 val service = gatt.getService(UUID.fromString(serviceUuidStr))
                 service?.characteristics?.forEach { char ->
                     if (isWritable(char)) {
-                        println("✅ Found writable char in known service: ${char.uuid}")
+                        println(" Found writable char in known service: ${char.uuid}")
                         return char
                     }
                 }
             } catch (e: Exception) {
-                println("⚠️ Error checking service $serviceUuidStr: ${e.message}")
+                println(" Error checking service $serviceUuidStr: ${e.message}")
             }
         }
 
         gatt.services.forEach { service ->
             service.characteristics.forEach { char ->
                 if (isWritable(char)) {
-                    println("✅ Found writable char: ${char.uuid}")
+                    println(" Found writable char: ${char.uuid}")
                     return char
                 }
             }
@@ -1161,14 +1161,14 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private fun cleanupBeforeConnect() {
         try {
             bluetoothGatt?.let { gatt ->
-                println("🧹 Cleaning up existing BLE connection...")
+                println(" Cleaning up existing BLE connection...")
                 gatt.disconnect()
                 Thread.sleep(300)
                 gatt.close()
                 Thread.sleep(300)
             }
         } catch (e: Exception) {
-            println("⚠️ Cleanup error: ${e.message}")
+            println(" Cleanup error: ${e.message}")
         }
         bluetoothGatt = null
         writeCharacteristic = null
@@ -1190,7 +1190,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                             writeClassicBluetoothWithLineDelay(socket, data, lineFeeds)
 
                             val elapsed = System.currentTimeMillis() - startTime
-                            println("✅ Classic BT: ${data.size} bytes in ${elapsed}ms")
+                            println(" Classic BT: ${data.size} bytes in ${elapsed}ms")
                             return
                         }
                     }
@@ -1210,10 +1210,10 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     }
                 }
 
-                else -> println("❌ No active connection")
+                else -> println(" No active connection")
             }
         } catch (e: Exception) {
-            println("❌ Write error: ${e.message}")
+            println(" Write error: ${e.message}")
             throw e
         }
     }
@@ -1226,7 +1226,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         val outputStream = socket.outputStream
 
         if (lineFeeds > 0 && data.size < 500) {
-            println("📝 Writing with line feed delays (${lineFeeds} line feeds)")
+            println(" Writing with line feed delays (${lineFeeds} line feeds)")
 
             for (i in data.indices) {
                 outputStream.write(data[i].toInt())
@@ -1234,7 +1234,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 if (data[i] == 0x0A.toByte()) {
                     outputStream.flush()
                     Thread.sleep(50L)
-                    println("⏸️ Line feed delay")
+                    println("Line feed delay")
                 }
             }
             outputStream.flush()
@@ -1270,7 +1270,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         val gatt = bluetoothGatt
 
         if (characteristic == null || gatt == null) {
-            println("❌ No BLE connection")
+            println("No BLE connection")
             return
         }
 
@@ -1321,10 +1321,10 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
 
             val elapsed = System.currentTimeMillis() - startTime
-            println("✅ BLE: ${elapsed}ms total")
+            println("BLE: ${elapsed}ms total")
 
         } catch (e: Exception) {
-            println("❌ BLE Error: ${e.message}")
+            println("BLE Error: ${e.message}")
             throw e
         }
     }
@@ -1356,7 +1356,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 offset = end
             }
         } catch (e: Exception) {
-            println("❌ Network error: ${e.message}")
+            println("Network error: ${e.message}")
             throw e
         }
     }
@@ -1365,7 +1365,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     // Printer Configuration
     // ====================================================================
     private fun warmUpPrinter() {
-        println("🔥 Warming up printer...")
+        println(" Warming up printer...")
 
         val warmUpData = byteArrayOf(
             ESC, 0x40,
@@ -1393,9 +1393,9 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 }
                 else -> {}
             }
-            println("✅ Printer warmed up")
+            println("Printer warmed up")
         } catch (e: Exception) {
-            println("⚠️ Warm-up failed: ${e.message}")
+            println("Warm-up failed: ${e.message}")
         }
     }
 
@@ -1410,7 +1410,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         writeDataSmooth(config.toByteArray())
 
-        println("✅ OOMAS configuration applied")
+        println(" OOMAS configuration applied")
     }
 
     private fun initializePrinterForSmoothPrinting() {
@@ -1433,7 +1433,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         writeDataSmooth(commands.toByteArray())
         Thread.sleep(200)
 
-        println("✅ Printer initialized for smooth operation")
+        println(" Printer initialized for smooth operation")
     }
 
     private fun printSeparator(width: Int, result: MethodChannel.Result) {
@@ -1486,7 +1486,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     val shouldRenderAsImage = fontSize < 20 || containsComplexUnicode(text)
 
                     if (shouldRenderAsImage) {
-                        println("🖼️ Rendering as image (fontSize: $fontSize): \"${text.take(30)}...\"")
+                        println(" Rendering as image (fontSize: $fontSize): \"${text.take(30)}...\"")
                         val imageData = renderTextToData(text, fontSize, bold, align, maxCharsPerLine)
 
                         if (imageData == null || imageData.isEmpty()) {
@@ -1495,7 +1495,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                         val alignLeftCommand = byteArrayOf(ESC, 0x61.toByte(), 0x00.toByte())
 
-                        // ✅ ADD EXTRA LINE FEED FOR KHMER
+                        //  ADD EXTRA LINE FEED FOR KHMER
                         val hasKhmer = containsComplexUnicode(text)
                         val extraLineFeed = if (hasKhmer && fontSize < 18) {
                             byteArrayOf(0x0A.toByte())  // Add one line break
@@ -1512,13 +1512,13 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     }
 
                     val elapsed = System.currentTimeMillis() - startTime
-                    println("✅ Text added to buffer in ${elapsed}ms")
+                    println(" Text added to buffer in ${elapsed}ms")
 
                     withContext(Dispatchers.Main) {
                         result.success(true)
                     }
                 } catch (e: Exception) {
-                    println("❌ Print error: ${e.message}")
+                    println(" Print error: ${e.message}")
                     withContext(Dispatchers.Main) {
                         result.error("PRINT_ERROR", e.message, null)
                     }
@@ -1534,7 +1534,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         align: String,
         maxCharsPerLine: Int
     ) {
-        println("🔵 Adding text to buffer: \"${text.take(30)}...\"")
+        println(" Adding text to buffer: \"${text.take(30)}...\"")
 
         val commands = mutableListOf<Byte>()
 
@@ -1622,7 +1622,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
             val maxWidth = printerWidth.toFloat()
 
-            // ✅ INCREASED PADDING FOR KHMER
+            //  INCREASED PADDING FOR KHMER
             val hasKhmer = containsComplexUnicode(text)
             val padding = when {
                 hasKhmer && fontSize < 14 -> config.paddingSmall * 2f  // Double padding for Khmer
@@ -1646,7 +1646,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 }
             }
 
-            // ✅ INCREASED LINE SPACING FOR KHMER
+            //  INCREASED LINE SPACING FOR KHMER
             val lineSpacingMultiplier = when {
                 hasKhmer && fontSize < 14 -> 1.25f  // Much more space for small Khmer
                 hasKhmer && fontSize < 18 -> 1.15f
@@ -1660,7 +1660,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val baseLineHeight = fontMetrics.descent - fontMetrics.ascent
             val lineHeight = baseLineHeight * lineSpacingMultiplier
 
-            // ✅ ADD EXTRA SPACE FOR KHMER DESCENDERS
+            //  ADD EXTRA SPACE FOR KHMER DESCENDERS
             val extraBottomPadding = if (hasKhmer) padding * 0.5f else 0f
             val totalHeight = (lineHeight * lines.size + padding * 2 + extraBottomPadding).toInt()
 
@@ -1684,7 +1684,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val monoData = convertToMonochromeFast(bitmap)
 
             if (monoData == null) {
-                println("❌ Failed to convert to monochrome")
+                println(" Failed to convert to monochrome")
                 return null
             }
 
@@ -1704,11 +1704,11 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
             System.arraycopy(monoData.data, 0, commands, idx, monoData.data.size)
 
-            println("✅ Rendered ${lines.size} lines, total height: ${totalHeight}px (Khmer spacing: ${if(hasKhmer) "YES" else "NO"})")
+            println(" Rendered ${lines.size} lines, total height: ${totalHeight}px (Khmer spacing: ${if(hasKhmer) "YES" else "NO"})")
             return commands
 
         } catch (e: Exception) {
-            println("❌ Render error: ${e.message}")
+            println(" Render error: ${e.message}")
             return null
         } finally {
             bitmap?.recycle()
@@ -1745,12 +1745,12 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         return@withLock
                     }
 
-                    // ✅ KEY FIX: Force image rendering for small fonts or complex Unicode
+                    //  KEY FIX: Force image rendering for small fonts or complex Unicode
                     val hasComplexUnicode = posColumns.any { containsComplexUnicode(it.text) }
                     val shouldRenderAsImage = fontSize < 20 || hasComplexUnicode
 
                     if (shouldRenderAsImage) {
-                        println("🖼️ Rendering row as image (fontSize: $fontSize)")
+                        println(" Rendering row as image (fontSize: $fontSize)")
                         val imageData = renderRowToData(posColumns, fontSize)
                         if (imageData == null || imageData.isEmpty()) {
                             withContext(Dispatchers.Main) {
@@ -1760,18 +1760,18 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         }
                         addToBuffer(imageData)
                     } else {
-                        println("📝 Printing row as text (fontSize: $fontSize)")
+                        println(" Printing row as text (fontSize: $fontSize)")
                         printRowUsingTextMethodBatched(posColumns, fontSize)
                     }
 
                     val elapsed = System.currentTimeMillis() - startTime
-                    println("✅ Row added to buffer in ${elapsed}ms")
+                    println(" Row added to buffer in ${elapsed}ms")
 
                     withContext(Dispatchers.Main) {
                         result.success(true)
                     }
                 } catch (e: Exception) {
-                    println("❌ Row error: ${e.message}")
+                    println(" Row error: ${e.message}")
                     withContext(Dispatchers.Main) {
                         result.error("PRINT_ROW_ERROR", e.message, null)
                     }
@@ -1791,7 +1791,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             else -> 48
         }
 
-        // ✅ Use grapheme-aware wrapping for text mode
+        //  Use grapheme-aware wrapping for text mode
         val columnTextLists = columns.map { column ->
             val maxCharsPerColumn = (totalChars * column.width) / 12
             val lines = wrapTextToList(column.text, maxCharsPerColumn)
@@ -1860,7 +1860,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val maxWidth = printerWidth.toFloat()
             val columnWidths = columns.map { (maxWidth * it.width) / 12 }
 
-            // ✅ Check if ANY column has Khmer
+            //  Check if ANY column has Khmer
             val hasKhmer = columns.any { containsComplexUnicode(it.text) }
 
             val basePaint = Paint().apply {
@@ -1890,7 +1890,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     try {
                         wrapTextToWidth(column.text, availableWidth, columnPaint)
                     } catch (e: Exception) {
-                        println("⚠️ Word wrapping failed, using syllable wrapping")
+                        println(" Word wrapping failed, using syllable wrapping")
                         wrapTextToList(column.text,maxLines)
                     }
                 } else {
@@ -1904,7 +1904,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 }
             }
 
-            // ✅ INCREASED LINE SPACING FOR KHMER ROWS
+            //  INCREASED LINE SPACING FOR KHMER ROWS
             val lineSpacingMultiplier = when {
                 hasKhmer && fontSize < 14 -> 1.25f
                 hasKhmer && fontSize < 18 -> 1.15f
@@ -1918,7 +1918,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val baseLineHeight = fontMetrics.descent - fontMetrics.ascent
             val lineHeight = baseLineHeight * lineSpacingMultiplier
 
-            // ✅ INCREASED PADDING FOR KHMER ROWS
+            //  INCREASED PADDING FOR KHMER ROWS
             val verticalPadding = when {
                 hasKhmer && fontSize < 14 -> config.paddingSmall * 2f
                 hasKhmer && fontSize < 18 -> config.paddingMedium * 1.8f
@@ -1928,7 +1928,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 else -> config.paddingLarge
             }
 
-            // ✅ ADD EXTRA BOTTOM SPACE FOR KHMER
+            //  ADD EXTRA BOTTOM SPACE FOR KHMER
             val extraBottomPadding = if (hasKhmer) verticalPadding * 0.5f else 0f
             val totalHeight = (lineHeight * maxLines + verticalPadding * 2 + extraBottomPadding).toInt()
 
@@ -1975,7 +1975,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val monoData = convertToMonochromeFast(bitmap)
 
             if (monoData == null) {
-                println("❌ Failed to convert row to monochrome")
+                println(" Failed to convert row to monochrome")
                 return null
             }
 
@@ -1995,11 +1995,11 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
             System.arraycopy(monoData.data, 0, commands, idx, monoData.data.size)
 
-            println("✅ Row rendered: ${columns.size} columns, ${maxLines} lines, height: ${totalHeight}px (Khmer: ${if(hasKhmer) "YES" else "NO"})")
+            println(" Row rendered: ${columns.size} columns, ${maxLines} lines, height: ${totalHeight}px (Khmer: ${if(hasKhmer) "YES" else "NO"})")
             return commands
 
         } catch (e: Exception) {
-            println("❌ Row render error: ${e.message}")
+            println(" Row render error: ${e.message}")
             e.printStackTrace()
             return null
         } finally {
@@ -2098,7 +2098,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         result.success(true)
                     }
                 } catch (e: Exception) {
-                    println("❌ Image print error: ${e.message}")
+                    println(" Image print error: ${e.message}")
                     withContext(Dispatchers.Main) {
                         result.error("PRINT_ERROR", e.message, null)
                     }
@@ -2173,7 +2173,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         result.success(true)
                     }
                 } catch (e: Exception) {
-                    println("❌ Image padding print error: ${e.message}")
+                    println(" Image padding print error: ${e.message}")
                     withContext(Dispatchers.Main) {
                         result.error("PRINT_ERROR", e.message, null)
                     }
@@ -2288,11 +2288,11 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 }
             }
 
-            println("✅ Converted to monochrome: ${width}x${height}, ${data.size} bytes")
+            println(" Converted to monochrome: ${width}x${height}, ${data.size} bytes")
             return MonochromeData(width, height, data)
 
         } catch (e: Exception) {
-            println("❌ Monochrome conversion error: ${e.message}")
+            println(" Monochrome conversion error: ${e.message}")
             e.printStackTrace()
             return null
         }
@@ -2329,7 +2329,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         val hasKhmer = containsComplexUnicode(text)
 
         if (hasKhmer) {
-            // ✅ KHMER TEXT: Use grapheme-aware wrapping
+            //  KHMER TEXT: Use grapheme-aware wrapping
             val boundary = java.text.BreakIterator.getCharacterInstance()
             boundary.setText(text)
 
@@ -2385,7 +2385,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
 
         } else {
-            // ✅ LATIN TEXT: Use word-based wrapping
+            //  LATIN TEXT: Use word-based wrapping
             val words = text.split(" ")
             var currentLine = StringBuilder()
 
@@ -2599,7 +2599,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     private fun setPrinterWidth(width: Int, result: MethodChannel.Result) {
         printerWidth = width
-        println("✅ Printer width set to $width dots (${if (width == 384) "58mm" else "80mm"})")
+        println(" Printer width set to $width dots (${if (width == 384) "58mm" else "80mm"})")
         result.success(true)
     }
 
@@ -2674,10 +2674,10 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     else -> "fonts/NotoSansKhmer-Regular.ttf"
                 }
 
-                println("✅ Loading font: $fontPath")
+                println(" Loading font: $fontPath")
                 Typeface.createFromAsset(context.assets, fontPath)
             } catch (e: Exception) {
-                println("⚠️ Failed to load Khmer font: ${e.message}")
+                println(" Failed to load Khmer font: ${e.message}")
                 Typeface.DEFAULT
             }
         }
@@ -2693,10 +2693,10 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     private fun preloadFonts() {
         scope.launch(Dispatchers.IO) {
-            println("🔄 Preloading fonts...")
+            println(" Preloading fonts...")
             getKhmerTypeface(false)
             getKhmerTypeface(true)
-            println("✅ Fonts preloaded")
+            println(" Fonts preloaded")
         }
     }
 }

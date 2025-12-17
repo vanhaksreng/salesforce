@@ -7,10 +7,14 @@ import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
 import 'package:salesforce/features/more/presentation/pages/components/sale_history_detail_box.dart';
+import 'package:salesforce/features/more/presentation/pages/imin_device/imin_mixin.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/imin_device/receipt_imin.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/receipt_preview_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_cubit.dart';
 import 'package:salesforce/localization/trans.dart';
+import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class SaleOrderHistoryDetailScreen extends StatefulWidget {
@@ -33,7 +37,7 @@ class SaleOrderHistoryDetailScreen extends StatefulWidget {
 
 class _SaleOrderHistoryDetailScreenState
     extends State<SaleOrderHistoryDetailScreen>
-    with MessageMixin {
+    with MessageMixin, IminPrinterMixin {
   final _cubit = SaleOrderHistoryDetailCubit();
 
   bool connected = false;
@@ -48,6 +52,7 @@ class _SaleOrderHistoryDetailScreenState
   }
 
   Future<void> loadData() async {
+    await checkIminDevice();
     await _cubit.getSaleDetails(no: widget.documentNo, isSync: widget.isSync);
     await _cubit.getComapyInfo();
   }
@@ -63,6 +68,31 @@ class _SaleOrderHistoryDetailScreenState
     }
   }
 
+  void pushToPrintReceipt({
+    CompanyInformation? company,
+    SaleDetail? detail,
+  }) async {
+    if (await checkIminDevice()) {
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              ReceiptImin(companyInfo: company, detail: detail),
+        ),
+      );
+    } else {
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              ReceiptPreviewScreen(companyInfo: company, detail: detail),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,23 +105,8 @@ class _SaleOrderHistoryDetailScreenState
               final detail = state.record;
               final company = state.comPanyInfo;
               return BtnIconCircleWidget(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    // MaterialPageRoute(
-                    //   builder: (context) => ReceiptPreview58mmScreen(
-                    //     companyInfo: company,
-                    //     detail: detail,
-                    //   ),
-                    // ),
-                    MaterialPageRoute(
-                      builder: (context) => ReceiptPreviewScreen(
-                        companyInfo: company,
-                        detail: detail,
-                      ),
-                    ),
-                  );
-                },
+                onPressed: () =>
+                    pushToPrintReceipt(company: company, detail: detail),
                 icons: const Icon(Icons.print_rounded, color: white),
                 rounded: appBtnRound,
               );

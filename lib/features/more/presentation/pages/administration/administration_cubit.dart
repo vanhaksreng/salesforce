@@ -13,12 +13,13 @@ import 'package:salesforce/features/more/presentation/pages/administration/admin
 import 'package:salesforce/features/more/presentation/pages/administration/bletooth_printer_service.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/device_printer_mixin.dart';
 import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_permission_handler.dart';
+import 'package:salesforce/features/more/presentation/pages/imin_device/imin_mixin.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/receipt_printer/thermal_printer.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 
 class AdministrationCubit extends Cubit<AdministrationState>
-    with MessageMixin, DevicePrinterMixin {
+    with MessageMixin, DevicePrinterMixin, IminPrinterMixin {
   AdministrationCubit() : super(AdministrationState(isLoading: true));
   final _repos = getIt<MoreRepository>();
   final _bluetoothService = BluetoothPrinterService();
@@ -163,37 +164,85 @@ class AdministrationCubit extends Cubit<AdministrationState>
   Future<void> initialize() async {
     emit(state.copyWith(isLoading: true));
 
-    // Listen to connection changes from the service
-    _connectionSubscription = _bluetoothService.connectionStream.listen((
-      device,
-    ) {
-      emit(state.copyWith(selectedDevice: device));
-    });
-
-    _statusSubscription = _bluetoothService.statusStream.listen((status) {
-      if (status == ConnectionStatus.connecting) {
-        // Optional: show connecting state
-      } else if (status == ConnectionStatus.connected) {
-        // Optional: show connected state
-      }
-    });
-
     try {
-      // Initialize the bluetooth service (will auto-reconnect if saved)
-      await _bluetoothService.initialize();
+      await checkImin();
 
-      // Load saved devices
-      await getDevicePrinter();
+      if (state.isIminDevice) {
+        bool initialized = false;
+        int attempts = 0;
 
-      // Update state with current connection
-      emit(
-        state.copyWith(
-          selectedDevice: _bluetoothService.connectedDevice,
-          isLoading: false,
-        ),
-      );
+        while (!initialized && attempts < 3) {
+          attempts++;
+
+          try {
+            await initializeIminPrinter();
+
+            await Future.delayed(Duration(seconds: 3));
+
+            final status = await checkIminPrinterStatus(showMessage: false);
+
+            if (status != null) {
+              final statusCode = status['status'] as int;
+              if (statusCode == 0 || statusCode == -1) {
+                initialized = true;
+                debugPrint(" iMin printer initialized successfully");
+              } else {
+                debugPrint("Printer status: ${status['message']}, retrying...");
+                await Future.delayed(Duration(seconds: 2));
+              }
+            }
+          } catch (e) {
+            debugPrint("Initialization attempt $attempts failed: $e");
+            if (attempts < 3) {
+              await Future.delayed(Duration(seconds: 2));
+            }
+          }
+        }
+
+        if (!initialized) {
+          showErrorMessage(
+            "Failed to initialize printer after $attempts attempts",
+          );
+        }
+
+        emit(state.copyWith(isLoading: false));
+      } else {
+        debugPrint("📱 Non-iMin device - initializing Bluetooth printer");
+
+        // Listen to connection changes from the Bluetooth service
+        _connectionSubscription = _bluetoothService.connectionStream.listen((
+          device,
+        ) {
+          emit(state.copyWith(selectedDevice: device));
+        });
+
+        _statusSubscription = _bluetoothService.statusStream.listen((status) {
+          if (status == ConnectionStatus.connecting) {
+            debugPrint(" Bluetooth printer connecting...");
+          } else if (status == ConnectionStatus.connected) {
+            debugPrint(" Bluetooth printer connected");
+          } else if (status == ConnectionStatus.disconnected) {
+            debugPrint(" Bluetooth printer disconnected");
+          }
+        });
+
+        // Initialize the bluetooth service (will auto-reconnect if saved)
+        await _bluetoothService.initialize();
+
+        // Load saved devices
+        await getDevicePrinter();
+
+        emit(
+          state.copyWith(
+            selectedDevice: _bluetoothService.connectedDevice,
+            isLoading: false,
+          ),
+        );
+      }
     } catch (error) {
+      debugPrint("Initialization error: $error");
       emit(state.copyWith(isLoading: false));
+      showErrorMessage("Initialization failed: ${error.toString()}");
     }
   }
 
@@ -290,31 +339,42 @@ class AdministrationCubit extends Cubit<AdministrationState>
     );
   }
 
-  // void checkBluetoothDevie(BluetoothInfo? devices) {
-  //   if (devices == null) return;
-
-  //   emit(state.copyWith(bluetoothDevice: devices));
-  // }
-
-  Future<void> checkIminDevice(DeviceInfoPlugin deviceInfo) async {
-    if (!Platform.isAndroid) return;
-
-    AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-    final model = (androidInfo.model).toLowerCase();
-
-    if (model.contains("m2-202") ||
-        model.contains("m2-203") ||
-        model.contains("m2 pro")) {
-      emit(state.copyWith(isIminDevice: true));
-    } else {
-      emit(state.copyWith(isIminDevice: false));
-    }
-  }
-
   @override
   Future<void> close() {
     _connectionSubscription?.cancel();
     _statusSubscription?.cancel();
     return super.close();
+  }
+
+  Future<bool> checkImin() async {
+    if (await checkIminDevice()) {
+      emit(state.copyWith(isIminDevice: true));
+      return true;
+    }
+    emit(state.copyWith(isIminDevice: false));
+    return false;
+  }
+
+  Future<void> printReceiptWithImin(String receiptContent) async {
+    emit(state.copyWith(isLoading: true));
+
+    try {
+      final success = await printWithImin(receiptContent);
+      emit(state.copyWith(isLoading: false));
+
+      if (!success) {
+        // Handle print failure
+      }
+    } catch (e) {
+      emit(state.copyWith(isLoading: false));
+      showErrorMessage("Print failed: ${e.toString()}");
+    }
+  }
+
+  /// Test iMin printer
+  Future<void> testIminPrinter() async {
+    emit(state.copyWith(isLoading: true));
+    await printIminTestReceipt();
+    emit(state.copyWith(isLoading: false));
   }
 }
