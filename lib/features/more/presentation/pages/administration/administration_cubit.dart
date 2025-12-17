@@ -165,8 +165,6 @@ class AdministrationCubit extends Cubit<AdministrationState>
     emit(state.copyWith(isLoading: true));
 
     try {
-      await checkImin();
-
       if (state.isIminDevice) {
         bool initialized = false;
         int attempts = 0;

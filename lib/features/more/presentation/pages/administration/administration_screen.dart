@@ -36,26 +36,19 @@ class AdministrationScreenState extends State<AdministrationScreen>
   @override
   void initState() {
     super.initState();
-    _cubit.checkBluetoothStatus();
-    _cubit.checkListenIOSBluetooth();
-    _cubit.startScanning(context);
-    _cubit.initialize();
+    _cubit.checkInforDevice();
+    _cubit.checkImin();
     _initializeScreen();
-  }
-
-  @override
-  void dispose() {
-    _cubit.close();
-    super.dispose();
+    _cubit.initialize();
   }
 
   Future<void> _initializeScreen() async {
-    await _cubit.checkInforDevice();
-    await checkIminDevice();
-  }
-
-  Future<void> checkIminDevice() async {
-    await _cubit.checkIminDevice();
+    if (!await _cubit.checkIminDevice()) {
+      _cubit.checkBluetoothStatus();
+      _cubit.checkListenIOSBluetooth();
+      if (!mounted) return;
+      _cubit.startScanning(context);
+    }
   }
 
   @override
