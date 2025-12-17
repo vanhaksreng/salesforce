@@ -69,7 +69,7 @@ class _ReceiptIminState extends State<ReceiptImin>
     try {
       await IminPrinterService.initialize();
       final info = await IminPrinterService.getDeviceInfo();
-      if (info != null && info['printerWidth'] != null) {
+      if (info['printerWidth'] != null) {
         setState(() {
           printerWidth = info['printerWidth'] as int;
         });
@@ -106,17 +106,12 @@ class _ReceiptIminState extends State<ReceiptImin>
     return printerWidth = 32;
   }
 
-  String discountValue({double? disAmount, double? disPer}) {
-    if (disAmount != null && disAmount > 0) {
-      return Helpers.formatNumber(
-        disAmount,
-        option: FormatType.amount,
-        display: false,
-      );
-    } else if (disPer != null && disPer > 0) {
-      return '${disPer.toStringAsFixed(0)}%';
-    }
-    return '0%';
+  discountValue({double? disAmount, double? disPer}) {
+    return (disAmount != null && disAmount != 0.0)
+        ? Helpers.formatNumber(disAmount, option: FormatType.amount)
+        : (disPer != null && disPer != 0)
+        ? Helpers.formatNumber(disPer, option: FormatType.percentage)
+        : " ";
   }
 
   void _updateProgress(String status, double progress) {
