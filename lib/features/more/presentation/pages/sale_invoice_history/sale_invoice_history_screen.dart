@@ -4,6 +4,7 @@ import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/upload/upload_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
@@ -228,6 +229,25 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
       appBar: AppBarWidget(
         title: greeting("sale_invoice"),
         actions: [
+          BlocBuilder<SaleInvoiceHistoryCubit, SaleInvoiceHistoryState>(
+            bloc: _cubit,
+            builder: (context, state) {
+              bool isHasUpload = state.records.any(
+                (e) => e.isSync == kStatusNo,
+              );
+              if (!isHasUpload) {
+                return SizedBox.shrink();
+              }
+              return BtnIconCircleWidget(
+                isShowBadge: true,
+                onPressed: () {
+                  Navigator.pushNamed(context, UploadScreen.routeName);
+                },
+                icons: Icon(Icons.upload, color: white),
+                rounded: appBtnRound,
+              );
+            },
+          ),
           if (isShowAddCustomer == kStatusYes) ...[
             BtnIconCircleWidget(
               onPressed: () => pushToAddCustomer(),

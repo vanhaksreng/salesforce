@@ -4,6 +4,7 @@ class SaleOrderHistoryState {
   final bool isLoading;
   final String? error;
   final List<SalesHeader> records;
+  final List<SalesLine> saleLines;
   final DateTime? startDate;
   final DateTime? toDate;
   final String? selectedStatus;
@@ -13,11 +14,13 @@ class SaleOrderHistoryState {
   final int lastPage;
   final bool isFetching;
   final String? htmlContent;
+  final Map<String, double> headerTotals;
 
   const SaleOrderHistoryState({
     this.isLoading = false,
     this.error,
     this.records = const [],
+    this.saleLines = const [],
     this.startDate,
     this.toDate,
     this.currentPage = 1,
@@ -27,6 +30,7 @@ class SaleOrderHistoryState {
     this.isFilter,
     this.isFetching = false,
     this.htmlContent,
+    this.headerTotals = const {},
   });
 
   SaleOrderHistoryState copyWith({
@@ -39,14 +43,17 @@ class SaleOrderHistoryState {
     String? selectedDate,
     bool? isFilter,
     int? currentPage,
+    List<SalesLine>? saleLines,
     int? lastPage,
     bool? isFetching,
     String? htmlContent,
+    Map<String, double>? headerTotals,
   }) {
     return SaleOrderHistoryState(
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
       records: records ?? this.records,
+      saleLines: saleLines ?? this.saleLines,
       startDate: startDate ?? this.startDate,
       toDate: toDate ?? this.toDate,
       selectedStatus: selectedStatus ?? this.selectedStatus,
@@ -56,6 +63,7 @@ class SaleOrderHistoryState {
       lastPage: lastPage ?? this.lastPage,
       isFetching: isFetching ?? this.isFetching,
       htmlContent: htmlContent ?? this.htmlContent,
+      headerTotals: headerTotals ?? this.headerTotals,
     );
   }
 }

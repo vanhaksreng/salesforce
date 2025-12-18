@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/upload/upload_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
@@ -187,6 +189,25 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
       appBar: AppBarWidget(
         title: greeting("sale_credit_memo"),
         actions: [
+          BlocBuilder<SaleCreditMemoHistoryCubit, SaleCreditMemoHistoryState>(
+            bloc: _cubit,
+            builder: (context, state) {
+              bool isHasUpload = state.records.any(
+                (e) => e.isSync == kStatusNo,
+              );
+              if (!isHasUpload) {
+                return SizedBox.shrink();
+              }
+              return BtnIconCircleWidget(
+                isShowBadge: true,
+                onPressed: () {
+                  Navigator.pushNamed(context, UploadScreen.routeName);
+                },
+                icons: Icon(Icons.upload, color: white),
+                rounded: appBtnRound,
+              );
+            },
+          ),
           BtnIconCircleWidget(
             onPressed: () => _showModalFiltter(context),
             icons: SvgWidget(

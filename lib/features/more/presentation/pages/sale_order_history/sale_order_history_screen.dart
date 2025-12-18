@@ -72,7 +72,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
   bool _shouldLoadMore() {
     return _scrollController.position.pixels ==
             _scrollController.position.maxScrollExtent &&
-        !_cubit.state.isFetching;
+        _cubit.state.currentPage < _cubit.state.lastPage;
   }
 
   void _loadMoreItems() async {
@@ -233,14 +233,25 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
       appBar: AppBarWidget(
         title: greeting("sale_orders"),
         actions: [
-          // BtnIconCircleWidget(
-          //   isShowBadge: true,
-          //   onPressed: () {
-          //     Navigator.pushNamed(context, UploadScreen.routeName);
-          //   },
-          //   icons: Icon(Icons.upload, color: white),
-          //   rounded: appBtnRound,
-          // ),
+          BlocBuilder<SaleOrderHistoryCubit, SaleOrderHistoryState>(
+            bloc: _cubit,
+            builder: (context, state) {
+              bool isHasUpload = state.records.any(
+                (e) => e.isSync == kStatusNo,
+              );
+              if (!isHasUpload) {
+                return SizedBox.shrink();
+              }
+              return BtnIconCircleWidget(
+                isShowBadge: true,
+                onPressed: () {
+                  Navigator.pushNamed(context, UploadScreen.routeName);
+                },
+                icons: Icon(Icons.upload, color: white),
+                rounded: appBtnRound,
+              );
+            },
+          ),
           Helpers.gapW(appSpace8),
           if (isShowAddCustomer == kStatusYes) ...[
             BtnIconCircleWidget(
@@ -309,13 +320,17 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     if (records.isEmpty) {
       return SliverFillRemaining(child: const EmptyScreen());
     }
+
     return SliverList.builder(
-      itemBuilder: (context, index) => SaleHistoryCardBox(
-        header: records[index],
-        onTapShare: () => shareSaleOrder(records[index].no ?? ""),
-        onTap: () => navigatorToSaleCard(context, records[index]),
-      ),
       itemCount: records.length,
+      itemBuilder: (context, index) {
+        return SaleHistoryCardBox(
+          header: records[index],
+
+          onTapShare: () => shareSaleOrder(records[index].no ?? ""),
+          onTap: () => navigatorToSaleCard(context, records[index]),
+        );
+      },
     );
   }
 

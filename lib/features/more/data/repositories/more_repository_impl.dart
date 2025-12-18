@@ -122,15 +122,14 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
-      final localeSaleLines = await _local.getSaleLines(args: param);
-
       if (fetchingApi && await _networkInfo.isConnected) {
-        param?['page'] = page;
+        // param?['page'] = page;
         final saleLineCloud = await _remote.getSaleLines(data: param);
 
-        _local.storeSaleLine(saleLine: saleLineCloud);
-        return Right(saleLineCloud);
+        await _local.storeSaleLine(saleLine: saleLineCloud);
       }
+
+      final localeSaleLines = await _local.getSaleLines(args: param);
 
       return Right(localeSaleLines);
     } on GeneralException catch (e) {

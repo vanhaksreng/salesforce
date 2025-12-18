@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
+import 'package:salesforce/core/presentation/widgets/circle_icon_widget.dart';
 import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -21,6 +23,7 @@ class SaleHistoryCardBox extends StatelessWidget {
     super.key,
     required this.header,
     this.onTap,
+
     this.onTapShare,
   });
 
@@ -46,10 +49,25 @@ class SaleHistoryCardBox extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    TextWidget(
-                      text: header.no ?? "",
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    Row(
+                      spacing: scaleFontSize(4),
+                      children: [
+                        CircleIconWidget(
+                          bgColor: header.isSync == kStatusYes
+                              ? success
+                              : error,
+                          sizeIcon: scaleFontSize(14),
+                          colorIcon: white,
+                          icon: header.isSync == kStatusYes
+                              ? Icons.cloud_done
+                              : Icons.cloud_off_outlined,
+                        ),
+                        TextWidget(
+                          text: header.no ?? "",
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ],
                     ),
                     ChipWidget(
                       ishadowColor: false,
@@ -111,7 +129,7 @@ class SaleHistoryCardBox extends StatelessWidget {
                 ),
                 TextWidget(
                   text: Helpers.formatNumber(
-                    header.amount ?? 0.0,
+                    header.totalAmtLine ?? 0.0,
                     option: FormatType.amount,
                   ),
                   fontSize: 20,

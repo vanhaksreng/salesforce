@@ -4,6 +4,7 @@ import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_credit_memo_history/sale_credit_memo_history_state.dart';
 import 'package:salesforce/injection_container.dart';
+import 'package:salesforce/realm/scheme/sales_schemas.dart';
 
 class SaleCreditMemoHistoryCubit extends Cubit<SaleCreditMemoHistoryState>
     with MessageMixin, GeneratePdfMixin {
@@ -34,10 +35,22 @@ class SaleCreditMemoHistoryCubit extends Cubit<SaleCreditMemoHistoryState>
         fetchingApi: fetchingApi,
       );
 
-      result.fold((l) => throw Exception(l.message), (records) {
+      result.fold((l) => throw Exception(l.message), (records) async {
         if (page > 1 && (records.saleHeaders).isEmpty) {
           hasMorePage = false;
           return;
+        }
+
+        List<SalesLine> lines = await loadSalesLines(records.saleHeaders);
+
+        for (var header in records.saleHeaders) {
+          final headerLines = lines
+              .where((e) => e.documentNo == header.no)
+              .toList();
+
+          header.totalAmtLine = headerLines
+              .fold<double>(0.0, (sum, line) => sum + (line.amount ?? 0.0))
+              .toString();
         }
         emit(
           state.copyWith(
@@ -56,6 +69,37 @@ class SaleCreditMemoHistoryCubit extends Cubit<SaleCreditMemoHistoryState>
     } finally {
       emit(state.copyWith(isFetching: false));
     }
+  }
+
+  Future<List<SalesLine>> loadSalesLines(List<SalesHeader> salesHeaders) async {
+    if (salesHeaders.isEmpty) return [];
+
+    final headerNumbers = salesHeaders.map((h) => '"${h.no}"').toList();
+
+    List<SalesLine> result = [];
+
+    await _handleResponse(
+      () => appRepos.getSaleLines(
+        param: {
+          'document_no': 'IN {${headerNumbers.join(",")}}',
+          // 'is_sync': kStatusNo,
+        },
+      ),
+      (List<SalesLine> data) {
+        result = data;
+        return state.copyWith(saleLines: data);
+      },
+    );
+
+    return result;
+  }
+
+  Future<void> _handleResponse<T>(
+    Future<dynamic> Function() request,
+    SaleCreditMemoHistoryState Function(T data) onSuccess,
+  ) async {
+    final response = await request();
+    response.fold((l) => showErrorMessage(), (data) => emit(onSuccess(data)));
   }
 
   // Future<void> getSaleCreditMemo({

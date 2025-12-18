@@ -1,4 +1,6 @@
+import 'package:dartz/dartz_unsafe.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:realm/realm.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/constants/permission.dart';
 import 'package:salesforce/core/mixins/generate_pdf_mixin.dart';
@@ -7,6 +9,7 @@ import 'package:salesforce/core/mixins/permission_mixin.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history/sale_order_history_state.dart';
 import 'package:salesforce/injection_container.dart';
+import 'package:salesforce/realm/scheme/sales_schemas.dart';
 
 class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
     with MessageMixin, GeneratePdfMixin, PermissionMixin {
@@ -36,17 +39,28 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
         fetchingApi: fetchingApi,
       );
 
-      result.fold((l) => throw Exception(l.message), (records) {
+      result.fold((l) => throw Exception(l.message), (records) async {
         if (page > 1 && (records.saleHeaders).isEmpty) {
           hasMorePage = false;
           return;
         }
 
+        List<SalesLine> lines = await loadSalesLines(records.saleHeaders);
+
+        for (var header in records.saleHeaders) {
+          final headerLines = lines
+              .where((e) => e.documentNo == header.no)
+              .toList();
+
+          header.totalAmtLine = headerLines
+              .fold<double>(0.0, (sum, line) => sum + (line.amount ?? 0.0))
+              .toString();
+        }
         emit(
           state.copyWith(
             isLoading: false,
-            currentPage: records.currentPage ?? 1,
-            lastPage: records.lastPage ?? 1,
+            currentPage: records.currentPage,
+            lastPage: records.lastPage,
             records: page == 1
                 ? (records.saleHeaders)
                 : (records.saleHeaders) + oldData,
@@ -59,6 +73,37 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
     } finally {
       emit(state.copyWith(isFetching: false));
     }
+  }
+
+  Future<List<SalesLine>> loadSalesLines(List<SalesHeader> salesHeaders) async {
+    if (salesHeaders.isEmpty) return [];
+
+    final headerNumbers = salesHeaders.map((h) => '"${h.no}"').toList();
+
+    List<SalesLine> result = [];
+
+    await _handleResponse(
+      () => appRepos.getSaleLines(
+        param: {
+          'document_no': 'IN {${headerNumbers.join(",")}}',
+          // 'is_sync': kStatusNo,
+        },
+      ),
+      (List<SalesLine> data) {
+        result = data;
+        return state.copyWith(saleLines: data);
+      },
+    );
+
+    return result;
+  }
+
+  Future<void> _handleResponse<T>(
+    Future<dynamic> Function() request,
+    SaleOrderHistoryState Function(T data) onSuccess,
+  ) async {
+    final response = await request();
+    response.fold((l) => showErrorMessage(), (data) => emit(onSuccess(data)));
   }
 
   Future<void> chooseDate({DateTime? startDate, DateTime? toDate}) async {

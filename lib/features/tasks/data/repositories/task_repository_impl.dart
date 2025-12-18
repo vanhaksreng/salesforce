@@ -617,10 +617,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
               option: FormatType.price,
             );
 
-            if(unitPrice == 0) {
+            if (unitPrice == 0) {
               unitPrice = item.unitPrice ?? 0;
             }
-            
           } else {
             manualPrice = Helpers.formatNumberDb(
               saleArg.manualPrice,
@@ -631,7 +630,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
               saleArg.itemUnitPrice,
               option: FormatType.price,
             );
-            
+
             if (manualPrice > 0) {
               unitPrice = manualPrice;
             }
