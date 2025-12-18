@@ -1483,7 +1483,8 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         scope.launch {
             printMutex.withLock {
                 try {
-                    val shouldRenderAsImage = fontSize < 20 || containsComplexUnicode(text)
+                    val isSeparator = text.trim().all { it == '-' || it == '=' || it == '_' }
+                    val shouldRenderAsImage = !isSeparator && (fontSize < 20 || containsComplexUnicode(text))
 
                     if (shouldRenderAsImage) {
                         println(" Rendering as image (fontSize: $fontSize): \"${text.take(30)}...\"")
@@ -1497,8 +1498,9 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                         //  ADD EXTRA LINE FEED FOR KHMER
                         val hasKhmer = containsComplexUnicode(text)
-                        val extraLineFeed = if (hasKhmer && fontSize < 18) {
-                            byteArrayOf(0x0A.toByte())  // Add one line break
+                        val isSeparator = text.trim().all { it == '-' || it == '=' || it == '_' }
+                        val extraLineFeed = if (hasKhmer && !isSeparator && fontSize < 18) {
+                            byteArrayOf(0x0A.toByte())  // Add one line break only for Khmer
                         } else {
                             byteArrayOf()
                         }
@@ -1560,7 +1562,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             when {
                 fontSize > 30 -> 0x30.toByte()
                 fontSize > 24 -> 0x11.toByte()
-                fontSize >= 18 -> 0x00.toByte()
+                fontSize >= 14 -> 0x00.toByte()
                 else -> 0x01.toByte()
             }
         }
@@ -1593,14 +1595,16 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val config = getPrinterConfig()
             val khmerTypeface = getKhmerTypeface(bold)
 
-            val baseFontSize = 20f
+
             val scaledFontSize = when {
-                fontSize >= 30 -> baseFontSize * 2.0f
-                fontSize >= 24 -> baseFontSize * config.fontScaleXLarge
-                fontSize >= 18 -> baseFontSize * config.fontScaleLarge
-                fontSize >= 14 -> baseFontSize * config.fontScaleMedium
-                fontSize >= 12 -> baseFontSize * 0.75f
-                else -> baseFontSize * config.fontScaleSmall
+                fontSize >= 30 -> fontSize * 1.8f  // Large text
+                fontSize >= 24 -> fontSize * 1.5f  // XLarge
+                fontSize >= 20 -> fontSize * 1.3f  // Standard large
+                fontSize >= 18 -> fontSize * 1.2f  // Medium-large
+                fontSize >= 16 -> fontSize * 1.1f  // Medium
+                fontSize >= 14 -> fontSize * 1.0f  // Normal
+                fontSize >= 12 -> fontSize * 0.9f  // Small
+                else -> fontSize * 0.8f            // Extra small
             }
 
             println("📐 Font rendering: fontSize=$fontSize → scaledFontSize=$scaledFontSize (${if (printerWidth == 384) "58mm" else "80mm"})")
@@ -1608,9 +1612,9 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val paint = Paint().apply {
                 textSize = scaledFontSize
                 typeface = khmerTypeface
-                isFakeBoldText = bold && fontSize < 16
-                strokeWidth = if (bold && fontSize < 16) 0.5f else 0f
-                style = Paint.Style.FILL
+                isFakeBoldText = bold
+                strokeWidth =  if (bold ) 0.8f else 0.5f
+                style = if (bold) Paint.Style.FILL_AND_STROKE else Paint.Style.FILL_AND_STROKE
                 isAntiAlias = true
                 color = Color.BLACK
                 textAlign = when (align.lowercase()) {
@@ -1621,14 +1625,17 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
 
             val maxWidth = printerWidth.toFloat()
-
+            val isSeparator = text.trim().all { it == '-' || it == '=' || it == '_' }
             //  INCREASED PADDING FOR KHMER
             val hasKhmer = containsComplexUnicode(text)
             val padding = when {
+                isSeparator -> 2f
                 hasKhmer && fontSize < 14 -> config.paddingSmall * 2f  // Double padding for Khmer
+                hasKhmer && fontSize < 16 -> config.paddingSmall * 2f
                 hasKhmer && fontSize < 18 -> config.paddingMedium * 1.8f
                 hasKhmer -> config.paddingLarge * 1.5f
                 fontSize < 14 -> config.paddingSmall
+                fontSize < 16 -> config.paddingSmall
                 fontSize < 18 -> config.paddingMedium
                 else -> config.paddingLarge
             }
@@ -1661,7 +1668,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val lineHeight = baseLineHeight * lineSpacingMultiplier
 
             //  ADD EXTRA SPACE FOR KHMER DESCENDERS
-            val extraBottomPadding = if (hasKhmer) padding * 0.5f else 0f
+            val extraBottomPadding = if (hasKhmer && !isSeparator) padding * 0.5f else 0f
             val totalHeight = (lineHeight * lines.size + padding * 2 + extraBottomPadding).toInt()
 
             bitmap = Bitmap.createBitmap(printerWidth, totalHeight, Bitmap.Config.ARGB_8888)
@@ -1747,7 +1754,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                     //  KEY FIX: Force image rendering for small fonts or complex Unicode
                     val hasComplexUnicode = posColumns.any { containsComplexUnicode(it.text) }
-                    val shouldRenderAsImage = fontSize < 20 || hasComplexUnicode
+                    val shouldRenderAsImage =  hasComplexUnicode||fontSize < 20
 
                     if (shouldRenderAsImage) {
                         println(" Rendering row as image (fontSize: $fontSize)")
@@ -1838,24 +1845,196 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         addToBuffer(commands.toByteArray())
     }
 
+//    private fun renderRowToData(columns: List<PosColumn>, fontSize: Int): ByteArray? {
+//        var bitmap: Bitmap? = null
+//        try {
+//            val config = getPrinterConfig()
+//
+//            val baseFontSize = 24f
+//            val scaledFontSize = when {
+//                fontSize >= 30 -> baseFontSize * 2.0f
+//                fontSize >= 24 -> baseFontSize * config.fontScaleXLarge
+//                fontSize >= 20 -> baseFontSize * config.fontScaleLarge
+//                fontSize >= 16 -> baseFontSize * config.fontScaleMedium
+//                fontSize >= 14 -> baseFontSize * 0.75f
+//                fontSize >= 12 -> baseFontSize * 0.65f
+//                fontSize >= 10 -> baseFontSize * 0.55f
+//                else -> baseFontSize * 0.5f
+//            }
+//
+//            println("📐 Row rendering: fontSize=$fontSize → scaledFontSize=$scaledFontSize (${if (printerWidth == 384) "58mm" else "80mm"})")
+//
+//            val maxWidth = printerWidth.toFloat()
+//            val columnWidths = columns.map { (maxWidth * it.width) / 12 }
+//
+//            //  Check if ANY column has Khmer
+//            val hasKhmer = columns.any { containsComplexUnicode(it.text) }
+//
+//            val basePaint = Paint().apply {
+//                textSize = scaledFontSize
+//                isAntiAlias = true
+//                color = Color.BLACK
+//                style = Paint.Style.FILL_AND_STROKE
+//                strokeWidth = 0.5f
+//            }
+//
+//            var maxLines = 1
+//            val columnLinesList = mutableListOf<List<String>>()
+//
+//            for (i in columns.indices) {
+//                val column = columns[i]
+//                val colWidth = columnWidths[i]
+//                val availableWidth = colWidth - 4f
+//
+//                val columnPaint = Paint(basePaint).apply {
+//                    typeface = getKhmerTypeface(column.bold)
+//                    isFakeBoldText = column.bold  // ✅ Always apply fake bold
+//                    strokeWidth = if (column.bold) 0.7f else 0.5f  // ✅ Bold: 2.0f, Normal: 1.0f (increased from 0f)
+//                    style = Paint.Style.FILL_AND_STROKE
+//                }
+//
+//                val hasColumnKhmer = containsComplexUnicode(column.text)
+//                val lines = if (hasColumnKhmer) {
+//                    try {
+//                        wrapTextToWidth(column.text, availableWidth, columnPaint)
+//                    } catch (e: Exception) {
+//                        println(" Word wrapping failed, using syllable wrapping")
+//                        wrapTextToList(column.text,maxLines)
+//                    }
+//                } else {
+//                    wrapTextToWidth(column.text, availableWidth, columnPaint)
+//                }
+//
+//                columnLinesList.add(lines)
+//
+//                if (lines.size > maxLines) {
+//                    maxLines = lines.size
+//                }
+//            }
+//
+//            //  INCREASED LINE SPACING FOR KHMER ROWS
+//            val lineSpacingMultiplier = when {
+//                hasKhmer && fontSize < 14 -> 1.25f
+//                hasKhmer && fontSize < 18 -> 1.15f
+//                hasKhmer -> 1.10f
+//                fontSize < 14 -> config.lineSpacingTight
+//                fontSize < 18 -> config.lineSpacingNormal
+//                else -> 0.90f
+//            }
+//
+//            val fontMetrics = basePaint.fontMetrics
+//            val baseLineHeight = fontMetrics.descent - fontMetrics.ascent
+//            val lineHeight = baseLineHeight * lineSpacingMultiplier
+//
+//            //  INCREASED PADDING FOR KHMER ROWS
+//            val verticalPadding = when {
+//                hasKhmer && fontSize < 14 -> config.paddingSmall * 2f
+//                hasKhmer && fontSize < 18 -> config.paddingMedium * 1.8f
+//                hasKhmer -> config.paddingLarge * 1.5f
+//                fontSize < 14 -> config.paddingSmall
+//                fontSize < 18 -> config.paddingMedium
+//                else -> config.paddingLarge
+//            }
+//
+//            //  ADD EXTRA BOTTOM SPACE FOR KHMER
+//            val extraBottomPadding = if (hasKhmer) verticalPadding * 0.5f else 0f
+//            val totalHeight = (lineHeight * maxLines + verticalPadding * 2 + extraBottomPadding).toInt()
+//
+//            bitmap = Bitmap.createBitmap(printerWidth, totalHeight, Bitmap.Config.ARGB_8888)
+//            val canvas = Canvas(bitmap)
+//            canvas.drawColor(Color.WHITE)
+//
+//            var currentX = 0f
+//            for (i in columns.indices) {
+//                val column = columns[i]
+//                val colWidth = columnWidths[i]
+//                val lines = columnLinesList[i]
+//
+//                val columnTypeface = getKhmerTypeface(column.bold)
+//
+//                basePaint.apply {
+//                    typeface = columnTypeface
+//                    isFakeBoldText = column.bold  // ✅ Always apply fake bold
+//                    strokeWidth = if (column.bold) 0.7f else 0.5f  // ✅ Bold: 2.0f, Normal: 1.0f (increased from 0f)
+//                    style = Paint.Style.FILL_AND_STROKE
+//                    textAlign = when (column.align.lowercase()) {
+//                        "center" -> Paint.Align.CENTER
+//                        "right" -> Paint.Align.RIGHT
+//                        else -> Paint.Align.LEFT
+//                    }
+//                }
+//
+//                for (lineIndex in lines.indices) {
+//                    val line = lines[lineIndex]
+//                    if (line.isBlank()) continue
+//
+//                    val x = when (column.align.lowercase()) {
+//                        "center" -> currentX + colWidth / 2
+//                        "right" -> currentX + colWidth - 2f
+//                        else -> currentX + 2f
+//                    }
+//
+//                    val y = verticalPadding - fontMetrics.ascent + (lineHeight * lineIndex)
+//                    canvas.drawText(line, x, y, basePaint)
+//                }
+//
+//                currentX += colWidth
+//            }
+//
+//            val monoData = convertToMonochromeFast(bitmap)
+//
+//            if (monoData == null) {
+//                println(" Failed to convert row to monochrome")
+//                return null
+//            }
+//
+//            val widthBytes = (monoData.width + 7) / 8
+//            val commandSize = 8 + monoData.data.size
+//            val commands = ByteArray(commandSize)
+//
+//            var idx = 0
+//            commands[idx++] = GS
+//            commands[idx++] = 0x76
+//            commands[idx++] = 0x30
+//            commands[idx++] = 0x00
+//            commands[idx++] = (widthBytes and 0xFF).toByte()
+//            commands[idx++] = ((widthBytes shr 8) and 0xFF).toByte()
+//            commands[idx++] = (monoData.height and 0xFF).toByte()
+//            commands[idx++] = ((monoData.height shr 8) and 0xFF).toByte()
+//
+//            System.arraycopy(monoData.data, 0, commands, idx, monoData.data.size)
+//
+//            println(" Row rendered: ${columns.size} columns, ${maxLines} lines, height: ${totalHeight}px (Khmer: ${if(hasKhmer) "YES" else "NO"})")
+//            return commands
+//
+//        } catch (e: Exception) {
+//            println(" Row render error: ${e.message}")
+//            e.printStackTrace()
+//            return null
+//        } finally {
+//            bitmap?.recycle()
+//        }
+//    }
+
     private fun renderRowToData(columns: List<PosColumn>, fontSize: Int): ByteArray? {
         var bitmap: Bitmap? = null
         try {
             val config = getPrinterConfig()
 
-            val baseFontSize = 24f
-            val scaledFontSize = when {
-                fontSize >= 30 -> baseFontSize * 2.0f
-                fontSize >= 24 -> baseFontSize * config.fontScaleXLarge
-                fontSize >= 20 -> baseFontSize * config.fontScaleLarge
-                fontSize >= 16 -> baseFontSize * config.fontScaleMedium
-                fontSize >= 14 -> baseFontSize * 0.75f
-                fontSize >= 12 -> baseFontSize * 0.65f
-                fontSize >= 10 -> baseFontSize * 0.55f
-                else -> baseFontSize * 0.5f
-            }
-
-            println("📐 Row rendering: fontSize=$fontSize → scaledFontSize=$scaledFontSize (${if (printerWidth == 384) "58mm" else "80mm"})")
+//            // ✅ USE THE SAME SCALING AS printText
+//            val scaledFontSize = when {
+//                fontSize >= 30 -> fontSize * 1.8f  // Large text
+//                fontSize >= 24 -> fontSize * 1.5f  // XLarge
+//                fontSize >= 20 -> fontSize * 1.3f  // Standard large
+//                fontSize >= 18 -> fontSize * 1.2f  // Medium-large
+//                fontSize >= 16 -> fontSize * 1.1f  // Medium
+//                fontSize >= 14 -> fontSize * 1.0f  // Normal
+//                fontSize >= 12 -> fontSize * 0.9f  // Small
+//                else -> fontSize * 0.8f            // Extra small
+//            }
+//
+//            println("📐 Row rendering: fontSize=$fontSize → scaledFontSize=$scaledFontSize (${if (printerWidth == 384) "58mm" else "80mm"})")
+            println("   Columns: ${columns.map { "${it.text.take(10)}... (bold=${it.bold})" }}")
 
             val maxWidth = printerWidth.toFloat()
             val columnWidths = columns.map { (maxWidth * it.width) / 12 }
@@ -1863,12 +2042,24 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             //  Check if ANY column has Khmer
             val hasKhmer = columns.any { containsComplexUnicode(it.text) }
 
+            val baseScaling = when {
+                fontSize >= 30 -> 1.8f
+                fontSize >= 24 -> 1.5f
+                fontSize >= 20 -> 1.3f
+                fontSize >= 18 -> 1.2f
+                fontSize >= 16 -> 1.1f
+                fontSize >= 14 -> 1.0f
+                fontSize >= 12 -> 0.9f
+                else -> 0.8f
+            }
+            val khmerBoost = if (hasKhmer) 1.2f else 1.0f  // 20% larger for Khmer
+            val scaledFontSize = fontSize * baseScaling * khmerBoost
             val basePaint = Paint().apply {
-                textSize = scaledFontSize
+                textSize = scaledFontSize  // ✅ Now using the same scaling
                 isAntiAlias = true
                 color = Color.BLACK
-                style = Paint.Style.FILL
-                strokeWidth = 0f
+                style = Paint.Style.FILL_AND_STROKE
+                strokeWidth = 0.5f
             }
 
             var maxLines = 1
@@ -1879,19 +2070,26 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 val colWidth = columnWidths[i]
                 val availableWidth = colWidth - 4f
 
+                // ✅ Create paint with EXACT same settings for all columns
                 val columnPaint = Paint(basePaint).apply {
+                    textSize = scaledFontSize  // ✅ Force same size
                     typeface = getKhmerTypeface(column.bold)
-                    isFakeBoldText = column.bold && fontSize < 16
-                    strokeWidth = if (column.bold && fontSize < 14) 0.5f else 0f
+                    isFakeBoldText = column.bold
+                    strokeWidth = if (column.bold) 0.7f else 0.5f
+                    style = Paint.Style.FILL_AND_STROKE
+                    isAntiAlias = true
+                    color = Color.BLACK
                 }
+
+                println("   Column $i: fontSize=$fontSize, scaledSize=$scaledFontSize, text='${column.text.take(15)}', bold=${column.bold}")
 
                 val hasColumnKhmer = containsComplexUnicode(column.text)
                 val lines = if (hasColumnKhmer) {
                     try {
                         wrapTextToWidth(column.text, availableWidth, columnPaint)
                     } catch (e: Exception) {
-                        println(" Word wrapping failed, using syllable wrapping")
-                        wrapTextToList(column.text,maxLines)
+                        println("⚠️ Word wrapping failed, using syllable wrapping")
+                        wrapTextToList(column.text, maxLines)
                     }
                 } else {
                     wrapTextToWidth(column.text, availableWidth, columnPaint)
@@ -1944,10 +2142,15 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                 val columnTypeface = getKhmerTypeface(column.bold)
 
+                // ✅ Ensure EXACT same size for rendering
                 basePaint.apply {
+                    textSize = scaledFontSize  // ✅ Re-apply size
                     typeface = columnTypeface
-                    isFakeBoldText = column.bold && fontSize < 16
-                    strokeWidth = if (column.bold && fontSize < 14) 0.5f else 0f
+                    isFakeBoldText = column.bold
+                    strokeWidth = if (column.bold) 0.7f else 0.5f
+                    style = Paint.Style.FILL_AND_STROKE
+                    isAntiAlias = true
+                    color = Color.BLACK
                     textAlign = when (column.align.lowercase()) {
                         "center" -> Paint.Align.CENTER
                         "right" -> Paint.Align.RIGHT
@@ -1975,7 +2178,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val monoData = convertToMonochromeFast(bitmap)
 
             if (monoData == null) {
-                println(" Failed to convert row to monochrome")
+                println("❌ Failed to convert row to monochrome")
                 return null
             }
 
@@ -1995,11 +2198,11 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
             System.arraycopy(monoData.data, 0, commands, idx, monoData.data.size)
 
-            println(" Row rendered: ${columns.size} columns, ${maxLines} lines, height: ${totalHeight}px (Khmer: ${if(hasKhmer) "YES" else "NO"})")
+            println("✅ Row rendered: ${columns.size} columns, ${maxLines} lines, height: ${totalHeight}px (Khmer: ${if(hasKhmer) "YES" else "NO"})")
             return commands
 
         } catch (e: Exception) {
-            println(" Row render error: ${e.message}")
+            println("❌ Row render error: ${e.message}")
             e.printStackTrace()
             return null
         } finally {

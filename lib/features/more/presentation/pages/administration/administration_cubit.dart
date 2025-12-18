@@ -27,6 +27,16 @@ class AdministrationCubit extends Cubit<AdministrationState>
   StreamSubscription? _statusSubscription;
   final _bluetoothPermission = BluetoothPermissionHandler();
 
+  // @override
+  // Future<void> close() {
+  //   // Clean up resources here
+  //   _bluetoothService?.cancel();
+  //   _timer?.cancel();
+
+  //   // Call super.close() to properly dispose the cubit
+  //   return super.close();
+  // }
+
   Future<void> checkPermission() async {
     final hasPermission = await _bluetoothPermission.hasPermissions();
     emit(state.copyWith(hasPermission: hasPermission));

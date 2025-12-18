@@ -222,7 +222,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       _builder.addText(
         maxCharPerLine: lengText(),
         widget.companyInfo?.name ?? "",
-        fontSize: printerWidth == 384 ? 14 : 28, // Smaller for 58mm
+        fontSize: printerWidth == 384 ? 16 : 28, // Smaller for 58mm
         bold: true,
         align: AlignStyle.center,
       );
@@ -230,44 +230,43 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       _builder.addText(
         maxCharPerLine: lengText(),
         widget.companyInfo?.address ?? "",
-        fontSize: printerWidth == 384 ? 12 : 18, // Smaller for 58mm
+        fontSize: printerWidth == 384 ? 16 : 18, // Smaller for 58mm
         align: AlignStyle.center,
       );
       _builder.addText(
         maxCharPerLine: lengText(),
         "Phone: ${widget.companyInfo?.phoneNo ?? ""}",
-        fontSize: printerWidth == 384 ? 12 : 18, // Smaller for 58mm
+        fontSize: printerWidth == 384 ? 16 : 18, // Smaller for 58mm
         align: AlignStyle.center,
       );
-
-      _builder.feedPaper(1);
 
       SalesHeader? header = widget.detail?.header;
 
       _builder.addText(
         maxCharPerLine: lengText(),
         "Invoice   : ${header?.no ?? 'N/A'}",
-        fontSize: printerWidth == 384 ? 12 : 18,
+        fontSize: printerWidth == 384 ? 16 : 18,
         align: AlignStyle.left,
       );
 
       _builder.addText(
         maxCharPerLine: lengText(),
         "Date      : ${header?.orderDate ?? DateTime.now().toString().split(' ')[0]}",
-        fontSize: printerWidth == 384 ? 12 : 18,
+        fontSize: printerWidth == 384 ? 16 : 18,
         align: AlignStyle.left,
       );
 
       _builder.addText(
         maxCharPerLine: lengText(),
         "Customer  : ${header?.customerName ?? ""}",
-        fontSize: printerWidth == 384 ? 12 : 18,
+        fontSize: printerWidth == 384 ? 16 : 18,
         align: AlignStyle.left,
       );
 
       _builder.addText(
         maxCharPerLine: lengText(),
         "-" * (lengText() - 1),
+        fontSize: printerWidth == 384 ? 16 : 24,
         align: AlignStyle.center,
       );
 
@@ -304,43 +303,44 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
             align: AlignStyle.center,
           ),
         ],
-        fontSize: printerWidth == 384 ? 14 : 18,
+        fontSize: printerWidth == 384 ? 16 : 18,
         autoAdjust: true,
       ); // Smaller font for 58mm
 
       _builder.addRow([
-        PosColumn(text: 'No.', width: columnWidths[0], bold: true),
-        PosColumn(text: 'Item', width: columnWidths[1], bold: true),
+        PosColumn(text: 'No.', width: columnWidths[0], bold: false),
+        PosColumn(text: 'Item', width: columnWidths[1], bold: false),
         PosColumn(
           text: 'Qty',
           width: columnWidths[2],
-          bold: true,
+          bold: false,
           align: AlignStyle.center,
         ),
         PosColumn(
           text: 'Price',
           width: columnWidths[3],
-          bold: true,
+          bold: false,
           align: AlignStyle.center,
         ),
         PosColumn(
           text: 'Disc',
           width: columnWidths[4],
-          bold: true,
+          bold: false,
           align: AlignStyle.center,
         ),
         PosColumn(
           text: 'Total',
           width: columnWidths[5],
-          bold: true,
+          bold: false,
           align: AlignStyle.center,
         ),
-      ], fontSize: printerWidth == 384 ? 12 : 14); // Smaller font for 58mm
+      ], fontSize: printerWidth == 384 ? 16 : 14); // Smaller font for 58mm
 
       // Another separator
       _builder.addText(
         maxCharPerLine: lengText(),
         "-" * (lengText() - 1),
+        fontSize: printerWidth == 384 ? 16 : 24,
         align: AlignStyle.center,
       );
 
@@ -395,10 +395,11 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
             width: columnWidths[5],
             bold: false,
           ),
-        ], fontSize: printerWidth == 384 ? 12 : 16); // Smaller for 58mm
+        ], fontSize: printerWidth == 384 ? 14 : 16); // Smaller for 58mm
         _builder.addText(
           "-" * (lengText() - 1),
           maxCharPerLine: 48,
+          fontSize: printerWidth == 384 ? 16 : 24,
           align: AlignStyle.center,
         );
       }
@@ -414,7 +415,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
 
       _builder.addText(
         'Thank you for your business!',
-        fontSize: printerWidth == 384 ? 18 : 20, // Adjusted for 58mm
+        fontSize: printerWidth == 384 ? 16 : 20, // Adjusted for 58mm
         bold: true,
         align: AlignStyle.center,
       );
