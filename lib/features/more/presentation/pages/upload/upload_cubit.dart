@@ -1,23 +1,34 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
 import 'package:salesforce/features/more/presentation/pages/upload/upload_state.dart';
 import 'package:salesforce/features/tasks/domain/repositories/task_repository.dart';
+import 'package:salesforce/infrastructure/network/network_info.dart';
+import 'package:salesforce/infrastructure/network/network_info_impl.dart';
 import 'package:salesforce/injection_container.dart';
+import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
 class UploadCubit extends Cubit<UploadState> with MessageMixin {
   UploadCubit() : super(const UploadState(isLoading: true));
-
   final _taskRepo = getIt.get<TaskRepository>();
   final _moreRepo = getIt.get<MoreRepository>();
+  final connection = getIt.get<NetworkInfo>();
 
-  // Public Methods
   Future<void> processUpload() async {
+    if (!await connection.isConnected) {
+      emit(state.copyWith(isconnect: false));
+      return;
+    }
+
+    emit(state.copyWith(isconnect: true));
+
     final uploadTasks = [
       if (state.salesHeaders.isNotEmpty) _processUploadSale(),
       if (state.cashReceiptJournals.isNotEmpty) _processUploadCollection(),
@@ -34,9 +45,6 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
       _gpsRouteTracking(),
     ];
 
-    //TODO : competitor promotion
-    // Redemption
-
     await Future.wait(uploadTasks);
   }
 
@@ -45,7 +53,7 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
       emit(state.copyWith(isLoading: true));
 
       await _loadCustomerItemLedgerEntries();
-      await _loadSalesData();
+      await loadSalesData();
       await _loadSalesLines();
       await _loadCashReceiptJournals();
       await _loadSalespersonSchedules(DateTime.now());
@@ -172,7 +180,7 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
     );
   }
 
-  Future<void> _loadSalesData() async {
+  Future<void> loadSalesData() async {
     await _handleResponse(
       () => _taskRepo.getSaleHeaders(
         params: {'is_sync': kStatusNo, 'status': kStatusApprove},

@@ -163,6 +163,11 @@ class RealmMoreDataSourceImpl extends BaseRealmDataSourceImpl
   }
 
   @override
+  Future<void> deletSaleHeader({required List<SalesHeader> saleHeader}) async {
+    return await ils.deleteAll<SalesHeader>();
+  }
+
+  @override
   Future<void> storeSaleLine({required List<SalesLine> saleLine}) async {
     return await ils.addAll<SalesLine>(saleLine);
   }

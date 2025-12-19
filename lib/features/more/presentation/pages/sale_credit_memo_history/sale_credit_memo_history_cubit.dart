@@ -26,7 +26,7 @@ class SaleCreditMemoHistoryCubit extends Cubit<SaleCreditMemoHistoryState>
     hasMorePage = true;
 
     try {
-      emit(state.copyWith(isFetching: true));
+      emit(state.copyWith(isFetching: true, isLoading: true));
 
       final oldData = state.records;
       final result = await appRepos.getSaleHeaders(

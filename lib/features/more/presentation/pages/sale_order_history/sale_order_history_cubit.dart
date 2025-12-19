@@ -30,7 +30,7 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
     hasMorePage = true;
 
     try {
-      emit(state.copyWith(isFetching: true));
+      emit(state.copyWith(isLoading: true));
 
       final oldData = state.records;
       final result = await appRepos.getSaleHeaders(

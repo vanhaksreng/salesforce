@@ -4,6 +4,7 @@ import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
 class UploadState {
   final bool isLoading;
+  final bool isconnect;
   final List<CustomerItemLedgerEntry> customerItemLedgerEntries;
   final List<CompetitorItemLedgerEntry> competitorItemLedgerEntries;
   final List<SalesHeader> salesHeaders;
@@ -17,6 +18,7 @@ class UploadState {
 
   const UploadState({
     this.isLoading = false,
+    this.isconnect = true,
     this.customerItemLedgerEntries = const [],
     this.salesHeaders = const [],
     this.salesLines = const [],
@@ -31,6 +33,7 @@ class UploadState {
 
   UploadState copyWith({
     bool? isLoading,
+    bool? isconnect,
     List<CustomerItemLedgerEntry>? customerItemLedgerEntries,
     List<SalesHeader>? salesHeaders,
     List<SalesLine>? salesLines,
@@ -44,15 +47,20 @@ class UploadState {
   }) {
     return UploadState(
       isLoading: isLoading ?? this.isLoading,
-      customerItemLedgerEntries: customerItemLedgerEntries ?? this.customerItemLedgerEntries,
+      isconnect: isconnect ?? this.isconnect,
+      customerItemLedgerEntries:
+          customerItemLedgerEntries ?? this.customerItemLedgerEntries,
       salesHeaders: salesHeaders ?? this.salesHeaders,
       salesLines: salesLines ?? this.salesLines,
       cashReceiptJournals: cashReceiptJournals ?? this.cashReceiptJournals,
       salespersonSchedules: salespersonSchedules ?? this.salespersonSchedules,
-      competitorItemLedgerEntries: competitorItemLedgerEntries ?? this.competitorItemLedgerEntries,
+      competitorItemLedgerEntries:
+          competitorItemLedgerEntries ?? this.competitorItemLedgerEntries,
       merchandiseSchedules: merchandiseSchedules ?? this.merchandiseSchedules,
-      compitorPromotionHeaders: compitorPromotionHeaders ?? this.compitorPromotionHeaders,
-      compitorPromotionLines: compitorPromotionLines ?? this.compitorPromotionLines,
+      compitorPromotionHeaders:
+          compitorPromotionHeaders ?? this.compitorPromotionHeaders,
+      compitorPromotionLines:
+          compitorPromotionLines ?? this.compitorPromotionLines,
       redemptions: redemptions ?? this.redemptions,
     );
   }

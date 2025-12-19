@@ -62,10 +62,20 @@ class SaleHistoryCardBox extends StatelessWidget {
                               ? Icons.cloud_done
                               : Icons.cloud_off_outlined,
                         ),
-                        TextWidget(
-                          text: header.no ?? "",
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                        Column(
+                          spacing: scaleFontSize(4),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextWidget(
+                              text: header.appId ?? "",
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            TextWidget(
+                              text: "Doc : ${header.no ?? ""}",
+                              fontSize: 12,
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -81,15 +91,25 @@ class SaleHistoryCardBox extends StatelessWidget {
                     ),
                   ],
                 ),
+                Helpers.gapH(16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: 8.scale,
                   children: [
                     TextWidget(
-                      text: header.customerName ?? "",
+                      text: "${header.customerName ?? ""} ",
                       fontSize: 14,
-                      color: textColor50,
                       fontWeight: FontWeight.w500,
+                    ),
+                    TextWidget(
+                      fontSize: 16,
+                      text: Helpers.formatNumber(
+                        header.totalAmtLine ?? 0.0,
+                        option: FormatType.amount,
+                      ),
+
+                      fontWeight: FontWeight.w600,
+                      textAlign: TextAlign.right,
                     ),
                     if ((header.shipToAddress ?? "").isNotEmpty)
                       BoxWidget(
@@ -108,6 +128,7 @@ class SaleHistoryCardBox extends StatelessWidget {
               ],
             ),
           ),
+
           const Hr(width: double.infinity),
           Padding(
             padding: EdgeInsets.fromLTRB(16.scale, 8.scale, 16.scale, 16.scale),
@@ -127,16 +148,7 @@ class SaleHistoryCardBox extends StatelessWidget {
                     ),
                   ],
                 ),
-                TextWidget(
-                  text: Helpers.formatNumber(
-                    header.totalAmtLine ?? 0.0,
-                    option: FormatType.amount,
-                  ),
-                  fontSize: 20,
-                  color: mainColor,
-                  fontWeight: FontWeight.bold,
-                  textAlign: TextAlign.right,
-                ),
+
                 InkWell(
                   onTap: onTapShare,
                   child: Row(

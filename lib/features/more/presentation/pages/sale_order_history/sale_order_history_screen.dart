@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
@@ -108,22 +109,32 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     );
   }
 
-  void _onApplyFilter(Map<String, dynamic> param, BuildContext context) {
+  void _onApplyFilter(Map<String, dynamic> param, BuildContext context) async {
+    Navigator.of(context).pop();
+    if (param.isEmpty) return;
+
     if (param["from_date"] != null) {
       initialFromDate = param["from_date"];
     } else {
       initialFromDate = null;
     }
+
     if (param["to_date"] != null) {
       initialToDate = param["to_date"];
     } else {
       initialToDate = null;
     }
+
     if (param["date"] != null) {
       selectedDate = param["date"];
     } else {
       selectedDate = "";
     }
+
+    // Build API parameters
+    Map<String, dynamic> apiParam = {'document_type': 'Order'};
+
+    // Add date range if both dates exist
     final String fromDate = initialFromDate != null
         ? DateTimeExt.parse(initialFromDate.toString()).toDateString()
         : "";
@@ -132,20 +143,21 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
         : "";
 
     if (fromDate.isNotEmpty && toDate.isNotEmpty) {
-      param["posting_date"] = '$fromDate .. $toDate';
+      apiParam["posting_date"] = '$fromDate .. $toDate';
     }
 
-    param['document_type'] = 'Order';
-    status = param["status"];
+    // Handle status filter
+    if (param["status"] != null && param["status"] != "All") {
+      status = param["status"];
+      apiParam["status"] = param["status"]; // ✅ Add status to API param
+    } else {
+      status = "All";
+      // Don't add status filter if it's "All"
+    }
 
-    param.remove("from_date");
-    param.remove("to_date");
-    param.remove("date");
-    param.remove("isFilter");
+    print("==============apiParam being sent: $apiParam");
 
-    _cubit.getSaleOrders(param: param, page: 1, fetchingApi: true);
-
-    Navigator.of(context).pop();
+    await _cubit.getSaleOrders(param: apiParam, page: 1, fetchingApi: true);
   }
 
   void _showModalFiltter(BuildContext context) {
@@ -222,16 +234,12 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
   }
 
   @override
-  void didPopNext() async {
-    _getSaleOrder();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: white,
       appBar: AppBarWidget(
         title: greeting("sale_orders"),
+        onBack: () => Navigator.of(context).pop(ActionState.updated),
         actions: [
           BlocBuilder<SaleOrderHistoryCubit, SaleOrderHistoryState>(
             bloc: _cubit,
@@ -316,7 +324,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
 
   Widget _buildBody(SaleOrderHistoryState state) {
     final records = state.records;
-
+    print("=============${records}");
     if (records.isEmpty) {
       return SliverFillRemaining(child: const EmptyScreen());
     }

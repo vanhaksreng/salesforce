@@ -94,7 +94,7 @@ class RealmConfig {
         DevicePrinter.schema,
       ],
       path: realmPath,
-      schemaVersion: 3,
+      schemaVersion: 4,
       shouldDeleteIfMigrationNeeded: false,
       migrationCallback: _performMigration,
     );
@@ -116,6 +116,9 @@ class RealmConfig {
     if (oldSchemaVersion < 4) {
       _migrateToVersion3(migration);
     }
+    if (oldSchemaVersion < 5) {
+      _migrateToVersion4(migration);
+    }
   }
 
   static void _migrateToVersion2(Migration migration) {
@@ -135,6 +138,16 @@ class RealmConfig {
     for (var sale in oldSaleLine) {
       if (sale.imgUrl == null || sale.imgUrl!.isEmpty) {
         sale.imgUrl = '';
+      }
+    }
+  }
+
+  static void _migrateToVersion4(Migration migration) {
+    final oldSaleLine = migration.newRealm.all<SalesLine>();
+
+    for (var sale in oldSaleLine) {
+      if (sale.appId == null || sale.appId!.isEmpty) {
+        sale.appId = '';
       }
     }
   }

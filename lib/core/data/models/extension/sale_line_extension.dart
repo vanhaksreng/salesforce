@@ -7,6 +7,7 @@ extension SalesLineExtension on SalesLine {
   static SalesLine fromMap(Map<String, dynamic> json) {
     return SalesLine(
       json['id'] ?? 0,
+      appId: json['app_id'] ?? "",
       lineNo: Helpers.toInt(json['line_no'] as String? ?? ""),
       documentNo: json['document_no'] as String? ?? '',
       customerNo: json['customer_no'] as String? ?? "",
@@ -133,6 +134,7 @@ extension SalesLineExtension on SalesLine {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'app_id': appId,
       'document_no': documentNo,
       'document_type': documentType,
       'line_no': lineNo,

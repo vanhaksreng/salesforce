@@ -1,5 +1,6 @@
 // const String kAppSearchIcon = "assets/icons/search_icon.svg";
 const String kAppSearchV2Icon = "assets/icons/search_Icon_new.svg";
+const String kConnectInternetLottie = "assets/images/No Connection.json";
 const String kAppOptionIcon = "assets/icons/option_icon.svg";
 const String kAppEmptyImage = "assets/images/no_imaage.png";
 const String kAppLoginImage = "assets/images/login_image.png";

@@ -8,6 +8,7 @@ class MoreModel {
   final String routeName;
   final Args arg;
   final bool isShow;
+  int countRemainUpload;
   final DefaultProcessArgs? processArg;
 
   MoreModel({
@@ -18,6 +19,7 @@ class MoreModel {
     required this.arg,
     this.isShow = true,
     this.processArg,
+    this.countRemainUpload = 0,
   });
 }
 

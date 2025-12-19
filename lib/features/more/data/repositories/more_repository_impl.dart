@@ -95,8 +95,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
+      param?.remove("page");
       final localSale = await _local.getSaleHeaders(args: param, page: page);
-      if (await _networkInfo.isConnected) {
+      if (fetchingApi && await _networkInfo.isConnected) {
         param?['page'] = page;
         final cloudSales = await _remote.getSaleHeaders(data: param);
 
@@ -104,10 +105,28 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
         for (var item in cloudSales["records"] ?? []) {
           cloudRecords.add(SalesHeaderExtension.fromMap(item));
         }
+
+        final cloudIds = cloudRecords.map((e) => e.no).toSet();
+        final recordsToDelete = localSale
+            .where(
+              (local) =>
+                  !cloudIds.contains(local.no) && local.isSync != kStatusYes,
+            ) // Keep synced records
+            .toList();
+
+        if (recordsToDelete.isNotEmpty) {
+          await _local.deletSaleHeader(saleHeader: recordsToDelete);
+        }
+
         await _local.storeSaleHeaders(saleHeader: cloudRecords);
       }
+      param?.remove("page");
+      final updatedLocalSale = await _local.getSaleHeaders(
+        args: param,
+        page: page,
+      );
 
-      return Right(RecordSaleHeader(saleHeaders: localSale));
+      return Right(RecordSaleHeader(saleHeaders: updatedLocalSale));
     } on GeneralException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (_) {

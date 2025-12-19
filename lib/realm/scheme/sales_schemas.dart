@@ -370,6 +370,8 @@ class _SalesHeader {
 class _SalesLine {
   @PrimaryKey()
   late int id;
+  @MapTo('app_id')
+  String? appId;
   @MapTo('document_type')
   String? documentType;
   @MapTo('document_no')

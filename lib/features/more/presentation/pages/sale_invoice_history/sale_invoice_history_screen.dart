@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
@@ -77,22 +78,30 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     _getSaleInvoice(page: pages);
   }
 
-  void _onApplyFilter(Map<String, dynamic> param, BuildContext context) {
+  void _onApplyFilter(Map<String, dynamic> param, BuildContext context) async {
+    if (param.isEmpty) {
+      Navigator.of(context).pop();
+      return;
+    }
+
     if (param["from_date"] != null) {
       initialFromDate = param["from_date"];
     } else {
       initialFromDate = null;
     }
+
     if (param["to_date"] != null) {
       initialToDate = param["to_date"];
     } else {
       initialToDate = null;
     }
+
     if (param["date"] != null) {
       selectedDate = param["date"];
     } else {
       selectedDate = "";
     }
+
     final String fromDate = initialFromDate != null
         ? DateTimeExt.parse(initialFromDate.toString()).toDateString()
         : "";
@@ -105,15 +114,22 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     }
 
     param['document_type'] = 'Invoice';
-    status = param["status"];
+
+    if (param["status"] != null) {
+      status = param["status"];
+
+      if (status == "All") {
+        param.remove("status");
+      }
+    }
 
     param.remove("from_date");
     param.remove("to_date");
     param.remove("date");
     param.remove("isFilter");
 
-    _getSaleInvoice();
-
+    await _cubit.getSaleInvoice(param: param, page: 1);
+    if (!mounted) return;
     Navigator.of(context).pop();
   }
 
@@ -206,11 +222,6 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     super.dispose();
   }
 
-  @override
-  void didPopNext() async {
-    _getSaleInvoice();
-  }
-
   Future<void> _getSaleInvoice({int page = 1}) async {
     return await _cubit.getSaleInvoice(
       page: page,
@@ -227,6 +238,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     return Scaffold(
       backgroundColor: white,
       appBar: AppBarWidget(
+        onBack: () => Navigator.of(context).pop(ActionState.updated),
         title: greeting("sale_invoice"),
         actions: [
           BlocBuilder<SaleInvoiceHistoryCubit, SaleInvoiceHistoryState>(

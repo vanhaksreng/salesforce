@@ -827,6 +827,8 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         saleLines.add(
           SalesLine(
             lineId,
+            appId:
+                "${Helpers.getSalePrefix(posHeader.documentType ?? "")}$saleDoc",
             documentNo: saleHeader.no,
             documentType: saleHeader.documentType,
             lineNo: lineNo,

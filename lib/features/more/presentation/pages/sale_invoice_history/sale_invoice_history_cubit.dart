@@ -30,7 +30,7 @@ class SaleInvoiceHistoryCubit extends Cubit<SaleInvoiceHistoryState>
     hasMorePage = true;
 
     try {
-      emit(state.copyWith(isFetching: true));
+      emit(state.copyWith(isFetching: true, isLoading: true));
 
       final oldData = state.records;
       final result = await appRepos.getSaleHeaders(
@@ -71,7 +71,7 @@ class SaleInvoiceHistoryCubit extends Cubit<SaleInvoiceHistoryState>
       emit(state.copyWith(isLoading: false));
       showErrorMessage(error.toString());
     } finally {
-      emit(state.copyWith(isFetching: false));
+      emit(state.copyWith(isLoading: false));
     }
   }
 
