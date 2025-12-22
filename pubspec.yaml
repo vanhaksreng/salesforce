@@ -80,4 +80,9 @@ flutter:
           weight: 700  # Bold
         - asset: assets/fonts/NotoSansKhmer-Black.ttf
           weight: 900  # Black
+          
+    - family: Neuropol
+      fonts:
+        - asset: assets/fonts/NEUROPOL BOLD.TTF
+        - asset: assets/fonts/NEUROPOL MEDIUM.TTF
         

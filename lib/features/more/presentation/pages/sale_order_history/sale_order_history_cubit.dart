@@ -1,6 +1,4 @@
-import 'package:dartz/dartz_unsafe.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:realm/realm.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/constants/permission.dart';
 import 'package:salesforce/core/mixins/generate_pdf_mixin.dart';

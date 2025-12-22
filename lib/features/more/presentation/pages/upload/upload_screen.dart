@@ -117,7 +117,7 @@ class _UploadScreenState extends State<UploadScreen> {
     return Scaffold(
       appBar: AppBarWidget(
         title: "Upload Dashboard",
-        onBack: () => Navigator.of(context).pop(ActionState.updated),
+        onBack: () => Navigator.pop(context, ActionState.updated),
       ),
       body: BlocBuilder<UploadCubit, UploadState>(
         bloc: _cubit,

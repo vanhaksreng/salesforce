@@ -107,11 +107,15 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
         }
 
         final cloudIds = cloudRecords.map((e) => e.no).toSet();
+        final appID = cloudRecords.map((e) => e.appId).toSet();
+
         final recordsToDelete = localSale
             .where(
               (local) =>
-                  !cloudIds.contains(local.no) && local.isSync != kStatusYes,
-            ) // Keep synced records
+                  !cloudIds.contains(local.no) &&
+                  local.isSync != kStatusYes &&
+                  appID.contains(local.no),
+            )
             .toList();
 
         if (recordsToDelete.isNotEmpty) {

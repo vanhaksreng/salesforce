@@ -209,6 +209,15 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
         }
       });
 
+  Future<void> _getBackAction() {
+    return Navigator.pushNamed(context, UploadScreen.routeName).then((action) {
+      if (action == null) return;
+      if (Helpers.shouldReload(action as ActionState)) {
+        _getSaleInvoice();
+      }
+    });
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -252,9 +261,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
               }
               return BtnIconCircleWidget(
                 isShowBadge: true,
-                onPressed: () {
-                  Navigator.pushNamed(context, UploadScreen.routeName);
-                },
+                onPressed: () => _getBackAction(),
                 icons: Icon(Icons.upload, color: white),
                 rounded: appBtnRound,
               );

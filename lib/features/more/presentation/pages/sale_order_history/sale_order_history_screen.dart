@@ -149,13 +149,11 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     // Handle status filter
     if (param["status"] != null && param["status"] != "All") {
       status = param["status"];
-      apiParam["status"] = param["status"]; // ✅ Add status to API param
+      apiParam["status"] = param["status"];
     } else {
       status = "All";
       // Don't add status filter if it's "All"
     }
-
-    print("==============apiParam being sent: $apiParam");
 
     await _cubit.getSaleOrders(param: apiParam, page: 1, fetchingApi: true);
   }
@@ -208,6 +206,15 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     );
   }
 
+  Future<void> _getBackAction(BuildContext context) {
+    return Navigator.pushNamed(context, UploadScreen.routeName).then((action) {
+      if (action == null) return;
+      if (Helpers.shouldReload(action as ActionState)) {
+        _getSaleOrder();
+      }
+    });
+  }
+
   Future<void> pushToAddCustomer() =>
       Navigator.pushNamed(
         context,
@@ -252,9 +259,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
               }
               return BtnIconCircleWidget(
                 isShowBadge: true,
-                onPressed: () {
-                  Navigator.pushNamed(context, UploadScreen.routeName);
-                },
+                onPressed: () => _getBackAction(context),
                 icons: Icon(Icons.upload, color: white),
                 rounded: appBtnRound,
               );
@@ -324,7 +329,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
 
   Widget _buildBody(SaleOrderHistoryState state) {
     final records = state.records;
-    print("=============${records}");
+
     if (records.isEmpty) {
       return SliverFillRemaining(child: const EmptyScreen());
     }

@@ -205,25 +205,25 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
         onBack: () => Navigator.of(context).pop(ActionState.updated),
         title: greeting("sale_credit_memo"),
         actions: [
-          BlocBuilder<SaleCreditMemoHistoryCubit, SaleCreditMemoHistoryState>(
-            bloc: _cubit,
-            builder: (context, state) {
-              bool isHasUpload = state.records.any(
-                (e) => e.isSync == kStatusNo,
-              );
-              if (!isHasUpload) {
-                return SizedBox.shrink();
-              }
-              return BtnIconCircleWidget(
-                isShowBadge: true,
-                onPressed: () {
-                  Navigator.pushNamed(context, UploadScreen.routeName);
-                },
-                icons: Icon(Icons.upload, color: white),
-                rounded: appBtnRound,
-              );
-            },
-          ),
+          // BlocBuilder<SaleCreditMemoHistoryCubit, SaleCreditMemoHistoryState>(
+          //   bloc: _cubit,
+          //   builder: (context, state) {
+          //     bool isHasUpload = state.records.any(
+          //       (e) => e.isSync == kStatusNo,
+          //     );
+          //     if (!isHasUpload) {
+          //       return SizedBox.shrink();
+          //     }
+          //     return BtnIconCircleWidget(
+          //       isShowBadge: true,
+          //       onPressed: () {
+          //         Navigator.pushNamed(context, UploadScreen.routeName);
+          //       },
+          //       icons: Icon(Icons.upload, color: white),
+          //       rounded: appBtnRound,
+          //     );
+          //   },
+          // ),
           BtnIconCircleWidget(
             onPressed: () => _showModalFiltter(context),
             icons: SvgWidget(
