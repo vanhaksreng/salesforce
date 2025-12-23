@@ -161,7 +161,8 @@ class ItemsScreenState extends State<ItemsScreen>
   }
 
   void _navigateToProcessForm(Item item) {
-    if (item.preventNegativeInventory == kStatusYes && widget.args.documentType == kSaleInvoice &&
+    if (item.preventNegativeInventory == kStatusYes &&
+        widget.args.documentType == kSaleInvoice &&
         Helpers.toDouble(item.inventory) <= 0) {
       showWarningMessage("No stock left.");
       return;

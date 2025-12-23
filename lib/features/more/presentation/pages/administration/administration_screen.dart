@@ -235,19 +235,4 @@ class AdministrationScreenState extends State<AdministrationScreen>
       ),
     );
   }
-
-  // MARK: - Helper Methods
-
-  // bool _isDeviceConnected(BluetoothInfo? device) {
-  //   return device != null && device.name.isNotEmpty;
-  // }
-
-  // String _getConnectedDeviceCount(BluetoothInfo? device) {
-  //   return _isDeviceConnected(device) ? "1" : "0";
-  // }
-
-  void _showComingSoonMessage() {
-    Navigator.pushNamed(context, PrinterTestScreen.routeName);
-    // showErrorMessage("APK deployment feature coming soon!");
-  }
 }
