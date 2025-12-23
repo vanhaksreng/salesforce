@@ -147,7 +147,7 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     try {
       if (fetchingApi && await _networkInfo.isConnected) {
         // param?['page'] = page;
-        final saleLineCloud = await _remote.getSaleLines(data: param);
+        final saleLineCloud = await _remote.getSaleLinesV2(data: param);
 
         await _local.storeSaleLine(saleLine: saleLineCloud);
       }
