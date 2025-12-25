@@ -206,7 +206,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     );
   }
 
-  Future<void> _getBackAction(BuildContext context) {
+  Future<void> _getBackAction() {
     return Navigator.pushNamed(context, UploadScreen.routeName).then((action) {
       if (action == null) return;
       if (Helpers.shouldReload(action as ActionState)) {
@@ -259,7 +259,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
               }
               return BtnIconCircleWidget(
                 isShowBadge: true,
-                onPressed: () => _getBackAction(context),
+                onPressed: () => _getBackAction(),
                 icons: Icon(Icons.upload, color: white),
                 rounded: appBtnRound,
               );

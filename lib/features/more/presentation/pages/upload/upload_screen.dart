@@ -81,12 +81,16 @@ class _UploadScreenState extends State<UploadScreen> {
 
       if (!_cubit.state.isconnect) {
         l.hide();
+        if (!mounted) return;
         Helpers.showNoInternetDialog(context);
         return;
       }
       l.hide();
+      if (_cubit.error == 0) {
+        _cubit.showSuccessMessage('Upload completed successfully');
+      }
 
-      _cubit.showSuccessMessage('Upload completed successfully');
+      // _cubit.showSuccessMessage('Upload completed successfully');
     } catch (e) {
       if (!context.mounted) return;
       l.hide();

@@ -96,11 +96,13 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
   }) async {
     try {
       param?.remove("page");
-      final localSale = await _local.getSaleHeaders(args: param, page: page);
+
       if (fetchingApi && await _networkInfo.isConnected) {
+        print("===============dd============");
+        final localSale = await _local.getSaleHeaders(args: param, page: page);
         param?['page'] = page;
         final cloudSales = await _remote.getSaleHeaders(data: param);
-
+        print(cloudSales);
         final List<SalesHeader> cloudRecords = [];
         for (var item in cloudSales["records"] ?? []) {
           cloudRecords.add(SalesHeaderExtension.fromMap(item));
@@ -108,15 +110,26 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
 
         final cloudIds = cloudRecords.map((e) => e.no).toSet();
         final appID = cloudRecords.map((e) => e.appId).toSet();
-
-        final recordsToDelete = localSale
-            .where(
-              (local) =>
-                  !cloudIds.contains(local.no) &&
-                  local.isSync != kStatusYes &&
-                  appID.contains(local.no),
-            )
-            .toList();
+        List<SalesHeader> recordsToDelete = [];
+        if (param?['document_type'] == kSaleInvoice) {
+          recordsToDelete = localSale
+              .where(
+                (local) =>
+                    !cloudIds.contains(local.no) &&
+                    local.isSync != kStatusYes &&
+                    appID.contains(local.appId),
+              )
+              .toList();
+        } else {
+          recordsToDelete = localSale
+              .where(
+                (local) =>
+                    !cloudIds.contains(local.no) &&
+                    local.isSync != kStatusYes &&
+                    appID.contains(local.no),
+              )
+              .toList();
+        }
 
         if (recordsToDelete.isNotEmpty) {
           await _local.deletSaleHeader(saleHeader: recordsToDelete);
@@ -124,6 +137,7 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
 
         await _local.storeSaleHeaders(saleHeader: cloudRecords);
       }
+
       param?.remove("page");
       final updatedLocalSale = await _local.getSaleHeaders(
         args: param,
@@ -147,7 +161,20 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     try {
       if (fetchingApi && await _networkInfo.isConnected) {
         // param?['page'] = page;
-        final saleLineCloud = await _remote.getSaleLinesV2(data: param);
+
+        String raw = param!['document_no'].toString();
+
+        Map<String, List<String>> result = {
+          "document_no": raw
+              .replaceFirst('IN', '')
+              .replaceAll(RegExp(r'[{}"]'), '')
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList(),
+        };
+
+        final saleLineCloud = await _remote.getSaleLinesV2(data: result);
 
         await _local.storeSaleLine(saleLine: saleLineCloud);
       }
@@ -572,6 +599,7 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     required List<SalesLine> salesLines,
   }) async {
     try {
+      print("processUploadSale");
       List<Map<String, dynamic>> jsonData = [];
       for (var sale in salesHeaders) {
         final lines = salesLines.where((e) => e.documentNo == sale.no).toList();
@@ -589,6 +617,10 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
         data: {'table_name': 'sales', 'data': jsonEncode(jsonData)},
       );
 
+      print("resultresultresultresult");
+      print(result);
+      print("resultresultresultresult");
+
       final List<SalesHeader> remoteSalesHeaders = [];
       for (var sh in result['headers']) {
         remoteSalesHeaders.add(SalesHeaderExtension.fromMap(sh));
@@ -599,16 +631,23 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
         remoteLines.add(SalesLineExtension.fromMap(sh));
       }
 
+      print("_local pass");
+
       _local.updateSales(
         saleHeaders: salesHeaders,
         remoteSaleHeaders: remoteSalesHeaders,
         remoteLines: remoteLines,
       );
 
+      print("Ok processUploadSale");
+
       return const Right(true);
     } on GeneralException catch (e) {
+      print("Ok GeneralException");
+
       return Left(CacheFailure(e.message));
     } on Exception catch (e) {
+      print("Ok Exception");
       return Left(CacheFailure(e.toString()));
     }
   }

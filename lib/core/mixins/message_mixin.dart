@@ -7,7 +7,7 @@ import 'package:salesforce/core/utils/logger.dart';
 mixin MessageMixin {
   void showErrorMessage([String msg = errorMessage]) {
     Helpers.showMessage(msg: msg, status: MessageStatus.errors);
-    Logger.log(msg);
+    // Logger.log(msg);
   }
 
   void showSuccessMessage(String msg, {SnackBarAction? action}) {

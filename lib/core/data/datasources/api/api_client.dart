@@ -64,10 +64,7 @@ class ApiClient {
       return responseData;
     } on NetworkException catch (_) {
       throw GeneralException("No internet connection");
-    } on GeneralException {
-      rethrow;
-    } on Exception catch (e) {
-      Logger.log("API : $e");
+    } catch (e) {
       rethrow;
     }
   }

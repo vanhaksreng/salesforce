@@ -201,7 +201,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
       Navigator.pushNamed(
         context,
         AddCustomerScreen.routeName,
-        arguments: AddCustomerArg(documentType: kSaleInvoice, isRefresh: true),
+        arguments: AddCustomerArg(documentType: kSaleInvoice),
       ).then((value) {
         if (value == null) return;
         if (value as bool) {

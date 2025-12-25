@@ -20,6 +20,7 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
   final _taskRepo = getIt.get<TaskRepository>();
   final _moreRepo = getIt.get<MoreRepository>();
   final connection = getIt.get<NetworkInfo>();
+  late int error = 0;
 
   Future<void> processUpload() async {
     if (!await connection.isConnected) {
@@ -74,7 +75,7 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
     );
 
     response.fold(
-      (failure) => showErrorMessage(failure.message),
+      (failure) => handleErrorMessage(failure.message),
       (_) => emit(state.copyWith(redemptions: [])),
     );
   }
@@ -85,10 +86,9 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
       salesLines: state.salesLines,
     );
 
-    response.fold(
-      (failure) => showErrorMessage(failure.message),
-      (_) => emit(state.copyWith(salesHeaders: [])),
-    );
+    response.fold((failure) {
+      handleErrorMessage(failure.message);
+    }, (_) => emit(state.copyWith(salesHeaders: [])));
   }
 
   Future<void> _processUploadCollection() async {
@@ -97,9 +97,14 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
     );
 
     response.fold(
-      (failure) => showErrorMessage(failure.message),
+      (failure) => handleErrorMessage(failure.message),
       (_) => emit(state.copyWith(cashReceiptJournals: [])),
     );
+  }
+
+  void handleErrorMessage(message) {
+    error += 1;
+    showErrorMessage(message);
   }
 
   Future<void> _processUploadCheckStock() async {
@@ -108,7 +113,7 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
     );
 
     response.fold(
-      (failure) => showErrorMessage(failure.message),
+      (failure) => handleErrorMessage(failure.message),
       (_) => emit(state.copyWith(customerItemLedgerEntries: [])),
     );
   }
@@ -119,7 +124,7 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
     );
 
     response.fold(
-      (failure) => showErrorMessage(failure.message),
+      (failure) => handleErrorMessage(failure.message),
       (_) => emit(state.copyWith(competitorItemLedgerEntries: [])),
     );
   }
@@ -130,7 +135,7 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
     );
 
     response.fold(
-      (failure) => showErrorMessage(failure.message),
+      (failure) => handleErrorMessage(failure.message),
       (_) => emit(state.copyWith(merchandiseSchedules: [])),
     );
   }
@@ -141,7 +146,7 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
     );
 
     response.fold(
-      (failure) => showErrorMessage(failure.message),
+      (failure) => handleErrorMessage(failure.message),
       (schedules) => emit(state.copyWith(salespersonSchedules: schedules)),
     );
   }
@@ -149,12 +154,12 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
   Future<void> _gpsTracking() async {
     await _moreRepo.processUploadGpsTracking();
 
-    // response.fold((failure) => showErrorMessage(failure.message), (_) {});
+    // response.fold((failure) => handleErrorMessage(failure.message), (_) {});
   }
 
   Future<void> _gpsRouteTracking() async {
     await _moreRepo.syncOfflineLocationToBackend();
-    // response.fold((failure) => showErrorMessage(failure.message), (_) {});
+    // response.fold((failure) => handleErrorMessage(failure.message), (_) {});
   }
 
   // Private Data Loading Methods
@@ -258,6 +263,6 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
     UploadState Function(T data) onSuccess,
   ) async {
     final response = await request();
-    response.fold((l) => showErrorMessage(), (data) => emit(onSuccess(data)));
+    response.fold((l) => showErrorMessage(l), (data) => emit(onSuccess(data)));
   }
 }

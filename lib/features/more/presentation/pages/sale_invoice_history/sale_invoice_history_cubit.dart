@@ -6,7 +6,6 @@ import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/mixins/permission_mixin.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_invoice_history/sale_invoice_history_state.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history/sale_order_history_state.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 

@@ -898,17 +898,21 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         posSaleLines: posLines,
       );
 
-      _processUploadSale(salesHeaders: [saleHeader], salesLines: saleLines);
+      await _processUploadSale(
+        salesHeaders: [saleHeader],
+        salesLines: saleLines,
+      );
 
       return const Right(true);
     } on GeneralException catch (e) {
+      print("============6789${e.message}");
       return Left(ServerFailure(e.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }
 
-  void _processUploadSale({
+  Future<void> _processUploadSale({
     required List<SalesHeader> salesHeaders,
     required List<SalesLine> salesLines,
   }) async {
@@ -929,6 +933,13 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       final result = await _remote.processUpload(
         data: {'table_name': 'sales', 'data': jsonEncode(jsonData)},
       );
+      print("==================");
+      print(result);
+      print("==================");
+
+      if (result['status'] != 'success') {
+        throw Exception(result['message'] ?? 'Upload failed');
+      }
 
       final List<SalesHeader> remoteSalesHeaders = [];
       for (var sh in result['headers']) {
@@ -940,13 +951,14 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         remoteLines.add(SalesLineExtension.fromMap(sh));
       }
 
-      _local.updateSales(
+      await _local.updateSales(
         saleHeaders: salesHeaders,
         remoteSaleHeaders: remoteSalesHeaders,
         remoteLines: remoteLines,
       );
-    } on Exception {
-      //
+    } catch (e) {
+      print("===============${e.toString()}");
+      throw GeneralException(e.toString());
     }
   }
 

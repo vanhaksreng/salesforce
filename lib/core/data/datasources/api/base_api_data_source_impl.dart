@@ -197,12 +197,19 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
   Future<Map<String, dynamic>> processUpload({
     Map<String, dynamic>? data,
   }) async {
+    return await apiClient.post(
+      'v2/upload-data',
+      body: await getParams(params: data),
+    );
+
     try {
       return await apiClient.post(
         'v2/upload-data',
         body: await getParams(params: data),
       );
     } catch (e) {
+      print("apiClient.post");
+      print(e);
       rethrow;
     }
   }
