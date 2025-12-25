@@ -28,6 +28,7 @@ android/app/intermediates/
 android/app/.cxx/
 *.apk
 *.aab
+android/app/src/jniLibs
 
 # iOS
 ios/Pods/
