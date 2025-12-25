@@ -208,8 +208,6 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
         body: await getParams(params: data),
       );
     } catch (e) {
-      print("apiClient.post");
-      print(e);
       rethrow;
     }
   }

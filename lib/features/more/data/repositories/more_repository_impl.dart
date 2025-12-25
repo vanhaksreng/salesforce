@@ -98,11 +98,10 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
       param?.remove("page");
 
       if (fetchingApi && await _networkInfo.isConnected) {
-        print("===============dd============");
         final localSale = await _local.getSaleHeaders(args: param, page: page);
         param?['page'] = page;
         final cloudSales = await _remote.getSaleHeaders(data: param);
-        print(cloudSales);
+
         final List<SalesHeader> cloudRecords = [];
         for (var item in cloudSales["records"] ?? []) {
           cloudRecords.add(SalesHeaderExtension.fromMap(item));
@@ -599,7 +598,6 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     required List<SalesLine> salesLines,
   }) async {
     try {
-      print("processUploadSale");
       List<Map<String, dynamic>> jsonData = [];
       for (var sale in salesHeaders) {
         final lines = salesLines.where((e) => e.documentNo == sale.no).toList();
@@ -617,10 +615,6 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
         data: {'table_name': 'sales', 'data': jsonEncode(jsonData)},
       );
 
-      print("resultresultresultresult");
-      print(result);
-      print("resultresultresultresult");
-
       final List<SalesHeader> remoteSalesHeaders = [];
       for (var sh in result['headers']) {
         remoteSalesHeaders.add(SalesHeaderExtension.fromMap(sh));
@@ -631,23 +625,16 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
         remoteLines.add(SalesLineExtension.fromMap(sh));
       }
 
-      print("_local pass");
-
       _local.updateSales(
         saleHeaders: salesHeaders,
         remoteSaleHeaders: remoteSalesHeaders,
         remoteLines: remoteLines,
       );
 
-      print("Ok processUploadSale");
-
       return const Right(true);
     } on GeneralException catch (e) {
-      print("Ok GeneralException");
-
       return Left(CacheFailure(e.message));
     } on Exception catch (e) {
-      print("Ok Exception");
       return Left(CacheFailure(e.toString()));
     }
   }
