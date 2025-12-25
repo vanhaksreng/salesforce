@@ -70,6 +70,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
 
       final saleNo = Helpers.getSaleDocumentNo(
         scheduleId: arg.schedule.id,
+
         documentType: arg.documentType,
       );
 
