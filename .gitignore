@@ -1,0 +1,45 @@
+# Misc
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# Android (IMPORTANT)
+android/.gradle/
+android/build/
+android/app/build/
+android/app/outputs/
+android/app/intermediates/
+android/app/.cxx/
+*.apk
+*.aab
+android/app/src/jniLibs/
+android/app/libs/
+
+# iOS
+ios/Pods/
+ios/build/
+
+# App config
+android/key.properties
+lib/env.dart
+
+# Docs
+commit_notes.md
+auto_take_commit_range_date.py
+

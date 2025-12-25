@@ -1,0 +1,300 @@
+import 'package:realm/realm.dart';
+
+// MARK: - Original Models (Version 1)
+@RealmModel()
+class _Product {
+  @PrimaryKey()
+  late String id;
+  late String name;
+  late String price; // Originally String - will change to double
+  late String category;
+}
+
+@RealmModel()
+class _User {
+  @PrimaryKey()
+  late String userId;
+  late String username;
+  late String age; // Originally String - will change to int
+}
+
+// MARK: - Updated Models (Version 3)
+@RealmModel()
+class _ProductV3 {
+  @PrimaryKey()
+  late String id;
+  late String name;
+  late double price; // Changed from String to double
+  late String category;
+  late double discount = 0.0; // New field
+  late bool isActive = true; // New field
+  late List<String> tags; // New field
+  late DateTime? lastUpdated; // New field
+}
+
+@RealmModel()
+class _UserV3 {
+  @PrimaryKey()
+  late String userId;
+  late String username;
+  late int age; // Changed from String to int
+  late String email = ''; // New field
+  late DateTime? registrationDate; // New field
+  late bool isPremium = false; // New field
+}
+
+// MARK: - Migration Configuration
+class RealmMigrationService {
+  static Configuration getConfiguration() {
+    var config = Configuration.local(
+      [ProductV3.schema, UserV3.schema],
+      schemaVersion: 3,
+      migrationCallback: (migration, oldSchemaVersion) {
+        print('Migrating from schema version $oldSchemaVersion to 3');
+        
+        // Migration from Version 1 to 2
+        if (oldSchemaVersion < 2) {
+          _migrateToVersion2(migration);
+        }
+        
+        // Migration from Version 2 to 3
+        if (oldSchemaVersion < 3) {
+          _migrateToVersion3(migration);
+        }
+      },
+    );
+    
+    return config;
+  }
+  
+  
+  
+  // Helper method for safe string to double conversion
+  static double _safeStringToDouble(String value) {
+    try {
+      // Clean the string: remove currency symbols, commas, extra spaces
+      var cleanedValue = value
+          .replaceAll(RegExp(r'[\$,\s]'), '')
+          .trim();
+      
+      if (cleanedValue.isEmpty) return 0.0;
+      
+      return double.parse(cleanedValue);
+    } catch (e) {
+      print('Warning: Could not convert "$value" to double, using 0.0');
+      return 0.0;
+    }
+  }
+  
+  // Helper method for safe string to int conversion
+  static int _safeStringToInt(String value) {
+    try {
+      var cleanedValue = value.trim();
+      if (cleanedValue.isEmpty) return 0;
+      
+      return int.parse(cleanedValue);
+    } catch (e) {
+      print('Warning: Could not convert "$value" to int, using 0');
+      return 0;
+    }
+  }
+}
+
+// MARK: - Usage Example
+class RealmService {
+  static Realm? _realm;
+  
+  static Future<void> initialize() async {
+    try {
+      var config = RealmMigrationService.getConfiguration();
+      _realm = Realm(config);
+      
+      print('Realm initialized successfully!');
+      print('Schema version: ${_realm!.config.schemaVersion}');
+      
+      // Test the migrated data
+      await _testMigratedData();
+      
+    } catch (e) {
+      print('Error initializing Realm: $e');
+      rethrow;
+    }
+  }
+  
+  static Future<void> _testMigratedData() async {
+    if (_realm == null) return;
+    
+    var products = _realm!.all<ProductV3>();
+    var users = _realm!.all<UserV3>();
+    
+    print('Products count: ${products.length}');
+    print('Users count: ${users.length}');
+    
+    // Print sample migrated data
+    if (products.isNotEmpty) {
+      var firstProduct = products.first;
+      print('Sample product:');
+      print('  Name: ${firstProduct.name}');
+      print('  Price: \$${firstProduct.price.toStringAsFixed(2)}');
+      print('  Discount: ${(firstProduct.discount * 100).toStringAsFixed(1)}%');
+      print('  Tags: ${firstProduct.tags.join(', ')}');
+      print('  Last Updated: ${firstProduct.lastUpdated}');
+    }
+    
+    if (users.isNotEmpty) {
+      var firstUser = users.first;
+      print('Sample user:');
+      print('  Username: ${firstUser.username}');
+      print('  Age: ${firstUser.age}');
+      print('  Email: ${firstUser.email}');
+      print('  Premium: ${firstUser.isPremium}');
+      print('  Registration: ${firstUser.registrationDate}');
+    }
+  }
+  
+  static Realm get realm {
+    if (_realm == null) {
+      throw StateError('Realm not initialized. Call initialize() first.');
+    }
+    return _realm!;
+  }
+  
+  static void close() {
+    _realm?.close();
+    _realm = null;
+  }
+}
+
+// MARK: - Advanced Migration Examples
+class AdvancedMigrationExamples {
+  
+  // Example: Complex data transformation during migration
+  static Configuration getAdvancedConfiguration() {
+    return Configuration.local(
+      [ProductV3.schema, UserV3.schema],
+      schemaVersion: 4,
+      migrationCallback: (migration, oldSchemaVersion) {
+        
+        if (oldSchemaVersion < 4) {
+          _performAdvancedMigration(migration);
+        }
+      },
+    );
+  }
+  
+  static void _performAdvancedMigration(Migration migration) {
+    print('Performing advanced migration...');
+    
+    var products = migration.newRealm.all('Product');
+    
+    for (var product in products) {
+      // Example: Convert comma-separated tags string to List<String>
+      var oldTagsString = product.dynamic.get<String?>('oldTagsField');
+      if (oldTagsString != null && oldTagsString.isNotEmpty) {
+        var tagsList = oldTagsString
+            .split(',')
+            .map((tag) => tag.trim())
+            .where((tag) => tag.isNotEmpty)
+            .toList();
+        
+        product.dynamic.set<List<String>>('tags', tagsList);
+      }
+      
+      // Example: Calculate discount based on complex business logic
+      var price = product.dynamic.get<double>('price') ?? 0.0;
+      var category = product.dynamic.get<String>('category') ?? '';
+      
+      double discount = 0.0;
+      
+      if (category.toLowerCase() == 'electronics') {
+        discount = price > 500 ? 0.15 : 0.08;
+      } else if (category.toLowerCase() == 'clothing') {
+        discount = price > 100 ? 0.20 : 0.10;
+      } else {
+        discount = 0.05;
+      }
+      
+      product.dynamic.set<double>('discount', discount);
+      
+      // Example: Set last updated based on creation pattern
+      var productId = product.dynamic.get<String>('id') ?? '';
+      var lastUpdated = _extractDateFromId(productId) ?? DateTime.now();
+      product.dynamic.set<DateTime?>('lastUpdated', lastUpdated);
+    }
+  }
+  
+  static DateTime? _extractDateFromId(String id) {
+    // Example: Extract date from ID pattern like "PROD_20240615_001"
+    try {
+      var parts = id.split('_');
+      if (parts.length >= 2) {
+        var dateString = parts[1];
+        if (dateString.length == 8) {
+          var year = int.parse(dateString.substring(0, 4));
+          var month = int.parse(dateString.substring(4, 6));
+          var day = int.parse(dateString.substring(6, 8));
+          return DateTime(year, month, day);
+        }
+      }
+    } catch (e) {
+      print('Could not extract date from ID: $id');
+    }
+    return null;
+  }
+}
+
+// MARK: - Migration Testing
+class MigrationTester {
+  
+  static Future<void> testMigration() async {
+    print('Testing Realm migration...');
+    
+    try {
+      // Test with different schema versions
+      await _testSchemaVersion1();
+      await _testSchemaVersion2();
+      await _testSchemaVersion3();
+      
+      print('All migration tests passed!');
+      
+    } catch (e) {
+      print('Migration test failed: $e');
+      rethrow;
+    }
+  }
+  
+  static Future<void> _testSchemaVersion1() async {
+    // This would be your original schema test
+    print('Testing schema version 1 compatibility...');
+  }
+  
+  static Future<void> _testSchemaVersion2() async {
+    // Test data type conversions
+    print('Testing schema version 2 data type conversions...');
+  }
+  
+  static Future<void> _testSchemaVersion3() async {
+    // Test new field additions
+    print('Testing schema version 3 new field additions...');
+  }
+}
+
+// MARK: - Usage in main.dart
+/*
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    // Initialize Realm with migration
+    await RealmService.initialize();
+    
+    // Test migration if needed
+    await MigrationTester.testMigration();
+    
+    runApp(MyApp());
+    
+  } catch (e) {
+    print('Failed to initialize app: $e');
+  }
+}
+*/

@@ -1,0 +1,305 @@
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:salesforce/core/enums/enums.dart';
+import 'package:salesforce/core/errors/exceptions.dart';
+import 'package:salesforce/core/mixins/message_mixin.dart';
+import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
+import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
+import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/core/utils/size_config.dart';
+import 'package:salesforce/env.dart';
+import 'package:salesforce/features/auth/domain/entities/login_arg.dart';
+import 'package:salesforce/features/auth/presentation/pages/first_download/first_download_screen.dart';
+import 'package:salesforce/features/auth/presentation/pages/login/login_cubit.dart';
+import 'package:salesforce/features/auth/presentation/pages/login/login_state.dart';
+import 'package:salesforce/features/auth/presentation/pages/starter_screen/starter_screen.dart';
+import 'package:salesforce/features/auth/presentation/pages/verify_phone_number/verify_phone_number_screen.dart';
+import 'package:salesforce/injection_container.dart';
+import 'package:salesforce/localization/trans.dart';
+import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
+import 'package:salesforce/core/presentation/widgets/text_form_field_widget.dart';
+import 'package:salesforce/core/presentation/widgets/text_widget.dart';
+import 'package:salesforce/realm/scheme/schemas.dart';
+import 'package:salesforce/theme/app_colors.dart';
+import 'package:salesforce/core/constants/app_config.dart';
+import 'package:salesforce/core/constants/app_styles.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  static const String routeName = "login";
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> with MessageMixin {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final _cubit = LoginCubit();
+
+  ServerType type = ServerType.shared;
+  String selectedUrl = sharedUrl;
+  List<AppServer> urls = [];
+  final server = GetIt.I<AppServer>();
+
+  @override
+  void initState() {
+    super.initState();
+    _initLoad();
+  }
+
+  void _initLoad() async {
+    _cubit.getCompanyInfo();
+    if (kDebugMode) {
+      if (server.id == "local") {
+        nameController.text = kAccountNo; //012222222
+      } else if (server.id == "smb") {
+        nameController.text = "5555";
+      }
+
+      passwordController.text = kAccountPass; //TODO : will remove on production
+    }
+  }
+
+  Future<void> login() async {
+    if (!await _cubit.isConnectedToNetwork()) {
+      showWarningMessage(
+        "No internet connection. Please check your network settings.",
+      );
+      return;
+    }
+
+    final DeviceInfoPlugin device = DeviceInfoPlugin();
+    String deviceId = "";
+    String platform = "";
+    String devVersion = "";
+
+    if (Platform.isAndroid) {
+      final AndroidDeviceInfo android = await device.androidInfo;
+      deviceId = android.id;
+      platform = "android";
+      devVersion = android.version.release;
+    } else {
+      final IosDeviceInfo ios = await device.iosInfo;
+      deviceId = ios.identifierForVendor ?? "";
+      platform = "ios";
+      devVersion = ios.systemVersion;
+    }
+
+    if (!mounted) return;
+
+    final l = LoadingOverlay.of(context);
+    l.show();
+
+    try {
+      await _cubit.login(
+        arg: LoginArg(
+          userAgent: deviceId,
+          email: nameController.text,
+          password: passwordController.text,
+          server: server,
+          platform: platform,
+          devVersion: devVersion,
+          notificationKey: OneSignal.User.pushSubscription.id ?? "",
+        ),
+      );
+
+      await _cubit.storeAppSyncLog();
+
+      l.hide();
+
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        FirstDownloadScreen.routeName,
+        (route) => false,
+      );
+    } on GeneralException catch (e) {
+      l.hide();
+      showWarningMessage(e.message);
+      setAuthInjection(null);
+    } on Exception catch (e) {
+      l.hide();
+      showErrorMessage(e.toString());
+      setAuthInjection(null);
+    }
+  }
+
+  void _navigateToServerOption() {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      StarterScreen.routeName,
+      (route) => false,
+      arguments: {'serverId': server.id},
+    );
+  }
+
+  void buildPushNamedToForgetPassWord() {
+    Navigator.pushNamed(context, VerifyPhoneNumberScreen.routeName);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF59A5F5), Color(0xFFF5F5F5), Color(0xFFF5F5F5)],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: const SizedBox.shrink(),
+        ),
+        body: BlocBuilder<LoginCubit, LoginState>(
+          bloc: _cubit,
+          builder: (context, state) {
+            // if (state.isLoading) {
+            //   return LoadingPageWidget();
+            // }
+
+            return ListView(
+              shrinkWrap: true,
+              children: [
+                Center(
+                  child: ImageNetWorkWidget(
+                    imageUrl: state.company?.logo128 ?? '',
+                    // imageUrl: getCompany()?.logo128 ?? "",
+                    height: 200,
+                    width: 250,
+                    isSide: true,
+                    sideWidth: 2,
+                  ),
+                ),
+                Helpers.gapH(30),
+                buildForm(state.company),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget buildForm(CompanyInformation? info) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: scaleFontSize(appSpace),
+        vertical: scaleFontSize(appSpace),
+      ),
+      child: Column(
+        spacing: scaleFontSize(appSpace),
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text.rich(
+            TextSpan(
+              style: TextStyle(fontSize: 14.scale),
+              children: [
+                TextSpan(
+                  text: greeting("Login to  "),
+                  style: TextStyle(fontSize: 15.scale, color: textColor50),
+                ),
+                TextSpan(
+                  text: info?.name,
+                  // text: "${getCompany()?.name}",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: primary,
+                    fontStyle: FontStyle.italic,
+                    fontSize: 16.scale,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          buildTextFormFieldWidget(
+            controller: nameController,
+            hintText: "Username",
+            labelIcon: Icons.person,
+          ),
+          buildTextFormFieldWidget(
+            controller: passwordController,
+            hintText: "password",
+            labelIcon: Icons.lock,
+            obscureText: true,
+          ),
+          Helpers.gapH(16),
+          // Align(
+          //   alignment: Alignment.bottomRight,
+          //   child: TextButton(
+          //     onPressed: () =>
+          //     buildPushNamedToForgetPassWord(),
+          //     child: TextWidget(
+          //       text: greeting("forget_pass"),
+          //       decoration: TextDecoration.underline,
+          //       textAlign: TextAlign.right,
+          //       softWrap: true,
+          //       fontWeight: FontWeight.bold,
+          //       fontSize: 12,
+          //       color: primary,
+          //     ),
+          //   ),
+          // ),
+          BtnWidget(
+            title: greeting("login"),
+            onPressed: () => login(),
+            horizontal: 0,
+            gradient: linearGradient,
+            size: BtnSize.medium,
+          ),
+          Helpers.gapH(appSpace8),
+          linkUrl(),
+        ],
+      ),
+    );
+  }
+
+  Widget linkUrl() {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: TextButton(
+        onPressed: _navigateToServerOption,
+        child: TextWidget(
+          text: "Switch server connection",
+          color: primary,
+          decoration: TextDecoration.underline,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  TextFormFieldWidget buildTextFormFieldWidget({
+    required TextEditingController controller,
+    String hintText = "",
+    IconData? labelIcon,
+    bool obscureText = false,
+  }) {
+    return TextFormFieldWidget(
+      controller: controller,
+      hintText: greeting(hintText),
+      hintColor: textColor50,
+      enabledBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: grey),
+      ),
+      focusedBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: grey),
+      ),
+      obscureText: obscureText,
+      prefixIcon: Icon(labelIcon, color: textColor50, size: scaleFontSize(20)),
+      isDefaultTextForm: true,
+    );
+  }
+}
