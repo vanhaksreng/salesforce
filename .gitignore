@@ -44,3 +44,4 @@ commit_notes.md
 auto_take_commit_range_date.py
 
 *.so
+*.apk
