@@ -4,6 +4,7 @@ class SaleCreditMemoHistoryState {
   final bool isLoading;
   final String? error;
   final List<SalesHeader> records;
+  final List<SalesLine> saleLines;
   final DateTime? startDate;
   final DateTime? toDate;
   final String? selectedStatus;
@@ -17,6 +18,7 @@ class SaleCreditMemoHistoryState {
     this.isLoading = false,
     this.error,
     this.records = const [],
+    this.saleLines = const [],
     this.startDate,
     this.toDate,
     this.selectedStatus,
@@ -30,6 +32,7 @@ class SaleCreditMemoHistoryState {
     bool? isLoading,
     String? error,
     List<SalesHeader>? records,
+    List<SalesLine>? saleLines,
     DateTime? startDate,
     DateTime? toDate,
     String? selectedStatus,
@@ -44,6 +47,7 @@ class SaleCreditMemoHistoryState {
       error: error ?? this.error,
       records: records ?? this.records,
       startDate: startDate ?? this.startDate,
+      saleLines: saleLines ?? this.saleLines,
       toDate: toDate ?? this.toDate,
       selectedStatus: selectedStatus ?? this.selectedStatus,
       isFilter: isFilter ?? this.isFilter,

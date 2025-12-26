@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
+import 'package:salesforce/core/presentation/widgets/circle_icon_widget.dart';
 import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -46,10 +48,35 @@ class SaleHistoryCardBox extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    TextWidget(
-                      text: header.no ?? "",
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    Row(
+                      spacing: scaleFontSize(4),
+                      children: [
+                        CircleIconWidget(
+                          bgColor: header.isSync == kStatusYes
+                              ? success
+                              : error,
+                          sizeIcon: scaleFontSize(14),
+                          colorIcon: white,
+                          icon: header.isSync == kStatusYes
+                              ? Icons.cloud_done
+                              : Icons.cloud_off_outlined,
+                        ),
+                        Column(
+                          spacing: scaleFontSize(4),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextWidget(
+                              text: header.appId ?? "",
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            TextWidget(
+                              text: "Doc : ${header.no ?? ""}",
+                              fontSize: 12,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                     ChipWidget(
                       ishadowColor: false,
@@ -63,15 +90,25 @@ class SaleHistoryCardBox extends StatelessWidget {
                     ),
                   ],
                 ),
+                Helpers.gapH(16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: 8.scale,
                   children: [
                     TextWidget(
-                      text: header.customerName ?? "",
+                      text: "${header.customerName ?? ""} ",
                       fontSize: 14,
-                      color: textColor50,
                       fontWeight: FontWeight.w500,
+                    ),
+                    TextWidget(
+                      fontSize: 16,
+                      text: Helpers.formatNumber(
+                        header.totalAmtLine ?? 0.0,
+                        option: FormatType.amount,
+                      ),
+
+                      fontWeight: FontWeight.w600,
+                      textAlign: TextAlign.right,
                     ),
                     if ((header.shipToAddress ?? "").isNotEmpty)
                       BoxWidget(
@@ -90,6 +127,7 @@ class SaleHistoryCardBox extends StatelessWidget {
               ],
             ),
           ),
+
           const Hr(width: double.infinity),
           Padding(
             padding: EdgeInsets.fromLTRB(16.scale, 8.scale, 16.scale, 16.scale),
@@ -108,16 +146,6 @@ class SaleHistoryCardBox extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   ],
-                ),
-                TextWidget(
-                  text: Helpers.formatNumber(
-                    header.amount ?? 0.0,
-                    option: FormatType.amount,
-                  ),
-                  fontSize: 20,
-                  color: mainColor,
-                  fontWeight: FontWeight.bold,
-                  textAlign: TextAlign.right,
                 ),
                 InkWell(
                   onTap: onTapShare,

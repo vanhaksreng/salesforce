@@ -3036,6 +3036,7 @@ class SalesLine extends _SalesLine
 
   SalesLine(
     int id, {
+    String? appId,
     String? documentType,
     String? documentNo,
     int? lineNo,
@@ -3116,6 +3117,7 @@ class SalesLine extends _SalesLine
       });
     }
     RealmObjectBase.set(this, 'id', id);
+    RealmObjectBase.set(this, 'app_id', appId);
     RealmObjectBase.set(this, 'document_type', documentType);
     RealmObjectBase.set(this, 'document_no', documentNo);
     RealmObjectBase.set(this, 'line_no', lineNo);
@@ -3219,6 +3221,11 @@ class SalesLine extends _SalesLine
   int get id => RealmObjectBase.get<int>(this, 'id') as int;
   @override
   set id(int value) => RealmObjectBase.set(this, 'id', value);
+
+  @override
+  String? get appId => RealmObjectBase.get<String>(this, 'app_id') as String?;
+  @override
+  set appId(String? value) => RealmObjectBase.set(this, 'app_id', value);
 
   @override
   String? get documentType =>
@@ -3716,6 +3723,7 @@ class SalesLine extends _SalesLine
   EJsonValue toEJson() {
     return <String, dynamic>{
       'id': id.toEJson(),
+      'app_id': appId.toEJson(),
       'document_type': documentType.toEJson(),
       'document_no': documentNo.toEJson(),
       'line_no': lineNo.toEJson(),
@@ -3796,6 +3804,7 @@ class SalesLine extends _SalesLine
     return switch (ejson) {
       {'id': EJsonValue id} => SalesLine(
         fromEJson(id),
+        appId: fromEJson(ejson['app_id']),
         documentType: fromEJson(ejson['document_type']),
         documentNo: fromEJson(ejson['document_no']),
         lineNo: fromEJson(ejson['line_no']),
@@ -3884,6 +3893,12 @@ class SalesLine extends _SalesLine
     register(_toEJson, _fromEJson);
     return const SchemaObject(ObjectType.realmObject, SalesLine, 'SALES_LINE', [
       SchemaProperty('id', RealmPropertyType.int, primaryKey: true),
+      SchemaProperty(
+        'appId',
+        RealmPropertyType.string,
+        mapTo: 'app_id',
+        optional: true,
+      ),
       SchemaProperty(
         'documentType',
         RealmPropertyType.string,

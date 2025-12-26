@@ -7,6 +7,7 @@ import 'package:salesforce/core/mixins/permission_mixin.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_invoice_history/sale_invoice_history_state.dart';
 import 'package:salesforce/injection_container.dart';
+import 'package:salesforce/realm/scheme/sales_schemas.dart';
 
 class SaleInvoiceHistoryCubit extends Cubit<SaleInvoiceHistoryState>
     with MessageMixin, GeneratePdfMixin, PermissionMixin {
@@ -28,7 +29,7 @@ class SaleInvoiceHistoryCubit extends Cubit<SaleInvoiceHistoryState>
     hasMorePage = true;
 
     try {
-      emit(state.copyWith(isFetching: true));
+      emit(state.copyWith(isFetching: true, isLoading: true));
 
       final oldData = state.records;
       final result = await appRepos.getSaleHeaders(
@@ -37,10 +38,22 @@ class SaleInvoiceHistoryCubit extends Cubit<SaleInvoiceHistoryState>
         fetchingApi: fetchingApi,
       );
 
-      result.fold((l) => throw Exception(l.message), (records) {
+      result.fold((l) => throw Exception(l.message), (records) async {
         if (page > 1 && (records.saleHeaders).isEmpty) {
           hasMorePage = false;
           return;
+        }
+
+        List<SalesLine> lines = await loadSalesLines(records.saleHeaders);
+
+        for (var header in records.saleHeaders) {
+          final headerLines = lines
+              .where((e) => e.documentNo == header.no)
+              .toList();
+
+          header.totalAmtLine = headerLines
+              .fold<double>(0.0, (sum, line) => sum + (line.amount ?? 0.0))
+              .toString();
         }
         emit(
           state.copyWith(
@@ -57,8 +70,39 @@ class SaleInvoiceHistoryCubit extends Cubit<SaleInvoiceHistoryState>
       emit(state.copyWith(isLoading: false));
       showErrorMessage(error.toString());
     } finally {
-      emit(state.copyWith(isFetching: false));
+      emit(state.copyWith(isLoading: false));
     }
+  }
+
+  Future<List<SalesLine>> loadSalesLines(List<SalesHeader> salesHeaders) async {
+    if (salesHeaders.isEmpty) return [];
+
+    final headerNumbers = salesHeaders.map((h) => '"${h.no}"').toList();
+
+    List<SalesLine> result = [];
+
+    await _handleResponse(
+      () => appRepos.getSaleLines(
+        param: {
+          'document_no': 'IN {${headerNumbers.join(",")}}',
+          // 'is_sync': kStatusNo,
+        },
+      ),
+      (List<SalesLine> data) {
+        result = data;
+        return state.copyWith(saleLines: data);
+      },
+    );
+
+    return result;
+  }
+
+  Future<void> _handleResponse<T>(
+    Future<dynamic> Function() request,
+    SaleInvoiceHistoryState Function(T data) onSuccess,
+  ) async {
+    final response = await request();
+    response.fold((l) => showErrorMessage(), (data) => emit(onSuccess(data)));
   }
 
   Future<void> chooseDate({DateTime? startDate, DateTime? toDate}) async {

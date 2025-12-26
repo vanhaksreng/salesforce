@@ -70,6 +70,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
 
       final saleNo = Helpers.getSaleDocumentNo(
         scheduleId: arg.schedule.id,
+
         documentType: arg.documentType,
       );
 
@@ -85,6 +86,19 @@ class SaleFormCubit extends Cubit<SaleFormState>
       final String itemNo = arg.item.no;
       double manualPrice = 0;
       String salesUomCode = arg.item.salesUomCode ?? "";
+      double unitPrice = Helpers.toDouble(arg.item.unitPrice);
+
+      if (lines.isNotEmpty) {
+        int rIndex = lines.indexWhere((e) {
+          return e.no == itemNo && e.specialType == kPromotionTypeStd;
+        });
+
+        if (rIndex != -1) {
+          unitPrice = Helpers.toDouble(lines[rIndex].unitPrice);
+        }
+      }
+
+      emit(state.copyWith(itemUnitPrice: unitPrice));
 
       final updatedForms = state.saleForm.map((form) {
         int rIndex = lines.indexWhere((e) {
@@ -121,6 +135,21 @@ class SaleFormCubit extends Cubit<SaleFormState>
         return form.copyWith(quantity: quantity, uomCode: uomCode);
       }).toList();
 
+      // double unitPrice = Helpers.toDouble(arg.item.unitPrice);
+      // if (lines.isNotEmpty) {
+      //   int rIndex = lines.indexWhere((e) {
+      //     return e.no == itemNo && e.specialType == kPromotionTypeStd;
+      //   });
+
+      //   if (rIndex != -1) {
+      //     unitPrice = Helpers.toDouble(lines[rIndex].unitPrice);
+      //   }
+      // }
+
+      // print("print(unitPrice)");
+      // print(unitPrice);
+      // print("print(unitPrice)");
+
       emit(
         state.copyWith(
           isLoading: false,
@@ -129,7 +158,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
           customer: customer,
           schedule: arg.schedule,
           item: arg.item,
-          itemUnitPrice: arg.item.unitPrice,
+          itemUnitPrice: unitPrice,
           documentType: arg.documentType,
           saleLines: lines,
           saleForm: updatedForms,

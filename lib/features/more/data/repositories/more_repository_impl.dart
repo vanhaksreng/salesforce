@@ -88,6 +88,7 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
   //   }
   // }
 
+  //UPdate code
   @override
   Future<Either<Failure, RecordSaleHeader>> getSaleHeaders({
     Map<String, dynamic>? param,
@@ -95,8 +96,10 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
-      final localSale = await _local.getSaleHeaders(args: param, page: page);
-      if (await _networkInfo.isConnected) {
+      param?.remove("page");
+
+      if (fetchingApi && await _networkInfo.isConnected) {
+        final localSale = await _local.getSaleHeaders(args: param, page: page);
         param?['page'] = page;
         final cloudSales = await _remote.getSaleHeaders(data: param);
 
@@ -104,10 +107,44 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
         for (var item in cloudSales["records"] ?? []) {
           cloudRecords.add(SalesHeaderExtension.fromMap(item));
         }
+
+        final cloudIds = cloudRecords.map((e) => e.no).toSet();
+        final appID = cloudRecords.map((e) => e.appId).toSet();
+        List<SalesHeader> recordsToDelete = [];
+        if (param?['document_type'] == kSaleInvoice) {
+          recordsToDelete = localSale
+              .where(
+                (local) =>
+                    !cloudIds.contains(local.no) &&
+                    local.isSync != kStatusYes &&
+                    appID.contains(local.appId),
+              )
+              .toList();
+        } else {
+          recordsToDelete = localSale
+              .where(
+                (local) =>
+                    !cloudIds.contains(local.no) &&
+                    local.isSync != kStatusYes &&
+                    appID.contains(local.no),
+              )
+              .toList();
+        }
+
+        if (recordsToDelete.isNotEmpty) {
+          await _local.deletSaleHeader(saleHeader: recordsToDelete);
+        }
+
         await _local.storeSaleHeaders(saleHeader: cloudRecords);
       }
 
-      return Right(RecordSaleHeader(saleHeaders: localSale));
+      param?.remove("page");
+      final updatedLocalSale = await _local.getSaleHeaders(
+        args: param,
+        page: page,
+      );
+
+      return Right(RecordSaleHeader(saleHeaders: updatedLocalSale));
     } on GeneralException catch (e) {
       return Left(CacheFailure(e.message));
     } catch (_) {
@@ -122,15 +159,27 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
-      final localeSaleLines = await _local.getSaleLines(args: param);
-
       if (fetchingApi && await _networkInfo.isConnected) {
-        param?['page'] = page;
-        final saleLineCloud = await _remote.getSaleLines(data: param);
+        // param?['page'] = page;
 
-        _local.storeSaleLine(saleLine: saleLineCloud);
-        return Right(saleLineCloud);
+        String raw = param!['document_no'].toString();
+
+        Map<String, List<String>> result = {
+          "document_no": raw
+              .replaceFirst('IN', '')
+              .replaceAll(RegExp(r'[{}"]'), '')
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList(),
+        };
+
+        final saleLineCloud = await _remote.getSaleLinesV2(data: result);
+
+        await _local.storeSaleLine(saleLine: saleLineCloud);
       }
+
+      final localeSaleLines = await _local.getSaleLines(args: param);
 
       return Right(localeSaleLines);
     } on GeneralException catch (e) {

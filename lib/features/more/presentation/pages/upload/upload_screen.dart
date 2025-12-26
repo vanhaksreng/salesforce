@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lottie/lottie.dart';
+import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/data/models/extension/sale_line_extension.dart';
@@ -8,6 +10,7 @@ import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
+import 'package:salesforce/core/presentation/widgets/custom_alert_dialog_widget.dart';
 import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
@@ -55,6 +58,11 @@ class _UploadScreenState extends State<UploadScreen> {
 
     Helpers.showDialogAction(
       context,
+      labelAction: greeting("Upload Data"),
+      subtitle: "Your data is ready. Would you like to upload it now?",
+      confirmText: "Yes, Upload",
+      canCancel: true,
+      cancelText: "Not Now",
       confirm: () {
         Navigator.of(context).pop();
         _processUploadNow();
@@ -66,9 +74,28 @@ class _UploadScreenState extends State<UploadScreen> {
     final l = LoadingOverlay.of(context);
     l.show();
 
-    await _cubit.processUpload();
-    if (!context.mounted) return;
-    l.hide();
+    try {
+      await _cubit.processUpload();
+
+      if (!context.mounted) return;
+
+      if (!_cubit.state.isconnect) {
+        l.hide();
+        if (!mounted) return;
+        Helpers.showNoInternetDialog(context);
+        return;
+      }
+      l.hide();
+      if (_cubit.error == 0) {
+        _cubit.showSuccessMessage('Upload completed successfully');
+      }
+
+      // _cubit.showSuccessMessage('Upload completed successfully');
+    } catch (e) {
+      if (!context.mounted) return;
+      l.hide();
+      _cubit.showErrorMessage(e.toString());
+    }
   }
 
   Color getScheduleColor(String status) {
@@ -92,7 +119,10 @@ class _UploadScreenState extends State<UploadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppBarWidget(title: "Upload Dashboard"),
+      appBar: AppBarWidget(
+        title: "Upload Dashboard",
+        onBack: () => Navigator.pop(context, ActionState.updated),
+      ),
       body: BlocBuilder<UploadCubit, UploadState>(
         bloc: _cubit,
         builder: (BuildContext context, UploadState state) {
@@ -518,6 +548,11 @@ class _UploadScreenState extends State<UploadScreen> {
     if (salesHeaders.isEmpty) {
       return _buildEmptyBox();
     }
+    final modifiedSchedules = [
+      ...schedules,
+      SalespersonSchedule("", name: "Non Schedule"),
+    ];
+    // schedules.add(SalespersonSchedule("", name: "Non Schedule"));
 
     schedules.add(SalespersonSchedule("", name: "Non Schedule"));
 
@@ -526,11 +561,11 @@ class _UploadScreenState extends State<UploadScreen> {
       padding: EdgeInsets.zero,
       physics: const NeverScrollableScrollPhysics(),
       separatorBuilder: (context, index) {
-        if (index + 1 >= schedules.length) {
+        if (index + 1 >= modifiedSchedules.length) {
           return const SizedBox.shrink();
         }
 
-        final nextSchedule = schedules[index + 1];
+        final nextSchedule = modifiedSchedules[index + 1];
         final nextStockRecords = salesHeaders
             .where((e) => e.sourceNo == nextSchedule.id)
             .toList();
@@ -550,9 +585,9 @@ class _UploadScreenState extends State<UploadScreen> {
           ),
         );
       },
-      itemCount: schedules.length,
+      itemCount: modifiedSchedules.length,
       itemBuilder: (context, index) {
-        final schedule = schedules[index];
+        final schedule = modifiedSchedules[index];
 
         final saleRecords = salesHeaders
             .where((e) => e.sourceNo == schedule.id)

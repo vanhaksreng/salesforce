@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
@@ -17,7 +18,6 @@ import 'package:salesforce/features/more/presentation/pages/components/sale_bott
 import 'package:salesforce/features/more/presentation/pages/components/sale_history_card_box.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_credit_memo_history/sale_credit_memo_history_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_credit_memo_history/sale_credit_memo_history_state.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen_old.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
@@ -76,17 +76,24 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
     await _cubit.getSaleCreditMemo(page: pages);
   }
 
-  void _onApplyFilter(Map<String, dynamic> param, BuildContext context) {
+  void _onApplyFilter(Map<String, dynamic> param, BuildContext context) async {
+    if (param.isEmpty) {
+      Navigator.of(context).pop();
+      return;
+    }
+
     if (param["from_date"] != null) {
       initialFromDate = param["from_date"];
     } else {
       initialFromDate = null;
     }
+
     if (param["to_date"] != null) {
       initialToDate = param["to_date"];
     } else {
       initialToDate = null;
     }
+
     if (param["date"] != null) {
       selectedDate = param["date"];
     } else {
@@ -104,16 +111,22 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
     }
 
     param['document_type'] = 'Credit Memo';
-    status = param["status"];
+
+    if (param["status"] != null) {
+      status = param["status"];
+      if (status == "All") {
+        param.remove("status");
+      }
+    }
 
     param.remove("from_date");
     param.remove("to_date");
     param.remove("date");
     param.remove("isFilter");
 
-    _cubit.getSaleCreditMemo(param: param, page: 1, fetchingApi: true);
-
     Navigator.of(context).pop();
+
+    await _cubit.getSaleCreditMemo(param: param, page: 1, fetchingApi: true);
   }
 
   void _showModalFiltter(BuildContext context) {
@@ -185,8 +198,28 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
     return Scaffold(
       backgroundColor: white,
       appBar: AppBarWidget(
+        onBack: () => Navigator.of(context).pop(ActionState.updated),
         title: greeting("sale_credit_memo"),
         actions: [
+          // BlocBuilder<SaleCreditMemoHistoryCubit, SaleCreditMemoHistoryState>(
+          //   bloc: _cubit,
+          //   builder: (context, state) {
+          //     bool isHasUpload = state.records.any(
+          //       (e) => e.isSync == kStatusNo,
+          //     );
+          //     if (!isHasUpload) {
+          //       return SizedBox.shrink();
+          //     }
+          //     return BtnIconCircleWidget(
+          //       isShowBadge: true,
+          //       onPressed: () {
+          //         Navigator.pushNamed(context, UploadScreen.routeName);
+          //       },
+          //       icons: Icon(Icons.upload, color: white),
+          //       rounded: appBtnRound,
+          //     );
+          //   },
+          // ),
           BtnIconCircleWidget(
             onPressed: () => _showModalFiltter(context),
             icons: SvgWidget(

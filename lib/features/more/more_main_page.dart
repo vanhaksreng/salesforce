@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/mixins/permission_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
@@ -23,7 +24,8 @@ class MoreMainPage extends StatefulWidget {
   State<MoreMainPage> createState() => _MoreMainPageState();
 }
 
-class _MoreMainPageState extends State<MoreMainPage> with PermissionMixin {
+class _MoreMainPageState extends State<MoreMainPage>
+    with PermissionMixin, RouteAware {
   late MoreMainPageCubit _cubit;
 
   List<MoreModel> listSettings = [
@@ -87,6 +89,25 @@ class _MoreMainPageState extends State<MoreMainPage> with PermissionMixin {
         _cubit.getInitData();
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    _cubit.getInitData(); // Refresh your data
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this); // ✅ Unsubscribe when disposing
+    _cubit.close();
+    super.dispose();
   }
 
   @override

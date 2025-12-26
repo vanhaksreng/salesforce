@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:salesforce/crash_report.dart';
+import 'package:salesforce/features/more/presentation/pages/administration/administration_cubit.dart';
 import 'package:salesforce/features/worker_manager/auto_upload_manager.dart';
 import 'package:salesforce/data/services/onesignal_notification.dart';
 import 'package:salesforce/app/app_router.dart';
@@ -90,6 +91,27 @@ class TradeB2b extends StatefulWidget {
 class _TradeB2bState extends State<TradeB2b> {
   final language = "en";
   final String languageCode = "EN";
+  final _printerCubit = AdministrationCubit();
+  // final _printerService = BluetoothPrinterService();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializePrinter();
+    });
+  }
+
+  Future<void> _initializePrinter() async {
+    await _printerCubit.checkImin();
+    await _printerCubit.initialize();
+  }
+
+  @override
+  void dispose() {
+    _printerCubit.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

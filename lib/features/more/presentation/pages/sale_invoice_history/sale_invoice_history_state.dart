@@ -4,6 +4,7 @@ class SaleInvoiceHistoryState {
   final bool isLoading;
   final String? error;
   final List<SalesHeader> records;
+  final List<SalesLine> saleLines;
   final DateTime? startDate;
   final DateTime? toDate;
   final String? selectedStatus;
@@ -17,6 +18,7 @@ class SaleInvoiceHistoryState {
     this.isLoading = false,
     this.error,
     this.records = const [],
+    this.saleLines = const [],
     this.startDate,
     this.toDate,
     this.selectedStatus,
@@ -31,6 +33,7 @@ class SaleInvoiceHistoryState {
     bool? isLoading,
     String? error,
     List<SalesHeader>? records,
+    List<SalesLine>? saleLines,
     DateTime? startDate,
     DateTime? toDate,
     String? selectedStatus,
@@ -44,6 +47,7 @@ class SaleInvoiceHistoryState {
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
       records: records ?? this.records,
+      saleLines: saleLines ?? this.saleLines,
       startDate: startDate ?? this.startDate,
       toDate: toDate ?? this.toDate,
       selectedStatus: selectedStatus ?? this.selectedStatus,

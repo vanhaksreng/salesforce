@@ -40,5 +40,6 @@ abstract class RealmMoreDataSource extends BaseRealmDataSource {
   Future<void> deletePrinter(DevicePrinter device);
 
   Future<void> storeSaleHeaders({required List<SalesHeader> saleHeader});
+  Future<void> deletSaleHeader({required List<SalesHeader> saleHeader});
   Future<void> storeSaleLine({required List<SalesLine> saleLine});
 }

@@ -42,6 +42,7 @@ dependencies:
   pinput: ^5.0.2
   country_code_picker: ^3.4.0
   workmanager: ^0.9.0+3
+  lottie: ^3.3.2
   # characters: ^1.4.1
  
 
@@ -79,4 +80,9 @@ flutter:
           weight: 700  # Bold
         - asset: assets/fonts/NotoSansKhmer-Black.ttf
           weight: 900  # Black
+          
+    - family: Neuropol
+      fonts:
+        - asset: assets/fonts/NEUROPOL BOLD.TTF
+        - asset: assets/fonts/NEUROPOL MEDIUM.TTF
         

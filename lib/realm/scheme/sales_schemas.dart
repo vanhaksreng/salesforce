@@ -360,6 +360,9 @@ class _SalesHeader {
   String isSync = "Yes";
   @MapTo('order_date')
   String? orderDate;
+
+  @Ignored()
+  String? totalAmtLine;
 }
 
 @MapTo('SALES_LINE')
@@ -367,6 +370,8 @@ class _SalesHeader {
 class _SalesLine {
   @PrimaryKey()
   late int id;
+  @MapTo('app_id')
+  String? appId;
   @MapTo('document_type')
   String? documentType;
   @MapTo('document_no')

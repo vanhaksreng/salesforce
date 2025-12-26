@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
-import 'package:salesforce/core/presentation/widgets/custom_alert_dialog_widget.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/presentation/widgets/list_tile_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/presentation/widgets/title_section_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
-import 'package:salesforce/features/auth/presentation/pages/loggedin_history/loggedin_history_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/login/login_screen.dart';
 import 'package:salesforce/features/more/domain/entities/more_model.dart';
 import 'package:salesforce/features/more/more_main_page_cubit.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_credit_memo_history/sale_credit_memo_history_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_invoice_history/sale_invoice_history_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/sale_order_history/sale_order_history_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/upload/upload_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/upload/upload_screen.dart';
-import 'package:salesforce/features/more/presentation/pages/upload/upload_state.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
-class BuildMore extends StatelessWidget {
+class BuildMore extends StatefulWidget {
   const BuildMore({
     super.key,
     required this.listActionMore,
@@ -26,8 +27,45 @@ class BuildMore extends StatelessWidget {
   final List<MoreModel> listActionMore;
   final String lable;
 
+  @override
+  State<BuildMore> createState() => _BuildMoreState();
+}
+
+class _BuildMoreState extends State<BuildMore> {
+  final upload = UploadCubit();
+
+  @override
+  void initState() {
+    upload.loadSalesData();
+    super.initState();
+  }
+
+  int checkSaleUploadByRoute(String routeName) {
+    final data = upload.state.salesHeaders;
+
+    String? documentType;
+
+    switch (routeName) {
+      case SaleOrderHistoryScreen.routeName:
+        documentType = kSaleOrder;
+        break;
+      case SaleInvoiceHistoryScreen.routeName:
+        documentType = kSaleInvoice;
+        break;
+      case SaleCreditMemoHistoryScreen.routeName:
+        documentType = kSaleCreditMemo;
+        break;
+    }
+
+    if (documentType == null) return 0;
+
+    return data
+        .where((e) => e.isSync == kStatusNo && e.documentType == documentType)
+        .length;
+  }
+
   void _navigatorToScreen(BuildContext context, int index) {
-    String routeName = listActionMore[index].routeName;
+    String routeName = widget.listActionMore[index].routeName;
 
     if (routeName == "logout") {
       _confirmLogout(context);
@@ -37,8 +75,14 @@ class BuildMore extends StatelessWidget {
     Navigator.pushNamed(
       context,
       routeName,
-      arguments: listActionMore[index].arg,
-    );
+      arguments: widget.listActionMore[index].arg,
+    ).then((state) async {
+      if (state == null) return;
+      if (Helpers.shouldReload(state)) {
+        await upload.loadSalesData();
+        checkSaleUploadByRoute(routeName);
+      }
+    });
   }
 
   void _confirmLogout(BuildContext context) {
@@ -54,7 +98,6 @@ class BuildMore extends StatelessWidget {
     BuildContext context,
     LoadingOverlay overlay,
   ) async {
-    final upload = UploadCubit();
     await upload.loadInitialData(DateTime.now());
     final state = upload.state;
 
@@ -119,28 +162,31 @@ class BuildMore extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TitleSectionWidget(
-      label: lable,
+      label: widget.lable,
       pt: scaleFontSize(appSpace8),
       child: ListView.builder(
         shrinkWrap: true,
         padding: EdgeInsets.zero,
-        itemCount: listActionMore.length,
+        itemCount: widget.listActionMore.length,
         physics: const NeverScrollableScrollPhysics(),
         itemBuilder: (context, index) {
-          if (listActionMore[index].isShow == false) {
+          if (widget.listActionMore[index].isShow == false) {
             return const SizedBox.shrink();
           }
           return Padding(
             padding: EdgeInsets.symmetric(vertical: 2.scale),
             child: ListTitleWidget(
+              countNumber: checkSaleUploadByRoute(
+                widget.listActionMore[index].routeName,
+              ),
               onTap: () => _navigatorToScreen(context, index),
-              label: listActionMore[index].title,
+              label: widget.listActionMore[index].title,
               leading: Icon(
-                listActionMore[index].icon,
+                widget.listActionMore[index].icon,
                 size: 24.scale,
                 color: mainColor,
               ),
-              subTitle: listActionMore[index].subTitle,
+              subTitle: widget.listActionMore[index].subTitle,
             ),
           );
         },

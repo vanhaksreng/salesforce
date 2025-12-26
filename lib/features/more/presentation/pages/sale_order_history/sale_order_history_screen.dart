@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
@@ -72,7 +73,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
   bool _shouldLoadMore() {
     return _scrollController.position.pixels ==
             _scrollController.position.maxScrollExtent &&
-        !_cubit.state.isFetching;
+        _cubit.state.currentPage < _cubit.state.lastPage;
   }
 
   void _loadMoreItems() async {
@@ -108,22 +109,32 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     );
   }
 
-  void _onApplyFilter(Map<String, dynamic> param, BuildContext context) {
+  void _onApplyFilter(Map<String, dynamic> param, BuildContext context) async {
+    Navigator.of(context).pop();
+    if (param.isEmpty) return;
+
     if (param["from_date"] != null) {
       initialFromDate = param["from_date"];
     } else {
       initialFromDate = null;
     }
+
     if (param["to_date"] != null) {
       initialToDate = param["to_date"];
     } else {
       initialToDate = null;
     }
+
     if (param["date"] != null) {
       selectedDate = param["date"];
     } else {
       selectedDate = "";
     }
+
+    // Build API parameters
+    Map<String, dynamic> apiParam = {'document_type': 'Order'};
+
+    // Add date range if both dates exist
     final String fromDate = initialFromDate != null
         ? DateTimeExt.parse(initialFromDate.toString()).toDateString()
         : "";
@@ -132,20 +143,19 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
         : "";
 
     if (fromDate.isNotEmpty && toDate.isNotEmpty) {
-      param["posting_date"] = '$fromDate .. $toDate';
+      apiParam["posting_date"] = '$fromDate .. $toDate';
     }
 
-    param['document_type'] = 'Order';
-    status = param["status"];
+    // Handle status filter
+    if (param["status"] != null && param["status"] != "All") {
+      status = param["status"];
+      apiParam["status"] = param["status"];
+    } else {
+      status = "All";
+      // Don't add status filter if it's "All"
+    }
 
-    param.remove("from_date");
-    param.remove("to_date");
-    param.remove("date");
-    param.remove("isFilter");
-
-    _cubit.getSaleOrders(param: param, page: 1, fetchingApi: true);
-
-    Navigator.of(context).pop();
+    await _cubit.getSaleOrders(param: apiParam, page: 1, fetchingApi: true);
   }
 
   void _showModalFiltter(BuildContext context) {
@@ -196,6 +206,15 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     );
   }
 
+  Future<void> _getBackAction() {
+    return Navigator.pushNamed(context, UploadScreen.routeName).then((action) {
+      if (action == null) return;
+      if (Helpers.shouldReload(action as ActionState)) {
+        _getSaleOrder();
+      }
+    });
+  }
+
   Future<void> pushToAddCustomer() =>
       Navigator.pushNamed(
         context,
@@ -222,25 +241,30 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
   }
 
   @override
-  void didPopNext() async {
-    _getSaleOrder();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: white,
       appBar: AppBarWidget(
         title: greeting("sale_orders"),
+        onBack: () => Navigator.of(context).pop(ActionState.updated),
         actions: [
-          // BtnIconCircleWidget(
-          //   isShowBadge: true,
-          //   onPressed: () {
-          //     Navigator.pushNamed(context, UploadScreen.routeName);
-          //   },
-          //   icons: Icon(Icons.upload, color: white),
-          //   rounded: appBtnRound,
-          // ),
+          BlocBuilder<SaleOrderHistoryCubit, SaleOrderHistoryState>(
+            bloc: _cubit,
+            builder: (context, state) {
+              bool isHasUpload = state.records.any(
+                (e) => e.isSync == kStatusNo,
+              );
+              if (!isHasUpload) {
+                return SizedBox.shrink();
+              }
+              return BtnIconCircleWidget(
+                isShowBadge: true,
+                onPressed: () => _getBackAction(),
+                icons: Icon(Icons.upload, color: white),
+                rounded: appBtnRound,
+              );
+            },
+          ),
           Helpers.gapW(appSpace8),
           if (isShowAddCustomer == kStatusYes) ...[
             BtnIconCircleWidget(
@@ -309,13 +333,17 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     if (records.isEmpty) {
       return SliverFillRemaining(child: const EmptyScreen());
     }
+
     return SliverList.builder(
-      itemBuilder: (context, index) => SaleHistoryCardBox(
-        header: records[index],
-        onTapShare: () => shareSaleOrder(records[index].no ?? ""),
-        onTap: () => navigatorToSaleCard(context, records[index]),
-      ),
       itemCount: records.length,
+      itemBuilder: (context, index) {
+        return SaleHistoryCardBox(
+          header: records[index],
+
+          onTapShare: () => shareSaleOrder(records[index].no ?? ""),
+          onTap: () => navigatorToSaleCard(context, records[index]),
+        );
+      },
     );
   }
 

@@ -15,6 +15,7 @@ import 'package:salesforce/features/auth/presentation/pages/login/login_screen.d
 import 'package:salesforce/features/auth/presentation/pages/server_option/server_option_cubit.dart';
 import 'package:salesforce/features/auth/presentation/pages/starter_screen/scanner_screen.dart';
 import 'package:salesforce/injection_container.dart';
+import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class StarterScreen extends StatefulWidget {
@@ -136,7 +137,8 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
               children: [
                 const TextWidget(
                   wordSpacing: 1,
-                  fontSize: 18,
+                  fontSize: 24,
+                  color: mainColor,
                   fontWeight: FontWeight.w500,
                   text: "Welcome to ",
                 ),
@@ -145,10 +147,14 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
                     Rect.fromLTWH(0, 0, bounds.width, bounds.height),
                   ),
                   blendMode: BlendMode.srcIn,
-                  child: const TextWidget(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    text: "ClearView Trade B2B",
+                  child: Text(
+                    greeting("ClearView Trade B2B"),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: scaleFontSize(26),
+                      fontFamily: "Neuropol",
+                      color: white,
+                    ),
                   ),
                 ),
               ],
@@ -172,8 +178,8 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
                   children: [
                     const Icon(Icons.arrow_forward, color: white),
                     SizedBox(width: 8.scale),
-                    const TextWidget(
-                      text: "Get Started",
+                    TextWidget(
+                      text: greeting("Get Started"),
                       fontSize: 16,
                       color: white,
                     ),

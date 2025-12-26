@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dartz/dartz.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -338,19 +340,20 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
 
   @override
   Future<Either<Failure, bool>> syncOfflineLocationToBackend() async {
+    // Check network connectivity
     if (!await _networkInfo.isConnected) {
       return const Right(true);
     }
 
-    final routeTrackings = await _local.getGPSRouteTracking(
-      param: {"is_sync": "No"},
-    );
-
-    if (routeTrackings.isEmpty) {
-      return const Right(true);
-    }
-
     try {
+      final routeTrackings = await _local.getGPSRouteTracking(
+        param: {"is_sync": "No"},
+      );
+
+      if (routeTrackings.isEmpty) {
+        return const Right(true);
+      }
+
       List<Map<String, dynamic>> jsonData = routeTrackings.map((record) {
         return {
           'salesperson_code': record.salepersonCode,
@@ -366,10 +369,51 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
       await _local.updateTrackingByCreatedDate(routeTrackings);
 
       return const Right(true);
+    } on SocketException catch (e) {
+      return Left(NetworkFailure('No internet connection: ${e.message}'));
+    } on TimeoutException catch (e) {
+      return Left(NetworkFailure('Request timeout: ${e.message}'));
+    } on HttpException catch (e) {
+      return Left(ServerFailure('Server error: ${e.message}'));
     } catch (e) {
-      rethrow;
+      return Left(CacheFailure('Failed to sync location: $e'));
     }
   }
+
+  // @override
+  // Future<Either<Failure, bool>> syncOfflineLocationToBackend() async {
+  //   if (!await _networkInfo.isConnected) {
+  //     return const Right(true);
+  //   }
+
+  //   final routeTrackings = await _local.getGPSRouteTracking(
+  //     param: {"is_sync": "No"},
+  //   );
+
+  //   if (routeTrackings.isEmpty) {
+  //     return const Right(true);
+  //   }
+
+  //   try {
+  //     List<Map<String, dynamic>> jsonData = routeTrackings.map((record) {
+  //       return {
+  //         'salesperson_code': record.salepersonCode,
+  //         "latitude": record.latitude,
+  //         "longitude": record.longitude,
+  //         "created_date": record.createdDate,
+  //         "created_time": record.createdTime,
+  //       };
+  //     }).toList();
+
+  //     await _remote.gpsTrackingEntry(data: {'data': jsonEncode(jsonData)});
+
+  //     await _local.updateTrackingByCreatedDate(routeTrackings);
+
+  //     return const Right(true);
+  //   } catch (e) {
+  //     rethrow;
+  //   }
+  // }
 
   @override
   Future<Either<Failure, Salesperson?>> getSaleperson({
