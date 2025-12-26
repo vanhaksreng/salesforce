@@ -45,3 +45,9 @@ auto_take_commit_range_date.py
 
 *.so
 *.apk
+*.bin
+*.jar
+# Ignore files with specific hashes (optional)
+toDdT4nRTwAM7cB7wu2E2XDd5Ic=
+0hUkBNvo6T1rAw07YQEQsjwlU0E=
+kB3P5g9wtdf+1sQ1B2abgAqcEIw=
