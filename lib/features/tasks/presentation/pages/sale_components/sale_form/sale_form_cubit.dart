@@ -94,12 +94,17 @@ class SaleFormCubit extends Cubit<SaleFormState>
         });
 
         if (rIndex != -1) {
-          unitPrice = Helpers.toDouble(lines[rIndex].unitPrice);
+          stdSaleLine = lines[rIndex];
+
+          unitPrice = Helpers.toDouble(stdSaleLine?.unitPrice);
+          salesUomCode = stdSaleLine?.unitOfMeasure ?? "";
+          manualPrice = Helpers.formatNumberDb(stdSaleLine?.manualUnitPrice);
         }
       }
 
       emit(state.copyWith(itemUnitPrice: unitPrice));
 
+      //Update form base on each lines
       final updatedForms = state.saleForm.map((form) {
         int rIndex = lines.indexWhere((e) {
           return e.no == itemNo && form.code == e.specialType;
@@ -114,18 +119,13 @@ class SaleFormCubit extends Cubit<SaleFormState>
             option: FormatType.quantity,
           );
           uomCode = lines[rIndex].unitOfMeasure ?? uomCode;
-
-          if (form.code == kPromotionTypeStd) {
-            stdSaleLine = lines[rIndex];
-            manualPrice = Helpers.formatNumberDb(lines[rIndex].manualUnitPrice);
-          }
         }
 
         if (uomCode.isEmpty) {
           uomCode = arg.item.salesUomCode ?? "";
         }
 
-        if (form.code == kPromotionTypeStd) {
+        if (form.code == kPromotionTypeStd && stdSaleLine == null) {
           _updateItemPrice(
             uomCode: form.uomCode,
             orderQty: Helpers.toStrings(quantity),
@@ -284,7 +284,6 @@ class SaleFormCubit extends Cubit<SaleFormState>
   }
 
   void updateSaleUom(String code, String uomCode) {
-
     final updatedForms = state.saleForm.map((form) {
       if (form.code == code) {
         if (code == kPromotionTypeStd) {

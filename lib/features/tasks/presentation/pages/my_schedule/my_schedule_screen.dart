@@ -123,6 +123,7 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
   void _checkInHandler(SalespersonSchedule schedule) async {
     final l = LoadingOverlay.of(context);
     l.show();
+    
     try {
       // Check pending schedules
       await _cubit.pendingScheduleValidate();

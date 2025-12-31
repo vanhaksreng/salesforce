@@ -79,8 +79,23 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
       final canModifyPrice = await hasPermission(kManualSellingPrice);
 
       final String itemNo = arg.item?.no ?? "";
-      double manualPrice = 0;
       String salesUomCode = arg.item?.salesUomCode ?? "";
+      double unitPrice = Helpers.toDouble(arg.item?.unitPrice);
+      double manualPrice = 0;
+
+      if (lines.isNotEmpty) {
+        int rIndex = lines.indexWhere((e) {
+          return e.no == itemNo && e.specialType == kPromotionTypeStd;
+        });
+
+        if (rIndex != -1) {
+          stdSaleLine = lines[rIndex];
+
+          unitPrice = Helpers.toDouble(stdSaleLine?.unitPrice);
+          salesUomCode = stdSaleLine?.unitOfMeasure ?? "";
+          manualPrice = Helpers.formatNumberDb(stdSaleLine?.manualUnitPrice);
+        }
+      }
 
       final updatedForms = state.saleForm.map((form) {
         int rIndex = lines.indexWhere((e) {
@@ -96,18 +111,13 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
             option: FormatType.quantity,
           );
           uomCode = lines[rIndex].unitOfMeasure ?? uomCode;
-
-          if (form.code == kPromotionTypeStd) {
-            stdSaleLine = lines[rIndex];
-            manualPrice = Helpers.formatNumberDb(lines[rIndex].manualUnitPrice);
-          }
         }
 
         if (uomCode.isEmpty) {
           uomCode = arg.item?.salesUomCode ?? "";
         }
 
-        if (form.code == kPromotionTypeStd) {
+        if (form.code == kPromotionTypeStd && stdSaleLine == null) {
           _updateItemPrice(
             uomCode: form.uomCode,
             orderQty: Helpers.toStrings(quantity),
@@ -125,7 +135,7 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
           customer: customer,
           schedule: null,
           item: arg.item,
-          itemUnitPrice: arg.item?.unitPrice,
+          itemUnitPrice: unitPrice,
           documentType: arg.documentType,
           saleLines: lines,
           saleForm: updatedForms,
