@@ -39,7 +39,10 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
   @override
   void initState() {
     _cubit.getCustomers(context: context, page: 1);
-    _cubit.getSalePosSaleHeader();
+
+    // {'source_no': '_'} mean source_no = empty value
+    _cubit.getSalePosSaleHeader(param: {'source_no': '_'});
+
     _scrollController.addListener(_handleScrolling);
     super.initState();
   }
@@ -190,8 +193,10 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
         bool isShowRed = state.posSaleHeader.any(
           (e) =>
               e.customerNo == customer.no &&
-              e.documentType == widget.addCustomerArg.documentType,
+              e.documentType == widget.addCustomerArg.documentType &&
+              e.sourceNo == "",
         );
+
         return BuildSelectCustomer(
           key: ValueKey(customer.no),
           isSelected: state.customer == customer,

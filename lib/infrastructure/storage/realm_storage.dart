@@ -185,6 +185,10 @@ class RealmStorage implements ILocalStorage {
                 return value;
               }
 
+              if (value == "_") {
+                return '$key = ""';
+              }
+
               // Handle .. syntax
               if (value.contains('..')) {
                 final range = value.split('..');
