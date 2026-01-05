@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/features/auth/presentation/navigation/auth_routes.dart';
-import 'package:salesforce/features/auth/presentation/pages/loggedin_history/loggedin_history_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/login/login_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/starter_screen/scanner_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/starter_screen/starter_screen.dart';
