@@ -38,7 +38,9 @@ class OneSignalNotificationService {
       event.preventDefault();
       event.notification.display();
     });
-    OneSignal.Notifications.addForegroundWillDisplayListener(_handleForegroundNotification);
+    OneSignal.Notifications.addForegroundWillDisplayListener(
+      _handleForegroundNotification,
+    );
   }
 
   static Future<void> _handleForegroundNotification(event) async {
@@ -46,9 +48,14 @@ class OneSignalNotificationService {
       final notification = event.notification;
       final data = notification.additionalData;
 
-      final String imagePath = data != null ? await _downloadAndSaveImage(data['imageUrl'] ?? '') : '';
+      final String imagePath = data != null
+          ? await _downloadAndSaveImage(data['imageUrl'] ?? '')
+          : '';
 
-      await _showLocalNotification(notification: notification, imagePath: imagePath);
+      await _showLocalNotification(
+        notification: notification,
+        imagePath: imagePath,
+      );
 
       event.preventDefault();
     } catch (e) {
@@ -56,7 +63,10 @@ class OneSignalNotificationService {
     }
   }
 
-  static Future<void> _showLocalNotification({required OSNotification notification, required String imagePath}) async {
+  static Future<void> _showLocalNotification({
+    required OSNotification notification,
+    required String imagePath,
+  }) async {
     final androidDetails = AndroidNotificationDetails(
       _channelId,
       _channelName,
