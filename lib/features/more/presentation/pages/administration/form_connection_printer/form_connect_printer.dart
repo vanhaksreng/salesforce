@@ -497,7 +497,7 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
                                         ),
                                       ),
                                       title: TextWidget(
-                                        text: device.name ?? 'Unknown',
+                                        text: device.name,
                                         fontSize: scaleFontSize(14),
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -515,8 +515,7 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
                                       onTap: () {
                                         setState(() {
                                           selectDevice = device;
-                                          _bluetoothname.text =
-                                              device.name ?? '';
+                                          _bluetoothname.text = device.name;
                                         });
                                         Navigator.pop(context);
                                       },

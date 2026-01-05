@@ -931,9 +931,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       final result = await _remote.processUpload(
         data: {'table_name': 'sales', 'data': jsonEncode(jsonData)},
       );
-      print("==================");
-      print(result);
-      print("==================");
 
       if (result['status'] != 'success') {
         throw Exception(result['message'] ?? 'Upload failed');
@@ -955,7 +952,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         remoteLines: remoteLines,
       );
     } catch (e) {
-      print("===============${e.toString()}");
       throw GeneralException(e.toString());
     }
   }

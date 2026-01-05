@@ -301,7 +301,7 @@ class _IminM203AppState extends State<IminM203App> {
       await IminPrinterService.feedPaper(lines: 3);
       await IminPrinterService.cutPaper();
     } catch (e) {
-      print('Error: $e');
+      // print('Error: $e');
     }
   }
 
