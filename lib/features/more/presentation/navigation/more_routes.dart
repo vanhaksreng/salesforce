@@ -35,7 +35,6 @@ import 'package:salesforce/features/more/presentation/pages/sale_invoice_history
 import 'package:salesforce/features/more/presentation/pages/sale_invoice_history_detail/sale_invoice_history_detail_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history/sale_order_history_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
-import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen_old.dart';
 import 'package:salesforce/features/more/presentation/pages/upload/upload_screen.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';

@@ -896,11 +896,12 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         posSaleHeader: posHeader,
         posSaleLines: posLines,
       );
-
-      await _processUploadSale(
-        salesHeaders: [saleHeader],
-        salesLines: saleLines,
-      );
+      if (await _networkInfo.isConnected) {
+        await _processUploadSale(
+          salesHeaders: [saleHeader],
+          salesLines: saleLines,
+        );
+      }
 
       return const Right(true);
     } on GeneralException catch (e) {
@@ -931,9 +932,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       final result = await _remote.processUpload(
         data: {'table_name': 'sales', 'data': jsonEncode(jsonData)},
       );
-      print("==================");
-      print(result);
-      print("==================");
 
       if (result['status'] != 'success') {
         throw Exception(result['message'] ?? 'Upload failed');
@@ -955,7 +953,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         remoteLines: remoteLines,
       );
     } catch (e) {
-      print("===============${e.toString()}");
       throw GeneralException(e.toString());
     }
   }

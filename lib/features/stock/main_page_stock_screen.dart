@@ -189,7 +189,9 @@ class _MainPageStockScreenState extends State<MainPageStockScreen>
             padding: EdgeInsets.all(scaleFontSize(appSpace)),
             itemBuilder: (context, int index) {
               if (index == items.length) {
-                return const LoadingPageWidget();
+                return state.isFetching
+                    ? const LoadingPageWidget()
+                    : const SizedBox.shrink();
               }
 
               final item = items[index];
