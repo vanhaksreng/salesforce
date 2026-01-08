@@ -896,11 +896,12 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         posSaleHeader: posHeader,
         posSaleLines: posLines,
       );
-
-      await _processUploadSale(
-        salesHeaders: [saleHeader],
-        salesLines: saleLines,
-      );
+      if (await _networkInfo.isConnected) {
+        await _processUploadSale(
+          salesHeaders: [saleHeader],
+          salesLines: saleLines,
+        );
+      }
 
       return const Right(true);
     } on GeneralException catch (e) {

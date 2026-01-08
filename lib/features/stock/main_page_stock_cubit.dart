@@ -10,7 +10,8 @@ import 'package:salesforce/realm/scheme/sales_schemas.dart';
 
 part 'main_page_stock_state.dart';
 
-class MainPageStockCubit extends Cubit<MainPageStockState> with MessageMixin, DownloadMixin, AppMixin {
+class MainPageStockCubit extends Cubit<MainPageStockState>
+    with MessageMixin, DownloadMixin, AppMixin {
   MainPageStockCubit() : super(const MainPageStockState(isLoading: true));
 
   final StockRepository repos = getIt<StockRepository>();
@@ -33,7 +34,11 @@ class MainPageStockCubit extends Cubit<MainPageStockState> with MessageMixin, Do
   //   }
   // }
 
-  Future<void> getItems({bool isLoading = true, int page = 1, Map<String, dynamic>? param}) async {
+  Future<void> getItems({
+    bool isLoading = true,
+    int page = 1,
+    Map<String, dynamic>? param,
+  }) async {
     try {
       if (!hasMorePage && page > 1) {
         return;
@@ -47,11 +52,11 @@ class MainPageStockCubit extends Cubit<MainPageStockState> with MessageMixin, Do
       final response = await repos.getItems(page: page, param: param);
 
       return response.fold((l) => throw GeneralException(l.message), (items) {
-        if (page > 1 && items.isEmpty) {
+        if (items.isEmpty) {
           hasMorePage = false;
+          emit(state.copyWith(isLoading: false, isFetching: false));
           return;
         }
-
         emit(
           state.copyWith(
             isLoading: false,
@@ -60,6 +65,7 @@ class MainPageStockCubit extends Cubit<MainPageStockState> with MessageMixin, Do
             items: page == 1 ? items : [...oldItems, ...items],
           ),
         );
+        hasMorePage = false;
       });
     } catch (e) {
       emit(state.copyWith(isLoading: false, isFetching: false));
@@ -69,13 +75,20 @@ class MainPageStockCubit extends Cubit<MainPageStockState> with MessageMixin, Do
   Future<void> getItemWorkSheets({Map<String, dynamic>? param}) async {
     try {
       final response = await repos.getItemRequestWorksheets(param: param);
-      response.fold((l) => emit(throw Exception(l.toString())), (r) => emit(state.copyWith(itemWorkSheet: r.records)));
+      response.fold(
+        (l) => emit(throw Exception(l.toString())),
+        (r) => emit(state.copyWith(itemWorkSheet: r.records)),
+      );
     } catch (error) {
       showErrorMessage(error.toString());
     }
   }
 
-  Future<void> storeStockRequest({required Item item, required double quantity, required String itemUomCode}) async {
+  Future<void> storeStockRequest({
+    required Item item,
+    required double quantity,
+    required String itemUomCode,
+  }) async {
     try {
       emit(state.copyWith(loadingUpdate: true));
 
@@ -84,8 +97,15 @@ class MainPageStockCubit extends Cubit<MainPageStockState> with MessageMixin, Do
         return;
       }
 
-      final response = await repos.storeStockRequest(item, quantity, itemUomCode: itemUomCode);
-      response.fold((failure) => showWarningMessage(failure.message), (newItem) => _updateWorksheetItems(newItem));
+      final response = await repos.storeStockRequest(
+        item,
+        quantity,
+        itemUomCode: itemUomCode,
+      );
+      response.fold(
+        (failure) => showWarningMessage(failure.message),
+        (newItem) => _updateWorksheetItems(newItem),
+      );
     } catch (error) {
       showErrorMessage(error.toString());
     } finally {

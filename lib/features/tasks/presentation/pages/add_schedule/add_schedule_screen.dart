@@ -190,6 +190,11 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> with AppMixin {
     final l = LoadingOverlay.of(context);
     try {
       l.show(1);
+      if (!await _cubit.isConnectedToNetwork()) {
+        _cubit.showErrorMessage(errorInternetMessage);
+        l.hide();
+        return;
+      }
 
       if (!await _cubit.isValidApiSession()) {
         l.hide();

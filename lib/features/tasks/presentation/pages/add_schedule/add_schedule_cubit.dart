@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/data/models/extension/customer_extension.dart';
 import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/mixins/download_mixin.dart';
+import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/features/tasks/domain/repositories/task_repository.dart';
 import 'package:salesforce/injection_container.dart';
@@ -12,7 +13,7 @@ import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 part 'add_schedule_state.dart';
 
 class AddScheduleCubit extends Cubit<AddScheduleState>
-    with DownloadMixin, AppMixin {
+    with DownloadMixin, AppMixin, MessageMixin {
   AddScheduleCubit() : super(const AddScheduleState(isLoading: true));
 
   final repos = getIt<TaskRepository>();
@@ -94,13 +95,15 @@ class AddScheduleCubit extends Cubit<AddScheduleState>
 
       return response.fold(
         (error) {
-          throw Exception(error.toString());
+          showErrorMessage(error.toString());
+          return false;
         },
         (success) {
           return true;
         },
       );
     } catch (error) {
+      showErrorMessage(error.toString());
       return false;
     }
   }
