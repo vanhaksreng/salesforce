@@ -889,6 +889,12 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
           ),
         );
       }
+      if (await _networkInfo.isConnected) {
+        await _processUploadSale(
+          salesHeaders: [saleHeader],
+          salesLines: saleLines,
+        );
+      }
 
       await _local.processCheckout(
         saleHeader: saleHeader,
@@ -896,12 +902,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         posSaleHeader: posHeader,
         posSaleLines: posLines,
       );
-      if (await _networkInfo.isConnected) {
-        await _processUploadSale(
-          salesHeaders: [saleHeader],
-          salesLines: saleLines,
-        );
-      }
 
       return const Right(true);
     } on GeneralException catch (e) {
