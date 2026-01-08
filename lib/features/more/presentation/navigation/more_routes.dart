@@ -5,7 +5,6 @@ import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/domain/entities/cart_preview_arg.dart';
 import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/domain/entities/more_model.dart';
-import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
 import 'package:salesforce/features/more/presentation/pages/about/about_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_screen.dart';
@@ -19,7 +18,6 @@ import 'package:salesforce/features/more/presentation/pages/customer_map/custome
 import 'package:salesforce/features/more/presentation/pages/customers/customers_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/downloads/download_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/imin_device/printer_test_page.dart';
-import 'package:salesforce/features/more/presentation/pages/invoice_printer/invoice_printer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/items/items_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/profile_form/profile_form_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/promotion/promotion_screen.dart';
@@ -316,31 +314,6 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
         pageBuilder: (context, animation, secondaryAnimation) {
           return CartPreviewItemScreen(
             args: settings.arguments as CartPreviewArg,
-          );
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return RouteST.st(animation, child, begin: 1, end: 0);
-        },
-      );
-    // case BluetoothThermalPrinterScreen.routeName:
-    //   return PageRouteBuilder(
-    //     pageBuilder: (context, animation, secondaryAnimation) {
-    //       return BluetoothThermalPrinterScreen(
-    //         // bluetoothDevice: settings.arguments as BluetoothDevice?,
-    //       );
-    //     },
-    //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-    //       return RouteST.st(animation, child, begin: 1, end: 0);
-    //     },
-    //   );
-
-    case InvoicePrinterScreen.routeName:
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          final arg = settings.arguments as Map<String, dynamic>;
-          return InvoicePrinterScreen(
-            detail: arg["detail"] as SaleDetail,
-            companyInfo: arg['company'] as CompanyInformation,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

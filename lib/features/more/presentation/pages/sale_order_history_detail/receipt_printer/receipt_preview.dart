@@ -95,8 +95,8 @@ class ReceiptPreview extends StatelessWidget {
       String currentLine = '';
 
       for (final word in words) {
-        if ((currentLine + ' ' + word).trim().length <= maxCharsPerLine) {
-          currentLine = (currentLine + ' ' + word).trim();
+        if (('$currentLine $word').trim().length <= maxCharsPerLine) {
+          currentLine = ('$currentLine $word').trim();
         } else {
           if (currentLine.isNotEmpty) lines.add(currentLine);
           currentLine = word;
@@ -138,7 +138,7 @@ class ReceiptPreview extends StatelessWidget {
 
   Widget _buildImage(Map<String, dynamic> params) {
     final imageBytes = params['imageBytes'] as Uint8List?;
-    final width = (params['width'] as int? ?? 384).toDouble();
+    // final width = (params['width'] as int? ?? 384).toDouble();
 
     if (imageBytes == null) {
       return Container(
