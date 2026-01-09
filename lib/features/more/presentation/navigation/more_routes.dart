@@ -17,7 +17,6 @@ import 'package:salesforce/features/more/presentation/pages/customer_group/custo
 import 'package:salesforce/features/more/presentation/pages/customer_map/customer_map_full_screen_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/customers/customers_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/downloads/download_screen.dart';
-import 'package:salesforce/features/more/presentation/pages/imin_device/printer_test_page.dart';
 import 'package:salesforce/features/more/presentation/pages/items/items_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/profile_form/profile_form_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/promotion/promotion_screen.dart';
@@ -330,16 +329,6 @@ Route<dynamic>? moreOnGenerateRoute(RouteSettings settings) {
           return RouteST.st(animation, child, begin: 1, end: 0);
         },
       );
-    case PrinterTestScreen.routeName:
-      return PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return PrinterTestScreen();
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return RouteST.st(animation, child, begin: 1, end: 0);
-        },
-      );
-
     default:
       return null;
   }

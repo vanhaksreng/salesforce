@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:salesforce/core/constants/app_config.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/utils/helpers.dart';
-import 'package:salesforce/core/utils/logger.dart';
 
 mixin MessageMixin {
   void showErrorMessage([String msg = errorMessage]) {

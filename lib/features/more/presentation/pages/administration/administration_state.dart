@@ -76,12 +76,4 @@ class AdministrationState {
           : (connectingDeviceId ?? this.connectingDeviceId),
     );
   }
-
-  @override
-  List<Object?> get props => [
-    devicePrinter,
-    selectedDevice,
-    connectingDeviceId,
-    isLoading,
-  ];
 }

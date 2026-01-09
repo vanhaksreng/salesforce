@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_config.dart';
-import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/features/auth/domain/entities/user.dart';
 import 'package:salesforce/features/auth/domain/repositories/auth_repository.dart';

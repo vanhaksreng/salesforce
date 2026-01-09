@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/infrastructure/network/network_info.dart';
-import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/injection_container.dart';
 
 class ApiClient {

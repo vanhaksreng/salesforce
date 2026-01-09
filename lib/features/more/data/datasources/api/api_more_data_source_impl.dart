@@ -1,8 +1,6 @@
 import 'dart:convert';
 
 import 'package:salesforce/core/data/datasources/api/base_api_data_source_impl.dart';
-import 'package:salesforce/core/data/models/extension/pos_sale_header_extension.dart';
-import 'package:salesforce/core/data/models/extension/pos_sale_line_extension.dart';
 import 'package:salesforce/core/data/models/extension/sale_header_extension.dart';
 import 'package:salesforce/core/data/models/extension/sale_line_extension.dart';
 import 'package:salesforce/env.dart';

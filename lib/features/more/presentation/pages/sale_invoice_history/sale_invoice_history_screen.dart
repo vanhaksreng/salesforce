@@ -155,14 +155,14 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
   }
 
   void _onSearch({String? text}) {
-    Map<String, dynamic> param = {'document_type': 'Invoice'};
+    // Map<String, dynamic> param = {'document_type': 'Invoice'};
 
-    if (text != null && text.isNotEmpty) {
-      param = {
-        // "no": "LIKE %$text%",
-        "customer_name": "LIKE %$text%",
-      };
-    }
+    // if (text != null && text.isNotEmpty) {
+    //   param = {
+    //     // "no": "LIKE %$text%",
+    //     "customer_name": "LIKE %$text%",
+    //   };
+    // }
     _getSaleInvoice();
   }
 

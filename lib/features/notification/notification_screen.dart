@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/app/app_state_handler.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
-import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/auth/domain/entities/notification_model.dart';
 import 'package:salesforce/features/notification/notification_cubit.dart';

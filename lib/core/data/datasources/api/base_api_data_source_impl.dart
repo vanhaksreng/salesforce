@@ -201,15 +201,6 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
       'v2/upload-data',
       body: await getParams(params: data),
     );
-
-    try {
-      return await apiClient.post(
-        'v2/upload-data',
-        body: await getParams(params: data),
-      );
-    } catch (e) {
-      rethrow;
-    }
   }
 
   @override
