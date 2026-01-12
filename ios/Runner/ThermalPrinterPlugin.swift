@@ -169,12 +169,10 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     private func initialize() {
         networkQueue = DispatchQueue(label: "com.clearviewerp.network_queue")
         preloadFonts()
-        print("🔵 ThermalPrinterPlugin initialized")
     }
 
     private func ensureBluetoothManager() {
         if centralManager == nil {
-            print("🔵 Initializing Bluetooth manager on demand...")
             centralManager = CBCentralManager(delegate: self, queue: nil)
         }
     }
@@ -331,23 +329,19 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
         initCommands.append(contentsOf: [ESC, 0x33, 0x30])
 
         receiptBuffer.append(initCommands)
-        print("📦 Started batch mode with initialization (\(printerWidth == 384 ? "58mm" : "80mm"))")
     }
 
     private func endBatchMode() {
         isBatchMode = false
         if !receiptBuffer.isEmpty {
             let originalSize = receiptBuffer.count
-            print("📤 Preparing receipt: \(originalSize) bytes")
 
             let optimizedData = optimizeLineFeeds(data: receiptBuffer)
-            print("✅ Optimized: \(originalSize) → \(optimizedData.count) bytes")
 
             writeDataSmooth(data: optimizedData)
             Thread.sleep(forTimeInterval: 0.050)
 
             receiptBuffer.removeAll()
-            print("✅ Receipt sent successfully")
         }
     }
 
@@ -366,7 +360,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     private func addToBuffer(data: Data) {
         if isBatchMode {
             receiptBuffer.append(data)
-            print("➕ Added \(data.count) bytes to buffer (total: \(receiptBuffer.count))")
         } else {
             queueWrite(data: data)
         }
@@ -404,7 +397,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     // ====================================================================
     private func testPaperFeed(result: @escaping FlutterResult) {
         printQueue.async {
-            print("🧪 TEST 1: Paper Feed Test")
             let feedCommand = Data(repeating: 0x0A, count: 10)
             self.writeDataSmooth(data: feedCommand)
             Thread.sleep(forTimeInterval: 2.0)
@@ -421,7 +413,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
 
     private func testSlowPrint(result: @escaping FlutterResult) {
         printQueue.async {
-            print("🧪 TEST 2: Slow Print Test")
 
             var commands = Data()
             commands.append(contentsOf: [self.ESC, 0x40])
@@ -456,7 +447,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
 
     private func checkPrinterStatus(result: @escaping FlutterResult) {
         printQueue.async {
-            print("🧪 TEST 3: Printer Status Check")
             let statusCommand = Data([0x10, 0x04, 0x01])
             self.writeDataSmooth(data: statusCommand)
             Thread.sleep(forTimeInterval: 0.1)
@@ -474,26 +464,16 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
         printQueue.async {
             var diagnosticResults: [String: String] = [:]
 
-            print(
-                """
-                ═══════════════════════════════════════
-                🔍 COMPLETE PRINTER DIAGNOSTIC
-                ═══════════════════════════════════════
-                """)
-
-            print("\n▶️ TEST 1: Paper Feed Test")
             let feedCommand = Data(repeating: 0x0A, count: 5)
             self.writeDataSmooth(data: feedCommand)
             Thread.sleep(forTimeInterval: 2.0)
             diagnosticResults["paper_feed"] = "Check if 'stuck stuck' sound occurred"
 
-            print("\n▶️ TEST 2: Single Line Test")
             let textCommand = "TEST LINE\n".data(using: .ascii)!
             self.writeDataSmooth(data: textCommand)
             Thread.sleep(forTimeInterval: 2.0)
             diagnosticResults["single_line"] = "Check if smooth"
 
-            print("\n▶️ TEST 3: Multiple Lines (with delays)")
             for i in 1...3 {
                 let line = "Line \(i)\n".data(using: .ascii)!
                 self.writeDataSmooth(data: line)
@@ -501,7 +481,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
             }
             diagnosticResults["multiple_lines"] = "Check if smooth with delays"
 
-            print("\n▶️ TEST 4: Multiple Lines (fast)")
             let fastLines = "Fast Line 1\nFast Line 2\nFast Line 3\n".data(using: .ascii)!
             self.writeDataSmooth(data: fastLines)
             Thread.sleep(forTimeInterval: 2.0)
@@ -517,8 +496,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     // MARK: - Initialization
     // ====================================================================
     private func initializePrinterOptimal() {
-        print("🔧 Initializing printer with optimal settings...")
-
         var commands = Data()
         commands.append(contentsOf: [ESC, 0x40])
         commands.append(contentsOf: [ESC, 0x21, 0x00])
@@ -527,11 +504,9 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
 
         writeDataSmooth(data: commands)
         Thread.sleep(forTimeInterval: 0.2)
-        print("✅ Printer initialized with smooth settings")
     }
 
     private func initializePrinterForSmoothPrinting() {
-        print("🔧 Initializing for continuous printing...")
 
         var commands = Data()
 
@@ -547,12 +522,9 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
 
         writeBLEDataOptimized(data: commands)
         Thread.sleep(forTimeInterval: 0.12)
-
-        print("✅ Ready for continuous printing")
     }
 
     private func configureForOOMAS() {
-        print("⚙️ Configuring for OOMAS printer...")
 
         var config = Data()
         config.append(contentsOf: [ESC, 0x33, 0x40])
@@ -560,11 +532,9 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
         config.append(contentsOf: [GS, 0x28, 0x4B, 0x02, 0x00, 0x32, 0x00])
 
         writeDataSmooth(data: config)
-        print("✅ OOMAS configuration applied")
     }
 
     private func warmUpPrinter() {
-        print("🔥 Warming up printer...")
 
         var warmUpData = Data()
         warmUpData.append(contentsOf: [ESC, 0x40])
@@ -572,7 +542,10 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
 
         writeDataSmooth(data: warmUpData)
         Thread.sleep(forTimeInterval: 0.1)
-        print("✅ Printer warmed up")
+    }
+
+    private func testPrint(message) {
+        // print(message)
     }
 
     // ====================================================================
@@ -636,8 +609,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
         DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
             self.stopDiscovery()
         }
-
-        print("🔍 Starting Bluetooth discovery...")
     }
 
     private func stopDiscovery() {
@@ -660,8 +631,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
             result(printers)
             discoveryResult = nil
         }
-
-        print("🔍 Discovery finished. Total devices: \(discoveredDevices.count)")
     }
 
     private func discoverUSBPrinters(result: @escaping FlutterResult) {
@@ -680,7 +649,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     // MARK: - Connection
     // ====================================================================
     private func connect(address: String, type: String, result: @escaping FlutterResult) {
-        print("🔵 Connect request: address=\(address), type=\(type)")
 
         switch type {
         case "bluetooth", "ble":
@@ -756,7 +724,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
                             details: nil))
                 }
             case .waiting(let error):
-                print("⏳ Waiting: \(error)")
             default:
                 break
             }
@@ -781,7 +748,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
         networkConnection = nil
 
         currentConnectionType = .none
-        print("🧹 All connections cleaned up")
     }
 
     // ====================================================================
@@ -789,8 +755,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     // ====================================================================
     private func writeDataSmooth(data: Data) {
         let startTime = Date()
-
-        print("📝 Writing \(data.count) bytes...")
 
         switch currentConnectionType {
         case .bluetoothBLE:
@@ -802,19 +766,16 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
             Thread.sleep(forTimeInterval: 0.020)
 
         default:
-            print("❌ No active connection")
             return
         }
 
         let elapsed = Date().timeIntervalSince(startTime)
-        print("✅ Complete: \(data.count) bytes in \(Int(elapsed * 1000))ms")
     }
 
     private func writeBLEDataOptimized(data: Data) {
         guard let peripheral = connectedPeripheral,
             let characteristic = writeCharacteristic
         else {
-            print("❌ No BLE connection")
             return
         }
 
@@ -826,8 +787,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
 
             var offset = 0
             var chunksWritten = 0
-
-            print("📤 Sending \(data.count) bytes to printer...")
 
             while offset < data.count {
                 let end = min(offset + chunkSize, data.count)
@@ -843,10 +802,7 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
 
             Thread.sleep(forTimeInterval: 0.025)
 
-            print("✅ Sent \(chunksWritten) chunks successfully")
-
         } else {
-            print("📤 Using write-with-response mode (reliable)")
             let chunkSize = 20
             var offset = 0
 
@@ -860,14 +816,11 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
 
                 offset = end
             }
-
-            print("✅ All data sent with confirmation")
         }
     }
 
     private func writeNetworkOptimized(data: Data) {
         guard let connection = networkConnection else {
-            print("❌ No network connection")
             return
         }
 
@@ -876,7 +829,7 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
                 content: data,
                 completion: .contentProcessed { error in
                     if let error = error {
-                        print("❌ Network error: \(error)")
+                        // print("❌ Network error: \(error)")
                     }
                 })
             return
@@ -893,7 +846,7 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
                 content: chunk,
                 completion: .contentProcessed { error in
                     if let error = error {
-                        print("❌ Network error: \(error)")
+                        // print("❌ Network error: \(error)")
                     }
                 })
 
@@ -922,7 +875,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
                 let shouldRenderAsImage = fontSize < 20 || self.containsComplexUnicode(text: text)
 
                 if shouldRenderAsImage {
-                    print("🖼️ Rendering as image (fontSize: \(fontSize)): \"\(text.prefix(30))...\"")
                     guard
                         let imageData = self.renderTextToData(
                             text: text, fontSize: fontSize, bold: bold, align: align,
@@ -946,20 +898,17 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
 
                     self.addToBuffer(data: finalData)
                 } else {
-                    print("📝 Printing as text (fontSize: \(fontSize)): \"\(text.prefix(30))...\"")
                     self.printSimpleTextInternalBatched(
                         text: text, fontSize: fontSize, bold: bold, align: align,
                         maxCharsPerLine: maxCharsPerLine)
                 }
 
                 let elapsed = Date().timeIntervalSince(startTime)
-                print("✅ Text added to buffer in \(Int(elapsed * 1000))ms")
 
                 DispatchQueue.main.async {
                     result(true)
                 }
             } catch {
-                print("❌ Print error: \(error)")
                 DispatchQueue.main.async {
                     result(
                         FlutterError(
@@ -972,14 +921,11 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
     private func printSimpleTextInternalBatched(
         text: String, fontSize: Int, bold: Bool, align: String, maxCharsPerLine: Int
     ) {
-        print("🔵 Adding text to buffer: \"\(text.prefix(30))...\"")
-
         var commands = Data()
 
         let isSeparatorLine = text.filter({ $0 == "=" }).count > Int(Double(text.count) * 0.8)
 
         if isSeparatorLine {
-            print("📏 Detected separator line - using lower density")
             commands.append(contentsOf: [GS, 0x28, 0x4B, 0x02, 0x00, 0x30, 0x03])
         }
 
@@ -1088,7 +1034,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
             let shouldRenderAsImage = fontSize < 20 || hasComplexUnicode
 
             if shouldRenderAsImage {
-                print("🖼️ Rendering row as image (fontSize: \(fontSize))")
                 guard let imageData = self.renderRowToData(columns: posColumns, fontSize: fontSize)
                 else {
                     DispatchQueue.main.async {
@@ -1101,12 +1046,10 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
                 }
                 self.addToBuffer(data: imageData)
             } else {
-                print("📝 Printing row as text (fontSize: \(fontSize))")
                 self.printRowUsingTextMethodBatched(columns: posColumns, fontSize: fontSize)
             }
 
             let elapsed = Date().timeIntervalSince(startTime)
-            print("✅ Row added to buffer in \(Int(elapsed * 1000))ms")
 
             DispatchQueue.main.async {
                 result(true)
@@ -1384,7 +1327,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
             }
         }
 
-        print("✅ Converted to monochrome: \(width)x\(height), \(data.count) bytes")
         return MonochromeData(width: width, height: height, data: data)
     }
 
@@ -1705,7 +1647,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
         DispatchQueue.global(qos: .background).async {
             _ = self.getFont(size: 24, bold: false)
             _ = self.getFont(size: 24, bold: true)
-            print("✅ Fonts preloaded")
         }
     }
 
@@ -1977,7 +1918,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
 
     private func setPrinterWidth(width: Int, result: @escaping FlutterResult) {
         printerWidth = width
-        print("✅ Printer width set to \(width) dots (\(width == 384 ? "58mm" : "80mm"))")
         result(true)
     }
 
@@ -2019,7 +1959,6 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
 // ====================================================================
 extension ThermalPrinterPlugin: CBCentralManagerDelegate {
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        print("🔵 Bluetooth state: \(central.state.rawValue)")
     }
 
     public func centralManager(
@@ -2028,19 +1967,16 @@ extension ThermalPrinterPlugin: CBCentralManagerDelegate {
     ) {
         if !discoveredDevices.contains(where: { $0.identifier == peripheral.identifier }) {
             discoveredDevices.append(peripheral)
-            print("📱 Found device: \(peripheral.name ?? "Unknown") (\(peripheral.identifier))")
         }
     }
 
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        print("✅ Connected to peripheral: \(peripheral.name ?? "Unknown")")
         peripheral.discoverServices(nil)
     }
 
     public func centralManager(
         _ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?
     ) {
-        print("❌ Failed to connect: \(error?.localizedDescription ?? "Unknown error")")
         let address = peripheral.identifier.uuidString
         if let result = pendingResults.removeValue(forKey: address) {
             DispatchQueue.main.async {
@@ -2055,7 +1991,6 @@ extension ThermalPrinterPlugin: CBCentralManagerDelegate {
     public func centralManager(
         _ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?
     ) {
-        print("❌ Disconnected from peripheral")
         connectedPeripheral = nil
         writeCharacteristic = nil
         currentConnectionType = .none
@@ -2068,7 +2003,6 @@ extension ThermalPrinterPlugin: CBCentralManagerDelegate {
 extension ThermalPrinterPlugin: CBPeripheralDelegate {
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard error == nil else {
-            print("❌ Service discovery error: \(error!)")
             return
         }
 
@@ -2081,7 +2015,6 @@ extension ThermalPrinterPlugin: CBPeripheralDelegate {
         _ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?
     ) {
         guard error == nil else {
-            print("❌ Characteristic discovery error: \(error!)")
             return
         }
 
@@ -2091,7 +2024,6 @@ extension ThermalPrinterPlugin: CBPeripheralDelegate {
             {
                 writeCharacteristic = characteristic
                 currentConnectionType = .bluetoothBLE
-                print("✅ Found writable characteristic: \(characteristic.uuid)")
 
                 initializePrinterForSmoothPrinting()
 
@@ -2105,7 +2037,6 @@ extension ThermalPrinterPlugin: CBPeripheralDelegate {
             }
         }
 
-        print("❌ No writable characteristic found")
         let address = peripheral.identifier.uuidString
         if let result = pendingResults.removeValue(forKey: address) {
             DispatchQueue.main.async {
@@ -2121,7 +2052,6 @@ extension ThermalPrinterPlugin: CBPeripheralDelegate {
         _ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?
     ) {
         if let error = error {
-            print("❌ Write error: \(error)")
         }
     }
 }

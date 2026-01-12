@@ -13,10 +13,8 @@ import androidx.core.content.ContextCompat;
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodChannel;
-import android.util.Log
 import io.flutter.plugins.GeneratedPluginRegistrant;
 import android.bluetooth.BluetoothAdapter
-
 
 class MainActivity : FlutterActivity(){
     private val htmlPdfChannel = "flutter_html_to_pdf"
@@ -37,7 +35,6 @@ class MainActivity : FlutterActivity(){
         if (intent?.getBooleanExtra("requestPermissions", false) == true) {
             requestPermissions("always")
         }
-
     }
     
     override fun onResume() {
@@ -77,7 +74,6 @@ class MainActivity : FlutterActivity(){
 
     private fun setupIminPrinterChannel(flutterEngine: FlutterEngine) {
         try {
-            Log.d(io.flutter.plugins.sharedpreferences.TAG, "🚀 Setting up iMin Printer...")
 
             // Create the printer instance
             iminPrinter = IminPrinter(this)
@@ -88,10 +84,8 @@ class MainActivity : FlutterActivity(){
                 printerChannelImin
             ).setMethodCallHandler(iminPrinter)
 
-            Log.d(io.flutter.plugins.sharedpreferences.TAG, "✅ iMin Printer channel registered")
-
         } catch (e: Exception) {
-            Log.e(io.flutter.plugins.sharedpreferences.TAG, "❌ Failed to setup iMin Printer", e)
+            //Log.e(io.flutter.plugins.sharedpreferences.TAG, "❌ Failed to setup iMin Printer", e)
         }
     }
 
@@ -325,328 +319,6 @@ class MainActivity : FlutterActivity(){
         }
     }
 
-    //=====================imin=====================================================================================
-//    private fun setupIminPrinterChannel(flutterEngine: FlutterEngine) {
-//        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, printerChannelImin)
-//            .setMethodCallHandler { call, result ->
-//
-//                when (call.method) {
-//
-//                    "sdkInit" -> {
-//                        try {
-//                            val deviceModel = SystemPropManager.getModel()
-//                            Log.d(PRINTER_TAG, "Device Model: $deviceModel, Android Version: ${Build.VERSION.RELEASE}")
-//
-//                            connectType = if (deviceModel.contains("M2-203") ||
-//                                deviceModel.contains("M2-202") ||
-//                                deviceModel.contains("M2 Pro")) {
-//                                IminPrintUtils.PrintConnectType.SPI
-//                            } else {
-//                                IminPrintUtils.PrintConnectType.USB
-//                            }
-//
-//                            connectType?.let { type ->
-//                                Log.d(PRINTER_TAG, "Initializing printer with connection type: $type")
-//                                IminPrintUtils.getInstance(this@MainActivity).initPrinter(type)
-//
-//                                // For Android 8.1, give more time for initialization
-//                                Thread.sleep(3000)
-//
-//                                // Try to reset printer state for better reliability
-//                                try {
-//                                    IminPrintUtils.getInstance(this@MainActivity).resetDevice()
-//                                    Thread.sleep(1000)
-//                                    Log.d(PRINTER_TAG, "Printer reset completed")
-//                                } catch (e: Exception) {
-//                                    Log.w(PRINTER_TAG, "Reset printer failed: ${e.message}")
-//                                }
-//
-//                                isPrinterInitialized = true
-//                            }
-//                            result.success("init")
-//                        } catch (e: Exception) {
-//                            Log.e(PRINTER_TAG, "Failed to initialize printer", e)
-//                            isPrinterInitialized = false
-//                            result.error("INIT_ERROR", "Failed to initialize printer", e.message)
-//                        }
-//                    }
-//
-//                    "getStatus" -> {
-//                        try {
-//                            if (!isPrinterInitialized) {
-//                                result.error("ERROR", "Printer not initialized", null)
-//                                return@setMethodCallHandler
-//                            }
-//
-//                            connectType?.let { type ->
-//                                // Multiple status checks with delays for Android 8.1
-//                                var status = -1
-//                                var attempts = 0
-//                                val maxAttempts = 3
-//
-//                                while (status == -1 && attempts < maxAttempts) {
-//                                    Thread.sleep(500)
-//                                    status = IminPrintUtils.getInstance(this@MainActivity).getPrinterStatus(type)
-//                                    attempts++
-//                                    Log.d(PRINTER_TAG, "Status check attempt $attempts: Status = $status")
-//                                }
-//
-//                                // Log status meaning for debugging
-//                                val statusMessage = when(status) {
-//                                    0 -> "Normal"
-//                                    1 -> "Printer busy"
-//                                    2 -> "Out of paper"
-//                                    3 -> "Paper jam"
-//                                    4 -> "Printer cover open"
-//                                    5 -> "Printer overheating"
-//                                    -1 -> "Error/Not ready"
-//                                    else -> "Unknown status"
-//                                }
-//                                Log.d(PRINTER_TAG, "Final printer status: $status ($statusMessage)")
-//
-//                                result.success(mapOf(
-//                                    "status" to status,
-//                                    "message" to statusMessage,
-//                                    "attempts" to attempts
-//                                ))
-//                            } ?: result.error("ERROR", "Printer not initialized", null)
-//                        } catch (e: Exception) {
-//                            Log.e(PRINTER_TAG, "Failed to get printer status", e)
-//                            result.error("STATUS_ERROR", "Failed to get printer status", e.message)
-//                        }
-//                    }
-//
-//                    "printText" -> {
-//                        try {
-//                            if (!isPrinterInitialized) {
-//                                result.error("ERROR", "Printer not initialized", null)
-//                                return@setMethodCallHandler
-//                            }
-//
-//                            val text = when (val arguments = call.arguments) {
-//                                is List<*> -> {
-//                                    if (arguments.isNotEmpty()) {
-//                                        arguments[0].toString()
-//                                    } else {
-//                                        null
-//                                    }
-//                                }
-//                                is Map<*, *> -> {
-//                                    arguments["text"]?.toString()
-//                                }
-//                                is String -> {
-//                                    arguments
-//                                }
-//                                else -> null
-//                            }
-//
-//                            if (text != null && text.isNotEmpty()) {
-//                                // Check printer status before printing
-//                                connectType?.let { type ->
-//                                    val status = IminPrintUtils.getInstance(this@MainActivity).getPrinterStatus(type)
-//                                    if (status != 0) {
-//                                        Log.w(PRINTER_TAG, "Printer status is $status, but attempting to print anyway")
-//                                    }
-//                                }
-//
-//                                val mIminPrintUtils = IminPrintUtils.getInstance(this@MainActivity)
-//                                mIminPrintUtils.printText("$text\n")
-//                                Log.d(PRINTER_TAG, "Text printed successfully: $text")
-//                                result.success(text)
-//                            } else {
-//                                result.error("INVALID_ARGUMENT", "Text argument is required", null)
-//                            }
-//                        } catch (e: Exception) {
-//                            Log.e(PRINTER_TAG, "Failed to print text", e)
-//                            result.error("PRINT_ERROR", "Failed to print text", e.message)
-//                        }
-//                    }
-//
-//                    "getSn" -> {
-//                        try {
-//                            val sn = if (Build.VERSION.SDK_INT >= 30) {
-//                                SystemPropManager.getSystemProperties("persist.sys.imin.sn")
-//                            } else {
-//                                // For Android 8.1 (API 27)
-//                                SystemPropManager.getSn()
-//                            }
-//                            Log.d(PRINTER_TAG, "Serial number retrieved: $sn")
-//                            result.success(sn)
-//                        } catch (e: Exception) {
-//                            Log.e(PRINTER_TAG, "Failed to get serial number", e)
-//                            result.error("SN_ERROR", "Failed to get serial number", e.message)
-//                        }
-//                    }
-//
-//                    "opencashBox" -> {
-//                        try {
-//                            IminSDKManager.opencashBox()
-//                            Log.d(PRINTER_TAG, "Cash box opened successfully")
-//                            result.success("opencashBox")
-//                        } catch (e: Exception) {
-//                            Log.e(PRINTER_TAG, "Failed to open cash box", e)
-//                            result.error("CASHBOX_ERROR", "Failed to open cash box", e.message)
-//                        }
-//                    }
-//
-//                    "printBitmap" -> {
-//                        try {
-//                            if (!isPrinterInitialized) {
-//                                result.error("ERROR", "Printer not initialized", null)
-//                                return@setMethodCallHandler
-//                            }
-//
-//                            val imageBytes = call.argument<ByteArray>("image")
-//                            if (imageBytes != null) {
-//                                val bitmap = byteToBitmap(imageBytes)
-//                                bitmap?.let { bmp ->
-//                                    // Check printer status before printing
-//                                    connectType?.let { type ->
-//                                        val status = IminPrintUtils.getInstance(this@MainActivity).getPrinterStatus(type)
-//                                        if (status != 0) {
-//                                            Log.w(PRINTER_TAG, "Printer status is $status, but attempting to print bitmap anyway")
-//                                        }
-//                                    }
-//
-//                                    val mIminPrintUtils = IminPrintUtils.getInstance(this@MainActivity)
-//                                    mIminPrintUtils.printSingleBitmap(bmp)
-//                                    Log.d(PRINTER_TAG, "Bitmap printed successfully")
-//                                    result.success("printBitmap")
-//                                } ?: result.error("BITMAP_ERROR", "Failed to convert bytes to bitmap", null)
-//                            } else {
-//                                result.error("INVALID_ARGUMENT", "Image bytes are required", null)
-//                            }
-//                        } catch (e: Exception) {
-//                            Log.e(PRINTER_TAG, "Failed to print bitmap", e)
-//                            result.error("BITMAP_PRINT_ERROR", "Failed to print bitmap", e.message)
-//                        }
-//                    }
-//
-//                    "resetPrinter" -> {
-//                        try {
-//                            if (!isPrinterInitialized) {
-//                                result.error("ERROR", "Printer not initialized", null)
-//                                return@setMethodCallHandler
-//                            }
-//
-//                            IminPrintUtils.getInstance(this@MainActivity).resetDevice()
-//                            Thread.sleep(1500) // Wait after reset
-//                            Log.d(PRINTER_TAG, "Printer reset completed")
-//                            result.success("reset")
-//                        } catch (e: Exception) {
-//                            Log.e(PRINTER_TAG, "Failed to reset printer", e)
-//                            result.error("RESET_ERROR", "Failed to reset printer", e.message)
-//                        }
-//                    }
-//
-//                    "getDeviceInfo" -> {
-//                        try {
-//                            val deviceModel = SystemPropManager.getModel()
-//                            val androidVersion = Build.VERSION.RELEASE
-//                            val sdkInt = Build.VERSION.SDK_INT
-//
-//                            val deviceInfo = mapOf(
-//                                "deviceModel" to deviceModel,
-//                                "androidVersion" to androidVersion,
-//                                "sdkInt" to sdkInt,
-//                                "printerInitialized" to isPrinterInitialized,
-//                                "connectionType" to (connectType?.toString() ?: "Not set")
-//                            )
-//
-//                            Log.d(PRINTER_TAG, "Device info: $deviceInfo")
-//                            result.success(deviceInfo)
-//                        } catch (e: Exception) {
-//                            Log.e(PRINTER_TAG, "Failed to get device info", e)
-//                            result.error("DEVICE_INFO_ERROR", "Failed to get device info", e.message)
-//                        }
-//                    }
-//
-//                    "testPrint" -> {
-//                        try {
-//                            if (!isPrinterInitialized) {
-//                                result.error("ERROR", "Printer not initialized", null)
-//                                return@setMethodCallHandler
-//                            }
-//
-//                            val mIminPrintUtils = IminPrintUtils.getInstance(this@MainActivity)
-//
-//                            // Print test receipt
-//                            mIminPrintUtils.printText("================================\n")
-//                            mIminPrintUtils.printText("         TEST PRINT\n")
-//                            mIminPrintUtils.printText("================================\n")
-//                            mIminPrintUtils.printText("Device: ${SystemPropManager.getModel()}\n")
-//                            mIminPrintUtils.printText("Android: ${Build.VERSION.RELEASE}\n")
-//                            mIminPrintUtils.printText("Time: ${System.currentTimeMillis()}\n")
-//                            mIminPrintUtils.printText("================================\n")
-//                            mIminPrintUtils.printText("\n\n\n")
-//
-//                            Log.d(PRINTER_TAG, "Test print completed")
-//                            result.success("Test print completed")
-//                        } catch (e: Exception) {
-//                            Log.e(PRINTER_TAG, "Failed to print test", e)
-//                            result.error("TEST_PRINT_ERROR", "Failed to print test", e.message)
-//                        }
-//                    }
-//
-//                    else -> {
-//                        Log.w(PRINTER_TAG, "Method not implemented: ${call.method}")
-//                        result.notImplemented()
-//                    }
-//                }
-//            }
-//    }
-
-//    private fun byteToBitmap(imgByte: ByteArray): Bitmap? {
-//        return try {
-//            val options = BitmapFactory.Options().apply {
-//                inSampleSize = 1
-//                inPreferredConfig = Bitmap.Config.RGB_565 // Use less memory for Android 8.1
-//                inJustDecodeBounds = false
-//            }
-//
-//            // First check the size
-//            val boundsOptions = BitmapFactory.Options().apply {
-//                inJustDecodeBounds = true
-//            }
-//            BitmapFactory.decodeByteArray(imgByte, 0, imgByte.size, boundsOptions)
-//
-//            // Calculate sample size if image is too large
-//            val imageSize = boundsOptions.outWidth * boundsOptions.outHeight * 2 // RGB_565 uses 2 bytes per pixel
-//            val maxSize = 2 * 1024 * 1024 // 2MB limit for Android 8.1
-//
-//            if (imageSize > maxSize) {
-//                val sampleSize = Math.ceil(Math.sqrt((imageSize / maxSize).toDouble())).toInt()
-//                options.inSampleSize = sampleSize
-//                Log.d(PRINTER_TAG, "Large image detected, using sample size: $sampleSize")
-//            }
-//
-//            val bitmap = BitmapFactory.decodeByteArray(imgByte, 0, imgByte.size, options)
-//            if (bitmap == null) {
-//                Log.e(PRINTER_TAG, "BitmapFactory.decodeByteArray returned null")
-//            } else {
-//                Log.d(PRINTER_TAG, "Bitmap created successfully: ${bitmap.width}x${bitmap.height}")
-//            }
-//            bitmap
-//        } catch (e: Exception) {
-//            Log.e(PRINTER_TAG, "Failed to convert bytes to bitmap", e)
-//            null
-//        } catch (e: OutOfMemoryError) {
-//            Log.e(PRINTER_TAG, "Out of memory while converting bytes to bitmap", e)
-//            // Try with higher sample size
-//            try {
-//                val options = BitmapFactory.Options().apply {
-//                    inSampleSize = 4 // Reduce size significantly
-//                    inPreferredConfig = Bitmap.Config.RGB_565
-//                }
-//                val bitmap = BitmapFactory.decodeByteArray(imgByte, 0, imgByte.size, options)
-//                Log.d(PRINTER_TAG, "Bitmap created with reduced size due to OOM")
-//                bitmap
-//            } catch (e2: Exception) {
-//                Log.e(PRINTER_TAG, "Failed to create bitmap even with reduced size", e2)
-//                null
-//            }
-//        }
-//    }
     //======================================printer===================
     private fun requestBluetoothPermissionsIfNeeded() {
         val hasPermissions = checkBluetoothPermissions()
@@ -757,118 +429,7 @@ class MainActivity : FlutterActivity(){
         }
     }
 
-    
-
-//=========================================new printer sdk=========================================
-    //  MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PRINTER_CHANNEL).setMethodCallHandler { call, result ->
-    //      when (call.method) {
-    //          "sdkInit" -> {
-    //              try {
-    //                  val deviceModel = SystemPropManager.getModel()
-    //                  connectType = if (deviceModel.contains("M2-203") ||
-    //                      deviceModel.contains("M2-202") ||
-    //                      deviceModel.contains("M2 Pro")) {
-    //                      IminPrintUtils.PrintConnectType.SPI
-    //                  } else {
-    //                      IminPrintUtils.PrintConnectType.USB
-    //                  }
-
-    //                  connectType?.let { type ->
-    //                      IminPrintUtils.getInstance(this@MainActivity).initPrinter(type)
-    //                  }
-    //                  result.success("init")
-    //              } catch (e: Exception) {
-    //                  result.error("INIT_ERROR", "Failed to initialize printer", e.message)
-    //              }
-    //          }
-
-    //          "getStatus" -> {
-    //              try {
-    //                  connectType?.let { type ->
-    //                      val status = IminPrintUtils.getInstance(this@MainActivity).getPrinterStatus(type)
-    //                      result.success(status.toString())
-    //                  } ?: result.error("ERROR", "Printer not initialized", null)
-    //              } catch (e: Exception) {
-    //                  result.error("STATUS_ERROR", "Failed to get printer status", e.message)
-    //              }
-    //          }
-
-    //          "printText" -> {
-    //              try {
-    //                  val text = when (val arguments = call.arguments) {
-    //                      is List<*> -> {
-    //                          if (arguments.isNotEmpty()) {
-    //                              arguments[0].toString()
-    //                          } else {
-    //                              null
-    //                          }
-    //                      }
-    //                      is Map<*, *> -> {
-    //                          arguments["text"]?.toString()
-    //                      }
-    //                      is String -> {
-    //                          arguments
-    //                      }
-    //                      else -> null
-    //                  }
-
-    //                  if (text != null && text.isNotEmpty()) {
-    //                      val mIminPrintUtils = IminPrintUtils.getInstance(this@MainActivity)
-    //                      mIminPrintUtils.printText("$text   \n")
-    //                      result.success(text)
-    //                  } else {
-    //                      result.error("INVALID_ARGUMENT", "Text argument is required", null)
-    //                  }
-    //              } catch (e: Exception) {
-    //                  result.error("PRINT_ERROR", "Failed to print text", e.message)
-    //              }
-    //          }
-
-    //          "getSn" -> {
-    //              try {
-    //                  val sn = if (Build.VERSION.SDK_INT >= 30) {
-    //                      SystemPropManager.getSystemProperties("persist.sys.imin.sn")
-    //                  } else {
-    //                      SystemPropManager.getSn()
-    //                  }
-    //                  result.success(sn)
-    //              } catch (e: Exception) {
-    //                  result.error("SN_ERROR", "Failed to get serial number", e.message)
-    //              }
-    //          }
-
-    //          "opencashBox" -> {
-    //              try {
-    //                  IminSDKManager.opencashBox()
-    //                  result.success("opencashBox")
-    //              } catch (e: Exception) {
-    //                  result.error("CASHBOX_ERROR", "Failed to open cash box", e.message)
-    //              }
-    //          }
-
-    //          "printBitmap" -> {
-    //              try {
-    //                  val imageBytes = call.argument<ByteArray>("image")
-    //                  if (imageBytes != null) {
-    //                      val bitmap = byteToBitmap(imageBytes)
-    //                      bitmap?.let { bmp ->
-    //                          val mIminPrintUtils = IminPrintUtils.getInstance(this@MainActivity)
-    //                          mIminPrintUtils.printSingleBitmap(bmp)
-    //                          result.success("printBitmap")
-    //                      } ?: result.error("BITMAP_ERROR", "Failed to convert bytes to bitmap", null)
-    //                  } else {
-    //                      result.error("INVALID_ARGUMENT", "Image bytes are required", null)
-    //                  }
-    //              } catch (e: Exception) {
-    //                  result.error("BITMAP_PRINT_ERROR", "Failed to print bitmap", e.message)
-    //              }
-    //          }
-
-    //          else -> result.notImplemented()
-    //      }
-    //  }
-
-     private fun byteToBitmap(imgByte: ByteArray): Bitmap? {
+    private fun byteToBitmap(imgByte: ByteArray): Bitmap? {
          return try {
              val options = BitmapFactory.Options().apply {
                  inSampleSize = 1
@@ -877,14 +438,12 @@ class MainActivity : FlutterActivity(){
 
              val bitmap = BitmapFactory.decodeByteArray(imgByte, 0, imgByte.size, options)
              if (bitmap == null) {
-                 Log.e("ByteToBitmap", "BitmapFactory.decodeByteArray returned null")
+                //Log.e("ByteToBitmap", "BitmapFactory.decodeByteArray returned null")
              }
              bitmap
          } catch (e: Exception) {
-             Log.e("ByteToBitmap", "Failed to convert bytes to bitmap", e)
              null
          } catch (e: OutOfMemoryError) {
-             Log.e("ByteToBitmap", "Out of memory while converting bytes to bitmap", e)
              null
          }
      }

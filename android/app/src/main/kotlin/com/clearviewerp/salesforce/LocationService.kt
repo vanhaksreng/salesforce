@@ -47,21 +47,16 @@ class LocationService : Service() {
         fun onFlutterEngineDestroyed() {
             isFlutterEngineActive = false
             channel = null
-            Log.d("LocationService", "Flutter engine destroyed, channel cleared")
         }
 
         private fun safeInvokeMethod(method: String, arguments: Any?) {
             try {
                 if (isFlutterEngineActive && channel != null) {
                     channel?.invokeMethod(method, arguments)
-                    Log.d("LocationService", "Successfully sent $method to Flutter")
-                } else {
-                    Log.d("LocationService", "Flutter engine not active, skipping $method")
                 }
             } catch (e: Exception) {
                 isFlutterEngineActive = false
                 channel = null
-                Log.e("LocationService", "Failed to invoke $method: ${e.message}")
             }
         }
 
@@ -98,7 +93,6 @@ class LocationService : Service() {
             try {
                 file.parentFile?.mkdirs() // Ensure directory exists
                 file.writeText(locationData.toString(2)) // Pretty print with indent
-                Log.d("LocationService", "Saved locations to file: ${file.path}")
             } catch (e: Exception) {
                 Log.e("LocationService", "Error saving location file: ${e.message}")
             }
@@ -148,7 +142,6 @@ class LocationService : Service() {
             locationData.put("count", sortedLocations.length())
 
             saveLocationsToFile(context, locationData)
-            Log.d("LocationService", "Saved ${locationBuffer.size} locations. Total: ${sortedLocations.length()}")
             locationBuffer.clear()
         }
 
@@ -170,10 +163,7 @@ class LocationService : Service() {
                     if (isFlutterEngineActive) {
                         val emptyData = createEmptyLocationFile()
                         saveLocationsToFile(context, emptyData)
-                        Log.d("LocationService", "Synced ${locationList.size} locations and cleared file")
                     }
-                } else {
-                    Log.d("LocationService", "No locations to sync")
                 }
             } catch (e: Exception) {
                 Log.e("LocationService", "Failed to sync locations: ${e.message}")
@@ -344,11 +334,9 @@ class LocationService : Service() {
         }
 
         if (currentTime - lastLocationTime < minInterval) {
-           Log.d("LocationService", "Rejected: Too frequent (${currentTime - lastLocationTime}ms < ${minInterval}ms)")
             return false
         }
 
-        Log.d("LocationService", "✅ Accepted location (accuracy: ${String.format("%.1f", accuracy)}m)")
         lastLocationTime = currentTime
         return true
     }

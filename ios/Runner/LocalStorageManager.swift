@@ -29,7 +29,7 @@ class LocalStorageManager {
                 return json
             }
         } catch {
-            print("Error loading location file: \(error)")
+            // print("Error loading location file: \(error)")
         }
         
         return createEmptyLocationFile()
@@ -51,7 +51,7 @@ class LocalStorageManager {
             let jsonData = try JSONSerialization.data(withJSONObject: locationData, options: .prettyPrinted)
             try jsonData.write(to: fileURL)
         } catch {
-            print("Error saving location file: \(error)")
+            // print("Error saving location file: \(error)")
         }
     }
     

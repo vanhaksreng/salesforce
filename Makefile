@@ -22,6 +22,11 @@ build-android:
 	flutter pub get
 	flutter build apk --release
 
+release-android:
+	flutter clean
+	flutter pub get
+	flutter build appbundle --release
+
 build-ios:
 	flutter clean
 	flutter pub get

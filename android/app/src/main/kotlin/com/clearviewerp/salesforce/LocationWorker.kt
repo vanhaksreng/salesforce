@@ -30,19 +30,17 @@ class LocationWorker(context: Context, params: WorkerParameters) : Worker(contex
                         )
 
                         LocationService.saveLocation(applicationContext, locationData)
-                        Log.d("LocationWorker", "Saved location from WorkManager: $locationData")
                     } else {
-                        Log.w("LocationWorker", "Location is null")
+                        // Log.w("LocationWorker", "Location is null")
                     }
                 }.addOnFailureListener { e ->
-                    Log.e("LocationWorker", "Failed to get location: ${e.message}")
+                   // Log.e("LocationWorker", "Failed to get location: ${e.message}")
                 }
             } else {
-                Log.w("LocationWorker", "Location permissions not granted")
+               // Log.w("LocationWorker", "Location permissions not granted")
             }
             return Result.success()
         } catch (e: Exception) {
-            Log.e("LocationWorker", "Failed to process location: ${e.message}")
             return Result.failure()
         }
     }

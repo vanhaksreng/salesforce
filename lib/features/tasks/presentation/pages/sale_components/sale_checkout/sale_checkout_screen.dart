@@ -185,7 +185,7 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
     }
   }
 
-  Future<void> _validateSaleCreditLimitAmount() async {
+  // Future<void> _validateSaleCreditLimitAmount() async {
     // final customer = _cubit.state.customer;
     // final customerLedgerEntries = _cubit.state.customerLedgerEntries;
 
@@ -227,7 +227,7 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
     // No of Invoices, by number of invoices  : Pending payments 3 invoices
     // No Credit, // No credit allowed for this customer
     // over Aging : Allow to credit up to 30 days
-  }
+  // }
 
   void _navigateToCustomerAddress(String addressCode) {
     Navigator.pushNamed(
