@@ -56,8 +56,11 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24
         targetSdk = 36
-        versionCode = flutterVersionCode
-        versionName = flutter.versionName
+        //versionCode = flutterVersionCode
+        //versionName = flutter.versionName
+
+        versionCode = 13000001
+        versionName = "13.0.0"
 
         ndk {
             abiFilters += setOf(
@@ -81,8 +84,8 @@ android {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
-            //signingConfig = signingConfigs.getByName("release")
+            //signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
