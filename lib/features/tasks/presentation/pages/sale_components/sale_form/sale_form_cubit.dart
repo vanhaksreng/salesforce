@@ -447,7 +447,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
     }
 
     if (item.preventNegativeInventory != kStatusNo &&
-        state.documentType != kSaleCreditMemo) {
+        state.documentType == kSaleInvoice) {
       double decreaseQty = inputs.fold(0.0, (sum, line) {
         return sum + Helpers.toDouble(line.quantity);
       });
