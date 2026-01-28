@@ -2197,6 +2197,7 @@ class SalesHeader extends _SalesHeader
     double? amount,
     String isSync = "Yes",
     String? orderDate,
+    String? orderDateTime,
   }) {
     if (!_defaultsSet) {
       _defaultsSet = RealmObjectBase.setDefaults<SalesHeader>({
@@ -2262,6 +2263,7 @@ class SalesHeader extends _SalesHeader
     RealmObjectBase.set(this, 'total_amount', amount);
     RealmObjectBase.set(this, 'is_sync', isSync);
     RealmObjectBase.set(this, 'order_date', orderDate);
+    RealmObjectBase.set(this, 'order_datetime', orderDateTime);
   }
 
   SalesHeader._();
@@ -2610,6 +2612,13 @@ class SalesHeader extends _SalesHeader
       RealmObjectBase.set(this, 'order_date', value);
 
   @override
+  String? get orderDateTime =>
+      RealmObjectBase.get<String>(this, 'order_datetime') as String?;
+  @override
+  set orderDateTime(String? value) =>
+      RealmObjectBase.set(this, 'order_datetime', value);
+
+  @override
   Stream<RealmObjectChanges<SalesHeader>> get changes =>
       RealmObjectBase.getChanges<SalesHeader>(this);
 
@@ -2674,6 +2683,7 @@ class SalesHeader extends _SalesHeader
       'total_amount': amount.toEJson(),
       'is_sync': isSync.toEJson(),
       'order_date': orderDate.toEJson(),
+      'order_datetime': orderDateTime.toEJson(),
     };
   }
 
@@ -2733,6 +2743,7 @@ class SalesHeader extends _SalesHeader
         amount: fromEJson(ejson['total_amount']),
         isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
         orderDate: fromEJson(ejson['order_date']),
+        orderDateTime: fromEJson(ejson['order_datetime']),
       ),
       _ => raiseInvalidEJson(ejson),
     };
@@ -3020,6 +3031,12 @@ class SalesHeader extends _SalesHeader
           'orderDate',
           RealmPropertyType.string,
           mapTo: 'order_date',
+          optional: true,
+        ),
+        SchemaProperty(
+          'orderDateTime',
+          RealmPropertyType.string,
+          mapTo: 'order_datetime',
           optional: true,
         ),
       ],

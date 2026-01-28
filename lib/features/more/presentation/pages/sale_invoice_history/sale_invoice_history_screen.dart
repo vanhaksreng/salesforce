@@ -129,7 +129,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     param.remove("isFilter");
 
     await _cubit.getSaleInvoice(param: param, page: 1);
-    
+
     if (!context.mounted) return;
     Navigator.of(context).pop();
   }

@@ -126,9 +126,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         if (fileExists) {
           validatedImage = args.imagePath;
         } else {
-          print(
-            'Warning: Image file not found at path: ${args.imagePath!.path}',
-          );
           validatedImage = null;
         }
       }
@@ -179,9 +176,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         if (fileExists) {
           validatedImage = args.imagePath;
         } else {
-          print(
-            'Warning: Image file not found at path: ${args.imagePath!.path}',
-          );
           validatedImage = null;
         }
       }
@@ -852,6 +846,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
           arg.paymentAmount,
           option: FormatType.amount,
         ),
+        orderDateTime: DateTime.now().toDateString(),
       );
 
       // print(saleHeader.amount);

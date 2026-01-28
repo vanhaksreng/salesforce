@@ -360,6 +360,8 @@ class _SalesHeader {
   String isSync = "Yes";
   @MapTo('order_date')
   String? orderDate;
+  @MapTo('order_datetime')
+  String? orderDateTime;
 
   @Ignored()
   String? totalAmtLine;
