@@ -787,21 +787,21 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       int headerNo = saleDoc + headerNoIncrease;
       List<SalesLine> saleLines = [];
 
-      final DeviceInfoPlugin device = DeviceInfoPlugin();
-      String deviceId = "";
+      // final DeviceInfoPlugin device = DeviceInfoPlugin();
+      // String deviceId = "";
 
-      if (Platform.isAndroid) {
-        final AndroidDeviceInfo android = await device.androidInfo;
-        deviceId = android.id;
-      } else {
-        final IosDeviceInfo ios = await device.iosInfo;
-        deviceId = ios.identifierForVendor ?? "";
-      }
+      // if (Platform.isAndroid) {
+      //   final AndroidDeviceInfo android = await device.androidInfo;
+      //   deviceId = android.id;
+      // } else {
+      //   final IosDeviceInfo ios = await device.iosInfo;
+      //   deviceId = ios.identifierForVendor ?? "";
+      // }
 
       final saleHeader = SalesHeader(
         headerNo,
         no: "${Helpers.getSalePrefix(posHeader.documentType ?? "")}$saleDoc",
-        appId: deviceId,
+        appId: "${Helpers.getSalePrefix(posHeader.documentType ?? "")}$saleDoc",
         documentType: posHeader.documentType,
         requestShipmentDate: arg.requestShipmentDate,
         postingDate: now.toDateString(),

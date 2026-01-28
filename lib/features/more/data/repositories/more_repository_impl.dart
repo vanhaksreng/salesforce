@@ -111,25 +111,14 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
         final cloudIds = cloudRecords.map((e) => e.no).toSet();
         final appID = cloudRecords.map((e) => e.appId).toSet();
         List<SalesHeader> recordsToDelete = [];
-        if (param?['document_type'] == kSaleInvoice) {
-          recordsToDelete = localSale
-              .where(
-                (local) =>
-                    !cloudIds.contains(local.no) &&
-                    local.isSync != kStatusYes &&
-                    appID.contains(local.appId),
-              )
-              .toList();
-        } else {
-          recordsToDelete = localSale
-              .where(
-                (local) =>
-                    !cloudIds.contains(local.no) &&
-                    local.isSync != kStatusYes &&
-                    appID.contains(local.no),
-              )
-              .toList();
-        }
+        recordsToDelete = localSale
+            .where(
+              (local) =>
+                  cloudIds.contains(local.no) &&
+                  local.isSync != kStatusYes &&
+                  appID.contains(local.appId),
+            )
+            .toList();
 
         if (recordsToDelete.isNotEmpty) {
           await _local.deletSaleHeader(saleHeader: recordsToDelete);
@@ -159,6 +148,36 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
+      // if (fetchingApi && await _networkInfo.isConnected) {
+      //   final localSale = await _local.getSaleHeaders(args: param, page: page);
+      //   param?['page'] = page;
+      //   final cloudSales = await _remote.getSaleHeaders(data: param);
+
+      //   final List<SalesHeader> cloudRecords = [];
+      //   for (var item in cloudSales["records"] ?? []) {
+      //     cloudRecords.add(SalesHeaderExtension.fromMap(item));
+      //   }
+
+      //   final cloudIds = cloudRecords.map((e) => e.no).toSet();
+      //   final appID = cloudRecords.map((e) => e.appId).toSet();
+      //   List<SalesHeader> recordsToDelete = [];
+      //   recordsToDelete = localSale
+      //       .where(
+      //         (local) =>
+      //             cloudIds.contains(local.no) &&
+      //             local.isSync != kStatusYes &&
+      //             appID.contains(local.appId),
+      //       )
+      //       .toList();
+
+      //   if (recordsToDelete.isNotEmpty) {
+      //     await _local.deletSaleHeader(saleHeader: recordsToDelete);
+      //   }
+
+      //   await _local.storeSaleHeaders(saleHeader: cloudRecords);
+      // }
+
+      //=======================old
       if (fetchingApi && await _networkInfo.isConnected) {
         // param?['page'] = page;
 
@@ -174,7 +193,22 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
               .toList(),
         };
 
+        final localSale = await _local.getSaleLines(args: param);
+
         final saleLineCloud = await _remote.getSaleLinesV2(data: result);
+
+        final appID = saleLineCloud.map((e) => e.appId).toSet();
+        List<SalesLine> recordsToDelete = [];
+        recordsToDelete = localSale
+            .where(
+              (local) =>
+                  local.isSync != kStatusYes && appID.contains(local.appId),
+            )
+            .toList();
+
+        if (recordsToDelete.isNotEmpty) {
+          await _local.deletSaleLine(saleLine: recordsToDelete);
+        }
 
         await _local.storeSaleLine(saleLine: saleLineCloud);
       }
@@ -194,9 +228,10 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     Map<String, dynamic>? param,
   }) async {
     try {
+      List<SalesLine> lines = [];
       String isSync = param?["isSync"];
       if (await _networkInfo.isConnected) {
-        final List<SalesLine> lines = await _remote.getSaleLinesV2(data: param);
+        lines = await _remote.getSaleLinesV2(data: param);
 
         if (isSync == kStatusYes) {
           await _local.storeSaleLine(saleLine: lines);
@@ -207,9 +242,7 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
         args: {"no": param?["document_no"]},
       );
 
-      final lines = await _local.getSaleLines(
-        args: {"document_no": header?.no},
-      );
+      lines = await _local.getSaleLines(args: {"document_no": header?.no});
 
       final saleDetail = SaleDetail(header: header!, lines: lines);
 
@@ -599,6 +632,9 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     required List<SalesLine> salesLines,
   }) async {
     try {
+      if (!await _networkInfo.isConnected) {
+        throw GeneralException(errorInternetMessage);
+      }
       List<Map<String, dynamic>> jsonData = [];
       for (var sale in salesHeaders) {
         final lines = salesLines.where((e) => e.documentNo == sale.no).toList();
