@@ -30,4 +30,4 @@ release-android:
 build-ios:
 	flutter clean
 	flutter pub get
-	flutter build ios --release
+	flutter build ios --release --build-name=13 --build-number=46
