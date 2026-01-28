@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dartz/dartz.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:salesforce/core/constants/app_config.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/data/models/extension/sale_header_extension.dart';
@@ -117,12 +120,21 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       if (await _networkInfo.isConnected) {
         statusInternet = kOnline;
       }
+      XFile? validatedImage;
+      if (args.imagePath != null) {
+        final fileExists = await File(args.imagePath!.path).exists();
+        if (fileExists) {
+          validatedImage = args.imagePath;
+        } else {
+          validatedImage = null;
+        }
+      }
 
       final newArg = CheckInArg(
         latitude: args.latitude,
         longitude: args.longitude,
         comment: args.comment,
-        imagePath: args.imagePath,
+        imagePath: validatedImage,
         checkInPosition: args.checkInPosition,
         isCloseShop: args.isCloseShop,
       );
@@ -158,11 +170,21 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         statusInternet = kOnline;
       }
 
+      XFile? validatedImage;
+      if (args.imagePath != null) {
+        final fileExists = await File(args.imagePath!.path).exists();
+        if (fileExists) {
+          validatedImage = args.imagePath;
+        } else {
+          validatedImage = null;
+        }
+      }
+
       final newArg = CheckInArg(
         latitude: args.latitude,
         longitude: args.longitude,
         comment: args.comment,
-        imagePath: args.imagePath,
+        imagePath: validatedImage,
         checkOutPosition: args.checkOutPosition,
         isCloseShop: args.isCloseShop,
       );
@@ -765,9 +787,21 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       int headerNo = saleDoc + headerNoIncrease;
       List<SalesLine> saleLines = [];
 
+      // final DeviceInfoPlugin device = DeviceInfoPlugin();
+      // String deviceId = "";
+
+      // if (Platform.isAndroid) {
+      //   final AndroidDeviceInfo android = await device.androidInfo;
+      //   deviceId = android.id;
+      // } else {
+      //   final IosDeviceInfo ios = await device.iosInfo;
+      //   deviceId = ios.identifierForVendor ?? "";
+      // }
+
       final saleHeader = SalesHeader(
         headerNo,
         no: "${Helpers.getSalePrefix(posHeader.documentType ?? "")}$saleDoc",
+        appId: "${Helpers.getSalePrefix(posHeader.documentType ?? "")}$saleDoc",
         documentType: posHeader.documentType,
         requestShipmentDate: arg.requestShipmentDate,
         postingDate: now.toDateString(),
@@ -812,6 +846,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
           arg.paymentAmount,
           option: FormatType.amount,
         ),
+        orderDateTime: DateTime.now().toDateString(),
       );
 
       // print(saleHeader.amount);

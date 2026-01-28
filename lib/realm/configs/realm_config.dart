@@ -1,5 +1,3 @@
-
-
 import 'package:path_provider/path_provider.dart';
 import 'package:realm/realm.dart';
 import 'package:path/path.dart' as path;
@@ -92,7 +90,7 @@ class RealmConfig {
         DevicePrinter.schema,
       ],
       path: realmPath,
-      schemaVersion: 4,
+      schemaVersion: 5,
       shouldDeleteIfMigrationNeeded: false,
       migrationCallback: _performMigration,
     );
@@ -116,6 +114,10 @@ class RealmConfig {
     }
     if (oldSchemaVersion < 5) {
       _migrateToVersion4(migration);
+    }
+
+    if (oldSchemaVersion < 6) {
+      _migrateToVersion5(migration);
     }
   }
 
@@ -146,6 +148,16 @@ class RealmConfig {
     for (var sale in oldSaleLine) {
       if (sale.appId == null || sale.appId!.isEmpty) {
         sale.appId = '';
+      }
+    }
+  }
+
+  static void _migrateToVersion5(Migration migration) {
+    final oldSaleHeader = migration.newRealm.all<SalesHeader>();
+
+    for (var sale in oldSaleHeader) {
+      if (sale.orderDateTime == null || sale.orderDateTime!.isEmpty) {
+        sale.orderDateTime = '';
       }
     }
   }

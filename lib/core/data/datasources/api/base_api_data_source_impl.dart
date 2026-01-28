@@ -103,38 +103,73 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
   // }
 
   @override
+  // Future<void> updateSchedule(
+  //   SalespersonSchedule schedule, {
+  //   String type = kStatusCheckIn,
+  // }) async {
+  //   try {
+  //     if (type == kStatusCheckIn) {
+  //       await apiClient.postUploadFiles(
+  //         'v2/update-schedule',
+  //         body: await getParams(
+  //           params: {'schedule': jsonEncode(schedule.toJson()), 'type': type},
+  //         ),
+  //         files: schedule.checkInImage != null
+  //             ? [XFile(schedule.checkInImage!)]
+  //             : [],
+  //       );
+  //     } else {
+  //       await apiClient.postUploadFiles(
+  //         'v2/update-schedule',
+  //         body: await getParams(
+  //           params: {'schedule': jsonEncode(schedule.toJson()), 'type': type},
+  //         ),
+  //         files: schedule.checkOutImage != null
+  //             ? [XFile(schedule.checkOutImage!)]
+  //             : [],
+  //       );
+  //       // await apiClient.post(
+  //       //   'v2/update-schedule',
+  //       //   body: await getParams(
+  //       //     params: {'schedule': jsonEncode(schedule.toJson()), 'type': type},
+  //       //   ),
+  //     }
+  //   } catch (e) {
+  //     rethrow;
+  //   }
+  // }
   Future<void> updateSchedule(
     SalespersonSchedule schedule, {
     String type = kStatusCheckIn,
   }) async {
     try {
-      if (type == kStatusCheckIn) {
-        await apiClient.postUploadFiles(
-          'v2/update-schedule',
-          body: await getParams(
-            params: {'schedule': jsonEncode(schedule.toJson()), 'type': type},
-          ),
-          files: schedule.checkInImage != null
-              ? [XFile(schedule.checkInImage!)]
-              : [],
-        );
-      } else {
-        await apiClient.postUploadFiles(
-          'v2/update-schedule',
-          body: await getParams(
-            params: {'schedule': jsonEncode(schedule.toJson()), 'type': type},
-          ),
-          files: schedule.checkOutImage != null
-              ? [XFile(schedule.checkOutImage!)]
-              : [],
-        );
+      final params = {'schedule': jsonEncode(schedule.toJson()), 'type': type};
 
-        // await apiClient.post(
-        //   'v2/update-schedule',
-        //   body: await getParams(
-        //     params: {'schedule': jsonEncode(schedule.toJson()), 'type': type},
-        //   ),
+      List<XFile> files = [];
+
+      if (type == kStatusCheckIn) {
+        if (schedule.checkInImage != null &&
+            schedule.checkInImage!.isNotEmpty) {
+          final file = File(schedule.checkInImage!);
+          if (await file.exists()) {
+            files.add(XFile(schedule.checkInImage!));
+          }
+        }
+      } else {
+        if (schedule.checkOutImage != null &&
+            schedule.checkOutImage!.isNotEmpty) {
+          final file = File(schedule.checkOutImage!);
+          if (await file.exists()) {
+            files.add(XFile(schedule.checkOutImage!));
+          }
+        }
       }
+
+      await apiClient.postUploadFiles(
+        'v2/update-schedule',
+        body: await getParams(params: params),
+        files: files,
+      );
     } catch (e) {
       rethrow;
     }

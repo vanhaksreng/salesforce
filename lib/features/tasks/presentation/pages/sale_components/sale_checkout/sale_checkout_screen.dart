@@ -186,47 +186,47 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
   }
 
   // Future<void> _validateSaleCreditLimitAmount() async {
-    // final customer = _cubit.state.customer;
-    // final customerLedgerEntries = _cubit.state.customerLedgerEntries;
+  // final customer = _cubit.state.customer;
+  // final customerLedgerEntries = _cubit.state.customerLedgerEntries;
 
-    // if (customer == null) {
-    //   throw GeneralException("Customer is required");
-    // }
+  // if (customer == null) {
+  //   throw GeneralException("Customer is required");
+  // }
 
-    // final String creditLimitType = customer.creditLimitedType ?? "";
-    // final double cla = customer.creditLimitedAmount ?? 0;
+  // final String creditLimitType = customer.creditLimitedType ?? "";
+  // final double cla = customer.creditLimitedAmount ?? 0;
 
-    // double sumRemaining = customerLedgerEntries.fold(
-    //   0.0,
-    //   (sum, entry) => sum + Helpers.toDouble(entry.remainingAmount),
-    // );
+  // double sumRemaining = customerLedgerEntries.fold(
+  //   0.0,
+  //   (sum, entry) => sum + Helpers.toDouble(entry.remainingAmount),
+  // );
 
-    // if (cla > 0) {
-    //   switch (creditLimitType) {
-    //     case kBalance:
-    //       if (sumRemaining > cla) {
-    //         throw GeneralException(
-    //           "Customer credit limit is ${Helpers.formatNumberLink(customer.creditLimitedAmount, option: FormatType.amount)}. Please clear pending payments before proceeding.",
-    //         );
-    //       }
+  // if (cla > 0) {
+  //   switch (creditLimitType) {
+  //     case kBalance:
+  //       if (sumRemaining > cla) {
+  //         throw GeneralException(
+  //           "Customer credit limit is ${Helpers.formatNumberLink(customer.creditLimitedAmount, option: FormatType.amount)}. Please clear pending payments before proceeding.",
+  //         );
+  //       }
 
-    //     case kNoOfInvoice:
-    //       if (customerLedgerEntries.length > cla) {
-    //         throw GeneralException(
-    //           "Customer has pending payments exceeding the credit limit of ${Helpers.formatNumber(customer.creditLimitedAmount ?? "0", option: FormatType.quantity)} invoices.",
-    //         );
-    //       }
+  //     case kNoOfInvoice:
+  //       if (customerLedgerEntries.length > cla) {
+  //         throw GeneralException(
+  //           "Customer has pending payments exceeding the credit limit of ${Helpers.formatNumber(customer.creditLimitedAmount ?? "0", option: FormatType.quantity)} invoices.",
+  //         );
+  //       }
 
-    //     case kNoCredit:
-    //       throw GeneralException("No credit allowed for this customer");
-    //   }
-    // }
+  //     case kNoCredit:
+  //       throw GeneralException("No credit allowed for this customer");
+  //   }
+  // }
 
-    // Check if credit limit type is no empty
-    // Balance, by amount : Allow to credit up to $100
-    // No of Invoices, by number of invoices  : Pending payments 3 invoices
-    // No Credit, // No credit allowed for this customer
-    // over Aging : Allow to credit up to 30 days
+  // Check if credit limit type is no empty
+  // Balance, by amount : Allow to credit up to $100
+  // No of Invoices, by number of invoices  : Pending payments 3 invoices
+  // No Credit, // No credit allowed for this customer
+  // over Aging : Allow to credit up to 30 days
   // }
 
   void _navigateToCustomerAddress(String addressCode) {

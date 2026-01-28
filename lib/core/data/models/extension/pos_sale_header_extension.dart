@@ -40,7 +40,10 @@ extension PosSalesHeaderExtension on PosSalesHeader {
       sourceType: json['source_type'] as String? ?? '',
       sourceNo: json['source_no'] as String? ?? '',
       status: json['status'] as String? ?? '',
-      amount: Helpers.formatNumberDb(json['total_amount'], option: FormatType.amount),
+      amount: Helpers.formatNumberDb(
+        json['total_amount'],
+        option: FormatType.amount,
+      ),
       orderDate: json["order_date"] as String? ?? '',
     );
   }

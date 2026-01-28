@@ -61,10 +61,12 @@ class SaleHistoryDetailBox extends StatelessWidget {
                   ),
                 ],
               ),
-              TextWidget(
-                fontWeight: FontWeight.w500,
-                color: textColor50,
-                text: header?.documentDate ?? "",
+
+              RowBoxTextWidget(
+                lable1: greeting("Customer No").toUpperCase(),
+                value1: header?.customerNo ?? "",
+                label2: greeting("Date").toUpperCase(),
+                value2: header?.documentDate ?? "",
               ),
             ],
           ),
