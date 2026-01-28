@@ -66,7 +66,12 @@ class ItemBuilderWidget extends StatelessWidget {
 
     return RepaintBoundary(
       key: ValueKey(item.no),
-      child: _buildItemContent(item: item, index: index, shouldAnimate: shouldAnimate, isGrid: isGrid),
+      child: _buildItemContent(
+        item: item,
+        index: index,
+        shouldAnimate: shouldAnimate,
+        isGrid: isGrid,
+      ),
     );
   }
 
@@ -92,7 +97,13 @@ class ItemBuilderWidget extends StatelessWidget {
       isAddedCart: hasCart,
     );
 
-    return shouldAnimate ? AnimatedItemWrapper(key: ValueKey(item.no), index: index, child: itemShape) : itemShape;
+    return shouldAnimate
+        ? AnimatedItemWrapper(
+            key: ValueKey(item.no),
+            index: index,
+            child: itemShape,
+          )
+        : itemShape;
   }
 
   EdgeInsets _buildPadding() {
