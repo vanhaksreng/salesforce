@@ -65,8 +65,8 @@ class SaleHistoryDetailBox extends StatelessWidget {
               RowBoxTextWidget(
                 lable1: greeting("Customer No").toUpperCase(),
                 value1: header?.customerNo ?? "",
-                label2: greeting("Date").toUpperCase(),
-                value2: header?.documentDate ?? "",
+                label2: greeting("Posting Date").toUpperCase(),
+                value2: header?.postingDate ?? "",
               ),
             ],
           ),
