@@ -6,6 +6,7 @@ import 'package:salesforce/core/data/models/extension/sale_line_extension.dart';
 import 'package:salesforce/env.dart';
 import 'package:salesforce/features/more/data/datasources/api/api_more_data_source.dart';
 import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
+import 'package:salesforce/features/tasks/domain/entities/app_version.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:http/http.dart' as http;
 
@@ -205,6 +206,19 @@ class ApiMoreDataSourceImpl extends BaseApiDataSourceImpl
         'v2/get-invoice-html',
         body: await getParams(params: data),
       );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<AppVersion> checkAppVersion({Map<String, dynamic>? data}) async {
+    try {
+      final response = await apiClient.post(
+        'v2/check-app-version',
+        body: await getParams(params: data),
+      );
+      return AppVersion.fromJson(response["record"]);
     } catch (e) {
       rethrow;
     }

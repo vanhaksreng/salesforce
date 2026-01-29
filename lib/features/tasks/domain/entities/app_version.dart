@@ -16,10 +16,11 @@ class AppVersion {
   });
 
   factory AppVersion.fromJson(Map<String, dynamic> json) => AppVersion(
-      appVersion: json["appVersion"] as String?,
-      isUpDate: json["isUpdate"] as String?,
-      forceUpdate: json["forceUpdate"] as String?,
-      title: json["title"] as String?,
-      description: json["description"] as String?,
-      appUrl: json["app_url"] as String?);
+    appVersion: json["appVersion"] as String?,
+    isUpDate: json["isUpdate"] as String?,
+    forceUpdate: json["forceUpdate"] as String?,
+    title: json["title"] as String?,
+    description: json["description"] as String?,
+    appUrl: json["app_url"] as String?,
+  );
 }

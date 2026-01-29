@@ -5,7 +5,7 @@ import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/domain/entities/cart_preview_arg.dart';
 import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/domain/entities/more_model.dart';
-import 'package:salesforce/features/more/presentation/pages/about/about_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/about/about/about_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/bussiness_unit/bussiness_unit_screen.dart';

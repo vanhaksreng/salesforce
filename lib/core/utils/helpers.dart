@@ -307,6 +307,29 @@ class Helpers {
     );
   }
 
+  static bool isUpdateAvailable(String latestVersion, String currentVersion) {
+    List<int> parseVersion(String version) {
+      return version
+          .split('+')
+          .first
+          .split('.')
+          .map((e) => int.tryParse(e) ?? 0)
+          .toList();
+    }
+
+    final latest = parseVersion(latestVersion);
+    final current = parseVersion(currentVersion);
+
+    for (int i = 0; i < latest.length; i++) {
+      final latestPart = latest[i];
+      final currentPart = i < current.length ? current[i] : 0;
+
+      if (currentPart < latestPart) return true;
+      if (currentPart > latestPart) return false;
+    }
+    return false;
+  }
+
   static Future showDialogAction(
     BuildContext context, {
     Function()? confirm,

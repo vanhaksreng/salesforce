@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/core/domain/entities/init_app_stage.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
-import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/features/main_tap_screen.dart';
 import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';

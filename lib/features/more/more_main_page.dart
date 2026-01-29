@@ -10,7 +10,7 @@ import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/domain/entities/more_model.dart';
 import 'package:salesforce/features/more/more_main_page_cubit.dart';
 import 'package:salesforce/features/more/presentation/components/more_shape.dart';
-import 'package:salesforce/features/more/presentation/pages/about/about_screen.dart';
+import 'package:salesforce/features/more/presentation/pages/about/about/about_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/profile_form/profile_form_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/reset_password/reset_password_screen.dart';
