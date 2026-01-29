@@ -9,6 +9,7 @@ import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/presentation/widgets/image_box_cover_widget.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
 import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
+import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/presentation/pages/components/color_status_history.dart';
@@ -66,7 +67,9 @@ class SaleHistoryDetailBox extends StatelessWidget {
                 lable1: greeting("Customer No").toUpperCase(),
                 value1: header?.customerNo ?? "",
                 label2: greeting("Posting Date").toUpperCase(),
-                value2: header?.postingDate ?? "",
+                value2: DateTimeExt.parse(
+                  header?.postingDate ?? "",
+                ).toDateNameString(),
               ),
             ],
           ),
@@ -78,7 +81,10 @@ class SaleHistoryDetailBox extends StatelessWidget {
           ),
           RowBoxTextWidget(
             lable1: greeting("document_date").toUpperCase(),
-            value1: header?.documentDate ?? "",
+            value1: DateTimeExt.parse(
+              header?.documentDate ?? "",
+            ).toDateNameString(),
+
             label2: greeting("ship_date").toUpperCase(),
             value2: header?.requestShipmentDate ?? "",
           ),

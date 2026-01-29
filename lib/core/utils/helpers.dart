@@ -307,7 +307,7 @@ class Helpers {
     );
   }
 
-  static showDialogAction(
+  static Future showDialogAction(
     BuildContext context, {
     Function()? confirm,
     Function()? cancel,

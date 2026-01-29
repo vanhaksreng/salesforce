@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
@@ -19,6 +20,7 @@ import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dar
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
 import 'package:salesforce/features/tasks/presentation/pages/card_scheduled.dart';
@@ -69,10 +71,19 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     super.initState();
     scheduleDate = DateTime.now();
     _cubit.getUserSetup();
-    _cubit.getCurrentLocation(context);
+    // _cubit.getCurrentLocation(context);
     checkInitWithLocation();
     refreshSchedule();
   }
+
+  // Future<void> getCheckLoc() async {
+  //   print("===============${await _location.isLocationServiceEnabled()}");
+  //   if (!await _location.isLocationServiceEnabled()) {
+  //     if (!mounted) return;
+  //     Position? loc;
+  //     loc = await _location.getCurrentLocation(context: context);
+  //   }
+  // }
 
   @override
   bool get wantKeepAlive => true;
@@ -122,111 +133,94 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
 
   void _checkInHandler(SalespersonSchedule schedule) async {
     final l = LoadingOverlay.of(context);
-    l.show();
-    
     try {
-      // Check pending schedules
       await _cubit.pendingScheduleValidate();
+    } on GeneralException catch (e) {
+      showErrorMessage(e.message);
+      return;
+    }
+    final String useGps = await _cubit.getSetting(kGpsRealTimeTracking);
+    if (checkInWithLocation == "Yes" || useGps == kStatusYes) {
+      if (!mounted) return;
 
-      final String useGps = await _cubit.getSetting(kGpsRealTimeTracking);
-      if (checkInWithLocation == "Yes" || useGps == kStatusYes) {
-        final permStatus = await perm.Permission.locationWhenInUse.status;
+      await _location.getCurrentLocation(context: context);
+
+      if (useGps == kStatusYes) {
+        final permStatus1 = await perm.Permission.locationAlways.status;
         if (!mounted) return;
 
-        if (permStatus != perm.PermissionStatus.granted) {
-          l.hide();
+        if (permStatus1 != perm.PermissionStatus.granted) {
           Helpers.showDialogAction(
             context,
-            labelAction: "Location Access Required",
+            labelAction: "Background Location Access Needed",
             subtitle:
-                "As required by your company, the app needs access to your current location. This is essential for tracking your check-in and check-out activities at customer sites.",
+                "As required by your company, the app needs access to your location even when running in the background. This is essential for tracking your check-in and check-out activities at customer sites.",
             confirmText: "Go to Settings",
             confirm: () async {
-              await perm.openAppSettings();
-              if (!mounted) return;
               Navigator.pop(context);
+              await perm.openAppSettings();
             },
             cancelText: "Not Now",
           );
+
           return;
         }
-
-        if (useGps == kStatusYes) {
-          final permStatus1 = await perm.Permission.locationAlways.status;
-          if (!mounted) return;
-
-          if (permStatus1 != perm.PermissionStatus.granted) {
-            l.hide();
-            Helpers.showDialogAction(
-              context,
-              labelAction: "Background Location Access Needed",
-              subtitle:
-                  "As required by your company, the app needs access to your location even when running in the background. This is essential for tracking your check-in and check-out activities at customer sites.",
-              confirmText: "Go to Settings",
-              confirm: () async {
-                await perm.openAppSettings();
-                if (!mounted) return;
-                Navigator.pop(context);
-              },
-              cancelText: "Not Now",
-            );
-
-            return;
-          }
-        }
       }
-
-      final areaByMeters = Helpers.toDouble(
-        await _cubit.getSetting(kCheckedInAreaKey),
-      );
-
-      if (areaByMeters > 0) {
-        final currentLocation = await getCurrentLocation();
-        if (currentLocation.latitude == 0 && currentLocation.longitude == 0) {
-          throw GeneralException(
-            greeting("Your current location is not available."),
-          );
-        }
-
-        final double distInMeters = _location.getDistanceBetween(
-          schedule.latitude ?? 0,
-          schedule.longitude ?? 0,
-          currentLocation.latitude,
-          currentLocation.longitude,
+      try {
+        l.show();
+        final areaByMeters = Helpers.toDouble(
+          await _cubit.getSetting(kCheckedInAreaKey),
         );
 
-        if (areaByMeters < distInMeters) {
-          throw GeneralException(
-            greeting(
-              "must_within_store_checkin",
-              params: {
-                'value': Helpers.formatNumber(
-                  areaByMeters,
-                  option: FormatType.quantity,
-                ),
-              },
-            ),
+        if (areaByMeters > 0) {
+          final currentLocation = await getCurrentLocation();
+          if (currentLocation.latitude == 0 && currentLocation.longitude == 0) {
+            throw GeneralException(
+              greeting("Your current location is not available."),
+            );
+          }
+
+          final double distInMeters = _location.getDistanceBetween(
+            schedule.latitude ?? 0,
+            schedule.longitude ?? 0,
+            currentLocation.latitude,
+            currentLocation.longitude,
           );
+
+          if (areaByMeters < distInMeters) {
+            throw GeneralException(
+              greeting(
+                "must_within_store_checkin",
+                params: {
+                  'value': Helpers.formatNumber(
+                    areaByMeters,
+                    option: FormatType.quantity,
+                  ),
+                },
+              ),
+            );
+          }
         }
+
+        l.hide();
+
+        if (!mounted) return;
+        _navigateToCheckInScreen(schedule);
+      } on GeneralException catch (e) {
+        l.hide();
+        showWarningMessage(e.message);
+      } on Exception {
+        l.hide();
+        showErrorMessage();
       }
-
-      l.hide();
-
-      if (!mounted) return;
-      _navigateToCheckInScreen(schedule);
-    } on GeneralException catch (e) {
-      l.hide();
-      showWarningMessage(e.message);
-    } on Exception {
-      l.hide();
-      showErrorMessage();
     }
   }
 
   void checkOutHandler(SalespersonSchedule schedule) async {
     final l = LoadingOverlay.of(context);
-    l.show();
+    await _location.getCurrentLocation(context: context);
 
+    l.show();
     try {
       if (schedule.planned == kStatusYes) {
         final areaByMeters = Helpers.toDouble(
@@ -543,6 +537,7 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     List<SalespersonSchedule> records,
     MyScheduleState state,
   ) {
+    Logger.log("============d=========$records");
     if (records.isEmpty) {
       return SizedBox(
         height: MediaQuery.of(context).size.height / 2.5,

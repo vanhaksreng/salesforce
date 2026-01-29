@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
@@ -8,6 +9,7 @@ import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/mixins/permission_mixin.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/features/tasks/domain/repositories/task_repository.dart';
 import 'package:salesforce/features/tasks/presentation/pages/my_schedule/my_schedule_state.dart';
 import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
@@ -90,13 +92,20 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
         },
       );
       if (!context.mounted) return;
-      final current = await _location.getCurrentLocation(context: context);
+      Position? current;
+
+      try {
+        current = await _location.getCurrentLocation(context: context);
+      } catch (e) {
+        emit(state.copyWith(isLoading: false));
+        Logger.log("Location error: $e");
+      }
 
       response.fold((failure) => throw Exception(failure.message), (schedules) {
         for (var s in schedules) {
           s.distance = Helpers.calculateDistanceInMeters(
-            current.latitude,
-            current.longitude,
+            current?.latitude ?? 0.0,
+            current?.longitude ?? 0.0,
             s.latitude ?? 0,
             s.longitude ?? 0,
           );
@@ -359,8 +368,8 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
     emit(state.copyWith(selectedStatus: "All", isSortDistance: false));
   }
 
-  Future<void> getCurrentLocation(BuildContext context) async {
-    final current = await _location.getCurrentLocation(context: context);
-    emit(state.copyWith(latLng: LatLng(current.latitude, current.longitude)));
-  }
+  // Future<void> getCurrentLocation(BuildContext context) async {
+  //   final current = await _location.getCurrentLocation(context: context);
+  //   emit(state.copyWith(latLng: LatLng(current.latitude, current.longitude)));
+  // }
 }
