@@ -69,8 +69,10 @@ class GeolocatorLocationService implements ILocationService {
     LocationSettings? customSettings,
   }) async {
     try {
-      await _ensureLocationServiceEnabled(context);
-      await _ensureLocationPermission();
+      await _ensureLocationPermission(context);
+      if (context.mounted) {
+        await _ensureLocationServiceEnabled(context);
+      }
 
       final locationSettings = customSettings ?? _getLocationSettings();
 
@@ -79,11 +81,13 @@ class GeolocatorLocationService implements ILocationService {
       ).timeout(_locationTimeout);
 
       return position;
-    } on TimeoutException {
-      throw GeneralException(
-        "Location request timed out after ${_locationTimeout.inSeconds} seconds",
-      );
-    } catch (e) {
+    }
+    //  on TimeoutException {
+    //   throw GeneralException(
+    //     "Location request timed out after ${_locationTimeout.inSeconds} seconds",
+    //   );
+    // }
+    catch (e) {
       Logger.log("Error getting current location: $e");
       rethrow;
     }
@@ -241,50 +245,41 @@ class GeolocatorLocationService implements ILocationService {
 
   static bool _isAlertCurrentlyShowing = false;
 
-  // (Assuming this function is part of a class with the static flag)
-  // static bool _isAlertCurrentlyShowing = false;
-
   Future<void> _ensureLocationServiceEnabled(BuildContext context) async {
-    // 1. Check current status
     bool serviceEnabled = await isLocationServiceEnabled();
 
-    if (!serviceEnabled) {
-      Logger.log("Location service disabled, showing alert to open settings");
+    if (serviceEnabled) return;
 
-      // Prevent concurrent dialogs
-      if (_isAlertCurrentlyShowing) {
-        throw GeneralException(
-          "Location services check is already in progress.",
-        );
-      }
+    if (_isAlertCurrentlyShowing) {
+      throw GeneralException("Location services check is already in progress.");
+    }
 
-      _isAlertCurrentlyShowing = true; // Lock the function
+    _isAlertCurrentlyShowing = true;
 
-      bool? didConfirm;
+    try {
       if (!context.mounted) return;
-      try {
-        didConfirm = await Helpers.showDialogAction(
-          context,
-          labelAction: "Location Services Required",
-          subtitle:
-              "Location services are currently disabled. Please enable them in your device settings to use this feature.",
-          canCancel: true,
-          cancelText: "No, Cancel",
-          confirmText: "Yes, Open setting",
 
-          confirm: () async {
-            Navigator.pop(context);
-            await Geolocator.openLocationSettings();
-          },
-        );
-      } finally {
-        _isAlertCurrentlyShowing = false;
-      }
+      final bool? didConfirm = await Helpers.showDialogAction(
+        context,
+        labelAction: "Location Services Required",
+        subtitle:
+            "Location services are currently disabled. Please enable them in your device settings to use this feature.",
+        canCancel: true,
+        cancelText: "No, Cancel",
+        confirmText: "Yes, Open Settings",
+        confirm: () {
+          Navigator.pop(context, true); // ✅ return TRUE
+        },
+        cancel: () {
+          Navigator.pop(context, false); // ✅ return FALSE
+        },
+      );
 
       if (didConfirm == true) {
         await Geolocator.openLocationSettings();
 
-        await Future.delayed(const Duration(milliseconds: 500));
+        // Give OS time to update service state
+        await Future.delayed(const Duration(milliseconds: 600));
         serviceEnabled = await isLocationServiceEnabled();
       }
 
@@ -293,26 +288,73 @@ class GeolocatorLocationService implements ILocationService {
           "Location services must be enabled to use this feature",
         );
       }
+    } finally {
+      _isAlertCurrentlyShowing = false;
     }
   }
 
-  Future<void> _ensureLocationPermission() async {
+  // Future<void> _ensureLocationPermission() async {
+  //   LocationPermission permission = await Geolocator.checkPermission();
+
+  //   if (permission == LocationPermission.denied) {
+  //     permission = await Geolocator.requestPermission();
+  //     if (permission == LocationPermission.denied) {
+  //       throw GeneralException(
+  //         'Location permission is required for this feature',
+  //       );
+  //     }
+  //   }
+
+  //   if (permission == LocationPermission.deniedForever) {
+  //     throw GeneralException(
+  //       'Location permission has been permanently denied. '
+  //       'Please enable it in your device settings to use this feature.',
+  //     );
+  //   }
+  // }
+  Future<void> _ensureLocationPermission(BuildContext context) async {
     LocationPermission permission = await Geolocator.checkPermission();
 
+    // Request permission if denied
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+      if (!context.mounted) return;
       if (permission == LocationPermission.denied) {
+        Helpers.showDialogAction(
+          context,
+          labelAction: "Location Permission Required",
+          subtitle:
+              "This feature requires access to your location to continue.",
+          confirmText: "Allow",
+          confirm: () async {
+            Navigator.pop(context);
+            await Geolocator.requestPermission();
+          },
+          cancelText: "Cancel",
+        );
+
         throw GeneralException(
           'Location permission is required for this feature',
         );
       }
     }
 
+    // Permanently denied
     if (permission == LocationPermission.deniedForever) {
-      throw GeneralException(
-        'Location permission has been permanently denied. '
-        'Please enable it in your device settings to use this feature.',
+      Helpers.showDialogAction(
+        context,
+        labelAction: "Enable Location Permission",
+        subtitle:
+            "Location access has been permanently denied. Please enable it from app settings.",
+        confirmText: "Go to Settings",
+        confirm: () async {
+          Navigator.pop(context);
+          await Geolocator.openAppSettings();
+        },
+        cancelText: "Cancel",
       );
+
+      throw GeneralException('Location permission has been permanently denied');
     }
   }
 

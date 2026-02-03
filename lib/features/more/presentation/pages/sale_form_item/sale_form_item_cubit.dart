@@ -141,6 +141,10 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
           saleForm: updatedForms,
           manualPrice: manualPrice,
           saleUomCode: salesUomCode,
+          discountAmt: stdSaleLine != null ? stdSaleLine?.discountAmount : 0,
+          discountPercentage: stdSaleLine != null
+              ? stdSaleLine?.discountPercentage
+              : 0,
         ),
       );
     } catch (error) {

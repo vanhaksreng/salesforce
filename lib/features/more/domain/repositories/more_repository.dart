@@ -5,6 +5,7 @@ import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/domain/entities/record_sale_header.dart';
 import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
 import 'package:salesforce/features/more/domain/entities/user_info.dart';
+import 'package:salesforce/features/tasks/domain/entities/app_version.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
@@ -126,4 +127,8 @@ abstract class MoreRepository extends BaseAppRepository {
     Map<String, dynamic>? param,
   });
   Future<Either<Failure, bool>> deletePrinter({required DevicePrinter device});
+
+  Future<Either<Failure, AppVersion?>> checkAppVersion({
+    Map<String, dynamic>? param,
+  });
 }

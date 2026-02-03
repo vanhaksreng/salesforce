@@ -24,6 +24,7 @@ import 'package:salesforce/domain/services/calculate_sale_price.dart';
 import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/domain/entities/record_sale_header.dart';
 import 'package:salesforce/features/more/domain/entities/user_info.dart';
+import 'package:salesforce/features/tasks/domain/entities/app_version.dart';
 import 'package:salesforce/infrastructure/network/network_info.dart';
 import 'package:salesforce/features/more/data/datasources/api/api_more_data_source.dart';
 import 'package:salesforce/features/more/data/datasources/realm/realm_more_data_source.dart';
@@ -1274,6 +1275,24 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
       return Right(true);
     } catch (e) {
       return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, AppVersion?>> checkAppVersion({
+    Map<String, dynamic>? param,
+  }) async {
+    try {
+      if (await _networkInfo.isConnected) {
+        final appVersion = await _remote.checkAppVersion(data: param);
+        return Right(appVersion);
+      }
+
+      return const Right(null);
+    } on GeneralException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 }

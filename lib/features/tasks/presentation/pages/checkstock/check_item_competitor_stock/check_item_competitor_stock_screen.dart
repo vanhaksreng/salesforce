@@ -29,10 +29,12 @@ class CheckItemCompetitorStockScreen extends StatefulWidget {
   final SalespersonSchedule schedule;
 
   @override
-  State<CheckItemCompetitorStockScreen> createState() => _CheckItemCompetitorStockScreenState();
+  State<CheckItemCompetitorStockScreen> createState() =>
+      _CheckItemCompetitorStockScreenState();
 }
 
-class _CheckItemCompetitorStockScreenState extends State<CheckItemCompetitorStockScreen>
+class _CheckItemCompetitorStockScreenState
+    extends State<CheckItemCompetitorStockScreen>
     with MessageMixin, PermissionMixin {
   final _cubit = CheckItemCompetitorStockCubit();
   final _scrollController = ScrollController();
@@ -41,14 +43,18 @@ class _CheckItemCompetitorStockScreenState extends State<CheckItemCompetitorStoc
   void initState() {
     super.initState();
 
-    _cubit.getCompetitorItemLedgetEntry(args: {"schedule_id": widget.schedule.id});
+    _cubit.getCompetitorItemLedgetEntry(
+      args: {"schedule_id": widget.schedule.id},
+    );
 
     _cubit.getItems(page: 1);
     _scrollController.addListener(_handleScrolling);
   }
 
   bool _shouldLoadMore() {
-    return _scrollController.position.pixels == _scrollController.position.maxScrollExtent && !_cubit.state.isFetching;
+    return _scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent &&
+        !_cubit.state.isFetching;
   }
 
   void _handleScrolling() {
@@ -74,17 +80,29 @@ class _CheckItemCompetitorStockScreenState extends State<CheckItemCompetitorStoc
       useSafeArea: true,
       showDragHandle: false,
       isDismissible: true,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(scaleFontSize(16)))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(scaleFontSize(16)),
+        ),
+      ),
       builder: (BuildContext context) {
         return _buildInputQty(context, item, qtyCount);
       },
     );
   }
 
-  Future<void> _onUpdateQty(CompetitorItem item, {required double qtyCount}) async {
+  Future<void> _onUpdateQty(
+    CompetitorItem item, {
+    required double qtyCount,
+  }) async {
     try {
       await _cubit.updateCompititorItemLedgerEntry(
-        CheckCompititorItemStockArg(item: item, stockQty: qtyCount, schedule: widget.schedule, updateOnlyQty: true),
+        CheckCompititorItemStockArg(
+          item: item,
+          stockQty: qtyCount,
+          schedule: widget.schedule,
+          updateOnlyQty: true,
+        ),
       );
 
       if (!mounted) return;
@@ -98,10 +116,17 @@ class _CheckItemCompetitorStockScreenState extends State<CheckItemCompetitorStoc
     return Navigator.pushNamed(
       context,
       CheckItemCompetitorStockForm.routeName,
-      arguments: CheckCompititorItemStockArg(item: item, stockQty: 0, schedule: widget.schedule, status: status ?? ""),
+      arguments: CheckCompititorItemStockArg(
+        item: item,
+        stockQty: 0,
+        schedule: widget.schedule,
+        status: status ?? "",
+      ),
     ).then((value) {
       if (value != null && value is Map<String, dynamic>) {
-        _cubit.getCompetitorItemLedgetEntry(args: {"schedule_id": widget.schedule.id});
+        _cubit.getCompetitorItemLedgetEntry(
+          args: {"schedule_id": widget.schedule.id},
+        );
       }
     });
   }
@@ -118,19 +143,30 @@ class _CheckItemCompetitorStockScreenState extends State<CheckItemCompetitorStoc
       arguments: widget.schedule,
     ).then((value) {
       if (Helpers.shouldReload(value)) {
-        _cubit.getCompetitorItemLedgetEntry(args: {"schedule_id": widget.schedule.id});
+        _cubit.getCompetitorItemLedgetEntry(
+          args: {"schedule_id": widget.schedule.id},
+        );
       }
     });
   }
 
-  Widget _buildInputQty(BuildContext context, CompetitorItem item, double qtyCount) {
+  Widget _buildInputQty(
+    BuildContext context,
+    CompetitorItem item,
+    double qtyCount,
+  ) {
     return SafeArea(
       child: RepaintBoundary(
         child: SingleChildScrollView(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
           child: QtyInput(
             key: const ValueKey("qty"),
-            initialQty: Helpers.formatNumber(qtyCount, option: FormatType.quantity),
+            initialQty: Helpers.formatNumber(
+              qtyCount,
+              option: FormatType.quantity,
+            ),
             onChanged: (value) => _onUpdateQty(item, qtyCount: value),
             modalTitle: item.description,
             inputLabel: "Quantity count",
@@ -143,30 +179,41 @@ class _CheckItemCompetitorStockScreenState extends State<CheckItemCompetitorStoc
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocBuilder<CheckItemCompetitorStockCubit, CheckItemCompetitorStockState>(
-        bloc: _cubit,
-        builder: (BuildContext context, CheckItemCompetitorStockState state) {
-          if (state.isLoading) {
-            return const LoadingPageWidget();
-          }
+      body:
+          BlocBuilder<
+            CheckItemCompetitorStockCubit,
+            CheckItemCompetitorStockState
+          >(
+            bloc: _cubit,
+            builder:
+                (BuildContext context, CheckItemCompetitorStockState state) {
+                  if (state.isLoading) {
+                    return const LoadingPageWidget();
+                  }
 
-          return buildBody(state);
-        },
-      ),
+                  return buildBody(state);
+                },
+          ),
       persistentFooterButtons: [
         SafeArea(
-          child: BlocBuilder<CheckItemCompetitorStockCubit, CheckItemCompetitorStockState>(
-            bloc: _cubit,
-            builder: (context, state) {
-              final matching = state.cile.where((entry) => entry.status == kStatusOpen).toList();
-              return BtnWidget(
-                gradient: linearGradient,
-                horizontal: scaleFontSize(appSpace8),
-                title: "${greeting("Preview")} (${matching.length})",
-                onPressed: () => _navigateToPreviewScreen(),
-              );
-            },
-          ),
+          child:
+              BlocBuilder<
+                CheckItemCompetitorStockCubit,
+                CheckItemCompetitorStockState
+              >(
+                bloc: _cubit,
+                builder: (context, state) {
+                  final matching = state.cile
+                      .where((entry) => entry.status == kStatusOpen)
+                      .toList();
+                  return BtnWidget(
+                    gradient: linearGradient,
+                    horizontal: scaleFontSize(appSpace8),
+                    title: "${greeting("Preview")} (${matching.length})",
+                    onPressed: () => _navigateToPreviewScreen(),
+                  );
+                },
+              ),
         ),
       ],
     );
@@ -197,13 +244,20 @@ class _CheckItemCompetitorStockScreenState extends State<CheckItemCompetitorStoc
     return Expanded(
       child: ListView.builder(
         controller: _scrollController,
-        padding: EdgeInsets.symmetric(horizontal: scaleFontSize(appSpace8), vertical: scaleFontSize(appSpace8)),
+        padding: EdgeInsets.symmetric(
+          horizontal: scaleFontSize(appSpace8),
+          vertical: scaleFontSize(appSpace8),
+        ),
         itemCount: state.items.length,
         itemBuilder: (BuildContext context, int index) {
           final item = state.items[index];
 
           final matching = state.cile
-              .where((entry) => entry.itemNo == item.no && entry.scheduleId?.toString() == widget.schedule.id)
+              .where(
+                (entry) =>
+                    entry.itemNo == item.no &&
+                    entry.scheduleId?.toString() == widget.schedule.id,
+              )
               .toList();
 
           double qty = 0.0;
@@ -212,7 +266,9 @@ class _CheckItemCompetitorStockScreenState extends State<CheckItemCompetitorStoc
           if (matching.isNotEmpty) {
             qty = Helpers.toDouble(matching.first.quantity ?? 0.0);
 
-            status = matching.first.status == kStatusSubmit ? matching.first.status : "";
+            status = matching.first.status == kStatusSubmit
+                ? matching.first.status
+                : "";
           }
 
           return BoxCheckStock(

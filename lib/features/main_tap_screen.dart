@@ -17,6 +17,8 @@ import 'package:salesforce/features/report/main_page_report_screen.dart';
 import 'package:salesforce/features/stock/main_page_stock_screen.dart';
 import 'package:salesforce/features/tasks/tasks_main_cubit.dart';
 import 'package:salesforce/features/tasks/tasks_main_screen.dart';
+import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
+import 'package:salesforce/infrastructure/external_services/location/i_location_service.dart';
 import 'package:salesforce/infrastructure/services/location_service.dart';
 import 'package:salesforce/injection_container.dart' as di;
 import 'package:salesforce/realm/scheme/general_schemas.dart';
@@ -35,6 +37,7 @@ class _MainTapScreenState extends State<MainTapScreen>
   final ValueNotifier<int> _selectedIndex = ValueNotifier<int>(0);
   final appRepo = di.getIt<BaseAppRepository>();
   final svc = LocationService.instance;
+  final ILocationService _location = GeolocatorLocationService();
 
   bool _hasBackgroundPermission = false;
   Map<String, dynamic>? latestLocation;
@@ -137,6 +140,7 @@ class _MainTapScreenState extends State<MainTapScreen>
 
   // MARK: - Enhanced Background Task Initialization
   Future<void> _initBGTasks() async {
+    if (!await _location.isLocationServiceEnabled()) return;
     final String setting = await getSetting(kGpsRealTimeTracking);
 
     if (setting == kStatusNo) return;

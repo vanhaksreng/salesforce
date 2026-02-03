@@ -1,5 +1,6 @@
 import 'package:salesforce/core/data/datasources/api/base_api_data_source.dart';
 import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
+import 'package:salesforce/features/tasks/domain/entities/app_version.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 
 abstract class ApiMoreDataSource extends BaseApiDataSource {
@@ -33,4 +34,5 @@ abstract class ApiMoreDataSource extends BaseApiDataSource {
 
   Future<Map<String, dynamic>> getInvoiceHtml({Map<String, dynamic>? data});
   Future<List<SalesLine>> getSaleLinesV2({Map<String, dynamic>? data});
+  Future<AppVersion> checkAppVersion({Map<String, dynamic>? data});
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/core/domain/entities/init_app_stage.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
-import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/features/main_tap_screen.dart';
 import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
@@ -34,81 +33,42 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _syncAndNavigate() async {
     try {
       if (await _cubit.isConnectedToNetwork()) {
+        if (!mounted) return;
+
         await _cubit.loadInitialData();
+        if (!mounted) return;
+
         await Future.delayed(const Duration(milliseconds: 200));
-        // await _handleDownload(); // Replace in Process screen
+        if (!mounted) return;
+
         await _cubit.getSchedules();
       }
-      if (!mounted) return;
-      final position = await _location.getCurrentLocation(context: context);
-      await appRepo.storeLocationOffline(
-        LatLng(position.latitude, position.longitude),
-      );
+
+      // Try to get location BUT do not block startup
+      try {
+        if (!mounted) return;
+        final position = await _location.getCurrentLocation(context: context);
+
+        await appRepo.storeLocationOffline(
+          LatLng(position.latitude, position.longitude),
+        );
+      } catch (e) {
+        // Log only – app can continue without location
+        debugPrint("Location error on splash: $e");
+      }
 
       await setInitAppStage(const InitAppStage(isSyncSetting: true));
-      if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => MainTapScreen()),
-          (route) => false,
-        );
-      }
+
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainTapScreen()),
+        (route) => false,
+      );
     } catch (e) {
-      if (mounted) {
-        _showErrorDialog();
-      }
+      // if (!mounted) return;
+      // _showErrorDialog();
     }
-  }
-
-  Future<void> _handleDownload() async {
-    try {
-      if (!await _cubit.isValidApiSession()) {
-        return;
-      }
-
-      List<String> tables = ["company_information", "distribution_setup"];
-
-      final filter = tables.map((table) => '"$table"').toList();
-
-      final appSyncLogs = await _cubit.getAppSyncLogs({
-        'tableName': 'IN {${filter.join(",")}}',
-      });
-
-      if (tables.isEmpty) {
-        throw GeneralException("Cannot find any table related");
-      }
-
-      await _cubit.downloadDatas(appSyncLogs);
-    } on Exception {
-      //
-    }
-  }
-
-  void _showErrorDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sync Failed'),
-        content: const Text('Failed to sync app settings. Continue anyway?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Retry'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => MainTapScreen()),
-                (route) => false,
-              );
-            },
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
