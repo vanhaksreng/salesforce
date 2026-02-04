@@ -544,7 +544,7 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
         Thread.sleep(forTimeInterval: 0.1)
     }
 
-    private func testPrint(message) {
+    private func testPrint(_ message: String) {
         // print(message)
     }
 
@@ -724,6 +724,7 @@ public class ThermalPrinterPlugin: NSObject, FlutterPlugin {
                             details: nil))
                 }
             case .waiting(let error):
+                break
             default:
                 break
             }
