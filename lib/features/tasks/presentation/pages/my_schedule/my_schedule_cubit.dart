@@ -50,6 +50,19 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
     );
   }
 
+  Future<bool> isCustomerExisted(SalespersonSchedule schedule) async {
+    final customerResult = await _repos.getCustomer(
+      no: schedule.customerNo ?? "",
+    );
+
+    Customer? customer = await customerResult.fold(
+      (failure) => null,
+      (customer) => customer,
+    );
+
+    return customer != null;
+  }
+
   Future<void> pendingScheduleValidate() async {
     if (state.userSetup == null) {
       throw GeneralException("User setup not found");

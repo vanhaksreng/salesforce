@@ -65,7 +65,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
       );
 
       if (customer == null) {
-        throw Exception("Customer not found.");
+        throw GeneralException("Customer not found.");
       }
 
       final saleNo = Helpers.getSaleDocumentNo(
@@ -170,9 +170,12 @@ class SaleFormCubit extends Cubit<SaleFormState>
               : 0,
         ),
       );
-    } catch (error) {
-      Logger.log(error);
+    } on GeneralException catch (error) {
       emit(stableState.copyWith(isLoading: false));
+      showWarningMessage(error.message);
+    } catch (error) {
+      emit(stableState.copyWith(isLoading: false));
+      showWarningMessage(error.toString());
     }
   }
 
