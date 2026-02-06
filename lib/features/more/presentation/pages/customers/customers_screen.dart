@@ -22,6 +22,7 @@ import 'package:salesforce/core/presentation/widgets/text_btn_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_form_field_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/presentation/pages/components/customer_card_box.dart';
 import 'package:salesforce/features/more/presentation/pages/customer_detail/customer_detail_screen.dart';
@@ -83,12 +84,24 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
     );
   }
 
-  _filter(String text) {
-    _cubit.getCustomers(
-      page: 1,
-      params: {'name': "LIKE %$text%"},
-      context: context,
-    );
+  void filter(String value) {
+    final l = LoadingOverlay.of(context);
+    try {
+      l.show();
+      _cubit.getCustomers(
+        page: 1,
+        params: {
+          "_raw_query":
+              '(name CONTAINS[c] "$value" OR no CONTAINS[c] "$value")',
+        },
+        // params: {'name': "LIKE %$text%"},
+        context: context,
+      );
+      l.hide();
+    } catch (e) {
+      l.hide();
+      Logger.log(e);
+    }
   }
 
   void _handleDownload() async {
@@ -351,7 +364,8 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
           ),
         ],
         bottom: SearchWidget(
-          onSubmitted: (value) async => _filter(value),
+          onChanged: (value) => filter(value),
+          onSubmitted: (value) => filter(value),
           showPrefixIcon: true,
           suffixIcon: Padding(
             padding: EdgeInsets.symmetric(

@@ -234,7 +234,9 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> with AppMixin {
     _cubit.loadCustomers(
       context: context,
       page: 1,
-      params: {"name": 'LIKE $value%'},
+      params: {
+        "_raw_query": '(name CONTAINS[c] "$value" OR no CONTAINS[c] "$value")',
+      },
     );
   }
 

@@ -112,7 +112,9 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
     _cubit.getCustomers(
       context: context,
       page: 1,
-      params: {"name": 'LIKE $value%'},
+      params: {
+        "_raw_query": '(name CONTAINS[c] "$value" OR no CONTAINS[c] "$value")',
+      },
     );
   }
 
