@@ -184,7 +184,10 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
   Future<void> loadSalesData() async {
     await _handleResponse(
       () => _taskRepo.getSaleHeaders(
-        params: {'is_sync': kStatusNo, 'status': kStatusApprove},
+        params: {
+          'is_sync': kStatusNo,
+          // 'status': 'IN {$kStatusApprove,$kStatusOpen,$kNe}',
+        },
       ),
       (List<SalesHeader> data) {
         return state.copyWith(salesHeaders: data);
