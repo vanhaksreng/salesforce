@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
@@ -50,9 +51,21 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
 
   Future<void> _initCamera() async {
     try {
+      final status = await Permission.camera.request();
+
+      if (!status.isGranted) {
+        if (mounted) {
+          showErrorMessage("Camera permission is required to scan QR codes");
+        }
+        return;
+      }
+
       _cameras = await availableCameras();
 
       if (_cameras.isEmpty) {
+        if (mounted) {
+          showErrorMessage("No camera found on this device");
+        }
         return;
       }
 
@@ -64,8 +77,9 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
         enableAudio: false,
         imageFormatGroup: Platform.isAndroid
             ? ImageFormatGroup.nv21
-            : ImageFormatGroup.bgra8888, // Changed for iOS
+            : ImageFormatGroup.bgra8888,
       );
+
       await cameraController!.initialize();
 
       if (Platform.isIOS) {
@@ -77,8 +91,43 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
       if (mounted) setState(() {});
     } catch (e) {
       Logger.log(e.toString());
+      if (mounted) {
+        showErrorMessage("Failed to initialize camera");
+      }
     }
   }
+
+  // Future<void> _initCamera() async {
+  //   try {
+  //     _cameras = await availableCameras();
+
+  //     if (_cameras.isEmpty) {
+  //       return;
+  //     }
+
+  //     final camera = _cameras.first;
+
+  //     cameraController = CameraController(
+  //       camera,
+  //       ResolutionPreset.high,
+  //       enableAudio: false,
+  //       imageFormatGroup: Platform.isAndroid
+  //           ? ImageFormatGroup.nv21
+  //           : ImageFormatGroup.bgra8888, // Changed for iOS
+  //     );
+  //     await cameraController!.initialize();
+
+  //     if (Platform.isIOS) {
+  //       await Future.delayed(const Duration(milliseconds: 500));
+  //     }
+
+  //     await cameraController!.startImageStream(_processCameraImage);
+
+  //     if (mounted) setState(() {});
+  //   } catch (e) {
+  //     Logger.log(e.toString());
+  //   }
+  // }
 
   Future<void> _processCameraImage(CameraImage image) async {
     if (_isProcessing || !mounted) return;
