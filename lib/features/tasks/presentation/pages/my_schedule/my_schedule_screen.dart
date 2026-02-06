@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -106,24 +108,42 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     return LatLng(current.latitude, current.longitude);
   }
 
-  _navigateToProcessScreen(SalespersonSchedule schedule, String customerNo) {
-    if (schedule.status != kStatusCheckIn) {
-      Helpers.showMessage(
-        msg: greeting("please_check_in_before_process"),
-        status: MessageStatus.warning,
+  Future<void> isCustomerExisted(SalespersonSchedule schedule) async {
+    if (!await _cubit.isCustomerExisted(schedule)) {
+      throw GeneralException(
+        "This schedule isn't assigned to you. Customer No. [${schedule.customerNo}] isn't in your list. Please download customers.",
       );
     }
+  }
 
-    Navigator.pushNamed(
-      context,
-      ProcessScreen.routeName,
-      arguments: CheckStockArgs(schedule: schedule, customerNo: customerNo),
-    ).then((value) {
-      if (value == null) {
-        return;
+  void _navigateToProcessScreen(
+    SalespersonSchedule schedule,
+    String customerNo,
+  ) async {
+    try {
+      if (schedule.status != kStatusCheckIn) {
+        throw GeneralException(greeting("please_check_in_before_process"));
       }
-      _cubit.getSaleLine(scheduleDate);
-    });
+
+      await isCustomerExisted(schedule);
+
+      if (!mounted) return;
+
+      Navigator.pushNamed(
+        context,
+        ProcessScreen.routeName,
+        arguments: CheckStockArgs(schedule: schedule, customerNo: customerNo),
+      ).then((value) {
+        if (value == null) {
+          return;
+        }
+        _cubit.getSaleLine(scheduleDate);
+      });
+    } on GeneralException catch (e) {
+      showSuccessMessage(e.message);
+    } catch (e) {
+      showErrorMessage();
+    }
   }
 
   Future<void> checkInitWithLocation() async {
@@ -134,6 +154,7 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     final l = LoadingOverlay.of(context);
     l.show();
     try {
+      await isCustomerExisted(schedule);
       await checkInitWithLocation();
       await _cubit.pendingScheduleValidate();
 

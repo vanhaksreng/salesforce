@@ -76,10 +76,12 @@ class ProcessState {
       countSaleInvoice: countSaleInvoice ?? this.countSaleInvoice,
       countSaleCreditMemo: countSaleCreditMemo ?? this.countSaleCreditMemo,
       countCollection: countCollection ?? this.countCollection,
-      countCompetitorPromotion: countCompetitorPromotion ?? this.countCompetitorPromotion,
+      countCompetitorPromotion:
+          countCompetitorPromotion ?? this.countCompetitorPromotion,
       countMerchandising: countMerchandising ?? this.countMerchandising,
       countPosm: countPosm ?? this.countPosm,
-      countItemPrizeRedeption: countItemPrizeRedeption ?? this.countItemPrizeRedeption,
+      countItemPrizeRedeption:
+          countItemPrizeRedeption ?? this.countItemPrizeRedeption,
       actionState: actionState ?? this.actionState,
     );
   }
