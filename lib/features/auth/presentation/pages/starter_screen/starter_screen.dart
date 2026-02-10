@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
@@ -8,8 +9,10 @@ import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dar
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
+import 'package:salesforce/crash_report.dart';
 import 'package:salesforce/features/auth/presentation/pages/login/login_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/server_option/server_option_cubit.dart';
+import 'package:salesforce/features/auth/presentation/pages/server_option/server_option_state.dart';
 import 'package:salesforce/features/auth/presentation/pages/starter_screen/scanner_screen.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/localization/trans.dart';
@@ -32,7 +35,7 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
     super.initState();
   }
 
-  _navigateToNextScreen(String url) async {
+  void _navigateToNextScreen(String url) async {
     final l = LoadingOverlay.of(context);
     l.show();
 
@@ -77,6 +80,7 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
       if (_cubit.state.servers.isEmpty) {
         await _cubit.getServerLists();
       }
+      Future.delayed(Duration(milliseconds: 200));
 
       if (_cubit.state.servers.isEmpty) {
         throw GeneralException(
@@ -93,8 +97,12 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
       if (!mounted) return;
 
       Navigator.pushNamed(context, ScannerScreen.routeName).then((url) {
-        if (url != null && url is String) {
-          _navigateToNextScreen(url);
+        try {
+          if (url != null && url is String) {
+            _navigateToNextScreen(url);
+          }
+        } catch (e) {
+          CrashReport.sendCrashReport(e.toString());
         }
       });
     } on GeneralException catch (e) {
@@ -108,11 +116,16 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: _buildBody(context),
+      body: BlocBuilder<ServerOptionCubit, ServerOptionState>(
+        bloc: _cubit,
+        builder: (context, state) {
+          return _buildBody(state);
+        },
+      ),
     );
   }
 
-  Widget _buildBody(BuildContext context) {
+  Widget _buildBody(ServerOptionState state) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -169,6 +182,7 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
                     "Get started by scanning your organization's QR code for secure, instant access to your business account.",
               ),
               BtnWidget(
+                isLoading: state.isLoading,
                 gradient: linearGradient,
                 onPressed: () => _pushToQrScanner(),
                 icon: Row(
