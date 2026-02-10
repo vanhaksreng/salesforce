@@ -341,6 +341,9 @@ class GeolocatorLocationService implements ILocationService {
 
     // Permanently denied
     if (permission == LocationPermission.deniedForever) {
+
+      if(!context.mounted) return;
+
       Helpers.showDialogAction(
         context,
         labelAction: "Enable Location Permission",

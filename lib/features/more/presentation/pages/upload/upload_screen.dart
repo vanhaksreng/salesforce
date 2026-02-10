@@ -243,7 +243,7 @@ class _UploadScreenState extends State<UploadScreen> {
       shrinkWrap: true,
       padding: EdgeInsets.only(bottom: 15.scale),
       physics: const NeverScrollableScrollPhysics(),
-      separatorBuilder: (_, __) => Padding(
+      separatorBuilder: (_, _) => Padding(
         padding: EdgeInsets.symmetric(vertical: 15.scale),
         child: Hr(height: 1.scale, color: grey20, width: double.infinity),
       ),
@@ -830,7 +830,7 @@ class _UploadScreenState extends State<UploadScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
-      separatorBuilder: (_, __) => Padding(
+      separatorBuilder: (_, _) => Padding(
         padding: EdgeInsets.symmetric(vertical: 15.scale),
         child: Hr(height: 1.scale, color: grey20, width: double.infinity),
       ),
