@@ -52,11 +52,10 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
   Future<void> _initCamera() async {
     try {
       final status = await Permission.camera.request();
+      if (!mounted) return;
 
       if (!status.isGranted) {
-        if (mounted) {
-          showErrorMessage("Camera permission is required to scan QR codes");
-        }
+        showErrorMessage("Camera permission is required to scan QR codes");
         return;
       }
 
