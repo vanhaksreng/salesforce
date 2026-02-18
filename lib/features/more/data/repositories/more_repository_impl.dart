@@ -231,7 +231,8 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     try {
       List<SalesLine> lines = [];
       String isSync = param?["isSync"];
-      if (await _networkInfo.isConnected) {
+
+      if (await _networkInfo.isConnected && isSync == kStatusYes) {
         lines = await _remote.getSaleLinesV2(data: param);
 
         if (isSync == kStatusYes) {
@@ -243,14 +244,18 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
         args: {"no": param?["document_no"]},
       );
 
-      lines = await _local.getSaleLines(args: {"document_no": header?.no});
+      if(header == null) {
+       throw GeneralException("Sale header not found for document_no: ${param?["document_no"]}");
+      }
 
-      final saleDetail = SaleDetail(header: header!, lines: lines);
+      lines = await _local.getSaleLines(args: {"document_no": header.no});
+
+      final saleDetail = SaleDetail(header: header, lines: lines);
 
       return Right(saleDetail);
     } on GeneralException catch (e) {
       return Left(CacheFailure(e.message));
-    } catch (_) {
+    } catch (e) {
       rethrow;
     }
   }

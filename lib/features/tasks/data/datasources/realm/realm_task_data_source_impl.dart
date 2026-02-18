@@ -819,10 +819,7 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
 
       if (posSaleHeader.documentType != kSaleCreditMemo) {
         for (final line in saleLines) {
-          double qty =
-              Helpers.formatNumberDb(line.quantity) *
-              Helpers.formatNumberDb(line.qtyPerUnitOfMeasure);
-
+          double qty = Helpers.formatNumberDb(line.quantity) * Helpers.formatNumberDb(line.qtyPerUnitOfMeasure);
           realm.add(
             ItemLedgerEntry(
               Helpers.toStrings(line.no ?? ""),

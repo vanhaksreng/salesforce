@@ -848,9 +848,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         orderDateTime: DateTime.now().toDateString(),
       );
 
-      // print(saleHeader.amount);
-      // print(arg.paymentAmount);
-
       int lineNo = 0;
       for (var line in posLines) {
         lineNo += 1;
@@ -923,12 +920,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
           ),
         );
       }
-      if (await _networkInfo.isConnected) {
-        await _processUploadSale(
-          salesHeaders: [saleHeader],
-          salesLines: saleLines,
-        );
-      }
 
       await _local.processCheckout(
         saleHeader: saleHeader,
@@ -936,6 +927,13 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         posSaleHeader: posHeader,
         posSaleLines: posLines,
       );
+
+      if (await _networkInfo.isConnected) {
+        // await _processUploadSale(
+        //   salesHeaders: [saleHeader],
+        //   salesLines: saleLines,
+        // ); TODO
+      }
 
       return const Right(true);
     } on GeneralException catch (e) {
@@ -951,6 +949,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
   }) async {
     try {
       List<Map<String, dynamic>> jsonData = [];
+
       for (var sale in salesHeaders) {
         final lines = salesLines.where((e) => e.documentNo == sale.no).toList();
         if (lines.isNotEmpty) {
@@ -2231,7 +2230,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       return Left(ServerFailure(e.toString()));
     }
   }
-  
+
   @override
   Future<void> cleanupSchedules() {
     return _local.cleanupSchedules();

@@ -354,7 +354,7 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
       if (!_validateSaleForm()) {
         return false;
       }
-      print("==========6789=========");
+      
       //Prepare sale data
       final saleData = _prepareSaleData();
 

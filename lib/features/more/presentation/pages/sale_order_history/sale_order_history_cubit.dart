@@ -51,7 +51,7 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
               .toList();
 
           header.totalAmtLine = headerLines
-              .fold<double>(0.0, (sum, line) => sum + (line.amount ?? 0.0))
+              .fold<double>(0.0, (sum, line) => sum + (line.amountIncludingVat ?? 0.0))
               .toString();
         }
         emit(

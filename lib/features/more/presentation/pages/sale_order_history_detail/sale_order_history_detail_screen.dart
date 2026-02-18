@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
+import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
@@ -77,8 +78,9 @@ class _SaleOrderHistoryDetailScreenState
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              ReceiptImin(companyInfo: company, detail: detail),
+          builder: (context) {
+            return ReceiptImin(companyInfo: company, detail: detail);
+          },
         ),
       );
     } else {
@@ -86,8 +88,9 @@ class _SaleOrderHistoryDetailScreenState
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              ReceiptPreviewScreen(companyInfo: company, detail: detail),
+          builder: (context) {
+            return ReceiptPreviewScreen(companyInfo: company, detail: detail);
+          },
         ),
       );
     }
@@ -119,14 +122,29 @@ class _SaleOrderHistoryDetailScreenState
           BlocBuilder<SaleOrderHistoryDetailCubit, SaleOrderHistoryDetailState>(
             bloc: _cubit,
             builder: (context, state) {
-              if (state.isLoading) return const LoadingPageWidget();
+              if (state.isLoading) {
+                return const LoadingPageWidget();
+              }
+
               final record = state.record;
+              final header = record?.header;
+              final lines = record?.lines ?? [];
+
+              final lineAmount = lines.fold<double>(
+                0.0,
+                (sum, line) => sum + Helpers.toDouble(line.amountIncludingVat),
+              );
+
               return ListView(
                 padding: const EdgeInsets.all(appSpace),
                 children: [
                   SaleHistoryDetailBox(
-                    header: record?.header,
-                    lines: record?.lines ?? [],
+                    header: header,
+                    lines: lines,
+                    lineAmount: Helpers.formatNumber(
+                      lineAmount,
+                      option: FormatType.amount,
+                    ),
                   ),
                 ],
               );

@@ -379,12 +379,14 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
       final localLinesToDelete = realm.query<SalesLine>(
         'document_no IN {${headerNo.join(",")}}',
       );
+
       realm.deleteMany(localLinesToDelete);
 
       // Delete headers
       final headersToDelete = realm.query<SalesHeader>(
         'no IN {${headerNo.join(",")}}',
       );
+      
       realm.deleteMany(headersToDelete);
 
       // Add new data

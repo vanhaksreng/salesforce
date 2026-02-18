@@ -29,7 +29,7 @@ class RealmConfig {
     String realmPath = path.join(documents.path, 'ClearViewSalesforce.realm');
 
     if (kDebugMode && Platform.isIOS && kDbPath.isNotEmpty) {
-      // realmPath = kDbPath;
+      realmPath = kDbPath; //TODO : Remove this when the issue with iOS simulator is resolved
     }
 
     var config = Configuration.local(

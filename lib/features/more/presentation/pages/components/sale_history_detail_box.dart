@@ -19,9 +19,16 @@ import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class SaleHistoryDetailBox extends StatelessWidget {
-  const SaleHistoryDetailBox({super.key, this.header, required this.lines});
+  const SaleHistoryDetailBox({
+    super.key,
+    this.header,
+    required this.lines,
+    this.lineAmount,
+  });
+
   final SalesHeader? header;
   final List<SalesLine> lines;
+  final String? lineAmount;
 
   @override
   Widget build(BuildContext context) {
@@ -112,12 +119,12 @@ class SaleHistoryDetailBox extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
                 TextWidget(
-                  text: header?.amount != null
-                      ? Helpers.formatNumber(
-                          header?.amount,
-                          option: FormatType.amount,
-                        )
-                      : "0.00",
+                  text:
+                      lineAmount ??
+                      Helpers.formatNumber(
+                        header?.amount,
+                        option: FormatType.amount,
+                      ),
                   fontSize: 20,
                   color: mainColor,
                   fontWeight: FontWeight.bold,
