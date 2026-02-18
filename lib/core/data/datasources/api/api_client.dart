@@ -68,6 +68,45 @@ class ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> get(
+    String endpoint, {
+    Map<String, String>? headers,
+    String? customUrl,
+  }) async {
+    await _checkNetworkConnection();
+
+    final defaultHeaders = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      final r = await client.get(
+        await _getBaseUrl(customUrl: customUrl, endpoint: endpoint),
+        headers: {...defaultHeaders, ...?headers},
+      );
+
+      if (r.statusCode == 500) {
+        throw GeneralException('Cannot connect to server: ${r.statusCode}');
+      }
+
+      if (r.statusCode != 200) {
+        throw GeneralException('Requested failed with : ${r.statusCode}');
+      }
+
+      final responseData = json.decode(r.body);
+      if (responseData['status'] != 'success') {
+        throw GeneralException(responseData['message'] ?? 'Unknown error');
+      }
+
+      return responseData;
+    } on NetworkException catch (_) {
+      throw GeneralException("No internet connection");
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> _checkNetworkConnection() async {
     if (!await networkInfo.isConnected) {
       throw NetworkException();

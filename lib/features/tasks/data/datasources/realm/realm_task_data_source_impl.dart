@@ -990,4 +990,24 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
       return true;
     });
   }
+
+  @override
+  Future<void> cleanupSchedules() async {
+    await _storage.writeTransaction((realm) {
+
+      final allSchedules = realm
+          .query<SalespersonSchedule>("id == '' OR id BEGINSWITH ' '")
+          .toList();
+
+      final toDelete = allSchedules
+          .where((schedule) => (schedule.id).trim().isEmpty)
+          .toList();
+
+      if (toDelete.isNotEmpty) {
+        realm.deleteMany(toDelete);
+      }
+
+      return true;
+    });
+  }
 }

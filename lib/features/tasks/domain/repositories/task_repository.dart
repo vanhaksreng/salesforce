@@ -26,6 +26,8 @@ abstract class TaskRepository extends BaseAppRepository {
     Map<String, dynamic>? param,
   });
 
+  Future<void> cleanupSchedules();
+
   Future<Either<Failure, SalespersonSchedule?>> getSchedule({
     Map<String, dynamic>? param,
   });
@@ -265,4 +267,5 @@ abstract class TaskRepository extends BaseAppRepository {
   Future<Either<Failure, List<SalespersonSchedule>>> getTeamSchedules({
     Map<String, dynamic>? param,
   });
+  
 }

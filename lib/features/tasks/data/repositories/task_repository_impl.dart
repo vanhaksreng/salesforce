@@ -2231,4 +2231,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       return Left(ServerFailure(e.toString()));
     }
   }
+  
+  @override
+  Future<void> cleanupSchedules() {
+    return _local.cleanupSchedules();
+  }
 }

@@ -96,38 +96,6 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
     }
   }
 
-  // Future<void> _initCamera() async {
-  //   try {
-  //     _cameras = await availableCameras();
-
-  //     if (_cameras.isEmpty) {
-  //       return;
-  //     }
-
-  //     final camera = _cameras.first;
-
-  //     cameraController = CameraController(
-  //       camera,
-  //       ResolutionPreset.high,
-  //       enableAudio: false,
-  //       imageFormatGroup: Platform.isAndroid
-  //           ? ImageFormatGroup.nv21
-  //           : ImageFormatGroup.bgra8888, // Changed for iOS
-  //     );
-  //     await cameraController!.initialize();
-
-  //     if (Platform.isIOS) {
-  //       await Future.delayed(const Duration(milliseconds: 500));
-  //     }
-
-  //     await cameraController!.startImageStream(_processCameraImage);
-
-  //     if (mounted) setState(() {});
-  //   } catch (e) {
-  //     Logger.log(e.toString());
-  //   }
-  // }
-
   Future<void> _processCameraImage(CameraImage image) async {
     if (_isProcessing || !mounted) return;
     _isProcessing = true;

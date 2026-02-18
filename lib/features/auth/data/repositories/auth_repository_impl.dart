@@ -37,11 +37,6 @@ class AuthRepositoryImpl extends BaseAppRepositoryImpl
 
       if (await _networkInfo.isConnected) {
         final servers = await _remote.getServerLists();
-
-        // if (localServers.length == servers.length) {
-        //   return Right(localServers);
-        // }
-
         _local.storeServers(servers);
 
         return Right(servers);

@@ -11,10 +11,9 @@ class ApiAuthDataSourceImpl extends BaseApiDataSourceImpl
   @override
   Future<List<AppServer>> getServerLists() async {
     try {
-      final response = await apiClient.post(
+      final response = await apiClient.get(
         'v2/server-lists',
         customUrl: kDomain,
-        body: await getParams(),
       );
 
       final List<AppServer> records = [];

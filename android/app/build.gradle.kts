@@ -56,8 +56,8 @@ android {
         //versionCode = flutterVersionCode
         //versionName = flutter.versionName
 
-        versionCode = 13010001
-        versionName = "13.0.1"
+        versionCode = 13020000
+        versionName = "13.0.2"
 
         ndk {
             abiFilters += setOf(

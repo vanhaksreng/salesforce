@@ -9,7 +9,7 @@ import 'package:salesforce/injection_container.dart';
 
 class ServerOptionCubit extends Cubit<ServerOptionState>
     with MessageMixin, AppMixin {
-  ServerOptionCubit() : super(const ServerOptionState(isLoading: true));
+  ServerOptionCubit() : super(const ServerOptionState(isLoading: false));
 
   final _appRepos = getIt<AuthRepository>();
   final _baseRepo = getIt<BaseAppRepository>();

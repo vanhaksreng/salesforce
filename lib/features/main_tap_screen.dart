@@ -64,12 +64,18 @@ class _MainTapScreenState extends State<MainTapScreen>
   }
 
   void _startTimers() async {
+
+    // Stop any existing timers before starting new ones
+    _stopTimers();
+
     final auth = di.getAuth();
     if (auth == null) {
       return;
     }
+
     final String setting = await getSetting(kGpsRealTimeTracking);
 
+    // Initial sync and heartbeat when app starts/resumes and gps real time tracking is enabled
     if (setting == kStatusYes) {
       await appRepo.syncOfflineLocationToBackend();
       await appRepo.heartbeatStatus(
@@ -141,18 +147,10 @@ class _MainTapScreenState extends State<MainTapScreen>
   // MARK: - Enhanced Background Task Initialization
   Future<void> _initBGTasks() async {
     if (!await _location.isLocationServiceEnabled()) return;
+    
     final String setting = await getSetting(kGpsRealTimeTracking);
 
     if (setting == kStatusNo) return;
-    // svc.onLocation.listen((loc) async {
-    //   try {
-    //     await appRepo.storeLocationOffline(
-    //       LatLng(loc['latitude'], loc['longitude']),
-    //     );
-    //   } catch (e) {
-    //     Logger.log("Error processing GPS location: $e");
-    //   }
-    // });
 
     // Enhanced event listener
     svc.onEvent.listen((e) {
@@ -173,7 +171,6 @@ class _MainTapScreenState extends State<MainTapScreen>
     });
 
     await _requestPermissions();
-
     await _startTracking();
   }
 

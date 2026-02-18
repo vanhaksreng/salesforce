@@ -92,7 +92,6 @@ class _TradeB2bState extends State<TradeB2b> {
   final language = "en";
   final String languageCode = "EN";
   final _printerCubit = AdministrationCubit();
-  // final _printerService = BluetoothPrinterService();
 
   @override
   void initState() {
@@ -130,8 +129,6 @@ class _TradeB2bState extends State<TradeB2b> {
       onGenerateRoute: appRouter,
       builder: (context, child) {
         Trans().init(context);
-        // SizeConfig().init(context);
-
         return child ?? const SizedBox.shrink();
       },
       navigatorKey: kAppNavigatorKey,
@@ -139,12 +136,3 @@ class _TradeB2bState extends State<TradeB2b> {
     );
   }
 }
-
-// class MyHttpOverrides extends HttpOverrides {
-//   @override
-//   HttpClient createHttpClient(SecurityContext? context) {
-//     return super.createHttpClient(context)
-//       ..badCertificateCallback =
-//           (X509Certificate cert, String host, int port) => true;
-//   }
-// }

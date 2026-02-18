@@ -32,6 +32,8 @@ abstract class RealmTaskDataSource extends BaseRealmDataSource {
     List<CustomerItemLedgerEntry> customerItemLe,
   );
 
+  Future<void> cleanupSchedules();
+
   Future<List<CompetitorItemLedgerEntry>> submitCheckStockCometitorItem(
     List<CompetitorItemLedgerEntry> compeItemLe,
   );

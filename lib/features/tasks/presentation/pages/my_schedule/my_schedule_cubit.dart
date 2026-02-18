@@ -86,6 +86,10 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
     }
   }
 
+  Future<void> cleanupSchedules() async {
+    await _repos.cleanupSchedules();
+  }
+
   Future<void> getSchedules(
     BuildContext context,
     DateTime date, {
@@ -96,6 +100,8 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
     try {
       emit(state.copyWith(isLoading: isLoading));
 
+      await cleanupSchedules();
+
       final response = await _repos.getLocalSchedules(
         param: {
           "status": state.selectedStatus == "All" ? null : state.selectedStatus,
@@ -104,24 +110,26 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
           'salesperson_code': state.userSetup?.salespersonCode,
         },
       );
+
       if (!context.mounted) return;
       Position? current;
 
       try {
         current = await _location.getCurrentLocation(context: context);
       } catch (e) {
-        emit(state.copyWith(isLoading: false));
         Logger.log("Location error: $e");
       }
 
       response.fold((failure) => throw Exception(failure.message), (schedules) {
-        for (var s in schedules) {
-          s.distance = Helpers.calculateDistanceInMeters(
-            current?.latitude ?? 0.0,
-            current?.longitude ?? 0.0,
-            s.latitude ?? 0,
-            s.longitude ?? 0,
-          );
+        if (current != null) {
+          for (var s in schedules) {
+            s.distance = Helpers.calculateDistanceInMeters(
+              current.latitude,
+              current.longitude,
+              s.latitude ?? 0,
+              s.longitude ?? 0,
+            );
+          }
         }
 
         emit(

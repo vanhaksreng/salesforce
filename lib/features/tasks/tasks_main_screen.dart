@@ -261,13 +261,13 @@ class _TaskScreenState extends State<TasksMainScreen>
               const TeamSchedultScreen(),
             ],
           ),
-          floatingActionButton: optionView(),
+          floatingActionButton: _optionView(),
         );
       },
     );
   }
 
-  optionView() {
+  Widget? _optionView() {
     return CustomSpeedDial(
       children: [
         SpeedDialChild(
