@@ -817,9 +817,10 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
       realm.add(saleHeader);
       realm.addAll(saleLines);
 
-      if (posSaleHeader.documentType != kSaleCreditMemo) {
+      if (posSaleHeader.documentType == kSaleInvoice) {
         for (final line in saleLines) {
           double qty = Helpers.formatNumberDb(line.quantity) * Helpers.formatNumberDb(line.qtyPerUnitOfMeasure);
+
           realm.add(
             ItemLedgerEntry(
               Helpers.toStrings(line.no ?? ""),
@@ -832,13 +833,8 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
 
           final item = realm.find<Item>(line.no);
           if (item != null) {
-            final entries = realm.query<ItemLedgerEntry>('item_no = \$0', [
-              line.no,
-            ]);
-            final endingQty = entries.fold<double>(
-              0,
-              (sum, entry) => sum + (entry.quantity),
-            );
+            final entries = realm.query<ItemLedgerEntry>('item_no = \$0', [line.no]);
+            final endingQty = entries.fold<double>(0,(sum, entry) => sum + (entry.quantity));
 
             item.inventory = endingQty;
             realm.add(item, update: true);

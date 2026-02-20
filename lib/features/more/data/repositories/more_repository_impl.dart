@@ -52,44 +52,6 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
        _local = local,
        _networkInfo = networkInfo;
 
-  // @override
-  // Future<Either<Failure, RecordSaleHeader>> getSaleHeaders({
-  //   Map<String, dynamic>? param,
-  //   int page = 1,
-  //   bool fetchingApi = true,
-  // }) async {
-  //   try {
-  //     final localSale = await _local.getSaleHeaders(args: param);
-
-  //     if (fetchingApi && await _networkInfo.isConnected) {
-  //       param?['page'] = page;
-  //       final Map<String, dynamic> cloudSales = await _remote.getSaleHeaders(
-  //         data: param,
-  //       );
-
-  //       final List<SalesHeader> records = [];
-  //       for (var item in cloudSales["records"] ?? []) {
-  //         records.add(SalesHeaderExtension.fromMap(item));
-  //       }
-
-  //       return Right(
-  //         RecordSaleHeader(
-  //           saleHeaders: records,
-  //           currentPage: cloudSales["currentPage"] ?? 1,
-  //           lastPage: cloudSales["lastPage"] ?? 1,
-  //         ),
-  //       );
-  //     }
-
-  //     return Right(RecordSaleHeader(saleHeaders: localSale));
-  //   } on GeneralException catch (e) {
-  //     return Left(CacheFailure(e.message));
-  //   } catch (_) {
-  //     rethrow;
-  //   }
-  // }
-
-  //UPdate code
   @override
   Future<Either<Failure, RecordSaleHeader>> getSaleHeaders({
     Map<String, dynamic>? param,
@@ -97,38 +59,41 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
-      param?.remove("page");
+      //TODO
+      // param?.remove("page");
 
-      if (fetchingApi && await _networkInfo.isConnected) {
-        final localSale = await _local.getSaleHeaders(args: param, page: page);
-        param?['page'] = page;
-        final cloudSales = await _remote.getSaleHeaders(data: param);
+      // if (fetchingApi && await _networkInfo.isConnected) {
+      //   final localSale = await _local.getSaleHeaders(args: param, page: page);
 
-        final List<SalesHeader> cloudRecords = [];
-        for (var item in cloudSales["records"] ?? []) {
-          cloudRecords.add(SalesHeaderExtension.fromMap(item));
-        }
+      //   param?['page'] = page;
+      //   final cloudSales = await _remote.getSaleHeaders(data: param);
 
-        final cloudIds = cloudRecords.map((e) => e.no).toSet();
-        final appID = cloudRecords.map((e) => e.appId).toSet();
-        List<SalesHeader> recordsToDelete = [];
-        recordsToDelete = localSale
-            .where(
-              (local) =>
-                  cloudIds.contains(local.no) &&
-                  local.isSync != kStatusYes &&
-                  appID.contains(local.appId),
-            )
-            .toList();
+      //   final List<SalesHeader> cloudRecords = [];
+      //   for (var item in cloudSales["records"] ?? []) {
+      //     cloudRecords.add(SalesHeaderExtension.fromMap(item));
+      //   }
 
-        if (recordsToDelete.isNotEmpty) {
-          await _local.deletSaleHeader(saleHeader: recordsToDelete);
-        }
+      //   final cloudIds = cloudRecords.map((e) => e.no).toSet();
+      //   final appID = cloudRecords.map((e) => e.appId).toSet();
+      //   List<SalesHeader> recordsToDelete = [];
+      //   recordsToDelete = localSale
+      //       .where(
+      //         (local) =>
+      //             cloudIds.contains(local.no) &&
+      //             local.isSync != kStatusYes &&
+      //             appID.contains(local.appId),
+      //       )
+      //       .toList();
 
-        await _local.storeSaleHeaders(saleHeader: cloudRecords);
-      }
+      //   if (recordsToDelete.isNotEmpty) {
+      //     await _local.deletSaleHeader(saleHeader: recordsToDelete);
+      //   }
 
-      param?.remove("page");
+      //   await _local.storeSaleHeaders(saleHeader: cloudRecords);
+      // }
+
+      // param?.remove("page");
+
       final updatedLocalSale = await _local.getSaleHeaders(
         args: param,
         page: page,

@@ -15,6 +15,8 @@ class SaleOrderHistoryState {
   final bool isFetching;
   final String? htmlContent;
   final Map<String, double> headerTotals;
+  final bool canSaleWithSchedult;
+  final bool hasPendingUpload;
 
   const SaleOrderHistoryState({
     this.isLoading = false,
@@ -31,6 +33,8 @@ class SaleOrderHistoryState {
     this.isFetching = false,
     this.htmlContent,
     this.headerTotals = const {},
+    this.canSaleWithSchedult = false,
+    this.hasPendingUpload = false,
   });
 
   SaleOrderHistoryState copyWith({
@@ -48,6 +52,8 @@ class SaleOrderHistoryState {
     bool? isFetching,
     String? htmlContent,
     Map<String, double>? headerTotals,
+    bool? canSaleWithSchedult,
+    bool? hasPendingUpload,
   }) {
     return SaleOrderHistoryState(
       isLoading: isLoading ?? this.isLoading,
@@ -64,6 +70,8 @@ class SaleOrderHistoryState {
       isFetching: isFetching ?? this.isFetching,
       htmlContent: htmlContent ?? this.htmlContent,
       headerTotals: headerTotals ?? this.headerTotals,
+      canSaleWithSchedult: canSaleWithSchedult ?? this.canSaleWithSchedult,
+      hasPendingUpload: hasPendingUpload ?? this.hasPendingUpload,
     );
   }
 }

@@ -47,21 +47,17 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
   DateTime? initialFromDate;
   String selectedDate = "This Week";
   String status = "All";
-  String isShowAddCustomer = kStatusYes;
 
   @override
   void initState() {
     super.initState();
     initialFromDate = DateTime.now().firstDayOfWeek();
     initialToDate = DateTime.now().endDayOfWeek();
-    getShowAddCustomer();
+    _cubit.canSaleWithoutSchedult();
+    _cubit.checkPendingUpload();
     _getSaleOrder();
 
     _scrollController.addListener(_handleScrolling);
-  }
-
-  getShowAddCustomer() async {
-    isShowAddCustomer = await _cubit.isShowAccCustomer();
   }
 
   void _handleScrolling() {
@@ -251,29 +247,28 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
           BlocBuilder<SaleOrderHistoryCubit, SaleOrderHistoryState>(
             bloc: _cubit,
             builder: (context, state) {
-              bool isHasUpload = state.records.any(
-                (e) => e.isSync == kStatusNo,
-              );
-              if (!isHasUpload) {
-                return SizedBox.shrink();
-              }
-              return BtnIconCircleWidget(
-                isShowBadge: true,
-                onPressed: () => _getBackAction(),
-                icons: Icon(Icons.upload, color: white),
-                rounded: appBtnRound,
+              return Row(
+                spacing: 6.scale,
+                children: [
+                  if (state.hasPendingUpload)
+                    BtnIconCircleWidget(
+                      isShowBadge: true,
+                      onPressed: () => _getBackAction(),
+                      icons: Icon(Icons.upload, color: white),
+                      rounded: appBtnRound,
+                    ),
+
+                  if (state.canSaleWithSchedult)
+                    BtnIconCircleWidget(
+                      onPressed: () => pushToAddCustomer(),
+                      icons: Icon(Icons.add, color: white),
+                      rounded: appBtnRound,
+                    ),
+                ],
               );
             },
           ),
-          Helpers.gapW(appSpace8),
-          if (isShowAddCustomer == kStatusYes) ...[
-            BtnIconCircleWidget(
-              onPressed: () => pushToAddCustomer(),
-              icons: Icon(Icons.add, color: white),
-              rounded: appBtnRound,
-            ),
-            Helpers.gapW(appSpace),
-          ],
+          Helpers.gapW(appSpace),
         ],
         heightBottom: heightBottomSearch,
         bottom: SearchWidget(
@@ -311,6 +306,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
             if (state.isLoading) {
               return const LoadingPageWidget();
             }
+
             return CustomScrollView(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
@@ -338,8 +334,8 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
       itemCount: records.length,
       itemBuilder: (context, index) {
         return SaleHistoryCardBox(
+          key: ValueKey(records[index].no),
           header: records[index],
-
           onTapShare: () => shareSaleOrder(records[index].no ?? ""),
           onTap: () => navigatorToSaleCard(context, records[index]),
         );

@@ -105,11 +105,10 @@ class _SaleOrderHistoryDetailScreenState
           BlocBuilder<SaleOrderHistoryDetailCubit, SaleOrderHistoryDetailState>(
             bloc: _cubit,
             builder: (tx, state) {
-              final detail = state.record;
-              final company = state.comPanyInfo;
               return BtnIconCircleWidget(
-                onPressed: () =>
-                    pushToPrintReceipt(company: company, detail: detail),
+                onPressed: () {
+                  pushToPrintReceipt(company: state.comPanyInfo, detail: state.record);
+                },
                 icons: const Icon(Icons.print_rounded, color: white),
                 rounded: appBtnRound,
               );

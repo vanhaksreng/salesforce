@@ -51,7 +51,10 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
               .toList();
 
           header.totalAmtLine = headerLines
-              .fold<double>(0.0, (sum, line) => sum + (line.amountIncludingVat ?? 0.0))
+              .fold<double>(
+                0.0,
+                (sum, line) => sum + (line.amountIncludingVat ?? 0.0),
+              )
               .toString();
         }
         emit(
@@ -137,34 +140,24 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
     );
   }
 
-  Future<String> isShowAccCustomer() async {
-    return await hasPermission(kUseSalesInvoiceWithoutVisit)
-        ? kStatusYes
-        : kStatusNo;
+  Future<void> canSaleWithoutSchedult() async {
+    final hasPermission = await this.hasPermission(
+      kUseSalesInvoiceWithoutVisit,
+    );
+
+    emit(state.copyWith(canSaleWithSchedult: hasPermission));
   }
 
-  // Future<void> getInvoiceHtml({
-  //   required String documentNo,
-  // }) async {
-  //   try {
-  //     final result = await appRepos.getInvoiceHtml(
-  //       param: {"document_no": documentNo},
-  //     );
-
-  //     result.fold(
-  //       (l) => throw Exception(l.message),
-  //       (html) {
-  //         emit(state.copyWith(
-  //           htmlContent: html,
-  //           isLoading: false,
-  //         ));
-  //       },
-  //     );
-  //   } catch (e) {
-  //     emit(state.copyWith(isLoading: false));
-  //     showErrorMessage(e.toString());
-  //   } finally {
-  //     emit(state.copyWith(isFetching: false));
-  //   }
-  // }
+  void checkPendingUpload() async {
+     await appRepos.getSaleHeaders(
+      param: {'is_sync': kStatusNo},
+      page: 1,
+      fetchingApi: false,
+    ).then((result) {
+      result.fold(
+        (l) => showErrorMessage(),
+        (r) => emit(state.copyWith(hasPendingUpload: r.saleHeaders.isNotEmpty)),
+      );
+    });
+  }
 }

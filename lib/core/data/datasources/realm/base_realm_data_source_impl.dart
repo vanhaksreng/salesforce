@@ -339,42 +339,14 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
     return await _storage.getFirst<VatPostingSetup>(args: param);
   }
 
-  // @override
-  // Future<List<SalesHeader>> updateSales({
-  //   required List<SalesHeader> saleHeaders,
-  //   required List<SalesHeader> remoteSaleHeaders,
-  //   required List<SalesLine> remoteLines,
-  // }) async {
-  //   final headerNo = saleHeaders.map((h) => '"${h.no}"').toList();
-  //   final localLines = await _storage.getAll<SalesLine>(
-  //     args: {'document_no': 'IN {${headerNo.join(",")}}'},
-  //   );
-
-  //   return _storage.writeTransaction((realm) {
-  //     realm.deleteMany(localLines);
-  //     realm.deleteMany(saleHeaders);
-
-  //     for (var r in remoteSaleHeaders) {
-  //       r.isSync = kStatusYes;
-  //       realm.add(r);
-  //     }
-
-  //     for (var l in remoteLines) {
-  //       l.isSync = kStatusYes;
-  //       realm.add(l);
-  //     }
-
-  //     return remoteSaleHeaders;
-  //   });
-  // }
   @override
   Future<List<SalesHeader>> updateSales({
     required List<SalesHeader> saleHeaders,
     required List<SalesHeader> remoteSaleHeaders,
     required List<SalesLine> remoteLines,
   }) async {
+    
     final headerNo = saleHeaders.map((h) => '"${h.no}"').toList();
-
     return _storage.writeTransaction((realm) {
       final localLinesToDelete = realm.query<SalesLine>(
         'document_no IN {${headerNo.join(",")}}',

@@ -47,13 +47,12 @@ class ChipWidget extends StatelessWidget {
         horizontal: scaleFontSize(horizontal),
       ),
       backgroundColor: bgColor,
-      shadowColor: ishadowColor ? bgColor.withValues(alpha: .3) : null,
+      shadowColor: ishadowColor ? bgColor.withValues(alpha: 0.3) : null,
       color: WidgetStatePropertyAll(bgColor),
       side: BorderSide(color: borderColor ?? bgColor, width: 0),
       visualDensity: VisualDensity.compact,
       shape: borderShape(isCircle),
       avatar: null,
-      // labelPadding: EdgeInsets.only(bottom: 16.scale),
       label: showLabel(),
     );
   }
@@ -63,7 +62,6 @@ class ChipWidget extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
-        // mainAxisAlignment: MainAxisAlignment.center,
         children: [
           TextWidget(
             text: label,

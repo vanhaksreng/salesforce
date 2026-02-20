@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/presentation/row_box_text_widget.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
 import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
+import 'package:salesforce/core/presentation/widgets/circle_icon_widget.dart';
 import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/presentation/widgets/image_box_cover_widget.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
@@ -34,7 +36,137 @@ class SaleHistoryDetailBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       spacing: 16.scale,
-      children: [_buildHeaderBox(), _buildListItem()],
+      children: [
+        _buildHeaderBoxV2(),
+        _buildCustomerInfo(),
+        // _buildHeaderBox(),
+        _buildListItem(),
+      ],
+    );
+  }
+
+  Widget _buildHeaderBoxV2() {
+    return BoxWidget(
+      padding: EdgeInsets.all(16.scale),
+      child: Column(
+        spacing: 16.scale,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    spacing: 4.scale,
+                    children: [
+                      CircleIconWidget(
+                        bgColor: header?.isSync == kStatusYes ? success : error,
+                        sizeIcon: scaleFontSize(10),
+                        colorIcon: white,
+                        icon: header?.isSync == kStatusYes
+                            ? Icons.cloud_done
+                            : Icons.cloud_off_outlined,
+                      ),
+                      TextWidget(
+                        text: greeting("Local Document No").toUpperCase(),
+                        fontSize: 12,
+                      ),
+                    ],
+                  ),
+                  TextWidget(
+                    fontWeight: FontWeight.bold,
+                    text: header?.appId ?? "",
+                    fontSize: 16,
+                  ),
+                ],
+              ),
+              ChipWidget(
+                ishadowColor: false,
+                fontSize: 12,
+                vertical: 8.scale,
+                label: header?.status?.toUpperCase() ?? "",
+                colorText: getStatusColor(header?.status),
+                bgColor: getStatusColor(header?.status).withValues(alpha: 0.1),
+              ),
+            ],
+          ),
+          Hr(width: double.infinity),
+          RowBoxTextWidget(
+            lable1: greeting("Document No"),
+            value1: header?.isSync == "Yes" ? "${header?.no}" : "-",
+            label2: greeting("Posting Date"),
+            value2: DateTimeExt.parse(
+              "${header?.postingDate}",
+            ).toDateNameString(),
+          ),
+          RowBoxTextWidget(
+            lable1: greeting("document_date"),
+            value1: DateTimeExt.parse(
+              "${header?.documentDate}",
+            ).toDateNameString(),
+            label2: greeting("Req. Shipment Date"),
+            value2: DateTimeExt.parse(
+              "${header?.requestShipmentDate}",
+            ).toDateNameString(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomerInfo() {
+    return BoxWidget(
+      width: double.infinity,
+      padding: const EdgeInsets.all(8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: scale(6),
+        children: [
+          CircleAvatar(
+            backgroundColor: mainColor50,
+            child: Icon(Icons.person, color: white, size: 25),
+          ),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: scaleFontSize(8),
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextWidget(
+                      text: "Customer Infomation".toUpperCase(),
+                      fontSize: 12,
+                    ),
+                    TextWidget(
+                      text: "${header?.customerName}",
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ],
+                ),
+                RowBoxTextWidget(
+                  lable1: greeting("Customer No"),
+                  value1: "${header?.customerNo}",
+                  label2: greeting("Phone No"),
+                  value2: "${header?.shipToPhoneNo}",
+                ),
+                Helpers.gapH(8),
+                if ((header?.shipToAddress ?? "").isNotEmpty)
+                  RowBoxTextWidget(
+                    lable1: greeting("Ship To Address"),
+                    value1:
+                        "${header?.shipToAddress} \n${header?.shipToAddress2}",
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -91,7 +223,6 @@ class SaleHistoryDetailBox extends StatelessWidget {
             value1: DateTimeExt.parse(
               header?.documentDate ?? "",
             ).toDateNameString(),
-
             label2: greeting("ship_date").toUpperCase(),
             value2: header?.requestShipmentDate ?? "",
           ),
@@ -149,25 +280,26 @@ class SaleHistoryDetailBox extends StatelessWidget {
             margin: EdgeInsets.zero,
             padding: EdgeInsets.all(8.scale),
             isBoxShadow: false,
-            color: grey20,
+            color: Colors.grey.withValues(alpha: 0.2),
+            rounding: 6.scale,
             child: Row(
               spacing: 8.scale,
               children: [
-                const ChipWidget(
-                  bgColor: mainColor50,
-                  radius: 8,
-                  vertical: 6,
-                  horizontal: 0,
-                  child: SvgWidget(
-                    assetName: kAddCart,
-                    colorSvg: white,
-                    width: 15,
-                    height: 15,
-                  ),
-                ),
                 TextWidget(
-                  text: "${greeting("order_items")} (${lines.length})",
+                  text: "${greeting("Items")} (${lines.length})",
                   fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                Spacer(),
+                TextWidget(
+                  text:
+                      lineAmount ??
+                      Helpers.formatNumber(
+                        header?.amount,
+                        option: FormatType.amount,
+                      ),
+                  fontSize: 20,
+                  color: mainColor,
                   fontWeight: FontWeight.bold,
                 ),
               ],
@@ -185,58 +317,76 @@ class SaleHistoryDetailBox extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      child: Row(
-                        spacing: 8.scale,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ImageBoxCoverWidget(
-                            key: ValueKey(record.id),
-                            image: ImageNetWorkWidget(
-                              key: ValueKey(record.id),
-                              imageUrl: record.imgUrl ?? "",
-                              width: scaleFontSize(70),
-                              height: scaleFontSize(70),
-                            ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              spacing: 6.scale,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                TextWidget(
-                                  fontSize: 16,
-                                  softWrap: true,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  fontWeight: FontWeight.bold,
-                                  text: record.description.toString(),
-                                ),
-                                TextWidget(
-                                  fontWeight: FontWeight.w500,
-                                  color: textColor50,
-                                  text:
-                                      "${Helpers.formatNumber(record.unitPrice, option: FormatType.amount)}/${record.unitOfMeasure ?? ""}",
-                                ),
-                                ChipWidget(
-                                  bgColor: mainColor,
-                                  label:
-                                      "${Helpers.formatNumber(record.quantity, option: FormatType.quantity)} ${record.unitOfMeasure ?? ""}",
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                    ImageBoxCoverWidget(
+                      key: ValueKey(record.id),
+                      image: ImageNetWorkWidget(
+                        key: ValueKey(record.id),
+                        imageUrl: record.imgUrl ?? "",
+                        width: scaleFontSize(70),
+                        height: scaleFontSize(70),
                       ),
                     ),
-                    TextWidget(
-                      fontSize: 16,
-                      color: mainColor,
-                      fontWeight: FontWeight.bold,
-                      text: Helpers.formatNumber(
-                        record.amount,
-                        option: FormatType.amount,
+                    Expanded(
+                      child: Column(
+                        spacing: 6.scale,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextWidget(
+                            fontSize: 16,
+                            softWrap: true,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            fontWeight: FontWeight.bold,
+                            text: record.description.toString(),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              TextWidget(
+                                color: textColor50,
+                                text: greeting("Unit Price"),
+                              ),
+                              TextWidget(
+                                fontWeight: FontWeight.bold,
+                                color: textColor50,
+                                text:
+                                    "${Helpers.formatNumber(record.unitPrice, option: FormatType.amount)}/${record.unitOfMeasure ?? ""}",
+                              ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              ChipWidget(
+                                bgColor: mainColor,
+                                radius: 8,
+                                label:
+                                    "${Helpers.formatNumber(record.quantity, option: FormatType.quantity)} ${record.unitOfMeasure ?? ""}",
+                              ),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  TextWidget(
+                                    color: textColor50,
+                                    text: greeting("Subtotal"),
+                                  ),
+                                  TextWidget(
+                                    fontWeight: FontWeight.bold,
+                                    color: mainColor,
+                                    fontSize: 16,
+                                    text: Helpers.formatNumber(
+                                      record.amount,
+                                      option: FormatType.amount,
+                                      
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ],
