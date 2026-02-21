@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
@@ -10,7 +9,6 @@ import 'package:salesforce/core/presentation/widgets/circle_icon_widget.dart';
 import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/presentation/widgets/image_box_cover_widget.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
-import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
@@ -170,103 +168,103 @@ class SaleHistoryDetailBox extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderBox() {
-    return BoxWidget(
-      padding: EdgeInsets.all(16.scale),
-      child: Column(
-        spacing: 16.scale,
-        children: [
-          Column(
-            spacing: 4.scale,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextWidget(
-                    fontWeight: FontWeight.bold,
-                    text: header?.no ?? "",
-                    fontSize: 18,
-                  ),
-                  ChipWidget(
-                    ishadowColor: false,
-                    fontSize: 12,
-                    vertical: 8.scale,
-                    label: header?.status?.toUpperCase() ?? "",
-                    colorText: getStatusColor(header?.status),
-                    bgColor: getStatusColor(
-                      header?.status,
-                    ).withValues(alpha: .2),
-                  ),
-                ],
-              ),
+  // Widget _buildHeaderBox() {
+  //   return BoxWidget(
+  //     padding: EdgeInsets.all(16.scale),
+  //     child: Column(
+  //       spacing: 16.scale,
+  //       children: [
+  //         Column(
+  //           spacing: 4.scale,
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             Row(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 TextWidget(
+  //                   fontWeight: FontWeight.bold,
+  //                   text: header?.no ?? "",
+  //                   fontSize: 18,
+  //                 ),
+  //                 ChipWidget(
+  //                   ishadowColor: false,
+  //                   fontSize: 12,
+  //                   vertical: 8.scale,
+  //                   label: header?.status?.toUpperCase() ?? "",
+  //                   colorText: getStatusColor(header?.status),
+  //                   bgColor: getStatusColor(
+  //                     header?.status,
+  //                   ).withValues(alpha: .2),
+  //                 ),
+  //               ],
+  //             ),
 
-              RowBoxTextWidget(
-                lable1: greeting("Customer No").toUpperCase(),
-                value1: header?.customerNo ?? "",
-                label2: greeting("Posting Date").toUpperCase(),
-                value2: DateTimeExt.parse(
-                  header?.postingDate ?? "",
-                ).toDateNameString(),
-              ),
-            ],
-          ),
-          RowBoxTextWidget(
-            lable1: greeting("customer").toUpperCase(),
-            value1: header?.customerName ?? "",
-            label2: greeting("Ship to name").toUpperCase(),
-            value2: header?.shipToName ?? "",
-          ),
-          RowBoxTextWidget(
-            lable1: greeting("document_date").toUpperCase(),
-            value1: DateTimeExt.parse(
-              header?.documentDate ?? "",
-            ).toDateNameString(),
-            label2: greeting("ship_date").toUpperCase(),
-            value2: header?.requestShipmentDate ?? "",
-          ),
-          if ((header?.shipToAddress ?? "").isNotEmpty)
-            RowBoxTextWidget(
-              lable1: greeting("ship to address").toUpperCase(),
-              value1: header?.shipToAddress ?? "",
-            ),
-          if ((header?.shipToAddress2 ?? "").isNotEmpty)
-            RowBoxTextWidget(
-              lable1: greeting("ship to address").toUpperCase(),
-              value1: header?.shipToAddress2 ?? "",
-            ),
-          BoxWidget(
-            color: grey20,
-            isBoxShadow: false,
-            padding: const EdgeInsets.all(appSpace),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextWidget(
-                  text: greeting("total_amount"),
-                  fontSize: 16,
-                  color: textColor50,
-                  fontWeight: FontWeight.bold,
-                ),
-                TextWidget(
-                  text:
-                      lineAmount ??
-                      Helpers.formatNumber(
-                        header?.amount,
-                        option: FormatType.amount,
-                      ),
-                  fontSize: 20,
-                  color: mainColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  //             RowBoxTextWidget(
+  //               lable1: greeting("Customer No").toUpperCase(),
+  //               value1: header?.customerNo ?? "",
+  //               label2: greeting("Posting Date").toUpperCase(),
+  //               value2: DateTimeExt.parse(
+  //                 header?.postingDate ?? "",
+  //               ).toDateNameString(),
+  //             ),
+  //           ],
+  //         ),
+  //         RowBoxTextWidget(
+  //           lable1: greeting("customer").toUpperCase(),
+  //           value1: header?.customerName ?? "",
+  //           label2: greeting("Ship to name").toUpperCase(),
+  //           value2: header?.shipToName ?? "",
+  //         ),
+  //         RowBoxTextWidget(
+  //           lable1: greeting("document_date").toUpperCase(),
+  //           value1: DateTimeExt.parse(
+  //             header?.documentDate ?? "",
+  //           ).toDateNameString(),
+  //           label2: greeting("ship_date").toUpperCase(),
+  //           value2: header?.requestShipmentDate ?? "",
+  //         ),
+  //         if ((header?.shipToAddress ?? "").isNotEmpty)
+  //           RowBoxTextWidget(
+  //             lable1: greeting("ship to address").toUpperCase(),
+  //             value1: header?.shipToAddress ?? "",
+  //           ),
+  //         if ((header?.shipToAddress2 ?? "").isNotEmpty)
+  //           RowBoxTextWidget(
+  //             lable1: greeting("ship to address").toUpperCase(),
+  //             value1: header?.shipToAddress2 ?? "",
+  //           ),
+  //         BoxWidget(
+  //           color: grey20,
+  //           isBoxShadow: false,
+  //           padding: const EdgeInsets.all(appSpace),
+  //           child: Row(
+  //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //             children: [
+  //               TextWidget(
+  //                 text: greeting("total_amount"),
+  //                 fontSize: 16,
+  //                 color: textColor50,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //               TextWidget(
+  //                 text:
+  //                     lineAmount ??
+  //                     Helpers.formatNumber(
+  //                       header?.amount,
+  //                       option: FormatType.amount,
+  //                     ),
+  //                 fontSize: 20,
+  //                 color: mainColor,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildListItem() {
     return BoxWidget(
@@ -351,7 +349,7 @@ class SaleHistoryDetailBox extends StatelessWidget {
                                 fontWeight: FontWeight.bold,
                                 color: textColor50,
                                 text:
-                                    "${Helpers.formatNumber(record.unitPrice, option: FormatType.amount)}/${record.unitOfMeasure ?? ""}",
+                                    "${Helpers.formatNumber(record.unitPrice, option: FormatType.amount)} / ${record.unitOfMeasure ?? ""}",
                               ),
                             ],
                           ),
@@ -360,29 +358,17 @@ class SaleHistoryDetailBox extends StatelessWidget {
                             children: [
                               ChipWidget(
                                 bgColor: mainColor,
-                                radius: 8,
-                                label:
-                                    "${Helpers.formatNumber(record.quantity, option: FormatType.quantity)} ${record.unitOfMeasure ?? ""}",
+                                radius: 6,
+                                label:"${Helpers.formatNumber(record.quantity, option: FormatType.quantity)} ${record.unitOfMeasure ?? ""}",
                               ),
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  TextWidget(
-                                    color: textColor50,
-                                    text: greeting("Subtotal"),
-                                  ),
-                                  TextWidget(
-                                    fontWeight: FontWeight.bold,
-                                    color: mainColor,
-                                    fontSize: 16,
-                                    text: Helpers.formatNumber(
-                                      record.amount,
-                                      option: FormatType.amount,
-                                      
-                                    ),
-                                  ),
-                                ],
+                              TextWidget(
+                                fontWeight: FontWeight.bold,
+                                color: mainColor,
+                                fontSize: 16,
+                                text: Helpers.formatNumber(
+                                  record.amount,
+                                  option: FormatType.amount,
+                                ),
                               ),
                             ],
                           ),

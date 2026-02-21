@@ -1,8 +1,10 @@
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/data/models/extension/sale_line_extension.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
+import 'package:salesforce/realm/scheme/schemas.dart';
 
 extension SalesHeaderExtension on SalesHeader {
   static SalesHeader fromMap(Map<String, dynamic> json) {
@@ -156,5 +158,71 @@ extension SalesHeaderExtension on SalesHeader {
       'gen_bus_posting_group_code': genBusPostingGroupCode,
       'lines': lines.map((line) => line.toJson()).toList(),
     };
+  }
+
+  static SalesHeader toObj({
+    required PosSalesHeader posHeader,
+    required CustomerAddress shipment,
+    required int headerNo,
+    required String documentNo,
+    required String paymentTermCode,
+    required String paymentMethod,
+    required double paymentAmount,
+    required String? requestShipmentDate,
+    required String? comments,
+    required String? distributorCode,
+  }) {
+    final now = DateTime.now();
+
+    return SalesHeader(
+      headerNo,
+      no: documentNo,
+      appId: documentNo,
+      documentType: posHeader.documentType,
+      requestShipmentDate: requestShipmentDate,
+      postingDate: now.toDateString(),
+      documentDate: now.toDateString(),
+      orderDate: posHeader.orderDate,
+      postingDescription: '',
+      currencyCode: "",
+      currencyFactor: 1,
+      remark: comments,
+      customerNo: posHeader.customerNo,
+      customerName: posHeader.customerName,
+      customerName2: posHeader.customerName2,
+      address: posHeader.address,
+      address2: posHeader.address2,
+      assignToUserId: posHeader.assignToUserId,
+      customerGroupCode: posHeader.customerGroupCode,
+      priceIncludeVat: posHeader.priceIncludeVat,
+      shipToCode: shipment.code,
+      shipToName: shipment.name,
+      shipToName2: shipment.name2,
+      shipToAddress: shipment.address,
+      shipToAddress2: shipment.address2,
+      shipToPhoneNo: shipment.phoneNo,
+      shipToPhoneNo2: shipment.phoneNo2,
+      shipToContactName: shipment.contactName,
+      locationCode: posHeader.locationCode,
+      businessUnitCode: posHeader.businessUnitCode,
+      storeCode: posHeader.storeCode,
+      departmentCode: posHeader.departmentCode,
+      distributorCode: distributorCode,
+      divisionCode: posHeader.divisionCode,
+      projectCode: posHeader.projectCode,
+      genBusPostingGroupCode: posHeader.genBusPostingGroupCode,
+      arPostingGroupCode: posHeader.arPostingGroupCode,
+      vatBusPostingGroupCode: posHeader.vatBusPostingGroupCode,
+      status: kStatusOpen,
+      isSync: kStatusNo,
+      paymentTermCode: paymentTermCode,
+      paymentMethodCode: paymentMethod,
+      salespersonCode: posHeader.salespersonCode,
+      externalDocumentNo: posHeader.externalDocumentNo,
+      sourceNo: posHeader.sourceNo,
+      sourceType: posHeader.sourceType,
+      amount: Helpers.formatNumberDb(paymentAmount, option: FormatType.amount),
+      orderDateTime: now.toDateString(),
+    );
   }
 }

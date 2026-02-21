@@ -340,12 +340,22 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
+  Future<PosSalesHeader?> getPosSaleHeader({
+    Map<String, dynamic>? params,
+  }) async {
+    try {
+      return await _storage.getFirst<PosSalesHeader>(args: params);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
   Future<List<SalesHeader>> updateSales({
     required List<SalesHeader> saleHeaders,
     required List<SalesHeader> remoteSaleHeaders,
     required List<SalesLine> remoteLines,
   }) async {
-    
     final headerNo = saleHeaders.map((h) => '"${h.no}"').toList();
     return _storage.writeTransaction((realm) {
       final localLinesToDelete = realm.query<SalesLine>(
@@ -358,7 +368,7 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
       final headersToDelete = realm.query<SalesHeader>(
         'no IN {${headerNo.join(",")}}',
       );
-      
+
       realm.deleteMany(headersToDelete);
 
       // Add new data

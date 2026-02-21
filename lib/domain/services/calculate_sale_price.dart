@@ -6,6 +6,7 @@ class CalculateSalePrices {
   final double vatPercentage;
   final bool priceIncludeVat;
   final bool vatBeforeDiscount;
+  final String vatCalculationType;
 
   late final double baseAmount;
   late final double amount; // Final amount after discount, before VAT
@@ -18,6 +19,7 @@ class CalculateSalePrices {
     required this.unitPrice,
     required this.quantity,
     required this.vatPercentage,
+    required this.vatCalculationType,
     this.discountAmount = 0,
     this.discountPercentage = 0,
     this.priceIncludeVat = false,

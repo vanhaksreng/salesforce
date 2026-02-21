@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
@@ -11,7 +12,7 @@ import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
-class UploadCubit extends Cubit<UploadState> with MessageMixin {
+class UploadCubit extends Cubit<UploadState> with MessageMixin, AppMixin {
   UploadCubit() : super(const UploadState(isLoading: true));
   final _taskRepo = getIt.get<TaskRepository>();
   final _moreRepo = getIt.get<MoreRepository>();
@@ -19,7 +20,7 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin {
   late int error = 0;
 
   Future<void> processUpload() async {
-    if (!await connection.isConnected) {
+    if (!await isConnectedToNetwork()) {
       emit(state.copyWith(isconnect: false));
       return;
     }

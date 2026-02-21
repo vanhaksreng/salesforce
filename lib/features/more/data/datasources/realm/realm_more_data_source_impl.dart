@@ -18,12 +18,12 @@ class RealmMoreDataSourceImpl extends BaseRealmDataSourceImpl
     return await ils.getFirst(args: param);
   }
 
-  @override
-  Future<PosSalesHeader?> getPosSaleHeader({
-    Map<String, dynamic>? param,
-  }) async {
-    return await ils.getFirst(args: param);
-  }
+  // @override
+  // Future<PosSalesHeader?> getPosSaleHeader({
+  //   Map<String, dynamic>? param,
+  // }) async {
+  //   return await ils.getFirst(args: param);
+  // }
 
   @override
   Future<List<PosSalesLine>> getPosSaleLines({

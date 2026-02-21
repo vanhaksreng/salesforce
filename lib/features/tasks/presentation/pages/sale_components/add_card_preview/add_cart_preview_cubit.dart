@@ -24,22 +24,20 @@ class AddCartPreviewCubit extends Cubit<AddCartPreviewState> with MessageMixin {
         documentType: documentType,
       );
 
-      final response = await _taskRepo.getPosSaleHeader(
-        params: {'no': saleNo, 'document_type': documentType},
+      final header = await _taskRepo.getPosSaleHeader(
+        no: saleNo,
+        documentType: documentType,
       );
 
-      PosSalesHeader header = await response.fold(
-        (l) => throw GeneralException(l.message),
-        (r) => r,
-      );
+      if (header == null) {
+        throw GeneralException("Sale header not found.");
+      }
 
-      emit(
-        state.copyWith(
-          salesHeader: header,
-          scheduleId: scheduleId,
-          documentType: documentType,
-        ),
-      );
+      emit(state.copyWith(
+        salesHeader: header,
+        scheduleId: scheduleId,
+        documentType: documentType,
+      ));
     } catch (e) {
       Logger.log('Error loading initial data: $e');
     }

@@ -11,15 +11,20 @@ import 'package:salesforce/features/more/domain/entities/item_sale_arg.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_form_item/sale_form_item_state.dart';
 import 'package:salesforce/features/tasks/domain/entities/sale_form_input.dart';
+import 'package:salesforce/features/tasks/domain/entities/tasks_arg.dart';
+import 'package:salesforce/features/tasks/domain/repositories/task_repository.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
+import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 
 class SaleFormItemCubit extends Cubit<SaleFormItemState>
     with PermissionMixin, MessageMixin {
   SaleFormItemCubit() : super(SaleFormItemState(isLoading: true));
   final _moreRepos = getIt<MoreRepository>();
+  final _taskRepos = getIt<TaskRepository>();
+
   PosSalesLine? stdSaleLine;
 
   Future<void> getPromotionType() async {
@@ -354,11 +359,9 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
       if (!_validateSaleForm()) {
         return false;
       }
-      
+
       //Prepare sale data
       final saleData = _prepareSaleData();
-
-      //Save to repository
       final result = await _moreRepos.insertSale(saleData);
 
       result.fold((failure) => throw GeneralException(failure.message), (

@@ -6,6 +6,8 @@ import 'package:dartz/dartz.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:salesforce/core/constants/app_config.dart';
 import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/core/data/models/extension/pos_sale_header_extension.dart';
+import 'package:salesforce/core/data/models/extension/pos_sale_line_extension.dart';
 import 'package:salesforce/core/data/models/extension/sale_header_extension.dart';
 import 'package:salesforce/core/data/models/extension/sale_line_extension.dart';
 import 'package:salesforce/core/data/models/extension/salesperson_schedule_extension.dart';
@@ -320,34 +322,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
     }
   }
 
-  @override
-  Future<Either<Failure, List<PromotionType>>> getPromotionType() async {
-    // if (await _networkInfo.isConnected && await _remote.isValidApiSession()) {
-    //   const String tableName = "promotion_type";
-    //   final datas = await _remote.downloadTranData(data: {
-    //     "table": tableName,
-    //   });
-
-    //   final handler = TableHandlerFactory.getHandler(tableName);
-    //   if (handler == null) {
-    //     return throw Exception("No handler found for table: $tableName");
-    //   }
-
-    //   final date = datas['datetime'] as String;
-
-    //   final records = (datas["records"] as List).map((item) {
-    //     return handler.fromMap(item as Map<String, dynamic>);
-    //   }).toList();
-
-    //   await _local.storeData(records, handler.extractKey, date, tableName);
-    // }
-
-    final localData = await _local.getPromotionType(
-      param: {'allow_manual': 'Yes'},
-    );
-
-    return Right(localData);
-  }
 
   @override
   Future<Either<Failure, ItemSalesLinePrices?>> getItemSaleLinePrice({
@@ -383,18 +357,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
   }
 
   @override
-  Future<Either<Failure, CustomerAddress?>> getCustomerAddress({
-    Map<String, dynamic>? params,
-  }) async {
-    try {
-      final customerAddress = await _getCustomerAddress(params: params);
-      return Right(customerAddress);
-    } on GeneralException {
-      return const Left(CacheFailure(errorInternetMessage));
-    }
-  }
-
-  @override
   Future<Either<Failure, List<CustomerAddress>>> getCustomerAddresses({
     Map<String, dynamic>? params,
   }) async {
@@ -405,24 +367,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
     } on GeneralException {
       return const Left(CacheFailure(errorInternetMessage));
     }
-  }
-
-  Future<CustomerAddress?> _getCustomerAddress({
-    Map<String, dynamic>? params,
-  }) async {
-    return await _local.getCustomerAddress(args: params);
-  }
-
-  Future<VatPostingSetup?> _getVatSetup({
-    required String busPostingGroup,
-    required String prodPostingGroup,
-  }) async {
-    return await _local.getVatSetup(
-      param: {
-        'vat_bus_posting_group': busPostingGroup,
-        'vat_prod_posting_group': prodPostingGroup,
-      },
-    );
   }
 
   Future<Customer?> _getCustomer({required String no}) async {
@@ -454,15 +398,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
     return await _local.getItemSaleLinePrice(param: p);
   }
 
-  Future<PosSalesHeader?> _getPosSaleHeader({
-    required String no,
-    required String documentType,
-  }) async {
-    return await _local.getPosSaleHeader(
-      params: {'no': no, 'document_type': documentType},
-    );
-  }
-
   Future<ItemUnitOfMeasure?> _getItemUom({
     required String itemNo,
     required String uomCode,
@@ -470,87 +405,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
     return await _local.getItemUom(
       params: {'item_no': itemNo, 'unit_of_measure_code': uomCode},
     );
-  }
-
-  Future<PosSalesHeader> _generateNewSaleHeader({
-    required String documentNo,
-    required SalespersonSchedule schedule,
-    required Customer customer,
-    required String documentType,
-  }) async {
-    try {
-      final int headerId = Helpers.generateUniqueNumber();
-      final String today = DateTime.now().toDateString();
-      CustomerAddress? customerAddress;
-
-      if (schedule.shipToCode != null) {
-        customerAddress = await _getCustomerAddress(
-          params: {'customer_no': customer.no, 'code': schedule.shipToCode},
-        );
-      }
-
-      final userSetup = await _local.getUserSetup();
-      if (userSetup == null) {
-        throw GeneralException("User setup not found");
-      }
-
-      if (userSetup.locationCode == null) {
-        throw GeneralException("User setup not link to location yet.");
-      }
-
-      final header = PosSalesHeader(
-        headerId,
-        no: documentNo,
-        locationCode: userSetup.locationCode,
-        documentType: documentType,
-        customerNo: customer.no,
-        customerName: customer.name,
-        customerName2: customer.name2,
-        address: customer.address,
-        address2: customer.address2,
-        shipToName: customer.name,
-        shipToName2: customer.name2,
-        shipToAddress: customer.address,
-        shipToAddress2: customer.address2,
-        shipToContactName: customer.contactName,
-        shipToPhoneNo: customer.phoneNo,
-        shipToPhoneNo2: customer.phoneNo2,
-        arPostingGroupCode: customer.recPostingGroupCode,
-        genBusPostingGroupCode: customer.genBusPostingGroupCode,
-        vatBusPostingGroupCode: customer.vatPostingGroupCode,
-        priceIncludeVat: customer.priceIncludeVat,
-        paymentTermCode: customer.paymentTermCode,
-        orderDate: today,
-        documentDate: today,
-        postingDate: today,
-        status: kStatusOpen,
-        salespersonCode: schedule.salespersonCode,
-        storeCode: userSetup.storeCode,
-        divisionCode: userSetup.divisionCode,
-        businessUnitCode: userSetup.businessUnitCode,
-        departmentCode: userSetup.departmentCode,
-        projectCode: userSetup.projectCode,
-        sourceType: kSourceTypeVisit,
-        sourceNo: schedule.id,
-        currencyCode: "",
-        currencyFactor: 1,
-      );
-
-      if (customerAddress != null) {
-        header.shipToCode = customerAddress.code;
-        header.shipToName = customerAddress.name;
-        header.shipToName = customerAddress.name2;
-        header.shipToAddress = customerAddress.address;
-        header.shipToAddress2 = customerAddress.address2;
-        header.shipToContactName = customerAddress.contactName;
-        header.shipToPhoneNo = customerAddress.phoneNo;
-        header.shipToPhoneNo2 = customerAddress.phoneNo2;
-      }
-
-      return header;
-    } catch (e) {
-      rethrow;
-    }
   }
 
   @override
@@ -570,21 +424,35 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         throw GeneralException('Please kill app and open again.');
       }
 
+      final userSetup = await _local.getUserSetup();
+      if (userSetup == null) {
+        throw GeneralException("User setup not found");
+      }
+
+      if (userSetup.locationCode == null) {
+        throw GeneralException("User setup not link to location yet.");
+      }
+
       final String saleNo = Helpers.getSaleDocumentNo(
         scheduleId: schedule.id,
         documentType: saleArg.documentType,
       );
 
-      PosSalesHeader? saleHeader = await _getPosSaleHeader(
+      PosSalesHeader? saleHeader = await getPosSaleHeader(
         no: saleNo,
         documentType: saleArg.documentType,
       );
 
-      saleHeader ??= await _generateNewSaleHeader(
-        schedule: schedule,
+      saleHeader ??= PosSalesHeaderExtension.toObj(
         documentNo: saleNo,
         customer: customer,
+        userSetup: userSetup,
         documentType: saleArg.documentType,
+        storeCode: getStoreCode(userSetup, customer),
+        divisionCode: getDivisionCode(userSetup, customer),
+        businessUnitCode: getBusinessUnitCode(userSetup, customer),
+        departmentCode: getDepartmentCode(userSetup, customer),
+        projectCode: getProjectCode(userSetup, customer),
       );
 
       String priceIncludeVat = customer.priceIncludeVat ?? kStatusNo;
@@ -592,7 +460,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       final bus = customer.vatPostingGroupCode ?? "";
       final prod = item.vatProdPostingGroupCode ?? "";
 
-      final vatSetup = await _getVatSetup(
+      final vatSetup = await getVatSetup(
         busPostingGroup: bus,
         prodPostingGroup: prod,
       );
@@ -660,6 +528,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
             unitPrice: unitPrice,
             quantity: input.quantity,
             vatPercentage: Helpers.toDouble(vatSetup.vatAmount),
+            vatCalculationType: "${vatSetup.vatCalculationType}",
             discountAmount: discountAmt,
             discountPercentage: discountPercent,
             priceIncludeVat: priceIncludeVat == kStatusYes,
@@ -674,68 +543,19 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
           final int lineId = Helpers.generateUniqueNumber();
           lineNo += 10000;
 
-          final saleLine = PosSalesLine(
-            lineId,
-            documentNo: saleHeader?.no,
-            specialType: input.code,
-            specialTypeNo: "",
-            type: kTypeItem,
+          final saleLine = PosSalesLineExtension.toObj(
+            saleHeader: saleHeader!,
+            lineId: lineId,
+            item: item,
+            input: input,
+            calculated: calculated,
             lineNo: lineNo,
-            referLineNo: referentLineNo,
-            customerNo: customer.no,
-            no: item.no,
-            description: item.description,
-            description2: item.description2,
-            itemBrandCode: item.itemBrandCode,
-            itemCategoryCode: item.itemCategoryCode,
-            itemGroupCode: item.itemGroupCode,
-            itemDiscGroupCode: item.itemDiscountGroupCode,
-            postingGroup: item.invPostingGroupCode,
-            genProdPostingGroupCode: item.genProdPostingGroupCode,
-            vatProdPostingGroupCode: item.vatProdPostingGroupCode,
-            genBusPostingGroupCode: saleHeader?.genBusPostingGroupCode,
-            vatBusPostingGroupCode: saleHeader?.vatBusPostingGroupCode,
-            locationCode: saleHeader?.locationCode,
-            documentType: saleHeader?.documentType,
-            salespersonCode: saleHeader?.salespersonCode,
-            storeCode: saleHeader?.storeCode,
-            divisionCode: saleHeader?.divisionCode,
-            distributorCode: saleHeader?.distributorCode,
-            departmentCode: saleHeader?.departmentCode,
-            businessUnitCode: saleHeader?.businessUnitCode,
-            projectCode: saleHeader?.projectCode,
-            requestShipmentDate: saleHeader?.requestShipmentDate,
-            currencyCode: saleHeader?.currencyCode,
-            currencyFactor: saleHeader?.currencyFactor,
-            vatCalculationType: vatSetup.vatCalculationType,
-            vatPercentage: Helpers.toDouble(vatSetup.vatAmount),
-            unitOfMeasure: itemUom.unitOfMeasureCode,
-            qtyPerUnitOfMeasure: qtyPerUnit,
-            quantity: input.quantity,
-            quantityToShip: input.quantity,
-            quantityToInvoice: input.quantity,
-            outstandingQuantity: input.quantity,
-            outstandingQuantityBase: input.quantity * qtyPerUnit,
-            quantityInvoiced: 0,
-            quantityShipped: 0,
-            unitPrice: unitPrice,
-            unitPriceLcy: unitPrice,
-            discountAmount: discountAmt,
-            discountPercentage: discountPercent,
-            vatAmount: calculated.vatAmount,
-            vatBaseAmount: calculated.vatBaseAmount,
-            amount: calculated.amount,
-            amountLcy: calculated.amount,
-            amountIncludingVat: calculated.amountIncludeVat,
-            amountIncludingVatLcy: calculated.amountIncludeVat,
-            manualUnitPrice: manualPrice,
-            isManualEdit: manualPrice > 0 ? kStatusYes : kStatusNo,
-            documentDate: DateTime.now().toDateString(),
-            unitPriceOri: Helpers.formatNumberDb(
-              saleArg.itemUnitPrice,
-              option: FormatType.price,
-            ),
-            serialNo: schedule.id,
+            referentLineNo: referentLineNo,
+            unitPriceOri: saleArg.itemUnitPrice,
+            manualPrice: manualPrice,
+            qtyPerUnit: qtyPerUnit,
+            unitOfMeasureCode: "${itemUom.unitOfMeasureCode}",
+            sourceNo: schedule.id,
           );
 
           saleLines.add(saleLine);
@@ -786,137 +606,31 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       int headerNo = saleDoc + headerNoIncrease;
       List<SalesLine> saleLines = [];
 
-      // final DeviceInfoPlugin device = DeviceInfoPlugin();
-      // String deviceId = "";
+      final docType = posHeader.documentType ?? "";
 
-      // if (Platform.isAndroid) {
-      //   final AndroidDeviceInfo android = await device.androidInfo;
-      //   deviceId = android.id;
-      // } else {
-      //   final IosDeviceInfo ios = await device.iosInfo;
-      //   deviceId = ios.identifierForVendor ?? "";
-      // }
-
-      final saleHeader = SalesHeader(
-        headerNo,
-        no: "${Helpers.getSalePrefix(posHeader.documentType ?? "")}$saleDoc",
-        appId: "${Helpers.getSalePrefix(posHeader.documentType ?? "")}$saleDoc",
-        documentType: posHeader.documentType,
+      final saleHeader = SalesHeaderExtension.toObj(
+        posHeader: posHeader,
+        shipment: shipment,
+        headerNo: headerNo,
+        documentNo: "${Helpers.getSalePrefix(docType)}$saleDoc",
+        paymentTermCode: term?.code ?? "",
+        paymentMethod: arg.paymentMethod?.code ?? "",
+        paymentAmount: arg.paymentAmount,
         requestShipmentDate: arg.requestShipmentDate,
-        postingDate: now.toDateString(),
-        documentDate: now.toDateString(),
-        orderDate: posHeader.orderDate,
-        remark: arg.comments,
-        customerNo: posHeader.customerNo,
-        customerName: posHeader.customerName,
-        customerName2: posHeader.customerName2,
-        address: posHeader.address,
-        address2: posHeader.address2,
-        assignToUserId: posHeader.assignToUserId,
-        customerGroupCode: posHeader.customerGroupCode,
-        priceIncludeVat: posHeader.priceIncludeVat,
-        shipToCode: shipment.code,
-        shipToName: shipment.name,
-        shipToName2: shipment.name2,
-        shipToAddress: shipment.address,
-        shipToAddress2: shipment.address2,
-        shipToPhoneNo: shipment.phoneNo,
-        shipToPhoneNo2: shipment.phoneNo2,
-        shipToContactName: shipment.contactName,
-        locationCode: posHeader.locationCode,
-        businessUnitCode: posHeader.businessUnitCode,
-        storeCode: posHeader.storeCode,
-        departmentCode: posHeader.departmentCode,
+        comments: arg.comments,
         distributorCode: arg.distributor?.code,
-        divisionCode: posHeader.divisionCode,
-        projectCode: posHeader.projectCode,
-        genBusPostingGroupCode: posHeader.genBusPostingGroupCode,
-        arPostingGroupCode: posHeader.arPostingGroupCode,
-        vatBusPostingGroupCode: posHeader.vatBusPostingGroupCode,
-        status: kStatusApprove,
-        isSync: kStatusNo,
-        paymentTermCode: term?.code,
-        paymentMethodCode: arg.paymentMethod?.code ?? "",
-        salespersonCode: posHeader.salespersonCode,
-        externalDocumentNo: posHeader.externalDocumentNo,
-        sourceNo: posHeader.sourceNo,
-        sourceType: posHeader.sourceType,
-        amount: Helpers.formatNumberDb(
-          arg.paymentAmount,
-          option: FormatType.amount,
-        ),
-        orderDateTime: DateTime.now().toDateString(),
       );
 
       int lineNo = 0;
-      for (var line in posLines) {
+      for (var posLine in posLines) {
         lineNo += 1;
 
-        final lineId = Helpers.generateUniqueNumber();
-
         saleLines.add(
-          SalesLine(
-            lineId,
-            appId:
-                "${Helpers.getSalePrefix(posHeader.documentType ?? "")}$saleDoc",
-            documentNo: saleHeader.no,
-            documentType: saleHeader.documentType,
+          SalesLineExtension.toObj(
+            saleHeader: saleHeader,
+            line: posLine,
+            lineId: Helpers.generateUniqueNumber(),
             lineNo: lineNo,
-            specialType: line.specialType,
-            specialTypeNo: line.specialType,
-            type: line.type,
-            referLineNo: 1,
-            customerNo: line.customerNo,
-            no: line.no,
-            description: line.description,
-            description2: line.description2,
-            itemBrandCode: line.itemBrandCode,
-            itemCategoryCode: line.itemCategoryCode,
-            itemGroupCode: line.itemGroupCode,
-            itemDiscGroupCode: line.itemDiscGroupCode,
-            postingGroup: line.postingGroup,
-            genProdPostingGroupCode: line.genProdPostingGroupCode,
-            vatProdPostingGroupCode: line.vatProdPostingGroupCode,
-            genBusPostingGroupCode: line.genBusPostingGroupCode,
-            vatBusPostingGroupCode: line.vatBusPostingGroupCode,
-            locationCode: line.locationCode,
-            salespersonCode: line.salespersonCode,
-            storeCode: line.storeCode,
-            divisionCode: line.divisionCode,
-            distributorCode: line.distributorCode,
-            departmentCode: line.departmentCode,
-            businessUnitCode: line.businessUnitCode,
-            projectCode: line.projectCode,
-            requestShipmentDate: line.requestShipmentDate,
-            currencyCode: line.currencyCode,
-            currencyFactor: line.currencyFactor,
-            vatCalculationType: line.vatCalculationType,
-            vatPercentage: line.vatPercentage,
-            unitOfMeasure: line.unitOfMeasure,
-            qtyPerUnitOfMeasure: line.qtyPerUnitOfMeasure,
-            quantity: line.quantity,
-            quantityToShip: line.quantityToShip,
-            quantityToInvoice: line.quantityToInvoice,
-            outstandingQuantity: line.outstandingQuantity,
-            outstandingQuantityBase: line.outstandingQuantityBase,
-            quantityInvoiced: 0,
-            quantityShipped: 0,
-            unitPrice: line.unitPrice,
-            unitPriceLcy: line.unitPriceLcy,
-            discountAmount: line.discountAmount,
-            discountPercentage: line.discountPercentage,
-            vatAmount: line.vatAmount,
-            vatBaseAmount: line.vatBaseAmount,
-            amount: line.amount,
-            amountLcy: line.amountLcy,
-            amountIncludingVat: line.amountIncludingVat,
-            amountIncludingVatLcy: line.amountIncludingVatLcy,
-            manualUnitPrice: line.manualUnitPrice,
-            isManualEdit: line.isManualEdit,
-            isSync: kStatusNo,
-            documentDate: DateTime.now().toDateString(),
-            unitPriceOri: line.unitPriceOri,
-            serialNo: line.sourceNo,
           ),
         );
       }
@@ -1008,12 +722,21 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         throw GeneralException('Please kill app and open again.');
       }
 
+      final userSetup = await _local.getUserSetup();
+      if (userSetup == null) {
+        throw GeneralException("User setup not found");
+      }
+
+      if (userSetup.locationCode == null) {
+        throw GeneralException("User setup not link to location yet.");
+      }
+
       final String saleNo = Helpers.getSaleDocumentNo(
         scheduleId: schedule.id,
         documentType: documentType,
       );
 
-      PosSalesHeader? saleHeader = await _getPosSaleHeader(
+      PosSalesHeader? saleHeader = await getPosSaleHeader(
         no: saleNo,
         documentType: documentType,
       );
@@ -1022,11 +745,16 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
 
       final bus = customer.vatPostingGroupCode ?? "";
 
-      saleHeader ??= await _generateNewSaleHeader(
-        schedule: schedule,
+      saleHeader ??= PosSalesHeaderExtension.toObj(
         documentNo: saleNo,
         customer: customer,
+        userSetup: userSetup,
         documentType: documentType,
+        storeCode: getStoreCode(userSetup, customer),
+        divisionCode: getDivisionCode(userSetup, customer),
+        businessUnitCode: getBusinessUnitCode(userSetup, customer),
+        departmentCode: getDepartmentCode(userSetup, customer),
+        projectCode: getProjectCode(userSetup, customer),
       );
 
       List<PosSalesLine> saleLines = [];
@@ -1039,7 +767,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
 
           if (record.type != "G/L Account") {
             final prod = l.item?.vatProdPostingGroupCode ?? "";
-            vatSetup = await _getVatSetup(
+            vatSetup = await getVatSetup(
               busPostingGroup: bus,
               prodPostingGroup: prod,
             );
@@ -1102,6 +830,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
             unitPrice: unitPrice,
             quantity: Helpers.toDouble(l.orderQty),
             vatPercentage: Helpers.toDouble(vatSetup?.vatAmount),
+            vatCalculationType: "${vatSetup?.vatCalculationType}",
             discountAmount: Helpers.formatNumberDb(
               record.line.discountAmount,
               option: FormatType.amount,
@@ -1381,18 +1110,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
-  }
-
-  @override
-  Future<Either<Failure, PosSalesHeader>> getPosSaleHeader({
-    Map<String, dynamic>? params,
-  }) async {
-    final saleHeader = await _local.getPosSaleHeader(params: params);
-    if (saleHeader == null) {
-      return Left(ServerFailure("Sale header not found."));
-    }
-
-    return Right(saleHeader);
   }
 
   @override

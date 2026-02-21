@@ -1,4 +1,10 @@
+import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/core/enums/enums.dart';
+import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/domain/services/calculate_sale_price.dart';
+import 'package:salesforce/features/tasks/domain/entities/sale_form_input.dart';
+import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 
 extension PosSalesLineExtension on PosSalesLine {
@@ -40,6 +46,93 @@ extension PosSalesLineExtension on PosSalesLine {
       currencyFactor: Helpers.toDouble(json['currency_factor']),
       quantityShipped: Helpers.toDouble(json['quantity_shipped']),
       quantityToInvoice: Helpers.toDouble(json['quantity_invoiced']),
+    );
+  }
+
+  static PosSalesLine toObj({
+    required int lineId,
+    required PosSalesHeader saleHeader,
+    required Item item,
+    required SaleFormInput input,
+    required CalculateSalePrices calculated,
+    required int lineNo,
+    required int referentLineNo,
+    required double unitPriceOri,
+    required double manualPrice,
+    required double qtyPerUnit,
+    required String unitOfMeasureCode,
+    String? specialType,
+    String specialTypeNo = "",
+    String? serialNo,
+    String? sourceNo,
+    String type = kTypeItem,
+    double headerQuantity = 0,
+  }) {
+    return PosSalesLine(
+      lineId,
+      documentNo: saleHeader.no,
+      headerId: saleHeader.id,
+      headerQuantity: headerQuantity,
+      customerNo: saleHeader.customerNo,
+      specialType: specialType ?? input.code,
+      specialTypeNo: specialTypeNo,
+      type: type,
+      lineNo: lineNo,
+      referLineNo: referentLineNo,
+      no: item.no,
+      description: item.description,
+      description2: item.description2,
+      itemBrandCode: item.itemBrandCode,
+      itemCategoryCode: item.itemCategoryCode,
+      itemGroupCode: item.itemGroupCode,
+      itemDiscGroupCode: item.itemDiscountGroupCode,
+      postingGroup: item.invPostingGroupCode,
+      genProdPostingGroupCode: item.genProdPostingGroupCode,
+      vatProdPostingGroupCode: item.vatProdPostingGroupCode,
+      genBusPostingGroupCode: saleHeader.genBusPostingGroupCode,
+      vatBusPostingGroupCode: saleHeader.vatBusPostingGroupCode,
+      locationCode: saleHeader.locationCode,
+      documentType: saleHeader.documentType,
+      salespersonCode: saleHeader.salespersonCode,
+      storeCode: saleHeader.storeCode,
+      divisionCode: saleHeader.divisionCode,
+      distributorCode: saleHeader.distributorCode,
+      departmentCode: saleHeader.departmentCode,
+      businessUnitCode: saleHeader.businessUnitCode,
+      projectCode: saleHeader.projectCode,
+      requestShipmentDate: saleHeader.requestShipmentDate,
+      currencyCode: saleHeader.currencyCode,
+      currencyFactor: saleHeader.currencyFactor,
+      unitOfMeasure: unitOfMeasureCode,
+      qtyPerUnitOfMeasure: qtyPerUnit,
+      quantity: input.quantity,
+      quantityToShip: input.quantity,
+      quantityToInvoice: input.quantity,
+      outstandingQuantity: input.quantity,
+      outstandingQuantityBase: input.quantity * qtyPerUnit,
+      quantityInvoiced: 0,
+      quantityShipped: 0,
+      unitPrice: calculated.unitPrice,
+      unitPriceLcy: calculated.unitPrice,
+      discountAmount: calculated.discountAmount,
+      discountPercentage: calculated.discountPercentage,
+      vatCalculationType: calculated.vatCalculationType,
+      vatPercentage: calculated.vatPercentage,
+      vatAmount: calculated.vatAmount,
+      vatBaseAmount: calculated.vatBaseAmount,
+      amount: calculated.amount,
+      amountLcy: calculated.amount,
+      amountIncludingVat: calculated.amountIncludeVat,
+      amountIncludingVatLcy: calculated.amountIncludeVat,
+      manualUnitPrice: manualPrice,
+      isManualEdit: manualPrice > 0 ? kStatusYes : kStatusNo,
+      documentDate: DateTime.now().toDateString(),
+      unitPriceOri: Helpers.formatNumberDb(
+        unitPriceOri,
+        option: FormatType.price,
+      ),
+      serialNo: serialNo,
+      sourceNo: sourceNo,
     );
   }
 }

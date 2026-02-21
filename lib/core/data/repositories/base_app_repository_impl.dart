@@ -16,10 +16,10 @@ import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/errors/failures.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
-import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/infrastructure/network/network_info.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
+import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
 class BaseAppRepositoryImpl implements BaseAppRepository {
@@ -265,6 +265,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
 
   @override
   Future<bool> isConnectedToNetwork() async {
+    print("KKKKKKKKKK");
     return await _networkInfo.isConnected;
   }
 
@@ -380,51 +381,11 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
     }
   }
 
-  // @override
-  // Future<Either<Failure, bool>> syncOfflineLocationToBackend() async {
-  //   if (!await _networkInfo.isConnected) {
-  //     return const Right(true);
-  //   }
-
-  //   final routeTrackings = await _local.getGPSRouteTracking(
-  //     param: {"is_sync": "No"},
-  //   );
-
-  //   if (routeTrackings.isEmpty) {
-  //     return const Right(true);
-  //   }
-
-  //   try {
-  //     List<Map<String, dynamic>> jsonData = routeTrackings.map((record) {
-  //       return {
-  //         'salesperson_code': record.salepersonCode,
-  //         "latitude": record.latitude,
-  //         "longitude": record.longitude,
-  //         "created_date": record.createdDate,
-  //         "created_time": record.createdTime,
-  //       };
-  //     }).toList();
-
-  //     await _remote.gpsTrackingEntry(data: {'data': jsonEncode(jsonData)});
-
-  //     await _local.updateTrackingByCreatedDate(routeTrackings);
-
-  //     return const Right(true);
-  //   } catch (e) {
-  //     rethrow;
-  //   }
-  // }
-
   @override
   Future<Either<Failure, Salesperson?>> getSaleperson({
     Map<String, dynamic>? params,
   }) async {
-    try {
-      final saleperson = await _local.getSalesperson(args: params);
-      return Right(saleperson);
-    } catch (e) {
-      rethrow;
-    }
+    return Right(await _local.getSalesperson(args: params));
   }
 
   @override
@@ -522,7 +483,6 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
 
       return Right(companyInfo);
     } catch (e) {
-      Logger.log("getRemoteCompanyInfo $e");
       return Left(CacheFailure(e.toString()));
     }
   }
@@ -559,4 +519,123 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
       return Left(CacheFailure(e.toString()));
     }
   }
+
+  String getStoreCode(UserSetup userSetup, Customer customer) {
+    final code = userSetup.storeCode ?? "";
+    if (code.isNotEmpty) {
+      return code;
+    }
+
+    return customer.storeCode ?? "";
+  }
+
+  String getBusinessUnitCode(UserSetup userSetup, Customer customer) {
+    final buCode = userSetup.businessUnitCode ?? "";
+
+    if (buCode.isNotEmpty) {
+      return buCode;
+    }
+
+    return customer.businessUnitCode ?? "";
+  }
+
+  String getDepartmentCode(UserSetup userSetup, Customer customer) {
+    final code = userSetup.departmentCode ?? "";
+    if (code.isNotEmpty) {
+      return code;
+    }
+
+    return customer.departmentCode ?? "";
+  }
+
+  String getProjectCode(UserSetup userSetup, Customer customer) {
+    final code = userSetup.projectCode ?? "";
+    if (code.isNotEmpty) {
+      return code;
+    }
+
+    return customer.projectCode ?? "";
+  }
+
+  String getDivisionCode(UserSetup userSetup, Customer customer) {
+    final code = userSetup.divisionCode ?? "";
+    if (code.isNotEmpty) {
+      return code;
+    }
+
+    return customer.divisionCode ?? "";
+  }
+
+  Future<VatPostingSetup?> getVatSetup({
+    required String busPostingGroup,
+    required String prodPostingGroup,
+  }) async {
+    return await _local.getVatSetup(
+      param: {
+        'vat_bus_posting_group': busPostingGroup,
+        'vat_prod_posting_group': prodPostingGroup,
+      },
+    );
+  }
+
+  @override
+  Future<PosSalesHeader?> getPosSaleHeader({
+    required String no,
+    required String documentType,
+  }) async {
+    return await _local.getPosSaleHeader(
+      params: {'no': no, 'document_type': documentType},
+    );
+  }
+
+  @override
+  Future<Either<Failure, CustomerAddress?>> getCustomerAddress({
+    Map<String, dynamic>? params,
+  }) async {
+    try {
+      final customerAddress = await _getCustomerAddress(params: params);
+      return Right(customerAddress);
+    } on GeneralException {
+      return const Left(CacheFailure(errorInternetMessage));
+    }
+  }
+
+  Future<CustomerAddress?> _getCustomerAddress({
+    Map<String, dynamic>? params,
+  }) async {
+    return await _local.getCustomerAddress(args: params);
+  }
+
+  @override
+  Future<Either<Failure, List<PromotionType>>> getPromotionType() async {
+    // if (await _networkInfo.isConnected && await _remote.isValidApiSession()) {
+    //   const String tableName = "promotion_type";
+    //   final datas = await _remote.downloadTranData(data: {
+    //     "table": tableName,
+    //   });
+
+    //   final handler = TableHandlerFactory.getHandler(tableName);
+    //   if (handler == null) {
+    //     return throw Exception("No handler found for table: $tableName");
+    //   }
+
+    //   final date = datas['datetime'] as String;
+
+    //   final records = (datas["records"] as List).map((item) {
+    //     return handler.fromMap(item as Map<String, dynamic>);
+    //   }).toList();
+
+    //   await _local.storeData(records, handler.extractKey, date, tableName);
+    // }
+
+    final localData = await _local.getPromotionType(
+      param: {'allow_manual': 'Yes'},
+    );
+
+    return Right(localData);
+  }
+
+  ///
+  ///
+  ///
 }

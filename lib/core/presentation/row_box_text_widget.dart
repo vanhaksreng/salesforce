@@ -22,6 +22,7 @@ class RowBoxTextWidget extends StatelessWidget {
     this.value2FontWeight = FontWeight.bold,
     this.crossAxisAlignment1 = CrossAxisAlignment.start,
     this.crossAxisAlignment2 = CrossAxisAlignment.end,
+    this.space = 8,
   });
 
   final String lable1;
@@ -40,6 +41,7 @@ class RowBoxTextWidget extends StatelessWidget {
   final double fontSizeValue;
   final CrossAxisAlignment crossAxisAlignment1;
   final CrossAxisAlignment crossAxisAlignment2;
+  final double space;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +51,7 @@ class RowBoxTextWidget extends StatelessWidget {
         children: [
           Expanded(
             child: Column(
-              spacing: 8.scale,
+              spacing: space,
               crossAxisAlignment: crossAxisAlignment1,
               children: [
                 TextWidget(
@@ -70,7 +72,7 @@ class RowBoxTextWidget extends StatelessWidget {
           if (label2.isNotEmpty && value2.isNotEmpty)
             Expanded(
               child: Column(
-                spacing: 8.scale,
+                spacing: space,
                 crossAxisAlignment: crossAxisAlignment2,
                 children: [
                   TextWidget(

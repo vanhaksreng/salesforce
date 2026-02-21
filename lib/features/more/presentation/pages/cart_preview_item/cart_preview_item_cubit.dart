@@ -26,21 +26,20 @@ class CartPreviewItemCubit extends Cubit<CartPreviewItemState>
         documentType: documentType,
       );
 
-      final response = await _moreRepo.getPosSaleHeader(
-        params: {'no': saleNo, 'document_type': documentType},
+      final header = await _moreRepo.getPosSaleHeader(
+        no: saleNo,
+        documentType: documentType,
       );
 
-      PosSalesHeader header = await response.fold(
-        (l) => throw GeneralException(l.message),
-        (r) => r,
-      );
-      emit(
-        state.copyWith(
-          salesHeader: header,
-          documentType: documentType,
-          customer: customer,
-        ),
-      );
+      if(header == null) {
+        throw GeneralException("Sale header not found.");
+      }
+
+      emit(state.copyWith(
+        salesHeader: header,
+        documentType: documentType,
+        customer: customer,
+      ));
     } catch (e) {
       Logger.log('Error loading initial data: $e');
     }

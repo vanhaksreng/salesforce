@@ -134,8 +134,8 @@ class SaleFormArg {
 
   SaleFormArg({
     required this.item,
-    required this.schedule,
     required this.documentType,
+    required this.schedule,
   });
 }
 

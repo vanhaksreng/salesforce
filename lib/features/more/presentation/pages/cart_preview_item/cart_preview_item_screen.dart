@@ -116,7 +116,6 @@ class CartPreviewItemScreenState extends State<CartPreviewItemScreen>
       SaleFormItemScreen.routeName,
       arguments: ItemSaleArg(
         item: item,
-
         documentType: line.documentType ?? widget.args.documentType,
         isRefreshing: true,
         customer: widget.args.customer,

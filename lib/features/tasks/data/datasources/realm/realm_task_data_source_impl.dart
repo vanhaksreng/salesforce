@@ -736,17 +736,6 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
   }
 
   @override
-  Future<PosSalesHeader?> getPosSaleHeader({
-    Map<String, dynamic>? params,
-  }) async {
-    try {
-      return await _storage.getFirst<PosSalesHeader>(args: params);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
   Future<List<PosSalesHeader>> getPosSaleHeaders({
     Map<String, dynamic>? params,
   }) async {

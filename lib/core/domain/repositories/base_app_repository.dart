@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/core/errors/failures.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
+import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
 abstract class BaseAppRepository {
@@ -90,4 +91,15 @@ abstract class BaseAppRepository {
   });
 
   Future<Either<Failure, bool>> processUploadGpsTracking();
+
+  Future<Either<Failure, CustomerAddress?>> getCustomerAddress({
+    Map<String, dynamic>? params,
+  });
+
+  Future<PosSalesHeader?> getPosSaleHeader({
+    required String no,
+    required String documentType,
+  });
+
+  Future<Either<Failure, List<PromotionType>>> getPromotionType();
 }

@@ -70,8 +70,6 @@ abstract class RealmTaskDataSource extends BaseRealmDataSource {
     Map<String, dynamic>? params,
   });
 
-  Future<PosSalesHeader?> getPosSaleHeader({Map<String, dynamic>? params});
-
   Future<List<PosSalesLine>> getPosSaleLines({Map<String, dynamic>? params});
   Future<PosSalesLine?> getPosSaleLine({Map<String, dynamic>? params});
 

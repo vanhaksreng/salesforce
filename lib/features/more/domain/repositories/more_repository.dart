@@ -30,8 +30,6 @@ abstract class MoreRepository extends BaseAppRepository {
     Map<String, dynamic>? params,
   });
 
-  Future<Either<Failure, List<PromotionType>>> getPromotionType();
-
   Future<Either<Failure, SaleDetail?>> getSaleDetails({
     Map<String, dynamic>? param,
   });

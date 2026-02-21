@@ -152,4 +152,6 @@ abstract class BaseRealmDataSource {
 
   Future<GpsRouteTracking?> getLastGpsRequest();
   Future<bool> storeGps(List<GpsRouteTracking> records);
+
+  Future<PosSalesHeader?> getPosSaleHeader({Map<String, dynamic>? params});
 }

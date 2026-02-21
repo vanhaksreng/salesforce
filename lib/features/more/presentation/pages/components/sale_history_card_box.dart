@@ -35,135 +35,159 @@ class SaleHistoryCardBox extends StatelessWidget {
       ),
       onPress: onTap,
       width: double.infinity,
+      padding: EdgeInsets.all(8),
       child: Column(
         spacing: 8.scale,
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(16.scale, 8.scale, 16.scale, 8.scale),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      spacing: scaleFontSize(4),
-                      children: [
-                        CircleIconWidget(
-                          bgColor: header.isSync == kStatusYes
-                              ? success
-                              : error,
-                          sizeIcon: scaleFontSize(14),
-                          colorIcon: white,
-                          icon: header.isSync == kStatusYes
-                              ? Icons.cloud_done
-                              : Icons.cloud_off_outlined,
-                        ),
-                        Column(
-                          spacing: scaleFontSize(4),
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            TextWidget(
-                              text: header.appId ?? "",
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            TextWidget(
-                              text: "Doc : ${header.no ?? ""}",
-                              fontSize: 12,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    ChipWidget(
-                      ishadowColor: false,
-                      fontSize: 12,
-                      vertical: 8.scale,
-                      label: header.status?.toUpperCase() ?? "",
-                      colorText: getStatusColor(header.status),
-                      bgColor: getStatusColor(
-                        header.status,
-                      ).withValues(alpha: .2),
-                    ),
-                  ],
-                ),
-                Helpers.gapH(16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 8.scale,
-                  children: [
-                    TextWidget(
-                      text: "${header.customerName ?? ""} ",
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    TextWidget(
-                      fontSize: 16,
-                      text: Helpers.formatNumber(
-                        header.totalAmtLine ?? 0.0,
-                        option: FormatType.amount,
-                      ),
-
-                      fontWeight: FontWeight.w600,
-                      textAlign: TextAlign.right,
-                    ),
-                    if ((header.shipToAddress ?? "").isNotEmpty)
-                      BoxWidget(
-                        rounding: 4,
-                        padding: EdgeInsets.all(scale(8)),
-                        color: grey20.withValues(alpha: 0.1),
-                        isBoxShadow: false,
-                        child: TextWidget(
-                          text: header.shipToAddress ?? "",
-                          color: textColor,
-                          fontSize: 12,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const Hr(width: double.infinity),
-          Padding(
-            padding: EdgeInsets.fromLTRB(16.scale, 8.scale, 16.scale, 16.scale),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  spacing: 6.scale,
-                  children: [
-                    Icon(Icons.date_range, size: 16.scale, color: textColor50),
-                    TextWidget(
-                      text: DateTimeExt.parse(
-                        header.postingDate,
-                      ).toDateNameString(),
-                      color: textColor50,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ],
-                ),
-                InkWell(
-                  onTap: onTapShare,
-                  child: Row(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     spacing: 4.scale,
                     children: [
-                      Icon(Icons.share, color: mainColor, size: 14.scale),
+                      CircleIconWidget(
+                        bgColor: header.isSync == kStatusYes ? success : error,
+                        sizeIcon: scaleFontSize(10),
+                        colorIcon: white,
+                        icon: header.isSync == kStatusYes
+                            ? Icons.cloud_done
+                            : Icons.cloud_off_outlined,
+                      ),
                       TextWidget(
-                        fontWeight: FontWeight.w400,
-                        text: greeting("Share"),
-                        color: mainColor,
+                        text: greeting("Local Document No").toUpperCase(),
+                        fontSize: 12,
                       ),
                     ],
                   ),
+                  TextWidget(
+                    fontWeight: FontWeight.bold,
+                    text: header.appId ?? "",
+                    fontSize: 16,
+                  ),
+                ],
+              ),
+              ChipWidget(
+                ishadowColor: false,
+                fontSize: 12,
+                vertical: 8.scale,
+                label: header.status?.toUpperCase() ?? "",
+                colorText: getStatusColor(header.status),
+                bgColor: getStatusColor(header.status).withValues(alpha: 0.1),
+              ),
+            ],
+          ),
+          Hr(width: double.infinity),
+
+          TextWidget(
+            text: "${header.customerName ?? ""} ",
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _cardBox(greeting("Customer No"), header.customerNo ?? ""),
+              _cardBox(greeting("Document No"), header.no ?? ""),
+            ],
+          ),
+
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 6.scale,
+              vertical: 8.scale,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6.scale),
+              color: getStatusColor(header.status).withValues(alpha: 0.1),
+            ),
+            width: double.infinity,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextWidget(
+                  text: greeting('Total Amount'),
+                  fontSize: 15,
+                  color: getStatusColor(header.status),
+                ),
+                TextWidget(
+                  fontSize: 16,
+                  color: getStatusColor(header.status),
+                  text: Helpers.formatNumber(
+                    header.totalAmtLine ?? 0.0,
+                    option: FormatType.amount,
+                  ),
+                  fontWeight: FontWeight.w600,
+                  textAlign: TextAlign.right,
                 ),
               ],
             ),
           ),
+
+          if ((header.shipToAddress ?? "").isNotEmpty)
+            Row(
+              children: [
+                Icon(Icons.location_pin, size: 18),
+                TextWidget(text: "${header.shipToAddress}", fontSize: 15),
+              ],
+            ),
+          const Hr(width: double.infinity),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                spacing: 6.scale,
+                children: [
+                  Icon(Icons.date_range, size: 16.scale, color: textColor50),
+                  TextWidget(
+                    text: DateTimeExt.parse(
+                      header.postingDate,
+                    ).toDateNameString(),
+                    color: textColor50,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ],
+              ),
+              InkWell(
+                onTap: onTapShare,
+                child: Row(
+                  spacing: 4.scale,
+                  children: [
+                    Icon(Icons.share, color: mainColor, size: 14.scale),
+                    TextWidget(
+                      fontWeight: FontWeight.w400,
+                      text: greeting("Share"),
+                      color: mainColor,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cardBox(String label, String value) {
+    return Container(
+      padding: EdgeInsets.all(6.scale),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6.scale),
+        color: Colors.grey.withValues(alpha: 0.1),
+      ),
+      width: 180,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextWidget(text: label, fontSize: 14, color: Colors.grey),
+          TextWidget(text: value, fontSize: 14, fontWeight: FontWeight.bold),
         ],
       ),
     );

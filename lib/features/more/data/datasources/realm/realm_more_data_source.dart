@@ -9,7 +9,7 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 abstract class RealmMoreDataSource extends BaseRealmDataSource {
   Future<SaleDetail?> getSaleDetails({Map<String, dynamic>? param});
 
-  Future<PosSalesHeader?> getPosSaleHeader({Map<String, dynamic>? param});
+  // Future<PosSalesHeader?> getPosSaleHeader({Map<String, dynamic>? param});
 
   Future<List<PosSalesLine>> getPosSaleLines({Map<String, dynamic>? param});
 

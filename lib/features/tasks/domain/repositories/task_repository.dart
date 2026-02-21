@@ -89,17 +89,11 @@ abstract class TaskRepository extends BaseAppRepository {
     String uomCode = "",
   });
 
-  Future<Either<Failure, List<PromotionType>>> getPromotionType();
-
   Future<Either<Failure, Customer?>> getCustomer({required String no});
 
   Future<Either<Failure, bool>> insertSale(SaleArg saleArg);
 
   Future<Either<Failure, bool>> createSchedules(Map data);
-
-  Future<Either<Failure, CustomerAddress?>> getCustomerAddress({
-    Map<String, dynamic>? params,
-  });
 
   Future<Either<Failure, List<CustomerAddress>>> getCustomerAddresses({
     Map<String, dynamic>? params,
@@ -115,10 +109,6 @@ abstract class TaskRepository extends BaseAppRepository {
   });
 
   Future<Either<Failure, PosSalesLine?>> getPosSaleLine({
-    Map<String, dynamic>? params,
-  });
-
-  Future<Either<Failure, PosSalesHeader>> getPosSaleHeader({
     Map<String, dynamic>? params,
   });
 
