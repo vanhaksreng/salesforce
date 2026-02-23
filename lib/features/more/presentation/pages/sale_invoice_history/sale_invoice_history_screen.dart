@@ -6,6 +6,7 @@ import 'package:salesforce/features/more/domain/entities/add_customer_arg.dart';
 import 'package:salesforce/features/more/presentation/pages/add_customer/add_customer_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/upload/upload_screen.dart';
+import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
@@ -50,15 +51,13 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
 
   @override
   void initState() {
+    super.initState();
     initialFromDate = DateTime.now().firstDayOfWeek();
     initialToDate = DateTime.now().endDayOfWeek();
     _getSaleInvoice();
+    _cubit.canSaleWithoutSchedult();
+    _cubit.checkPendingUpload();
     _scrollController.addListener(_handleScrolling);
-    super.initState();
-  }
-
-  getShowAddCustomer() async {
-    isShowAddCustomer = await _cubit.isShowAccCustomer();
   }
 
   void _handleScrolling() {
@@ -134,18 +133,14 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     Navigator.of(context).pop();
   }
 
-  Future<Object?> navigatorToSaleHistoryList(
-    BuildContext context,
-    List<dynamic> records,
-    int index,
-  ) {
-    return Navigator.pushNamed(
+  void _navigatorToSaleHistoryList(BuildContext context, SalesHeader record) {
+    Navigator.pushNamed(
       context,
       SaleOrderHistoryDetailScreen.routeName,
       arguments: {
-        'documentNo': records[index].no,
+        'documentNo': record.no,
         "docType": "Invoice",
-        "isSync": records[index].isSync,
+        "isSync": record.isSync,
       },
     );
   }
@@ -155,14 +150,6 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
   }
 
   void _onSearch({String? text}) {
-    // Map<String, dynamic> param = {'document_type': 'Invoice'};
-
-    // if (text != null && text.isNotEmpty) {
-    //   param = {
-    //     // "no": "LIKE %$text%",
-    //     "customer_name": "LIKE %$text%",
-    //   };
-    // }
     _getSaleInvoice();
   }
 
@@ -237,8 +224,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
       page: page,
       param: {
         'document_type': kSaleInvoice,
-        "posting_date":
-            "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+        "posting_date": "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
       },
     );
   }
@@ -254,28 +240,28 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
           BlocBuilder<SaleInvoiceHistoryCubit, SaleInvoiceHistoryState>(
             bloc: _cubit,
             builder: (context, state) {
-              bool isHasUpload = state.records.any(
-                (e) => e.isSync == kStatusNo,
-              );
-              if (!isHasUpload) {
-                return SizedBox.shrink();
-              }
-              return BtnIconCircleWidget(
-                isShowBadge: true,
-                onPressed: () => _getBackAction(),
-                icons: Icon(Icons.upload, color: white),
-                rounded: appBtnRound,
+              return Row(
+                spacing: 6.scale,
+                children: [
+                  if (state.hasPendingUpload)
+                    BtnIconCircleWidget(
+                      isShowBadge: true,
+                      onPressed: () => _getBackAction(),
+                      icons: Icon(Icons.upload, color: white),
+                      rounded: appBtnRound,
+                    ),
+
+                  if (state.canSaleWithSchedult)
+                    BtnIconCircleWidget(
+                      onPressed: () => pushToAddCustomer(),
+                      icons: Icon(Icons.add, color: white),
+                      rounded: appBtnRound,
+                    ),
+                ],
               );
             },
           ),
-          if (isShowAddCustomer == kStatusYes) ...[
-            BtnIconCircleWidget(
-              onPressed: () => pushToAddCustomer(),
-              icons: Icon(Icons.add, color: white),
-              rounded: appBtnRound,
-            ),
-            Helpers.gapW(appSpace),
-          ],
+          Helpers.gapW(appSpace),
         ],
         heightBottom: heightBottomSearch,
         bottom: SearchWidget(
@@ -313,35 +299,28 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
             if (state.isLoading) {
               return const LoadingPageWidget();
             }
-            return CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              controller: _scrollController,
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.all(appSpace),
-                  sliver: _buildBody(state),
-                ),
-              ],
+
+            final records = state.records;
+            if (records.isEmpty) {
+              return const EmptyScreen();
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(appSpace),
+              itemCount: records.length,
+              itemBuilder: (context, index) {
+                final record = records[index];
+                return SaleHistoryCardBox(
+                  key: ValueKey(record.no),
+                  header: record,
+                  onTapShare: () => shareSaleOrder(record.no ?? ""),
+                  onTap: () => _navigatorToSaleHistoryList(context, record),
+                );
+              },
             );
           },
         ),
       ),
-    );
-  }
-
-  Widget _buildBody(SaleInvoiceHistoryState state) {
-    final records = state.records;
-
-    if (records.isEmpty) {
-      return SliverFillRemaining(child: const EmptyScreen());
-    }
-    return SliverList.builder(
-      itemBuilder: (context, index) => SaleHistoryCardBox(
-        header: records[index],
-        onTapShare: () => shareSaleOrder(records[index].no ?? ""),
-        onTap: () => navigatorToSaleHistoryList(context, records, index),
-      ),
-      itemCount: records.length,
     );
   }
 

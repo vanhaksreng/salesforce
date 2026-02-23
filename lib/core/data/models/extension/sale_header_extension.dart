@@ -51,6 +51,9 @@ extension SalesHeaderExtension on SalesHeader {
         option: FormatType.amount,
       ),
       orderDate: DateTimeExt.parse(json["order_date"]).toDateString(),
+      orderDateTime: (json["order_datetime"] as String?)?.isEmpty == false
+          ? DateTimeExt.parse(json["order_datetime"]).toDateTimeString()
+          : DateTimeExt.parse(json["order_date"]).toDateTimeString(),
       remark: json["remark"] ?? "",
       appId: json["app_id"] ?? "",
       shipToCode: json["shipment_method_code"] ?? "",
@@ -222,7 +225,7 @@ extension SalesHeaderExtension on SalesHeader {
       sourceNo: posHeader.sourceNo,
       sourceType: posHeader.sourceType,
       amount: Helpers.formatNumberDb(paymentAmount, option: FormatType.amount),
-      orderDateTime: now.toDateString(),
+      orderDateTime: now.toDateTimeString(),
     );
   }
 }

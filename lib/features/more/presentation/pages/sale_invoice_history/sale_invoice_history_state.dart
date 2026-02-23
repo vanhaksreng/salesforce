@@ -13,6 +13,8 @@ class SaleInvoiceHistoryState {
   final bool isFetching;
   final int currentPage;
   final int lastPage;
+  final bool canSaleWithSchedult;
+  final bool hasPendingUpload;
 
   const SaleInvoiceHistoryState({
     this.isLoading = false,
@@ -27,6 +29,8 @@ class SaleInvoiceHistoryState {
     this.isFetching = false,
     this.currentPage = 1,
     this.lastPage = 1,
+    this.canSaleWithSchedult = false,
+    this.hasPendingUpload = false,
   });
 
   SaleInvoiceHistoryState copyWith({
@@ -42,6 +46,8 @@ class SaleInvoiceHistoryState {
     bool? isFetching,
     int? currentPage,
     int? lastPage,
+    bool? canSaleWithSchedult,
+    bool? hasPendingUpload,
   }) {
     return SaleInvoiceHistoryState(
       isLoading: isLoading ?? this.isLoading,
@@ -56,6 +62,8 @@ class SaleInvoiceHistoryState {
       isFetching: isFetching ?? this.isFetching,
       lastPage: lastPage ?? this.lastPage,
       currentPage: currentPage ?? this.currentPage,
+      canSaleWithSchedult: canSaleWithSchedult ?? this.canSaleWithSchedult,
+      hasPendingUpload: hasPendingUpload ?? this.hasPendingUpload,
     );
   }
 }

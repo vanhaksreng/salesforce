@@ -175,10 +175,6 @@ class _TaskScreenState extends State<TasksMainScreen>
     Navigator.pushNamed(context, ScheduleHistoryScreen.routeName);
   }
 
-  // void _onSearch(String value) {
-  //   _cubit.setText(value);
-  // }
-
   void _navigateToAddSchedule() {
     Navigator.pop(context);
     Navigator.pushNamed(context, AddScheduleScreen.routeName).then((value) {

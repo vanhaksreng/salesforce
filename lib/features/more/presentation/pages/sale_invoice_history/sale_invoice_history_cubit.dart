@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/constants/permission.dart';
+import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/generate_pdf_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/mixins/permission_mixin.dart';
@@ -12,7 +13,7 @@ import 'package:salesforce/realm/scheme/sales_schemas.dart';
 class SaleInvoiceHistoryCubit extends Cubit<SaleInvoiceHistoryState>
     with MessageMixin, GeneratePdfMixin, PermissionMixin {
   SaleInvoiceHistoryCubit()
-    : super(const SaleInvoiceHistoryState(isLoading: true));
+    : super(const SaleInvoiceHistoryState(isLoading: false));
   final MoreRepository appRepos = getIt<MoreRepository>();
 
   late bool hasMorePage = true;
@@ -22,55 +23,62 @@ class SaleInvoiceHistoryCubit extends Cubit<SaleInvoiceHistoryState>
     Map<String, dynamic>? param,
     bool fetchingApi = true,
   }) async {
-    if (!hasMorePage && page > 1) {
-      return;
-    }
+    if (!hasMorePage && page > 1) return;
 
     hasMorePage = true;
+    emit(state.copyWith(isFetching: true, isLoading: page == 1));
+    int currentPage = 1;
+    int lastPage = 1;
 
     try {
-      emit(state.copyWith(isFetching: true, isLoading: true));
+      final List<SalesHeader> previousRecords = page == 1
+          ? []
+          : List.from(state.records);
 
-      final oldData = state.records;
-      final result = await appRepos.getSaleHeaders(
+      final h = await appRepos.getSaleHeaders(
         param: param,
         page: page,
         fetchingApi: fetchingApi,
       );
 
-      result.fold((l) => throw Exception(l.message), (records) async {
-        if (page > 1 && (records.saleHeaders).isEmpty) {
-          hasMorePage = false;
-          return;
-        }
+      final List<SalesHeader> newRecords = await h.fold(
+        (l) => throw GeneralException(l.message),
+        (r) {
+          currentPage = r.currentPage ?? 1;
+          lastPage = r.lastPage ?? 1;
+          return r.saleHeaders;
+        },
+      );
 
-        List<SalesLine> lines = await loadSalesLines(records.saleHeaders);
+      if (page > 1 && newRecords.isEmpty) {
+        hasMorePage = false;
+        emit(state.copyWith(isLoading: false, isFetching: false));
+        return;
+      }
 
-        for (var header in records.saleHeaders) {
-          final headerLines = lines
-              .where((e) => e.documentNo == header.no)
-              .toList();
+      final lines = await loadSalesLines(newRecords);
+      for (final header in newRecords) {
+        final headerLines = lines.where((e) => e.documentNo == header.no);
 
-          header.totalAmtLine = headerLines
-              .fold<double>(0.0, (sum, line) => sum + (line.amount ?? 0.0))
-              .toString();
-        }
-        emit(
-          state.copyWith(
-            isLoading: false,
-            currentPage: records.currentPage ?? 1,
-            lastPage: records.lastPage ?? 1,
-            records: page == 1
-                ? (records.saleHeaders)
-                : (records.saleHeaders) + oldData,
-          ),
-        );
-      });
+        header.totalAmtLine = headerLines
+            .fold<double>(0.0, (sum, line) => sum + (line.amount ?? 0.0))
+            .toString();
+      }
+
+      previousRecords.addAll(newRecords);
+
+      emit(
+        state.copyWith(
+          isLoading: false,
+          records: previousRecords,
+          currentPage: currentPage,
+          lastPage: lastPage,
+        ),
+      );
     } catch (error) {
-      emit(state.copyWith(isLoading: false));
       showErrorMessage(error.toString());
     } finally {
-      emit(state.copyWith(isLoading: false));
+      emit(state.copyWith(isLoading: false, isFetching: false));
     }
   }
 
@@ -121,9 +129,28 @@ class SaleInvoiceHistoryCubit extends Cubit<SaleInvoiceHistoryState>
     emit(state.copyWith(selectedDate: selectDate));
   }
 
-  Future<String> isShowAccCustomer() async {
-    return await hasPermission(kUseSalesInvoiceWithoutVisit)
-        ? kStatusYes
-        : kStatusNo;
+  Future<void> canSaleWithoutSchedult() async {
+    final hasPermission = await this.hasPermission(
+      kUseSalesInvoiceWithoutVisit,
+    );
+
+    emit(state.copyWith(canSaleWithSchedult: hasPermission));
+  }
+
+  void checkPendingUpload() async {
+    await appRepos
+        .getSaleHeaders(
+          param: {'is_sync': kStatusNo},
+          page: 1,
+          fetchingApi: false,
+        )
+        .then((result) {
+          result.fold(
+            (l) => showErrorMessage(),
+            (r) => emit(
+              state.copyWith(hasPendingUpload: r.saleHeaders.isNotEmpty),
+            ),
+          );
+        });
   }
 }

@@ -149,15 +149,19 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
   }
 
   void checkPendingUpload() async {
-     await appRepos.getSaleHeaders(
-      param: {'is_sync': kStatusNo},
-      page: 1,
-      fetchingApi: false,
-    ).then((result) {
-      result.fold(
-        (l) => showErrorMessage(),
-        (r) => emit(state.copyWith(hasPendingUpload: r.saleHeaders.isNotEmpty)),
-      );
-    });
+    await appRepos
+        .getSaleHeaders(
+          param: {'is_sync': kStatusNo},
+          page: 1,
+          fetchingApi: false,
+        )
+        .then((result) {
+          result.fold(
+            (l) => showErrorMessage(),
+            (r) => emit(
+              state.copyWith(hasPendingUpload: r.saleHeaders.isNotEmpty),
+            ),
+          );
+        });
   }
 }

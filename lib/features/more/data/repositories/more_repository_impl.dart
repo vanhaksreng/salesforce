@@ -60,40 +60,21 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
-      //TODO
-      // param?.remove("page");
+      if (fetchingApi && await _networkInfo.isConnected) {
+        // final localSale = await _local.getSaleHeaders(args: param, page: page);
 
-      // if (fetchingApi && await _networkInfo.isConnected) {
-      //   final localSale = await _local.getSaleHeaders(args: param, page: page);
+        print(param);
 
-      //   param?['page'] = page;
-      //   final cloudSales = await _remote.getSaleHeaders(data: param);
+        final cloudSales = await _remote.getSaleHeaders(data: param);
+        final List<SalesHeader> cloudRecords = [];
+        for (var item in cloudSales["records"] ?? []) {
+          cloudRecords.add(SalesHeaderExtension.fromMap(item));
+        }
 
-      //   final List<SalesHeader> cloudRecords = [];
-      //   for (var item in cloudSales["records"] ?? []) {
-      //     cloudRecords.add(SalesHeaderExtension.fromMap(item));
-      //   }
+        print("cloudRecords ${cloudRecords.length}");
 
-      //   final cloudIds = cloudRecords.map((e) => e.no).toSet();
-      //   final appID = cloudRecords.map((e) => e.appId).toSet();
-      //   List<SalesHeader> recordsToDelete = [];
-      //   recordsToDelete = localSale
-      //       .where(
-      //         (local) =>
-      //             cloudIds.contains(local.no) &&
-      //             local.isSync != kStatusYes &&
-      //             appID.contains(local.appId),
-      //       )
-      //       .toList();
-
-      //   if (recordsToDelete.isNotEmpty) {
-      //     await _local.deletSaleHeader(saleHeader: recordsToDelete);
-      //   }
-
-      //   await _local.storeSaleHeaders(saleHeader: cloudRecords);
-      // }
-
-      // param?.remove("page");
+        await _local.storeSaleHeaders(saleHeader: cloudRecords);
+      }
 
       final updatedLocalSale = await _local.getSaleHeaders(
         args: param,

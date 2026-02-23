@@ -307,39 +307,26 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
               return const LoadingPageWidget();
             }
 
-            return CustomScrollView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.all(appSpace),
-                  sliver: _buildBody(state),
-                ),
-              ],
+            final records = state.records;
+            if (records.isEmpty) {
+              return const EmptyScreen();
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(appSpace),
+              itemCount: records.length,
+              itemBuilder: (context, index) {
+                return SaleHistoryCardBox(
+                  key: ValueKey(records[index].no),
+                  header: records[index],
+                  onTapShare: () => shareSaleOrder(records[index].no ?? ""),
+                  onTap: () => navigatorToSaleCard(context, records[index]),
+                );
+              },
             );
           },
         ),
       ),
-    );
-  }
-
-  Widget _buildBody(SaleOrderHistoryState state) {
-    final records = state.records;
-
-    if (records.isEmpty) {
-      return SliverFillRemaining(child: const EmptyScreen());
-    }
-
-    return SliverList.builder(
-      itemCount: records.length,
-      itemBuilder: (context, index) {
-        return SaleHistoryCardBox(
-          key: ValueKey(records[index].no),
-          header: records[index],
-          onTapShare: () => shareSaleOrder(records[index].no ?? ""),
-          onTap: () => navigatorToSaleCard(context, records[index]),
-        );
-      },
     );
   }
 

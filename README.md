@@ -18,5 +18,5 @@ flutter build ios --release --build-name=13.0.6 --build-number=1
 
 ==============
 => In sale order not show pending upload when create new sale offline
-=> Duble check on auto synce & upload sale 
+=> Duble check on auto synce & upload sale
 => Double check on upload data , why saleperson schedule auto insert blank record
