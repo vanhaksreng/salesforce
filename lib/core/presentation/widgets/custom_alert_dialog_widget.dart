@@ -33,7 +33,7 @@ class AlertDialogBuilderWidget extends StatelessWidget {
     return _buildAlertDialog(context);
   }
 
-  Widget _buildAlertDialog(context) {
+  Widget _buildAlertDialog(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16.scale),

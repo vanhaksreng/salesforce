@@ -81,8 +81,8 @@ class _MoreMainPageState extends State<MoreMainPage>
     await _cubit.getMenus(false);
   }
 
-  _pushToDetail(BuildContext context) {
-    return Navigator.pushNamed(context, ProfileFormScreen.routeName).then((
+  void _pushToDetail(BuildContext context) {
+    Navigator.pushNamed(context, ProfileFormScreen.routeName).then((
       value,
     ) {
       if (Helpers.shouldReload(value)) {

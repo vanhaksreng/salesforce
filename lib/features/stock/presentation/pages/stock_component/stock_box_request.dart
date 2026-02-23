@@ -204,8 +204,8 @@ class _StockBoxRequestState extends State<StockBoxRequest> {
     );
   }
 
-  _onOption(BuildContext context) {
-    return showModalBottomSheet<void>(
+  void _onOption(BuildContext context) {
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       enableDrag: true,

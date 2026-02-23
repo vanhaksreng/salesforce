@@ -204,11 +204,11 @@ class CustomersCubit extends Cubit<CustomersState>
     );
   }
 
-  isValidate(String code) {
+  void isValidate(String code) {
     emit(state.copyWith(messageCode: code));
   }
 
-  onClear() {
+  void onClear() {
     emit(state.copyWith(isValidation: false, messageCode: ""));
   }
 

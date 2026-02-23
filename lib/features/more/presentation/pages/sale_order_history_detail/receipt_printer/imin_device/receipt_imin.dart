@@ -106,7 +106,7 @@ class _ReceiptIminState extends State<ReceiptImin>
     return printerWidth = 32;
   }
 
-  discountValue({double? disAmount, double? disPer}) {
+  String discountValue({double? disAmount, double? disPer}) {
     return (disAmount != null && disAmount != 0.0)
         ? Helpers.formatNumber(disAmount, option: FormatType.amount)
         : (disPer != null && disPer != 0)

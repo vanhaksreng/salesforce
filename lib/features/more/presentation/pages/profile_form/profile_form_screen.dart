@@ -50,11 +50,11 @@ class ProfileFormScreenState extends State<ProfileFormScreen>
 
   @override
   void initState() {
-    onInit();
+    _onInit();
     super.initState();
   }
 
-  onInit() async {
+  void _onInit() async {
     _auth = getAuth();
     await _cubit.getUserSetup();
     final userSetUp = _cubit.state.user;
@@ -74,7 +74,7 @@ class ProfileFormScreenState extends State<ProfileFormScreen>
     salesPersonCodeController.text = userSetUp?.salespersonCode ?? "";
   }
 
-  _saveInfoUser() async {
+  void _saveInfoUser() async {
     final l = LoadingOverlay.of(context);
     try {
       l.show();
@@ -114,7 +114,7 @@ class ProfileFormScreenState extends State<ProfileFormScreen>
     _pickImage(ImageSource.camera);
   }
 
-  showBottomSheetCamera() {
+  void _showBottomSheetCamera() {
     modalBottomSheet(
       context,
       child: SafeArea(
@@ -287,7 +287,7 @@ class ProfileFormScreenState extends State<ProfileFormScreen>
             child: BtnIconCircleWidget(
               bgColor: mainColor50.withValues(alpha: .2),
               flipX: false,
-              onPressed: () => showBottomSheetCamera(),
+              onPressed: () => _showBottomSheetCamera(),
               icons: const Icon(Icons.edit, color: mainColor50),
             ),
           ),

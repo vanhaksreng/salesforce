@@ -46,7 +46,7 @@ class _CustomerBalanceReportScreenState
     _onInit();
   }
 
-  _onInit() async {
+  void _onInit() async {
     initialFromDate = DateTime.now();
     initialToDate = DateTime.now();
     _cubit.getCustomerBalanceReport(

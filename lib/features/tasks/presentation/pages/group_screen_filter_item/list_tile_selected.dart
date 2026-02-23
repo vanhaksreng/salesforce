@@ -4,7 +4,12 @@ import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class ListTileSelected extends StatelessWidget {
-  const ListTileSelected({super.key, required this.group, required this.onSelected, required this.isSelected});
+  const ListTileSelected({
+    super.key,
+    required this.group,
+    required this.onSelected,
+    required this.isSelected,
+  });
 
   final ItemGroup group;
   final VoidCallback onSelected;
@@ -30,16 +35,24 @@ class ListTileSelected extends StatelessWidget {
           ),
         ),
         onTap: onSelected,
-        title: TextWidget(text: group.description ?? "", fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal),
+        title: TextWidget(
+          text: group.description ?? "",
+          fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+        ),
         subtitle: showDescription2(),
       ),
     );
   }
 
-  showDescription2() {
+  Widget? showDescription2() {
     if (group.description2?.isNotEmpty == true) {
-      return TextWidget(text: group.description2!, fontSize: 13, color: textColor50);
+      return TextWidget(
+        text: group.description2!,
+        fontSize: 13,
+        color: textColor50,
+      );
     }
-    null;
+
+    return null;
   }
 }

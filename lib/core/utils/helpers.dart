@@ -50,7 +50,7 @@ class Helpers {
     }
   }
 
-  static exception(T) => throw Exception(T.message);
+  static void exception(dynamic T) => throw Exception(T.message);
   static BoxDecoration dropDownDecoration = BoxDecoration(
     border: Border.all(color: Colors.grey, width: 1),
     borderRadius: const BorderRadius.all(Radius.circular(appSpace - 3)),

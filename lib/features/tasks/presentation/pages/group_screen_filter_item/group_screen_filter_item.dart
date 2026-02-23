@@ -109,7 +109,7 @@ class _GroupScreenFilterItemState extends State<GroupScreenFilterItem> {
     _cubit.resetFilter();
   }
 
-  onSelectedStatus(String statusStock) {
+  void onSelectedStatus(String statusStock) {
     _cubit.selectStatus(statusStock);
   }
 

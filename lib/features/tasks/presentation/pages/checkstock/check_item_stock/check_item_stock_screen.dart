@@ -60,8 +60,8 @@ class _CheckItemStockScreenState extends State<CheckItemStockScreen> with Messag
     await _screenCubit.getItems(page: page);
   }
 
-  _showModalInput(double qtyCount, Item item) {
-    return showModalBottomSheet<void>(
+  void _showModalInput(double qtyCount, Item item) {
+     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       enableDrag: true,
@@ -88,8 +88,8 @@ class _CheckItemStockScreenState extends State<CheckItemStockScreen> with Messag
     }
   }
 
-  _navigateToEditStockQty(Item item, String? status) {
-    return Navigator.pushNamed(
+  void _navigateToEditStockQty(Item item, String? status) {
+    Navigator.pushNamed(
       context,
       CheckStockFormScreen.routeName,
       arguments: {"item": item, "schedule": widget.schedule, "status": status},
@@ -100,13 +100,13 @@ class _CheckItemStockScreenState extends State<CheckItemStockScreen> with Messag
     });
   }
 
-  _navigateToPreviewScreen() {
+  void _navigateToPreviewScreen() {
     if (_screenCubit.state.cile.isEmpty) {
       showWarningMessage("Nothing to preview");
       return;
     }
 
-    return Navigator.pushNamed(
+    Navigator.pushNamed(
       context,
       CheckStockSubmitPreviewScreen.routeName,
       arguments: CheckStockArgs(schedule: widget.schedule, customerNo: widget.customerNo),

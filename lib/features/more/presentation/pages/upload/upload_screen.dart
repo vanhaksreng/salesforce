@@ -547,9 +547,6 @@ class _UploadScreenState extends State<UploadScreen> {
       ...schedules,
       SalespersonSchedule("", name: "Non Schedule"),
     ];
-    // schedules.add(SalespersonSchedule("", name: "Non Schedule"));
-
-    schedules.add(SalespersonSchedule("", name: "Non Schedule"));
 
     return ListView.separated(
       shrinkWrap: true,
@@ -1080,6 +1077,7 @@ class _UploadScreenState extends State<UploadScreen> {
     int totalRecords = 0,
     required Widget child,
   }) {
+
     return BoxWidget(
       color: white,
       margin: EdgeInsets.only(bottom: 10.scale),

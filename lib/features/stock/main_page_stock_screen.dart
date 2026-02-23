@@ -135,7 +135,7 @@ class _MainPageStockScreenState extends State<MainPageStockScreen>
     }
   }
 
-  _onSearch(String value) async {
+  void _onSearch(String value) async {
     await _cubit.getItems(
       param: {
         "_raw_query":

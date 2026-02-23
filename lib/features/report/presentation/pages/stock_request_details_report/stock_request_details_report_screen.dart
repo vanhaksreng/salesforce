@@ -228,7 +228,7 @@ class _StockRequestDetailsReportScreenState extends State<StockRequestDetailsRep
     );
   }
 
-  _buildInfo({
+  Widget _buildInfo({
     Color? valueColor,
     String label = "",
     String value = " 0",

@@ -60,9 +60,9 @@ abstract class MoreRepository extends BaseAppRepository {
     Map<String, dynamic>? params,
   });
 
-  Future<Either<Failure, CustomerAddress?>> getCustomerAddress({
-    Map<String, dynamic>? params,
-  });
+  // Future<Either<Failure, CustomerAddress?>> getCustomerAddress({
+  //   Map<String, dynamic>? params,
+  // });
 
   Future<Either<Failure, bool>> processUploadSale({
     required List<SalesHeader> salesHeaders,

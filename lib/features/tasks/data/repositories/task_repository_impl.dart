@@ -643,10 +643,10 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       );
 
       if (await _networkInfo.isConnected) {
-        // await _processUploadSale(
-        //   salesHeaders: [saleHeader],
-        //   salesLines: saleLines,
-        // );
+        await _processUploadSale(
+          salesHeaders: [saleHeader],
+          salesLines: saleLines,
+        );
       }
 
       return const Right(true);

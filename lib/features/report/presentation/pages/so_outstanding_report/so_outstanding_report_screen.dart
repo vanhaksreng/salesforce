@@ -63,7 +63,7 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen>
     await _cubit.getSoOutstandingReport(page: pages);
   }
 
-  _onInit() async {
+  void _onInit() async {
     initialFromDate = DateTime.now().firstDayOfMonth();
     initialToDate = DateTime.now().endDayOfMonth();
     await _cubit.getSoOutstandingReport(

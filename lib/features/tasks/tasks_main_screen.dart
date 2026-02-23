@@ -296,7 +296,7 @@ class _TaskScreenState extends State<TasksMainScreen>
     );
   }
 
-  _onOption() {
+  void _onOption() {
     if (_cubit.state.activeTap != 0) {
       Helpers.showMessage(
         msg: "This feature isn't available yet",
@@ -305,7 +305,7 @@ class _TaskScreenState extends State<TasksMainScreen>
       return;
     }
 
-    return showModalBottomSheet<void>(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       enableDrag: true,
@@ -364,7 +364,7 @@ class _TaskScreenState extends State<TasksMainScreen>
     );
   }
 
-  Widget builderThemCalendar(context, child) {
+  Widget builderThemCalendar(BuildContext context, Widget child) {
     return Theme(
       data: Theme.of(context).copyWith(
         primaryColor: white,
@@ -375,7 +375,7 @@ class _TaskScreenState extends State<TasksMainScreen>
         ),
         dividerTheme: const DividerThemeData(color: Colors.transparent),
       ),
-      child: child!,
+      child: child,
     );
   }
 }

@@ -72,7 +72,7 @@ class _ItemMerchandisingScreenState extends State<ItemMerchandisingScreen> with 
     _itemFilter();
   }
 
-  onPushToPriview() {
+  void onPushToPriview() {
     Navigator.pushNamed(
       context,
       PosmMerchandingPreviewScreen.routeName,

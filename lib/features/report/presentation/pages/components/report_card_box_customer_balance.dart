@@ -105,7 +105,7 @@ class ReportCardBoxCustomerBalance extends StatelessWidget {
     );
   }
 
-  _buildInfo({
+  Widget _buildInfo({
     Color? value1Color = textColor50,
     Color? valueColor = primary,
     String label = "",

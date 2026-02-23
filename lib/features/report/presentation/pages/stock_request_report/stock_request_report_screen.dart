@@ -42,7 +42,7 @@ class _StockRequestReportScreenState extends State<StockRequestReportScreen>
     _onInit();
   }
 
-  _onInit() async {
+  void _onInit() async {
     initialFromDate = DateTime.now().firstDayOfMonth();
     initialToDate = DateTime.now().endDayOfMonth();
     _cubit.getStockRequestReport(

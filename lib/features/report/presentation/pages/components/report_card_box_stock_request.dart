@@ -135,11 +135,11 @@ class ReportCardBoxStockRequest extends StatelessWidget {
     );
   }
 
-  _navigateToDetails(StockRequestReportModel report, BuildContext context) {
+  void _navigateToDetails(StockRequestReportModel report, BuildContext context) {
     Navigator.pushNamed(context, StockRequestDetailsReportScreen.routeName, arguments: StockRequestArg(report: report));
   }
 
-  _buildInfo({
+  Widget _buildInfo({
     Color? valueColor,
     String label = "",
     String value = " 0",

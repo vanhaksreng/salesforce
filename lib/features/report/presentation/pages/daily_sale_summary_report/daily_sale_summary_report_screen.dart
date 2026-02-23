@@ -43,7 +43,7 @@ class _DailySaleSummaryReportScreenState
     _init();
   }
 
-  _init() async {
+  void _init() async {
     initialFromDate = DateTime.now().firstDayOfMonth();
     initialToDate = DateTime.now().endDayOfMonth();
     _cubit.getDailySalesSummaryReport(

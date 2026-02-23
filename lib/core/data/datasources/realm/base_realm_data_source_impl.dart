@@ -407,6 +407,7 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   Future<List<SalespersonSchedule>> updateSalepersonScheduleLastSyncDate(
     List<SalespersonSchedule> schedules,
   ) async {
+    
     final now = DateTime.now().toDateTimeString();
     return await _storage.writeTransaction((realm) {
       for (var schedule in schedules) {

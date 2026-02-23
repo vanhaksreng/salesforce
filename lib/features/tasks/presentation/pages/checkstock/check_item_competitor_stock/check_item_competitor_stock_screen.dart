@@ -72,8 +72,8 @@ class _CheckItemCompetitorStockScreenState
     await _cubit.getItems(param: {"description": 'LIKE $value%'});
   }
 
-  _showModalInput(double qtyCount, CompetitorItem item) {
-    return showModalBottomSheet<void>(
+  void _showModalInput(double qtyCount, CompetitorItem item) {
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       enableDrag: true,
@@ -112,8 +112,8 @@ class _CheckItemCompetitorStockScreenState
     }
   }
 
-  _navigateToEditStockQty(CompetitorItem item, String? status) {
-    return Navigator.pushNamed(
+  void _navigateToEditStockQty(CompetitorItem item, String? status) {
+    Navigator.pushNamed(
       context,
       CheckItemCompetitorStockForm.routeName,
       arguments: CheckCompititorItemStockArg(
@@ -131,13 +131,13 @@ class _CheckItemCompetitorStockScreenState
     });
   }
 
-  _navigateToPreviewScreen() {
+  void _navigateToPreviewScreen() {
     if (_cubit.state.cile.isEmpty) {
       showWarningMessage("Nothing to preview");
       return;
     }
 
-    return Navigator.pushNamed(
+    Navigator.pushNamed(
       context,
       CheckStockSubmitPreviewCompetitorItemScreen.routeName,
       arguments: widget.schedule,

@@ -195,7 +195,7 @@ class _MapScheduleScreenState extends State<CustomerScheduleMapScreen> {
     );
   }
 
-  void _onChangePageCustomer(schedule) async {
+  void _onChangePageCustomer(SalespersonSchedule schedule) async {
     if (schedule.latitude == null || schedule.longitude == null) {
       Logger.log('Schedule location data is null');
       return;

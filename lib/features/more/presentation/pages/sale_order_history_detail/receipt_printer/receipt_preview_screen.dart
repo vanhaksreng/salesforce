@@ -447,7 +447,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     }
   }
 
-  discountValue({double? disAmount, double? disPer}) {
+  String discountValue({double? disAmount, double? disPer}) {
     return (disAmount != null && disAmount != 0.0)
         ? Helpers.formatNumber(disAmount, option: FormatType.amount)
         : (disPer != null && disPer != 0)

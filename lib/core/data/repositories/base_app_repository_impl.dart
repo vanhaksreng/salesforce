@@ -265,7 +265,6 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
 
   @override
   Future<bool> isConnectedToNetwork() async {
-    print("KKKKKKKKKK");
     return await _networkInfo.isConnected;
   }
 

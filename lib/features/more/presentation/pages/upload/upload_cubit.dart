@@ -44,6 +44,8 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin, AppMixin {
     ];
 
     await Future.wait(uploadTasks);
+
+    loadInitialData(DateTime.now());
   }
 
   Future<void> loadInitialData(DateTime date) async {
@@ -54,7 +56,7 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin, AppMixin {
       await loadSalesData();
       await _loadSalesLines();
       await _loadCashReceiptJournals();
-      await _loadSalespersonSchedules(DateTime.now());
+      await _loadSalespersonSchedules(date);
       await _loadCompetitorItemLedgerEntries();
       await _loadMerchandiseSchedules();
       await _loadRedeptionEntries();
@@ -99,7 +101,7 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin, AppMixin {
     );
   }
 
-  void handleErrorMessage(message) {
+  void handleErrorMessage(String message) {
     error += 1;
     showErrorMessage(message);
   }

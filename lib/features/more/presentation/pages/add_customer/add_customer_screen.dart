@@ -108,7 +108,7 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
     }
   }
 
-  _onSearch(String value) {
+  void _onSearch(String value) {
     _cubit.getCustomers(
       context: context,
       page: 1,
@@ -118,7 +118,7 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
     );
   }
 
-  _showError({String msg = errorMessage}) {
+  void _showError({String msg = errorMessage}) {
     Helpers.showMessage(msg: msg, status: MessageStatus.errors);
   }
 

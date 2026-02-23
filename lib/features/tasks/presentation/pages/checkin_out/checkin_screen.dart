@@ -329,7 +329,7 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
     );
   }
 
-  showBottomSheetCamera() {
+  void showBottomSheetCamera() {
     modalBottomSheet(
       context,
       child: SafeArea(

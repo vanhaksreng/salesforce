@@ -94,7 +94,7 @@ class _ItemPosmScreenState extends State<ItemPosmScreen> with MessageMixin {
     );
   }
 
-  onPushToPriview() {
+  void onPushToPriview() {
     Navigator.pushNamed(
       context,
       PosmMerchandingPreviewScreen.routeName,

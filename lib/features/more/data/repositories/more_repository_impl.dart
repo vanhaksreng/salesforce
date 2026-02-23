@@ -60,18 +60,13 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
+
       if (fetchingApi && await _networkInfo.isConnected) {
-        // final localSale = await _local.getSaleHeaders(args: param, page: page);
-
-        print(param);
-
         final cloudSales = await _remote.getSaleHeaders(data: param);
         final List<SalesHeader> cloudRecords = [];
         for (var item in cloudSales["records"] ?? []) {
           cloudRecords.add(SalesHeaderExtension.fromMap(item));
         }
-
-        print("cloudRecords ${cloudRecords.length}");
 
         await _local.storeSaleHeaders(saleHeader: cloudRecords);
       }
@@ -590,6 +585,7 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
       if (!await _networkInfo.isConnected) {
         throw GeneralException(errorInternetMessage);
       }
+      
       List<Map<String, dynamic>> jsonData = [];
       for (var sale in salesHeaders) {
         final lines = salesLines.where((e) => e.documentNo == sale.no).toList();

@@ -14,7 +14,7 @@ class Service {
     'Dec'
   ];
 
-  static toDateString(DateTime date) {
+  static String toDateString(DateTime date) {
     final year = date.year.toString();
     final month = date.month.toString();
     final day = date.day.toString();
@@ -24,7 +24,7 @@ class Service {
     return "$year-$zero$month-$day";
   }
 
-  static toDateNameString(DateTime date) {
+  static String toDateNameString(DateTime date) {
     final year = date.year.toString();
     final month = date.month;
     final day = date.day.toString();
@@ -32,7 +32,7 @@ class Service {
     return "$day-${months[month - 1]}-$year";
   }
 
-  static toDateTimeString(DateTime date) {
+  static String toDateTimeString(DateTime date) {
     final year = date.year;
     final month = date.month;
     final day = date.day;
@@ -44,7 +44,7 @@ class Service {
     return "$year-$zero$month-$day $h:$m:$s";
   }
 
-  static toDateTimeNameString(DateTime date) {
+  static String toDateTimeNameString(DateTime date) {
     final year = date.year;
     final month = date.month;
     final day = date.day;

@@ -192,13 +192,14 @@ class _StockBoxState extends State<StockBox> with MessageMixin {
     );
   }
 
-  _onOption(BuildContext context, OptionType type) {
+  void _onOption(BuildContext context, OptionType type) {
     if (widget.isReadonly) return;
 
     if (type == OptionType.uom && Helpers.toDouble(qty) <= 0) {
       showWarningMessage("Request quantity is required.");
       return;
     }
+
     modalBottomSheet(
       context,
       child: SafeArea(

@@ -33,11 +33,11 @@ class CustomerMapFullScreenScreenState extends State<CustomerMapFullScreenScreen
     );
   }
 
-  _onCameraIdle(LatLng newlatLong) async {
+  void _onCameraIdle(LatLng newlatLong) async {
     latLng = newlatLong;
   }
 
-  _onSaveLatLng(LatLng? latLng) {
+  void _onSaveLatLng(LatLng? latLng) {
     Helpers.showDialogAction(
       context,
       labelAction: greeting("Comfirm"),

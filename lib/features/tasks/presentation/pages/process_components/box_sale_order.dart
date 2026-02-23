@@ -30,7 +30,7 @@ class _BoxSaleOrderState extends State<BoxSaleOrder> with AutomaticKeepAliveClie
 
   final screenCubit = ProcessCubit();
 
-  onEditScreen(BuildContext context) {
+  void onEditScreen(BuildContext context) {
     Navigator.pushNamed(context, CheckStockFormScreen.routeName).then((value) {
       if (value != null && value is Map<String, dynamic>) {
         screenCubit.getItemUom(itemNo: widget.item.no, uOmCode: widget.item.stockUomCode ?? "");

@@ -273,7 +273,7 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
 
   void onclear() async {
     _codeController.clear();
-    await _cubit.onClear();
+    _cubit.onClear();
   }
 
   void _clearInut(BuildContext context) {

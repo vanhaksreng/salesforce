@@ -44,7 +44,7 @@ class _ItemInventoryReportScreenState extends State<ItemInventoryReportScreen>
     super.initState();
   }
 
-  _onInit() async {
+  void _onInit() async {
     initialFromDate = DateTime.now().firstDayOfMonth();
     initialToDate = DateTime.now().endDayOfMonth();
     _cubit.getItemInventoryReport(

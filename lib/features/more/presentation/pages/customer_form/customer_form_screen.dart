@@ -171,7 +171,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
     await _onCameraIdle(LatLng(data.latitude, data.longitude));
   }
 
-  _onCameraIdle(LatLng latLng) async {
+  Future<void> _onCameraIdle(LatLng latLng) async {
     _latTextEditController.text = latLng.latitude.toString();
     _longTextEditController.text = latLng.longitude.toString();
 
@@ -181,7 +181,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
     }
   }
 
-  _onNvigatorToOpenMap() {
+  void _onNvigatorToOpenMap() {
     Navigator.pushNamed(
       context,
       CustomerMapFullScreenScreen.routeName,
@@ -196,7 +196,7 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
     });
   }
 
-  showBottomSheetCamera() {
+  void showBottomSheetCamera() {
     modalBottomSheet(
       context,
       child: SafeArea(

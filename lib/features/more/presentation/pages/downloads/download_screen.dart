@@ -44,7 +44,7 @@ class _DownloadScreenState extends State<DownloadScreen> with SingleTickerProvid
     super.dispose();
   }
 
-  updateTabValue(int value) {
+  void updateTabValue(int value) {
     if (activeTab.value != value) {
       tables.value = [];
       screenCubit.setSelectAll(false);

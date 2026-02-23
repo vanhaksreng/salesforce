@@ -45,7 +45,7 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> with AppMixin {
     super.initState();
   }
 
-  _showError({String msg = errorMessage}) {
+  void _showError({String msg = errorMessage}) {
     Helpers.showMessage(msg: msg, status: MessageStatus.errors);
   }
 
@@ -112,8 +112,8 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> with AppMixin {
     _cubit.addSelectedCustomers(customerNo, addresss);
   }
 
-  _showCustomerAddress(List<CustomerAddress> address) {
-    return showModalBottomSheet<void>(
+  void _showCustomerAddress(List<CustomerAddress> address) {
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       enableDrag: true,
@@ -230,7 +230,7 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> with AppMixin {
     }
   }
 
-  _onSearch(String value) {
+  void _onSearch(String value) {
     _cubit.loadCustomers(
       context: context,
       page: 1,

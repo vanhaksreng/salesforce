@@ -72,7 +72,7 @@ class CustomerAddressFormScreenState extends State<CustomerAddressFormScreen>
     _lngController.text = (widget.address?.longitude ?? "").toString();
   }
 
-  _onCameraIdle(LatLng latLng) async {
+  Future<void> _onCameraIdle(LatLng latLng) async {
     _latController.text = latLng.latitude.toString();
     _lngController.text = latLng.longitude.toString();
 
@@ -161,7 +161,7 @@ class CustomerAddressFormScreenState extends State<CustomerAddressFormScreen>
     );
   }
 
-  _onNvigatorToOpenMap() {
+  void _onNvigatorToOpenMap() {
     Navigator.pushNamed(
       context,
       CustomerMapFullScreenScreen.routeName,

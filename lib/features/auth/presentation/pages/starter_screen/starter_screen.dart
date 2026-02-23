@@ -92,11 +92,11 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
       }
 
       if (kDebugMode && Platform.isIOS) {
-        _navigateToNextScreen("https://sme-new.clearview-erp.com/qr/ODA1"); //Seng Nary Book
+        // _navigateToNextScreen("https://sme-new.clearview-erp.com/qr/ODA1"); //Seng Nary Book
         // _navigateToNextScreen("https://sme-new.clearview-erp.com/qr/Nzk4"); //Hearo UAT
         // _navigateToNextScreen("https://smb.clearview-erp.com/qr/MjM2");
         // _navigateToNextScreen("https://192.168.40.20/qr/Mg==");
-        return; //TODO
+        // return; 
       }
 
       if (!mounted) return;
