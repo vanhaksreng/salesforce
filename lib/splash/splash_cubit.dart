@@ -1,4 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/constants/app_setting.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/app_mixin.dart';
@@ -29,6 +31,10 @@ class SplashCubit extends Cubit<SplashState> with MessageMixin, DownloadMixin, A
     } finally {
       emit(state.copyWith(isLoading: false));
     }
+  }
+
+  Future<void> loadCheckInitWithLocationSetting() async {
+    emit(state.copyWith(isUseGpsTracing: await getSetting(kGpsRealTimeTracking) == kStatusYes));
   }
 
   Future<void> getSchedules() async {

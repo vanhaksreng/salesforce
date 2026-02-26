@@ -43,7 +43,7 @@ class OneSignalNotificationService {
     );
   }
 
-  static Future<void> _handleForegroundNotification(event) async {
+  static Future<void> _handleForegroundNotification(OSNotificationWillDisplayEvent event) async {
     try {
       final notification = event.notification;
       final data = notification.additionalData;

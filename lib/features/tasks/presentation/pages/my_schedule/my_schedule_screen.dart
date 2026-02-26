@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -56,7 +55,6 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
   late DateTime scheduleDate;
   final String selectedStatus = kStatusCheckIn;
   ActionState action = ActionState.init;
-  String? checkInWithLocation;
 
   final List<String> _listStatus = [
     "All",
@@ -70,19 +68,9 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     super.initState();
     scheduleDate = DateTime.now();
     _cubit.getUserSetup();
-    // _cubit.getCurrentLocation(context);
-    checkInitWithLocation();
+    _cubit.loadCheckInitWithLocationSetting();
     refreshSchedule();
   }
-
-  // Future<void> getCheckLoc() async {
-  //   print("===============${await _location.isLocationServiceEnabled()}");
-  //   if (!await _location.isLocationServiceEnabled()) {
-  //     if (!mounted) return;
-  //     Position? loc;
-  //     loc = await _location.getCurrentLocation(context: context);
-  //   }
-  // }
 
   @override
   bool get wantKeepAlive => true;
@@ -112,6 +100,20 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
         "This schedule isn't assigned to you. Customer No. [${schedule.customerNo}] isn't in your list. Please download customers.",
       );
     }
+  }
+
+  void _showPermissionDialog({required String title, required String body}) {
+    Helpers.showDialogAction(
+      context,
+      labelAction: title,
+      subtitle: body,
+      confirmText: "Go to Settings",
+      confirm: () async {
+        Navigator.pop(context);
+        await perm.openAppSettings();
+      },
+      cancelText: "Not Now",
+    );
   }
 
   void _navigateToProcessScreen(
@@ -144,45 +146,35 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
     }
   }
 
-  Future<void> checkInitWithLocation() async {
-    checkInWithLocation = await _cubit.getSetting(kCheckInWithLocation);
-  }
-
   void _checkInHandler(SalespersonSchedule schedule) async {
     final l = LoadingOverlay.of(context);
     l.show();
+
     try {
       await isCustomerExisted(schedule);
-      await checkInitWithLocation();
       await _cubit.pendingScheduleValidate();
 
       final String useGps = await _cubit.getSetting(kGpsRealTimeTracking);
-      if (checkInWithLocation == "Yes" || useGps == kStatusYes) {
-        if (!mounted) return;
-        await _location.getCurrentLocation(context: context);
 
-        if (useGps == kStatusYes) {
-          final permStatus1 = await perm.Permission.locationAlways.status;
-          if (!mounted) return;
+      if (_cubit.state.isCheckInWithLocation == "Yes" || useGps == kStatusYes) {
 
-          if (permStatus1 != perm.PermissionStatus.granted) {
-            l.hide();
+        if (!await _location.hasPermission()) {
+          l.hide();
+          _showPermissionDialog(
+            title: "Location Permission Required",
+            body: "This feature requires access to your location to continue.",
+          );
+          return;
+        }
 
-            Helpers.showDialogAction(
-              context,
-              labelAction: "Background Location Access Needed",
-              subtitle:
-                  "As required by your company, the app needs access to your location even when running in the background. This is essential for tracking your check-in and check-out activities at customer sites.",
-              confirmText: "Go to Settings",
-              confirm: () async {
-                Navigator.pop(context);
-                await perm.openAppSettings();
-              },
-              cancelText: "Not Now",
-            );
-
-            return;
-          }
+        final permStatus1 = await perm.Permission.locationAlways.status;
+        if (permStatus1 != perm.PermissionStatus.granted) {
+          l.hide();
+          _showPermissionDialog(
+            title: "Background Location Permission Required",
+            body: "As required by your company, the app needs access to your location even when running in the background. This is essential for tracking your check-in and check-out activities at customer sites.",
+          );
+          return;
         }
       }
 

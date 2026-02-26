@@ -27,31 +27,32 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _syncAndNavigate();
+    _init();
+  }
+
+  void _init() async {
+    await _cubit.loadCheckInitWithLocationSetting();
+    await _syncAndNavigate();
   }
 
   Future<void> _syncAndNavigate() async {
     try {
       if (await _cubit.isConnectedToNetwork()) {
-        if (!mounted) return;
-
         await _cubit.loadInitialData();
-        if (!mounted) return;
-
-        await Future.delayed(const Duration(milliseconds: 200));
-        if (!mounted) return;
-
+        await Future.delayed(const Duration(milliseconds: 100));
         await _cubit.getSchedules();
       }
 
-      // Try to get location BUT do not block startup
       try {
-        if (!mounted) return;
-        final position = await _location.getCurrentLocation(context: context);
+        
+        if (_cubit.state.isUseGpsTracing) {
+          if (!mounted) return;
+          final position = await _location.getCurrentLocation(context: context);
 
-        await appRepo.storeLocationOffline(
-          LatLng(position.latitude, position.longitude),
-        );
+          await appRepo.storeLocationOffline(
+            LatLng(position.latitude, position.longitude),
+          );
+        }
       } catch (e) {
         // Log only – app can continue without location
         debugPrint("Location error on splash: $e");

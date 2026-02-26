@@ -1,4 +1,5 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
@@ -31,7 +32,9 @@ class MyScheduleState {
   final double totalSalesBySchedule;
   final bool isSortDistance;
   final String selectedStatus;
+  final String isCheckInWithLocation;
   final LatLng? latLng;
+
 
   const MyScheduleState({
     this.isLoading = false,
@@ -60,6 +63,7 @@ class MyScheduleState {
     this.isSortDistance = false,
     this.selectedStatus = "All",
     this.latLng,
+    this.isCheckInWithLocation = kStatusNo
   });
 
   MyScheduleState copyWith({
@@ -89,11 +93,13 @@ class MyScheduleState {
     double? totalSalesBySchedule,
     bool? isSortDistance,
     String? selectedStatus,
+    String? isCheckInWithLocation,
     LatLng? latLng,
   }) {
     return MyScheduleState(
       isLoading: isLoading ?? this.isLoading,
       isLoadingId: isLoadingId ?? this.isLoadingId,
+      isCheckInWithLocation: isCheckInWithLocation ?? this.isCheckInWithLocation,
       schedules: schedules ?? this.schedules,
       userSetup: userSetup ?? this.userSetup,
       saleLines: saleLines ?? this.saleLines,

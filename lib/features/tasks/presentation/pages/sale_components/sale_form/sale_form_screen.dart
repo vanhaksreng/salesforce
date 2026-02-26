@@ -215,6 +215,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
             children: [
               ImageBoxCoverWidget(
                 image: ImageNetWorkWidget(
+                  key: ValueKey(_item.no),
                   imageUrl: _item.picture ?? "",
                   width: 60.scale,
                   height: 60.scale,
@@ -255,9 +256,12 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
             itemCount: inputs.length,
             itemBuilder: (context, index) {
               final input = inputs[index];
+
               return Padding(
+                key: ValueKey(input.code),
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Column(
+                  key: ValueKey(input.code),
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(input.description),

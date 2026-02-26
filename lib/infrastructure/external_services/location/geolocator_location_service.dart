@@ -14,7 +14,7 @@ class GeolocatorLocationService implements ILocationService {
   static const int _defaultDistanceFilter = 5;
   static const double _maxAcceptableAccuracy = 10.0;
   static const LocationAccuracy _defaultAccuracy = LocationAccuracy.best;
-  static const Duration _locationTimeout = Duration(seconds: 30);
+  static const Duration _locationTimeout = Duration(seconds: 20);
 
   StreamSubscription<Position>? _subscription;
   bool _isTracking = false;
@@ -69,7 +69,7 @@ class GeolocatorLocationService implements ILocationService {
     LocationSettings? customSettings,
   }) async {
     try {
-      await _ensureLocationPermission(context);
+      await _ensureLocationPermission();
       if (context.mounted) {
         await _ensureLocationServiceEnabled(context);
       }
@@ -81,13 +81,7 @@ class GeolocatorLocationService implements ILocationService {
       ).timeout(_locationTimeout);
 
       return position;
-    }
-    //  on TimeoutException {
-    //   throw GeneralException(
-    //     "Location request timed out after ${_locationTimeout.inSeconds} seconds",
-    //   );
-    // }
-    catch (e) {
+    } catch (e) {
       Logger.log("Error getting current location: $e");
       rethrow;
     }
@@ -293,73 +287,91 @@ class GeolocatorLocationService implements ILocationService {
     }
   }
 
-  // Future<void> _ensureLocationPermission() async {
-  //   LocationPermission permission = await Geolocator.checkPermission();
-
-  //   if (permission == LocationPermission.denied) {
-  //     permission = await Geolocator.requestPermission();
-  //     if (permission == LocationPermission.denied) {
-  //       throw GeneralException(
-  //         'Location permission is required for this feature',
-  //       );
-  //     }
-  //   }
-
-  //   if (permission == LocationPermission.deniedForever) {
-  //     throw GeneralException(
-  //       'Location permission has been permanently denied. '
-  //       'Please enable it in your device settings to use this feature.',
-  //     );
-  //   }
-  // }
-  Future<void> _ensureLocationPermission(BuildContext context) async {
+  Future<void> _ensureLocationPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
 
-    // Request permission if denied
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (!context.mounted) return;
       if (permission == LocationPermission.denied) {
-        Helpers.showDialogAction(
-          context,
-          labelAction: "Location Permission Required",
-          subtitle:
-              "This feature requires access to your location to continue.",
-          confirmText: "Allow",
-          confirm: () async {
-            Navigator.pop(context);
-            await Geolocator.requestPermission();
-          },
-          cancelText: "Cancel",
-        );
-
         throw GeneralException(
           'Location permission is required for this feature',
         );
       }
     }
 
-    // Permanently denied
     if (permission == LocationPermission.deniedForever) {
-
-      if(!context.mounted) return;
-
-      Helpers.showDialogAction(
-        context,
-        labelAction: "Enable Location Permission",
-        subtitle:
-            "Location access has been permanently denied. Please enable it from app settings.",
-        confirmText: "Go to Settings",
-        confirm: () async {
-          Navigator.pop(context);
-          await Geolocator.openAppSettings();
-        },
-        cancelText: "Cancel",
+      throw GeneralException(
+        'Location permission has been permanently denied. '
+        'Please enable it in your device settings to use this feature.',
       );
-
-      throw GeneralException('Location permission has been permanently denied');
     }
   }
+
+  @override
+  Future<bool> hasPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return false;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // Future<void> ensureLocationPermission(BuildContext context) async {
+  //   LocationPermission permission = await Geolocator.checkPermission();
+
+  //   // Request permission if denied
+  //   if (permission == LocationPermission.denied) {
+  //     permission = await Geolocator.requestPermission();
+  //     if (!context.mounted) return;
+  //     if (permission == LocationPermission.denied) {
+  //       Helpers.showDialogAction(
+  //         context,
+  //         labelAction: "Location Permission Required",
+  //         subtitle:
+  //             "This feature requires access to your location to continue.",
+  //         confirmText: "Allow",
+  //         confirm: () async {
+  //           Navigator.pop(context);
+  //           await Geolocator.requestPermission();
+  //         },
+  //         cancelText: "Cancel",
+  //       );
+
+  //       throw GeneralException(
+  //         'Location permission is required for this feature',
+  //       );
+  //     }
+  //   }
+
+  //   // Permanently denied
+  //   if (permission == LocationPermission.deniedForever) {
+  //     if (!context.mounted) return;
+
+  //     Helpers.showDialogAction(
+  //       context,
+  //       labelAction: "Enable Location Permission",
+  //       subtitle:
+  //           "Location access has been permanently denied. Please enable it from app settings.",
+  //       confirmText: "Go to Settings",
+  //       confirm: () async {
+  //         Navigator.pop(context);
+  //         await Geolocator.openAppSettings();
+  //       },
+  //       cancelText: "Cancel",
+  //     );
+
+  //     throw GeneralException('Location permission has been permanently denied');
+  //   }
+  // }
 
   LocationPermissionStatus _mapGeolocatorPermission(
     LocationPermission permission,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/app_mixin.dart';
@@ -9,7 +10,6 @@ import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/mixins/permission_mixin.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
-import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/features/tasks/domain/repositories/task_repository.dart';
 import 'package:salesforce/features/tasks/presentation/pages/my_schedule/my_schedule_state.dart';
 import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
@@ -42,6 +42,10 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
     }
   }
 
+  Future<void> loadCheckInitWithLocationSetting() async {
+    emit(state.copyWith(isCheckInWithLocation: await getSetting(kCheckInWithLocation)));
+  }
+
   Future<void> getUserSetup() async {
     final userSetupRes = await _repos.getUserSetup();
     userSetupRes.fold(
@@ -64,6 +68,10 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
   }
 
   Future<void> pendingScheduleValidate() async {
+    if (state.userSetup == null) {
+     await getUserSetup();
+    }
+
     if (state.userSetup == null) {
       throw GeneralException("User setup not found");
     }
@@ -117,7 +125,7 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
       try {
         current = await _location.getCurrentLocation(context: context);
       } catch (e) {
-        Logger.log("Location error: $e");
+        // Logger.log("Location error: $e");
       }
 
       response.fold((failure) => throw Exception(failure.message), (schedules) {
@@ -137,9 +145,7 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
             isLoading: false,
             schedules: schedules,
             totalVisit: schedules.length,
-            countCheckOut: schedules
-                .where((e) => e.status == kStatusCheckOut)
-                .length,
+            countCheckOut: schedules.where((e) => e.status == kStatusCheckOut).length,
           ),
         );
       });

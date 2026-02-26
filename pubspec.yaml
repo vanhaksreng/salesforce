@@ -2,7 +2,6 @@ name: salesforce
 description: "Trade B2B"
 publish_to: 'none'
 version: 14.0.0+14000001
-  # ios : 38
 
 environment:
   sdk: ^3.8.1
@@ -43,8 +42,6 @@ dependencies:
   country_code_picker: ^3.4.0
   workmanager: ^0.9.0+3
   lottie: ^3.3.2
-  # characters: ^1.4.1
- 
 
 dev_dependencies:
   flutter_test:
@@ -64,10 +61,6 @@ flutter:
     - assets/icons/process_icon/
     
   fonts:
-    # - family: Siemreap
-    #   fonts:
-    #     - asset: assets/fonts/Siemreap-Regular.ttf
-
     - family: NotoSansKhmer
       fonts:
         - asset: assets/fonts/NotoSansKhmer-Regular.ttf

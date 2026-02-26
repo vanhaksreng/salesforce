@@ -13,19 +13,11 @@ abstract class ILocationService {
     double endLongitude,
   );
 
-  /// Checks the current location permission status.
   Future<LocationPermissionStatus> checkPermission();
-
-  /// Requests location permissions from the user.
-  /// Returns the new permission status.
+  Future<bool> hasPermission();
+  // Future<void> ensureLocationPermission(BuildContext context);
   Future<LocationPermissionStatus> requestPermission(BuildContext context);
-
-  /// Gets the current position of the device.
-  /// Throws an exception if permissions are not granted or service is disabled.
   Future<Position> getCurrentLocation({required BuildContext context});
-
-  /// Provides a stream of location updates.
-  /// Not implemented in this example but shows extensibility.
   Stream<Position> getPositionStream({
     LocationSettings locationSettings = const LocationSettings(
       accuracy: LocationAccuracy.high,
