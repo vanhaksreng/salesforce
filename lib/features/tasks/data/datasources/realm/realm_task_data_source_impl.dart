@@ -769,15 +769,16 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
     List<PosSalesLine> allExistedLines = [];
     if (refreshLine) {
       final itemNos = saleLines.map((line) => '"${line.no}"').toList();
-      allExistedLines = await _storage.getAll<PosSalesLine>(
-        args: {
-          'document_no': saleHeader.no,
-          'customer_no': saleHeader.customerNo,
-          'document_type': saleHeader.documentType,
-          'no': 'IN {${itemNos.join(",")}}',
-          'special_type_no': '',
-        },
-      );
+
+      final filters = {
+        'document_no': saleHeader.no,
+        'customer_no': saleHeader.customerNo,
+        'document_type': saleHeader.documentType,
+        'no': 'IN {${itemNos.join(",")}}',
+        'special_type_no': '_', //_ mean empty
+      };
+
+      allExistedLines = await _storage.getAll<PosSalesLine>(args: filters);
     }
 
     await _storage.writeTransaction((realm) {
@@ -808,7 +809,9 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
 
       if (posSaleHeader.documentType == kSaleInvoice) {
         for (final line in saleLines) {
-          double qty = Helpers.formatNumberDb(line.quantity) * Helpers.formatNumberDb(line.qtyPerUnitOfMeasure);
+          double qty =
+              Helpers.formatNumberDb(line.quantity) *
+              Helpers.formatNumberDb(line.qtyPerUnitOfMeasure);
 
           realm.add(
             ItemLedgerEntry(
@@ -822,8 +825,13 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
 
           final item = realm.find<Item>(line.no);
           if (item != null) {
-            final entries = realm.query<ItemLedgerEntry>('item_no = \$0', [line.no]);
-            final endingQty = entries.fold<double>(0,(sum, entry) => sum + (entry.quantity));
+            final entries = realm.query<ItemLedgerEntry>('item_no = \$0', [
+              line.no,
+            ]);
+            final endingQty = entries.fold<double>(
+              0,
+              (sum, entry) => sum + (entry.quantity),
+            );
 
             item.inventory = endingQty;
             realm.add(item, update: true);
@@ -976,7 +984,6 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
   @override
   Future<void> cleanupSchedules() async {
     await _storage.writeTransaction((realm) {
-
       final allSchedules = realm
           .query<SalespersonSchedule>("id == '' OR id BEGINSWITH ' '")
           .toList();

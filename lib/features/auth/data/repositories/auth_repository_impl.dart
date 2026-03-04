@@ -91,13 +91,17 @@ class AuthRepositoryImpl extends BaseAppRepositoryImpl
 
       setAuthInjection(userLogin);
 
-      await _local.storeAppSetting([
-        AppSetting(kUserId, userLogin.id),
-        AppSetting(kConnectionKey, arg.server.id),
-      ]);
+      if (!arg.isReAuth) {
+        await _local.storeAppSetting([
+          AppSetting(kUserId, userLogin.id),
+          AppSetting(kConnectionKey, arg.server.id),
+        ]);
+      }
 
       await _local.storeLoginSession(userLogin);
-      await _local.storeUserSetup(UserSetupExtension.fromMap(result));
+      if (!arg.isReAuth) {
+        await _local.storeUserSetup(UserSetupExtension.fromMap(result));
+      }
     } catch (e) {
       rethrow;
     }

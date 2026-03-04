@@ -500,20 +500,21 @@ class _AddCardPreviewScreenState extends State<AddCartPreviewScreen>
                       mainAxisAlignment: MainAxisAlignment.end,
                       spacing: 8.scale,
                       children: [
-                        Expanded(
-                          child: BtnWidget(
-                            bgColor: mainColor.withValues(alpha: 0.2),
-                            textColor: mainColor,
-                            onPressed: () => _onEditHandler(line, item),
-                            title: "Edit",
-                            icon: const SvgWidget(
-                              width: 20,
-                              height: 20,
-                              colorSvg: mainColor,
-                              assetName: kEditIcon,
+                        if ((line.specialTypeNo ?? "").isEmpty)
+                          Expanded(
+                            child: BtnWidget(
+                              bgColor: mainColor.withValues(alpha: 0.2),
+                              textColor: mainColor,
+                              onPressed: () => _onEditHandler(line, item),
+                              title: "Edit",
+                              icon: const SvgWidget(
+                                width: 20,
+                                height: 20,
+                                colorSvg: mainColor,
+                                assetName: kEditIcon,
+                              ),
                             ),
                           ),
-                        ),
                         // Expanded(
                         //   child: BtnWidget(
                         //     bgColor: skyColor.withValues(alpha: 0.2),

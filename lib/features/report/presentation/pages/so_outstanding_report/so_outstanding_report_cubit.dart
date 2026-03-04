@@ -34,24 +34,6 @@ class SoOutstandingReportCubit extends Cubit<SoOutstandingReportState>
     emit(state.copyWith(salesperson: salePersonCoe));
   }
 
-  // Future<void> getSalespersons({
-  //   Map<String, dynamic>? param,
-  // }) async {
-  //   try {
-  //     emit(state.copyWith(isLoading: true));
-  //     final result = await _appRepos.getSalespersons(param: param);
-  //     result.fold(
-  //       (l) => throw Exception(),
-  //       (records) => emit(state.copyWith(
-  //         isLoading: false,
-  //         recordSalespersons: records,
-  //       )),
-  //     );
-  //   } catch (error) {
-  //     emit(state.copyWith(error: error.toString(), isLoading: false));
-  //   }
-  // }
-
   Future<void> getSoOutstandingReport({
     Map<String, dynamic>? param,
     int page = 1,

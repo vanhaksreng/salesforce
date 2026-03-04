@@ -645,7 +645,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       if (await _networkInfo.isConnected) {
         await _processUploadSale(
           salesHeaders: [saleHeader],
-          salesLines: saleLines,
+          salesLines: saleLines, 
         );
       }
 
@@ -831,14 +831,8 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
             quantity: Helpers.toDouble(l.orderQty),
             vatPercentage: Helpers.toDouble(vatSetup?.vatAmount),
             vatCalculationType: "${vatSetup?.vatCalculationType}",
-            discountAmount: Helpers.formatNumberDb(
-              record.line.discountAmount,
-              option: FormatType.amount,
-            ),
-            discountPercentage: Helpers.formatNumberDb(
-              record.line.discountPercentage,
-              option: FormatType.percentage,
-            ),
+            discountAmount: l.discountAmount,
+            discountPercentage: l.discountPercent,
             priceIncludeVat: priceIncludeVat == kStatusYes,
           );
 
@@ -891,14 +885,8 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
             quantityShipped: 0,
             unitPrice: unitPrice,
             unitPriceLcy: unitPrice,
-            discountAmount: Helpers.formatNumberDb(
-              record.line.discountAmount,
-              option: FormatType.amount,
-            ),
-            discountPercentage: Helpers.formatNumberDb(
-              record.line.discountPercentage,
-              option: FormatType.percentage,
-            ),
+            discountAmount: calculated.discountAmount,
+            discountPercentage: calculated.discountPercentage,
             vatAmount: calculated.vatAmount,
             vatBaseAmount: calculated.vatBaseAmount,
             amount: calculated.amount,

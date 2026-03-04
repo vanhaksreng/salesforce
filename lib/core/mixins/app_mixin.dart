@@ -22,6 +22,15 @@ mixin AppMixin {
     }
   }
 
+   Future<bool> apiSessionStillAlive() async {
+    try {
+      final response = await _appRepo.isValidApiSession();
+      return response.fold((failure) => throw GeneralException(failure.message), (items) => true);
+    } on Exception {
+      return false;
+    }
+  }
+
   Future<bool> isConnectedToNetwork() async {
     return _appRepo.isConnectedToNetwork();
   }

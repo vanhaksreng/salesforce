@@ -10,6 +10,7 @@ import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
 import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
+import 'package:salesforce/core/presentation/widgets/session_login_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -49,8 +50,23 @@ class _UploadScreenState extends State<UploadScreen> {
     _cubit.loadInitialData(DateTime.now());
   }
 
-  void _uploadDataHandler() {
-    //Vilidate before process;
+  void _uploadDataHandler() async {
+    if (!await _cubit.isConnectedToNetwork()) {
+      _cubit.showWarningMessage(
+        "No internet connection. Please check your network settings.",
+      );
+      return;
+    }
+
+    final isNotExpired = await _cubit.apiSessionStillAlive();
+    if (!isNotExpired) {
+      
+      if (!mounted) return;
+      final password = await _showSessionLoginDialog(context);
+      if (password == null) return;
+    }
+
+    if (!mounted) return;
 
     Helpers.showDialogAction(
       context,
@@ -66,16 +82,41 @@ class _UploadScreenState extends State<UploadScreen> {
     );
   }
 
+  Future<String?> _showSessionLoginDialog(BuildContext context) {
+    return showGeneralDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      transitionDuration: const Duration(milliseconds: 300),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutBack,
+        );
+        return ScaleTransition(
+          scale: curved,
+          child: FadeTransition(opacity: animation, child: child),
+        );
+      },
+      pageBuilder: (context, _, _) => const SessionLoginWidget(),
+    );
+  }
+
   void _processUploadNow() async {
     final l = LoadingOverlay.of(context);
     l.show();
 
     try {
+      // if (!await _cubit.apiSessionStillAlive()) {
+      //   _showLoginForm();
+      //   return;
+      // }
+
       await _cubit.processUpload();
 
       if (!context.mounted) return;
 
-      if ( !_cubit.state.isconnect) {
+      if (!_cubit.state.isconnect) {
         l.hide();
         if (!mounted) return;
         Helpers.showNoInternetDialog(context);
@@ -1077,7 +1118,6 @@ class _UploadScreenState extends State<UploadScreen> {
     int totalRecords = 0,
     required Widget child,
   }) {
-
     return BoxWidget(
       color: white,
       margin: EdgeInsets.only(bottom: 10.scale),

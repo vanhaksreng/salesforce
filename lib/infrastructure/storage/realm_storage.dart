@@ -185,7 +185,7 @@ class RealmStorage implements ILocalStorage {
                 return value;
               }
 
-              if (value == "_") {
+              if (value == "_") { 
                 return '$key = ""';
               }
 

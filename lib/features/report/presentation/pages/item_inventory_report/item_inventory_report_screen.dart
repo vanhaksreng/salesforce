@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/app/app_state_handler.dart';
-import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/default_sale_person_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/bottom_sheet_fn.dart';
-import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
-import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
-import 'package:salesforce/core/utils/helpers.dart';
-import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/presentation/pages/components/sale_bottomsheet_filter.dart';
 import 'package:salesforce/features/report/presentation/pages/components/report_card_box_inventory.dart';
 import 'package:salesforce/features/report/presentation/pages/item_inventory_report/item_inventory_report_cubit.dart';
 import 'package:salesforce/features/report/presentation/pages/item_inventory_report/item_inventory_report_state.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
-import 'package:salesforce/theme/app_colors.dart';
 
 class ItemInventoryReportScreen extends StatefulWidget {
   const ItemInventoryReportScreen({super.key});
@@ -124,26 +118,26 @@ class _ItemInventoryReportScreenState extends State<ItemInventoryReportScreen>
       appBar: AppBarWidget(
         title: "item_inventory",
         parentTitle: "Back",
-        actions: [
-          BlocBuilder<ItemInventoryReportCubit, ItemInventoryReportState>(
-            bloc: _cubit,
-            builder: (context, state) {
-              return BtnIconCircleWidget(
-                onPressed: () => _showModalFilter(context),
-                icons: SvgWidget(
-                  assetName: kAppOptionIcon,
-                  colorSvg: white,
-                  padding: EdgeInsets.all(4.scale),
-                  width: 18,
-                  height: 18,
-                ),
-                isShowBadge: state.isFilter ?? false,
-                rounded: appBtnRound,
-              );
-            },
-          ),
-          Helpers.gapW(appSpace),
-        ],
+        // actions: [
+        //   BlocBuilder<ItemInventoryReportCubit, ItemInventoryReportState>(
+        //     bloc: _cubit,
+        //     builder: (context, state) {
+        //       return BtnIconCircleWidget(
+        //         onPressed: () => _showModalFilter(context),
+        //         icons: SvgWidget(
+        //           assetName: kAppOptionIcon,
+        //           colorSvg: white,
+        //           padding: EdgeInsets.all(4.scale),
+        //           width: 18,
+        //           height: 18,
+        //         ),
+        //         isShowBadge: state.isFilter ?? false,
+        //         rounded: appBtnRound,
+        //       );
+        //     },
+        //   ),
+        //   Helpers.gapW(appSpace),
+        // ],
       ),
       body: BlocBuilder<ItemInventoryReportCubit, ItemInventoryReportState>(
         bloc: _cubit,

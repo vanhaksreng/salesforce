@@ -12,8 +12,10 @@ import 'package:salesforce/features/tasks/presentation/pages/sale_components/ite
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 
-class ItemPromotionFormCubit extends Cubit<ItemPromotionFormState> with MessageMixin {
-  ItemPromotionFormCubit() : super(const ItemPromotionFormState(isLoading: true));
+class ItemPromotionFormCubit extends Cubit<ItemPromotionFormState>
+    with MessageMixin {
+  ItemPromotionFormCubit()
+    : super(const ItemPromotionFormState(isLoading: true));
 
   final _taskRepo = getIt<TaskRepository>();
 
@@ -50,7 +52,9 @@ class ItemPromotionFormCubit extends Cubit<ItemPromotionFormState> with MessageM
   void updateOrderQty(double qty) {
     final updatedLinesTemplate = state.linesTemplate.map((l) {
       if (l.type == "Item") {
-        final updatedLines = l.lines.map((r) => r.copyWith(orderQty: r.qty * qty)).toList();
+        final updatedLines = l.lines
+            .map((r) => r.copyWith(orderQty: r.qty * qty))
+            .toList();
         return l.copyWith(
           lines: updatedLines,
           addedQty: Helpers.toDouble(l.qty) * qty,
@@ -66,7 +70,9 @@ class ItemPromotionFormCubit extends Cubit<ItemPromotionFormState> with MessageM
 
   Future<void> getPromotionLines(String promotionCode) async {
     try {
-      final response = await _taskRepo.getItemPromotionLines(params: {'promotion_no': promotionCode});
+      final response = await _taskRepo.getItemPromotionLines(
+        params: {'promotion_no': promotionCode},
+      );
 
       await response.fold(
         (failure) => throw GeneralException(failure.message),
@@ -91,7 +97,10 @@ class ItemPromotionFormCubit extends Cubit<ItemPromotionFormState> with MessageM
     return itemResult.fold((failure) => <Item>[], (items) => items);
   }
 
-  Future<List<PromotionLineEntity>> _buildPromotionTemplate(List<ItemPromotionLine> lines, List<Item> items) async {
+  Future<List<PromotionLineEntity>> _buildPromotionTemplate(
+    List<ItemPromotionLine> lines,
+    List<Item> items,
+  ) async {
     final template = <PromotionLineEntity>[];
     final processedTypes = <String>{};
 
@@ -139,7 +148,10 @@ class ItemPromotionFormCubit extends Cubit<ItemPromotionFormState> with MessageM
     return itemLines;
   }
 
-  Future<List<PromotionItemLineEntity>> _getItemsForPromotionLine(ItemPromotionLine line, List<Item> items) async {
+  Future<List<PromotionItemLineEntity>> _getItemsForPromotionLine(
+    ItemPromotionLine line,
+    List<Item> items,
+  ) async {
     switch (line.type) {
       case "Item":
         return _getItemsByItem(line, items);
@@ -160,7 +172,10 @@ class ItemPromotionFormCubit extends Cubit<ItemPromotionFormState> with MessageM
     }
   }
 
-  List<PromotionItemLineEntity> _getItemsByItem(ItemPromotionLine line, List<Item> items) {
+  List<PromotionItemLineEntity> _getItemsByItem(
+    ItemPromotionLine line,
+    List<Item> items,
+  ) {
     final item = items.firstWhere(
       (item) => item.no == line.itemNo,
       orElse: () => throw Exception('Item not found: ${line.itemNo}'),
@@ -171,18 +186,34 @@ class ItemPromotionFormCubit extends Cubit<ItemPromotionFormState> with MessageM
         itemNo: item.no,
         itemName: line.description ?? "",
         qty: Helpers.formatNumberDb(line.quantity, option: FormatType.quantity),
-        orderQty: Helpers.formatNumberDb(line.quantity, option: FormatType.quantity),
+        orderQty: Helpers.formatNumberDb(
+          line.quantity,
+          option: FormatType.quantity,
+        ),
         saleUomCode: line.unitOfMeasureCode ?? "",
         itemPicture: item.picture ?? "",
         promotionType: line.promotionType ?? "",
         lineCode: line.itemNo ?? "",
+        discountAmount: Helpers.formatNumberDb(
+          line.discountAmount,
+          option: FormatType.amount,
+        ),
+        discountPercent: Helpers.formatNumberDb(
+          line.discountPercentage,
+          option: FormatType.percentage,
+        ),
         item: item,
       ),
     ];
   }
 
-  Future<List<PromotionItemLineEntity>> _getItemsByPromotionScheme(ItemPromotionLine line, List<Item> items) async {
-    final pschemes = await _taskRepo.getPromotionScheme(params: {'code': line.itemNo});
+  Future<List<PromotionItemLineEntity>> _getItemsByPromotionScheme(
+    ItemPromotionLine line,
+    List<Item> items,
+  ) async {
+    final pschemes = await _taskRepo.getPromotionScheme(
+      params: {'code': line.itemNo},
+    );
 
     ItemPromotionScheme? scheme = await pschemes.fold((l) => null, (s) => s);
 
@@ -190,37 +221,62 @@ class ItemPromotionFormCubit extends Cubit<ItemPromotionFormState> with MessageM
       return <PromotionItemLineEntity>[];
     }
 
-    final itemNoList = scheme.itemsNos!.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-    final filteredItems = items.where((item) => itemNoList.contains(item.no)).toList();
+    final itemNoList = scheme.itemsNos!
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    final filteredItems = items
+        .where((item) => itemNoList.contains(item.no))
+        .toList();
 
     return _mapItemsToPromotionItemLines(filteredItems, line);
   }
 
-  List<PromotionItemLineEntity> _getItemsByDiscountCode(ItemPromotionLine line, List<Item> items) {
-    final categoryItems = items.where((item) => item.itemDiscountGroupCode == line.itemNo);
+  List<PromotionItemLineEntity> _getItemsByDiscountCode(
+    ItemPromotionLine line,
+    List<Item> items,
+  ) {
+    final categoryItems = items.where(
+      (item) => item.itemDiscountGroupCode == line.itemNo,
+    );
 
     return _mapItemsToPromotionItemLines(categoryItems, line);
   }
 
-  List<PromotionItemLineEntity> _getItemsByCategory(ItemPromotionLine line, List<Item> items) {
-    final categoryItems = items.where((item) => item.itemCategoryCode == line.itemNo);
+  List<PromotionItemLineEntity> _getItemsByCategory(
+    ItemPromotionLine line,
+    List<Item> items,
+  ) {
+    final categoryItems = items.where(
+      (item) => item.itemCategoryCode == line.itemNo,
+    );
 
     return _mapItemsToPromotionItemLines(categoryItems, line);
   }
 
-  List<PromotionItemLineEntity> _getItemsByGroup(ItemPromotionLine line, List<Item> items) {
+  List<PromotionItemLineEntity> _getItemsByGroup(
+    ItemPromotionLine line,
+    List<Item> items,
+  ) {
     final groupItems = items.where((item) => item.itemGroupCode == line.itemNo);
 
     return _mapItemsToPromotionItemLines(groupItems, line);
   }
 
-  List<PromotionItemLineEntity> _getItemsByBrand(ItemPromotionLine line, List<Item> items) {
+  List<PromotionItemLineEntity> _getItemsByBrand(
+    ItemPromotionLine line,
+    List<Item> items,
+  ) {
     final brandItems = items.where((item) => item.itemBrandCode == line.itemNo);
 
     return _mapItemsToPromotionItemLines(brandItems, line);
   }
 
-  List<PromotionItemLineEntity> _mapItemsToPromotionItemLines(Iterable<Item> items, ItemPromotionLine line) {
+  List<PromotionItemLineEntity> _mapItemsToPromotionItemLines(
+    Iterable<Item> items,
+    ItemPromotionLine line,
+  ) {
     return items
         .map(
           (item) => PromotionItemLineEntity(
@@ -232,6 +288,14 @@ class ItemPromotionFormCubit extends Cubit<ItemPromotionFormState> with MessageM
             itemPicture: item.picture ?? "",
             promotionType: line.promotionType ?? "",
             lineCode: line.itemNo ?? "",
+            discountAmount: Helpers.formatNumberDb(
+              line.discountAmount,
+              option: FormatType.amount,
+            ),
+            discountPercent: Helpers.formatNumberDb(
+              line.discountPercentage,
+              option: FormatType.percentage,
+            ),
             item: item,
           ),
         )
@@ -244,26 +308,48 @@ class ItemPromotionFormCubit extends Cubit<ItemPromotionFormState> with MessageM
         itemNo: line.itemNo ?? "",
         itemName: line.description ?? "",
         qty: Helpers.formatNumberDb(line.quantity, option: FormatType.quantity),
-        orderQty: Helpers.formatNumberDb(line.quantity, option: FormatType.quantity),
+        orderQty: Helpers.formatNumberDb(
+          line.quantity,
+          option: FormatType.quantity,
+        ),
         saleUomCode: line.unitOfMeasureCode ?? "",
         itemPicture: "",
         promotionType: line.promotionType ?? "",
         lineCode: line.itemNo ?? "",
+        discountAmount: Helpers.formatNumberDb(
+          line.discountAmount,
+          option: FormatType.amount,
+        ),
+        discountPercent: Helpers.formatNumberDb(
+          line.discountPercentage,
+          option: FormatType.percentage,
+        ),
         item: null,
       ),
     ];
   }
 
   double _calculateTotalQuantity(List<ItemPromotionLine> lines) {
-    return lines.fold<double>(0.0, (sum, line) => sum + Helpers.toDouble(line.quantity));
+    return lines.fold<double>(
+      0.0,
+      (sum, line) => sum + Helpers.toDouble(line.quantity),
+    );
   }
 
-  void updateAddedQty({required PromotionItemLineEntity line, required PromotionLineEntity row, required double qty}) {
+  void updateAddedQty({
+    required PromotionItemLineEntity line,
+    required PromotionLineEntity row,
+    required double qty,
+  }) {
     try {
       final pIndex = state.linesTemplate.indexWhere((e) => e.type == row.type);
-      final subIndex = state.linesTemplate[pIndex].lines.indexWhere((l) => l.itemNo == line.itemNo);
+      final subIndex = state.linesTemplate[pIndex].lines.indexWhere(
+        (l) => l.itemNo == line.itemNo,
+      );
 
-      state.linesTemplate[pIndex].lines[subIndex] = line.copyWith(orderQty: qty);
+      state.linesTemplate[pIndex].lines[subIndex] = line.copyWith(
+        orderQty: qty,
+      );
 
       final addedQty = state.linesTemplate[pIndex].lines.fold<double>(
         0.0,
@@ -336,7 +422,10 @@ class ItemPromotionFormCubit extends Cubit<ItemPromotionFormState> with MessageM
     return await _checkOrderQtyLimit(params, currentQty);
   }
 
-  Future<bool> _checkOrderQtyLimit(Map<String, dynamic> params, double currentQty) async {
+  Future<bool> _checkOrderQtyLimit(
+    Map<String, dynamic> params,
+    double currentQty,
+  ) async {
     // Check POS sale line
     final posResult = await _taskRepo.getPosSaleLines(params: params);
     double posQty = posResult.fold((l) => 0, (r) {
@@ -370,7 +459,9 @@ class ItemPromotionFormCubit extends Cubit<ItemPromotionFormState> with MessageM
 
     // Calculate total existing quantity
     double totalExistingQty = posQty + saleQty;
-    emit(state.copyWith(totalExistingQty: totalExistingQty, orderQty: currentQty));
+    emit(
+      state.copyWith(totalExistingQty: totalExistingQty, orderQty: currentQty),
+    );
 
     // Check if current order + existing quantity exceeds the limit
     return (currentQty + totalExistingQty) > state.maxAllowedQty;

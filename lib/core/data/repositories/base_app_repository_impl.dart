@@ -520,49 +520,48 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   String getStoreCode(UserSetup userSetup, Customer customer) {
-    final code = userSetup.storeCode ?? "";
+    final code = customer.storeCode ?? "";
     if (code.isNotEmpty) {
       return code;
     }
 
-    return customer.storeCode ?? "";
+    return userSetup.storeCode ?? "";
   }
 
   String getBusinessUnitCode(UserSetup userSetup, Customer customer) {
-    final buCode = userSetup.businessUnitCode ?? "";
-
+    final buCode = customer.businessUnitCode ?? "";
     if (buCode.isNotEmpty) {
       return buCode;
     }
 
-    return customer.businessUnitCode ?? "";
+    return userSetup.businessUnitCode ?? "";
   }
 
   String getDepartmentCode(UserSetup userSetup, Customer customer) {
-    final code = userSetup.departmentCode ?? "";
+    final code = customer.departmentCode ?? "";
     if (code.isNotEmpty) {
       return code;
     }
 
-    return customer.departmentCode ?? "";
+    return userSetup.departmentCode ?? "";
   }
 
   String getProjectCode(UserSetup userSetup, Customer customer) {
-    final code = userSetup.projectCode ?? "";
+    final code = customer.projectCode ?? "";
     if (code.isNotEmpty) {
       return code;
     }
 
-    return customer.projectCode ?? "";
+    return userSetup.projectCode ?? "";
   }
 
   String getDivisionCode(UserSetup userSetup, Customer customer) {
-    final code = userSetup.divisionCode ?? "";
+    final code = customer.divisionCode ?? "";
     if (code.isNotEmpty) {
       return code;
     }
 
-    return customer.divisionCode ?? "";
+    return userSetup.divisionCode ?? "";
   }
 
   Future<VatPostingSetup?> getVatSetup({

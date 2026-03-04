@@ -74,7 +74,11 @@ class SaleFormCubit extends Cubit<SaleFormState>
       );
 
       final getSaleLines = await _taskRepos.getPosSaleLines(
-        params: {'document_type': arg.documentType, 'document_no': saleNo},
+        params: {
+          'document_type': arg.documentType, 
+          'document_no': saleNo,
+          'special_type_no': '_', //_ mean empty
+        },
       );
 
       List<PosSalesLine> lines = getSaleLines.fold((l) => [], (r) => r);

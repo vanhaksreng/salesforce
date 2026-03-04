@@ -2,7 +2,7 @@ import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 
 extension ItemPromotionLineExtension on ItemPromotionLine {
-  static ItemPromotionLine fromMap(Map<String, dynamic> json) {
+  static ItemPromotionLine fromMap(Map<String, dynamic> json) {    
     return ItemPromotionLine(
       Helpers.toStrings(json['id']),
       type: Helpers.toStrings(json['type']),

@@ -6,6 +6,8 @@ class PromotionItemLineEntity {
   final String saleUomCode;
   final double orderQty;
   final double qty;
+  final double discountAmount;
+  final double discountPercent;
   final String itemPicture;
   final String promotionType;
   final String lineCode;
@@ -17,6 +19,8 @@ class PromotionItemLineEntity {
     required this.saleUomCode,
     required this.promotionType,
     required this.lineCode,
+    required this.discountAmount,
+    required this.discountPercent,
     required this.item,
     this.qty = 0,
     this.orderQty = 0,
@@ -31,9 +35,12 @@ class PromotionItemLineEntity {
       itemName: itemName,
       saleUomCode: saleUomCode,
       promotionType: promotionType,
+      discountAmount: discountAmount,
+      discountPercent: discountPercent,
       lineCode: lineCode,
       itemPicture: itemPicture,
       item: item,
+      
     );
   }
 }

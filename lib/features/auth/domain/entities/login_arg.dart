@@ -9,6 +9,7 @@ class LoginArg {
   final String userAgent;
   final String platform;
   final String devVersion;
+  final bool isReAuth;
 
   const LoginArg({
     required this.email,
@@ -19,6 +20,7 @@ class LoginArg {
     this.userAgent = "",
     this.platform = "",
     this.devVersion = "",
+    this.isReAuth = false,
   });
 
   Map<String, dynamic> toJson() {
