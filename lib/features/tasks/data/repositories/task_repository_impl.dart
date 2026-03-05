@@ -322,7 +322,6 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
     }
   }
 
-
   @override
   Future<Either<Failure, ItemSalesLinePrices?>> getItemSaleLinePrice({
     required String itemNo,
@@ -643,10 +642,16 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       );
 
       if (await _networkInfo.isConnected) {
-        await _processUploadSale(
-          salesHeaders: [saleHeader],
-          salesLines: saleLines, 
-        );
+        try {
+          if (!await _remote.isValidApiSession()) {
+            await _processUploadSale(
+              salesHeaders: [saleHeader],
+              salesLines: saleLines,
+            );
+          }
+        } catch (e) {
+          //
+        }
       }
 
       return const Right(true);

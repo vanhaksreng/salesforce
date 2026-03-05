@@ -10,7 +10,6 @@ import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
 import 'package:salesforce/core/presentation/widgets/hr.dart';
 import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
-import 'package:salesforce/core/presentation/widgets/session_login_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -62,7 +61,7 @@ class _UploadScreenState extends State<UploadScreen> {
     if (!isNotExpired) {
       
       if (!mounted) return;
-      final password = await _showSessionLoginDialog(context);
+      final password = await Helpers.showSessionLoginDialog(context);
       if (password == null) return;
     }
 
@@ -79,26 +78,6 @@ class _UploadScreenState extends State<UploadScreen> {
         Navigator.of(context).pop();
         _processUploadNow();
       },
-    );
-  }
-
-  Future<String?> _showSessionLoginDialog(BuildContext context) {
-    return showGeneralDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.6),
-      transitionDuration: const Duration(milliseconds: 300),
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutBack,
-        );
-        return ScaleTransition(
-          scale: curved,
-          child: FadeTransition(opacity: animation, child: child),
-        );
-      },
-      pageBuilder: (context, _, _) => const SessionLoginWidget(),
     );
   }
 

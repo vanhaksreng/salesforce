@@ -90,54 +90,20 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
     }
   }
 
-  // @override
-  // Future<void> checkApiSession() async {
-  //   try {
-  //     await apiClient.postCheckSession(
-  //       'v2/check-api-session',
-  //       body: await getParams(),
-  //     );
-  //   } catch (e) {
-  //     rethrow;
-  //   }
-  // }
+  @override
+  Future<bool> isValidApiSessionV2() async {
+    try {
+      await apiClient.postCheckSession(
+        'v2/check-api-session',
+        body: await getParams(),
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 
   @override
-  // Future<void> updateSchedule(
-  //   SalespersonSchedule schedule, {
-  //   String type = kStatusCheckIn,
-  // }) async {
-  //   try {
-  //     if (type == kStatusCheckIn) {
-  //       await apiClient.postUploadFiles(
-  //         'v2/update-schedule',
-  //         body: await getParams(
-  //           params: {'schedule': jsonEncode(schedule.toJson()), 'type': type},
-  //         ),
-  //         files: schedule.checkInImage != null
-  //             ? [XFile(schedule.checkInImage!)]
-  //             : [],
-  //       );
-  //     } else {
-  //       await apiClient.postUploadFiles(
-  //         'v2/update-schedule',
-  //         body: await getParams(
-  //           params: {'schedule': jsonEncode(schedule.toJson()), 'type': type},
-  //         ),
-  //         files: schedule.checkOutImage != null
-  //             ? [XFile(schedule.checkOutImage!)]
-  //             : [],
-  //       );
-  //       // await apiClient.post(
-  //       //   'v2/update-schedule',
-  //       //   body: await getParams(
-  //       //     params: {'schedule': jsonEncode(schedule.toJson()), 'type': type},
-  //       //   ),
-  //     }
-  //   } catch (e) {
-  //     rethrow;
-  //   }
-  // }
   Future<void> updateSchedule(
     SalespersonSchedule schedule, {
     String type = kStatusCheckIn,

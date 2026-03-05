@@ -185,7 +185,7 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
               ),
             ),
             Text(
-              'Upload Dashboard',
+              'Token expired',
               style: TextStyle(
                 fontSize: 13,
                 color: Color(0xFF8E8E9A),
@@ -214,7 +214,7 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Your session has expired. Enter your password to continue uploading.',
+              'Your session has expired. Enter your password to continue.',
               style: TextStyle(
                 fontSize: 12.5,
                 color: Color(0xFF5D4037),
@@ -247,7 +247,7 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
           autofocus: true,
           onSubmitted: (_) => _submit(),
           style: const TextStyle(
-            fontSize: 15,
+            fontSize: 12,
             letterSpacing: 1.5,
             color: Color(0xFF1A1A2E),
           ),
@@ -256,7 +256,7 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
             hintStyle: TextStyle(letterSpacing: 2, color: Colors.grey.shade400),
             prefixIcon: const Icon(
               Icons.lock_rounded,
-              size: 18,
+              size: 14,
               color: Color(0xFFAAAAAA),
             ),
             suffixIcon: GestureDetector(
@@ -265,7 +265,7 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
                 _obscure
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
-                size: 20,
+                size: 18,
                 color: _obscure ? const Color(0xFFAAAAAA) : _accent,
               ),
             ),

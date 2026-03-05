@@ -175,8 +175,22 @@ class _TaskScreenState extends State<TasksMainScreen>
     Navigator.pushNamed(context, ScheduleHistoryScreen.routeName);
   }
 
-  void _navigateToAddSchedule() {
+  void _navigateToAddSchedule() async {
     Navigator.pop(context);
+
+    if (!await _cubit.isConnectedToNetwork()) {
+      _cubit.showWarningMessage("No internet connection");
+      return;
+    }
+
+    final isNotExpired = await _cubit.apiSessionStillAlive();
+    if (!isNotExpired) {
+      if (!mounted) return;
+      final password = await Helpers.showSessionLoginDialog(context);
+      if (password == null) return;
+    }
+
+    if (!mounted) return;
     Navigator.pushNamed(context, AddScheduleScreen.routeName).then((value) {
       if (Helpers.shouldReload(value)) {
         _cubit.refreshSchedules();
@@ -184,8 +198,38 @@ class _TaskScreenState extends State<TasksMainScreen>
     });
   }
 
+  void _headerRefreshSchedules() async {
+
+    if (!await _cubit.isConnectedToNetwork()) {
+      _cubit.showWarningMessage("No internet connection");
+      return;
+    }
+
+    final isNotExpired = await _cubit.apiSessionStillAlive();
+    if (!isNotExpired) {
+      if (!mounted) return;
+      final password = await Helpers.showSessionLoginDialog(context);
+      if (password == null) return;
+    }
+
+    _cubit.refreshSchedules();
+  }
+
   void _refreshSchedules() async {
     Navigator.pop(context);
+
+    if (!await _cubit.isConnectedToNetwork()) {
+      _cubit.showWarningMessage("No internet connection");
+      return;
+    }
+
+    final isNotExpired = await _cubit.apiSessionStillAlive();
+    if (!isNotExpired) {
+      if (!mounted) return;
+      final password = await Helpers.showSessionLoginDialog(context);
+      if (password == null) return;
+    }
+
     _cubit.setRefreshChild();
   }
 
@@ -226,7 +270,7 @@ class _TaskScreenState extends State<TasksMainScreen>
               Visibility(
                 visible: state.activeTap == 0,
                 child: BtnIconCircleWidget(
-                  onPressed: () => _cubit.refreshSchedules(),
+                  onPressed: _headerRefreshSchedules,
                   icons: const Icon(Icons.refresh, color: white),
                   rounded: appBtnRound,
                 ),

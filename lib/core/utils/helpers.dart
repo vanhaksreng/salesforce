@@ -15,6 +15,7 @@ import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/custom_alert_dialog_widget.dart';
+import 'package:salesforce/core/presentation/widgets/session_login_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
 import 'package:salesforce/core/utils/fllutter_html_to_pdf.dart';
@@ -67,19 +68,6 @@ class Helpers {
     return _widthCache.putIfAbsent(w, () => SizedBox(width: scaleFontSize(w)));
   }
 
-  // static double toDouble(value) {
-  //   if (value == null || value == "" || value == "-") {
-  //     return 0;
-  //   }
-
-  //   String v = value.toString().replaceAll("\$", "");
-  //   v = v.replaceAll("%", "");
-  //   v = v.replaceAll(",", "");
-  //   v = v.replaceAll(",", "");
-  //   // v = v.replaceAll("-", "");
-  //   return double.parse(v);
-  // }
-
   static double toDouble(dynamic value) {
     if (value == null) return 0;
 
@@ -131,16 +119,6 @@ class Helpers {
     }
   }
 
-  // static int toInt(value) {
-  //   if (value == null || value == "") {
-  //     return 0;
-  //   }
-
-  //   String v = value.toString().replaceAll("\$", "");
-  //   v = v.replaceAll("%", "");
-  //   return int.parse(v);
-  // }
-
   static int toInt(dynamic value) {
     if (value == null || value.toString().trim().isEmpty) {
       return 0;
@@ -175,47 +153,6 @@ class Helpers {
 
     return String.fromCharCode(firstChar) + String.fromCharCode(secondChar);
   }
-
-  //show messgae
-  // static void showMessage({
-  //   required String msg,
-  //   MessageStatus status = MessageStatus.success,
-  //   SnackBarAction? action,
-  //   bool closeIcon = true,
-  // }) {
-  //   final scaffold = kAppScaffoldMsgKey.currentState;
-  //   if (scaffold == null) return;
-
-  //   // Prevent showing same message repeatedly
-  //   if (_lastMessage == msg) return;
-  //   _lastMessage = msg;
-
-  //   Color color = success;
-  //   if (status == MessageStatus.warning) {
-  //     color = warning;
-  //   } else if (status == MessageStatus.errors) {
-  //     color = error;
-  //   }
-  //   scaffold.clearSnackBars(); // Hide previous snackbars
-  //   scaffold.showSnackBar(
-  //     SnackBar(
-  //       backgroundColor: color,
-  //       content: TextWidget(text: msg, color: white),
-  //       showCloseIcon: closeIcon,
-  //       closeIconColor: white,
-  //       behavior: SnackBarBehavior.floating,
-  //       shape: RoundedRectangleBorder(
-  //         borderRadius: BorderRadius.circular(scaleFontSize(8)),
-  //       ),
-  //       action: action,
-  //     ),
-  //   );
-
-  //   // Reset last message after duration
-  //   Future.delayed(const Duration(seconds: 3), () {
-  //     _lastMessage = null;
-  //   });
-  // }
 
   static void showMessage({
     required String msg,
@@ -268,12 +205,6 @@ class Helpers {
     final now = DateTime.now();
     return Helpers.toInt("${now.year}${now.month}${now.day}${random}1");
   }
-
-  // static int generateSaleId(String scheduleId, {int digit = 5}) {
-  //   final random = math.Random().nextInt(100).toString().padLeft(digit, '0');
-  //   final now = DateTime.now();
-  //   // return Helpers.toInt("${now.year}${now.month}${now.day}$scheduleId$random");
-  // }
 
   static int generateSaleId(String scheduleId, {int digit = 5}) {
     final random = math.Random().nextInt(99999).toString().padLeft(digit, '0');
@@ -934,52 +865,6 @@ class Helpers {
     );
   }
 
-  // static Future<void> ensureLocationEnabled(BuildContext context) async {
-  //   await Geolocator.requestPermission();
-  //   bool isServiceEnabled = await Geolocator.isLocationServiceEnabled();
-
-  //   LocationPermission permission = await Geolocator.checkPermission();
-
-  //   if (permission == LocationPermission.denied) {
-  //     permission = await Geolocator.requestPermission();
-  //   }
-
-  //   if ((permission == LocationPermission.denied ||
-  //           permission == LocationPermission.deniedForever) &&
-  //       context.mounted) {
-  //     await showDialogAction(
-  //       context,
-  //       confirm: () async {
-  //         await Geolocator.openAppSettings();
-  //         if (!context.mounted) return;
-  //         Navigator.of(context).pop(); // Close dialog
-  //       },
-  //       canCancel: false,
-  //       confirmText: "Enable Now",
-  //       labelAction: "Location Permission Disabled",
-  //       subtitle: "Please enable location permission to continue.",
-  //     );
-  //     return;
-  //   }
-
-  //   if (!isServiceEnabled && context.mounted) {
-  //     await showDialogAction(
-  //       context,
-  //       confirm: () async {
-  //         await Geolocator.openLocationSettings();
-  //         if (!context.mounted) return;
-  //         Navigator.of(context).pop(); // Close dialog
-  //       },
-  //       canCancel: false,
-  //       confirmText: "Enable Now",
-  //       labelAction: "Location Service Disabled",
-  //       subtitle: "Please enable location service to continue.",
-  //     );
-
-  //     return;
-  //   }
-  // }
-
   static Future<File?> generateToPdfDocument({
     required String htmlContent,
     required String documentNo,
@@ -1058,5 +943,25 @@ class Helpers {
       default:
         return ConnectionType.ble;
     }
+  }
+
+  static Future<String?> showSessionLoginDialog(BuildContext context) {
+    return showGeneralDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      transitionDuration: const Duration(milliseconds: 300),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutBack,
+        );
+        return ScaleTransition(
+          scale: curved,
+          child: FadeTransition(opacity: animation, child: child),
+        );
+      },
+      pageBuilder: (context, _, _) => const SessionLoginWidget(),
+    );
   }
 }

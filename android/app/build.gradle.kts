@@ -56,7 +56,7 @@ android {
         //versionCode = flutterVersionCode
         //versionName = flutter.versionName
 
-        versionCode = 13020001
+        versionCode = 13020002
         versionName = "13.0.2"
 
         ndk {

@@ -143,9 +143,7 @@ class ApiClient {
       }
 
       return responseData;
-    } on GeneralException {
-      rethrow;
-    } on Exception {
+    } catch (e) {
       rethrow;
     }
   }

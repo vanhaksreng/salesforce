@@ -60,15 +60,18 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
-
       if (fetchingApi && await _networkInfo.isConnected) {
-        final cloudSales = await _remote.getSaleHeaders(data: param);
-        final List<SalesHeader> cloudRecords = [];
-        for (var item in cloudSales["records"] ?? []) {
-          cloudRecords.add(SalesHeaderExtension.fromMap(item));
-        }
+        final isNotExpired = await _remote.isValidApiSessionV2();
 
-        await _local.storeSaleHeaders(saleHeader: cloudRecords);
+        if (isNotExpired) {
+          final cloudSales = await _remote.getSaleHeaders(data: param);
+          final List<SalesHeader> cloudRecords = [];
+          for (var item in cloudSales["records"] ?? []) {
+            cloudRecords.add(SalesHeaderExtension.fromMap(item));
+          }
+
+          await _local.storeSaleHeaders(saleHeader: cloudRecords);
+        }
       }
 
       final updatedLocalSale = await _local.getSaleHeaders(
@@ -91,69 +94,40 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
-      // if (fetchingApi && await _networkInfo.isConnected) {
-      //   final localSale = await _local.getSaleHeaders(args: param, page: page);
-      //   param?['page'] = page;
-      //   final cloudSales = await _remote.getSaleHeaders(data: param);
-
-      //   final List<SalesHeader> cloudRecords = [];
-      //   for (var item in cloudSales["records"] ?? []) {
-      //     cloudRecords.add(SalesHeaderExtension.fromMap(item));
-      //   }
-
-      //   final cloudIds = cloudRecords.map((e) => e.no).toSet();
-      //   final appID = cloudRecords.map((e) => e.appId).toSet();
-      //   List<SalesHeader> recordsToDelete = [];
-      //   recordsToDelete = localSale
-      //       .where(
-      //         (local) =>
-      //             cloudIds.contains(local.no) &&
-      //             local.isSync != kStatusYes &&
-      //             appID.contains(local.appId),
-      //       )
-      //       .toList();
-
-      //   if (recordsToDelete.isNotEmpty) {
-      //     await _local.deletSaleHeader(saleHeader: recordsToDelete);
-      //   }
-
-      //   await _local.storeSaleHeaders(saleHeader: cloudRecords);
-      // }
-
-      //=======================old
+      
       if (fetchingApi && await _networkInfo.isConnected) {
-        // param?['page'] = page;
+        final isNotExpired = await _remote.isValidApiSessionV2();
 
-        String raw = param!['document_no'].toString();
+        if (isNotExpired) {
+          String raw = param!['document_no'].toString();
 
-        Map<String, List<String>> result = {
-          "document_no": raw
-              .replaceFirst('IN', '')
-              .replaceAll(RegExp(r'[{}"]'), '')
-              .split(',')
-              .map((e) => e.trim())
-              .where((e) => e.isNotEmpty)
-              .toList(),
-        };
+          Map<String, List<String>> result = {
+            "document_no": raw
+                .replaceFirst('IN', '')
+                .replaceAll(RegExp(r'[{}"]'), '')
+                .split(',')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList(),
+          };
 
-        final localSale = await _local.getSaleLines(args: param);
+          final localSale = await _local.getSaleLines(args: param);
+          final saleLineCloud = await _remote.getSaleLinesV2(data: result);
 
-        final saleLineCloud = await _remote.getSaleLinesV2(data: result);
+          final appID = saleLineCloud.map((e) => e.appId).toSet();
+          List<SalesLine> recordsToDelete = [];
 
-        final appID = saleLineCloud.map((e) => e.appId).toSet();
-        List<SalesLine> recordsToDelete = [];
-        recordsToDelete = localSale
-            .where(
-              (local) =>
-                  local.isSync != kStatusYes && appID.contains(local.appId),
-            )
-            .toList();
+          recordsToDelete = localSale.where((local) {
+            return local.isSync != kStatusYes && appID.contains(local.appId);
+          }).toList();
 
-        if (recordsToDelete.isNotEmpty) {
-          await _local.deletSaleLine(saleLine: recordsToDelete);
+          if (recordsToDelete.isNotEmpty) {
+            await _local.deletSaleLine(saleLine: recordsToDelete);
+          }
+
+          await _local.storeSaleLine(saleLine: saleLineCloud);
+          
         }
-
-        await _local.storeSaleLine(saleLine: saleLineCloud);
       }
 
       final localeSaleLines = await _local.getSaleLines(args: param);
@@ -585,7 +559,7 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
       if (!await _networkInfo.isConnected) {
         throw GeneralException(errorInternetMessage);
       }
-      
+
       List<Map<String, dynamic>> jsonData = [];
       for (var sale in salesHeaders) {
         final lines = salesLines.where((e) => e.documentNo == sale.no).toList();

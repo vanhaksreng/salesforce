@@ -4,7 +4,7 @@ import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 
 abstract class BaseApiDataSource {
   Future<bool> isValidApiSession();
-  // Future<void> checkApiSession();
+  Future<bool> isValidApiSessionV2();
   Future<List<SalespersonSchedule>> createSchedules(Map data);
   Future<List<SalespersonSchedule>> getSchedules(String data);
   Future<void> updateSchedule(
