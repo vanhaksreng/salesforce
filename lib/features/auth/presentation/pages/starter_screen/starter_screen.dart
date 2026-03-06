@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
@@ -14,9 +15,11 @@ import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/crash_report.dart';
 import 'package:salesforce/features/auth/presentation/pages/login/login_screen.dart';
+import 'package:salesforce/features/auth/presentation/pages/policy_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/server_option/server_option_cubit.dart';
 import 'package:salesforce/features/auth/presentation/pages/server_option/server_option_state.dart';
 import 'package:salesforce/features/auth/presentation/pages/starter_screen/scanner_screen.dart';
+import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
@@ -31,12 +34,19 @@ class StarterScreen extends StatefulWidget {
 
 class _StarterScreenState extends State<StarterScreen> with MessageMixin {
   final _cubit = ServerOptionCubit();
+  final _location = GeolocatorLocationService();
 
   @override
   void initState() {
+    _location.requestPermission(context);
     _cubit.getServerLists();
     super.initState();
   }
+
+  final linkStyle = const TextStyle(
+    color: Colors.blue,
+    decoration: TextDecoration.none,
+  );
 
   void _navigateToNextScreen(String url) async {
     final l = LoadingOverlay.of(context);
@@ -96,7 +106,7 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
         // _navigateToNextScreen("https://sme-new.clearview-erp.com/qr/Nzk4"); //Hearo UAT
         // _navigateToNextScreen("https://smb.clearview-erp.com/qr/MjM2"); // Demo
         // _navigateToNextScreen("https://192.168.40.20/qr/Mg==");
-        // return; 
+        // return;
       }
 
       if (!mounted) return;
@@ -115,6 +125,16 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
     } on Exception catch (e) {
       showErrorMessage(e.toString());
     }
+  }
+
+  void openTerms() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PolicyScreen(),
+        fullscreenDialog: true,
+      ),
+    );
   }
 
   @override
@@ -180,11 +200,25 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
           Column(
             spacing: scaleFontSize(40),
             children: [
-              const TextWidget(
-                fontSize: 16,
-                textAlign: TextAlign.center,
-                text:
-                    "Get started by scanning your organization's QR code for secure, instant access to your business account.",
+              Text.rich(
+                TextSpan(
+                  style: TextStyle(fontSize: 14.scale),
+                  text:
+                      "Get started by scanning your organization's QR code for secure, instant access to your business account.",
+                  children: [
+                    TextSpan(
+                      text: "Terms of Service",
+                      style: linkStyle,
+                      recognizer: TapGestureRecognizer()..onTap = openTerms,
+                    ),
+                    const TextSpan(text: " & "),
+                    TextSpan(
+                      text: "Privacy Policy",
+                      style: linkStyle,
+                      recognizer: TapGestureRecognizer()..onTap = openTerms,
+                    ),
+                  ],
+                ),
               ),
               BtnWidget(
                 isLoading: state.isLoading,

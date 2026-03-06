@@ -54,8 +54,6 @@ class GeolocatorLocationService implements ILocationService {
       // Then request permission
       final permission = await Geolocator.requestPermission();
       final status = _mapGeolocatorPermission(permission);
-
-      Logger.log("Location permission granted: ${status.name}");
       return status;
     } catch (e) {
       Logger.log("Error requesting location permission: $e");
@@ -191,8 +189,6 @@ class GeolocatorLocationService implements ILocationService {
     }
   }
 
-  /// Additional utility methods
-
   Future<double> getDistanceFromCurrentLocation(
     BuildContext context,
     double targetLatitude,
@@ -325,7 +321,10 @@ class GeolocatorLocationService implements ILocationService {
     return true;
   }
 
-  // Future<void> ensureLocationPermission(BuildContext context) async {
+  // Future<void> ensureLocationPermission(BuildContext context, {
+  //   String textTitle = "Location Permission Required",
+  //   String text = "This feature requires access to your location to continue.",
+  // }) async {
   //   LocationPermission permission = await Geolocator.checkPermission();
 
   //   // Request permission if denied
@@ -335,9 +334,8 @@ class GeolocatorLocationService implements ILocationService {
   //     if (permission == LocationPermission.denied) {
   //       Helpers.showDialogAction(
   //         context,
-  //         labelAction: "Location Permission Required",
-  //         subtitle:
-  //             "This feature requires access to your location to continue.",
+  //         labelAction: textTitle,
+  //         subtitle: text,
   //         confirmText: "Allow",
   //         confirm: () async {
   //           Navigator.pop(context);
