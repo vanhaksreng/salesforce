@@ -45,15 +45,15 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
 
   DateTime? initialToDate;
   DateTime? initialFromDate;
-  String selectedDate = "This Week";
+  String selectedDate = "This Month";
   String status = "All";
   String isShowAddCustomer = kStatusYes;
 
   @override
   void initState() {
     super.initState();
-    initialFromDate = DateTime.now().firstDayOfWeek();
-    initialToDate = DateTime.now().endDayOfWeek();
+    initialFromDate = DateTime.now().firstDayOfMonth();
+    initialToDate = DateTime.now().endDayOfMonth();
     _getSaleInvoice();
     _cubit.canSaleWithoutSchedult();
     _cubit.checkPendingUpload();

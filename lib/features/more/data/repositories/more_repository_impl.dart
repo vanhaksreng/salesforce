@@ -60,17 +60,21 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
+
       if (fetchingApi && await _networkInfo.isConnected) {
         final isNotExpired = await _remote.isValidApiSessionV2();
 
         if (isNotExpired) {
           final cloudSales = await _remote.getSaleHeaders(data: param);
           final List<SalesHeader> cloudRecords = [];
+
           for (var item in cloudSales["records"] ?? []) {
             cloudRecords.add(SalesHeaderExtension.fromMap(item));
           }
 
-          await _local.storeSaleHeaders(saleHeader: cloudRecords);
+          if(cloudRecords.isNotEmpty) {
+            await _local.storeSaleHeaders(saleHeader: cloudRecords);
+          }
         }
       }
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:salesforce/core/data/datasources/api/base_api_data_source.dart';
 import 'package:salesforce/core/data/models/extension/salesperson_schedule_extension.dart';
 import 'package:salesforce/infrastructure/network/network_info.dart';
@@ -18,16 +19,19 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
 
   Future<String> getParams({Map? params}) async {
     try {
+      final packageInfo = await PackageInfo.fromPlatform();
+
       final auth = getAuth();
       final Map param = {
         "app_id": "com.clearviewerp.salesforce",
         "token": auth?.token ?? "",
         "username": auth?.email ?? "",
         "source": Platform.isIOS ? "ios" : "android",
+        "app_version": packageInfo.version,
+        "installer_store": packageInfo.installerStore,
       };
 
       var body = param;
-
       if (params != null) {
         body = {...param, ...params};
       }

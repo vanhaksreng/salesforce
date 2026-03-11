@@ -41,18 +41,17 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
 
   DateTime? initialToDate;
   DateTime? initialFromDate;
-  String selectedDate = "This Week";
+  String selectedDate = "This Month";
   String status = "All";
 
   @override
   void initState() {
-    initialFromDate = DateTime.now().firstDayOfWeek();
-    initialToDate = DateTime.now().endDayOfWeek();
+    initialFromDate = DateTime.now().firstDayOfMonth();
+    initialToDate = DateTime.now().endDayOfMonth();
     _cubit.getSaleCreditMemo(
       param: {
         'document_type': 'Credit Memo',
-        "posting_date":
-            "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+        "posting_date": "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
       },
     );
     _scrollController.addListener(_handleScrolling);

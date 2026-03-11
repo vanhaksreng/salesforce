@@ -76,59 +76,20 @@ class SaleCreditMemoHistoryCubit extends Cubit<SaleCreditMemoHistoryState>
 
     final headerNumbers = salesHeaders.map((h) => '"${h.no}"').toList();
 
-    List<SalesLine> result = [];
-
-    await _handleResponse(
-      () => appRepos.getSaleLines(
-        param: {
-          'document_no': 'IN {${headerNumbers.join(",")}}',
-          // 'is_sync': kStatusNo,
-        },
-      ),
-      (List<SalesLine> data) {
-        result = data;
-        return state.copyWith(saleLines: data);
-      },
+    final response = await appRepos.getSaleLines(
+      param: {'document_no': 'IN {${headerNumbers.join(",")}}'},
     );
 
-    return result;
+    return response.fold(
+      (l) {
+        showWarningMessage(l.message);
+        return [];
+      },
+      (data) {
+        return data;
+      },
+    );
   }
-
-  Future<void> _handleResponse<T>(
-    Future<dynamic> Function() request,
-    SaleCreditMemoHistoryState Function(T data) onSuccess,
-  ) async {
-    final response = await request();
-    response.fold((l) => showErrorMessage(), (data) => emit(onSuccess(data)));
-  }
-
-  // Future<void> getSaleCreditMemo({
-  //   Map<String, dynamic>? param,
-  //   int page = 1,
-  //   bool fetchingApi = true,
-  // }) async {
-  //   try {
-  //     emit(state.copyWith(isLoading: true));
-
-  //     final result = await appRepos.getSaleHeaders(
-  //       param: param,
-  //       page: page,
-  //       fetchingApi: fetchingApi,
-  //     );
-
-  //     result.fold(
-  //       (l) => throw Exception(),
-  //       (records) => emit(state.copyWith(
-  //         isLoading: false,
-  //         currentPage: records.currentPage,
-  //         lastPage: records.lastPage,
-  //         records: records.saleHeaders,
-  //       )),
-  //     );
-  //   } catch (error) {
-  //     emit(state.copyWith(error: error.toString()));
-  //   }
-  // }
 
   Future<void> chooseDate({DateTime? startDate, DateTime? toDate}) async {
     try {

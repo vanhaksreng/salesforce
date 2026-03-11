@@ -87,30 +87,19 @@ class SaleInvoiceHistoryCubit extends Cubit<SaleInvoiceHistoryState>
 
     final headerNumbers = salesHeaders.map((h) => '"${h.no}"').toList();
 
-    List<SalesLine> result = [];
-
-    await _handleResponse(
-      () => appRepos.getSaleLines(
-        param: {
-          'document_no': 'IN {${headerNumbers.join(",")}}',
-          // 'is_sync': kStatusNo,
-        },
-      ),
-      (List<SalesLine> data) {
-        result = data;
-        return state.copyWith(saleLines: data);
-      },
+    final response = await appRepos.getSaleLines(
+      param: {'document_no': 'IN {${headerNumbers.join(",")}}'},
     );
 
-    return result;
-  }
-
-  Future<void> _handleResponse<T>(
-    Future<dynamic> Function() request,
-    SaleInvoiceHistoryState Function(T data) onSuccess,
-  ) async {
-    final response = await request();
-    response.fold((l) => showErrorMessage(), (data) => emit(onSuccess(data)));
+    return response.fold(
+      (l) {
+        showWarningMessage(l.message);
+        return [];
+      },
+      (data) {
+        return data;
+      },
+    );
   }
 
   Future<void> chooseDate({DateTime? startDate, DateTime? toDate}) async {

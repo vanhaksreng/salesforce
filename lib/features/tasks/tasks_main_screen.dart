@@ -106,26 +106,26 @@ class _TaskScreenState extends State<TasksMainScreen>
     l.hide();
   }
 
-  void _checkAppVersion() {
-    //TODO : impliment next time
-    if (mounted) {
-      Helpers.showDialogAction(
-        context,
-        labelAction: "New version available",
-        subtitle: _cubit.state.appVersion?.description ?? "",
-        confirm: () async {
-          if (!mounted) return;
-          Navigator.pop(context, true);
-          final url = Uri.parse("${_cubit.state.appVersion!.appUrl}");
-          if (await canLaunchUrl(url)) {
-            await launchUrl(url, mode: LaunchMode.externalApplication);
-          } else {
-            Helpers.showMessage(msg: 'No application found to open this link.');
-          }
-        },
-      );
-    }
-  }
+  // void _checkAppVersion() {
+  //   //TODO : impliment next time
+  //   if (mounted) {
+  //     Helpers.showDialogAction(
+  //       context,
+  //       labelAction: "New version available",
+  //       subtitle: _cubit.state.appVersion?.description ?? "",
+  //       confirm: () async {
+  //         if (!mounted) return;
+  //         Navigator.pop(context, true);
+  //         final url = Uri.parse("${_cubit.state.appVersion!.appUrl}");
+  //         if (await canLaunchUrl(url)) {
+  //           await launchUrl(url, mode: LaunchMode.externalApplication);
+  //         } else {
+  //           Helpers.showMessage(msg: 'No application found to open this link.');
+  //         }
+  //       },
+  //     );
+  //   }
+  // }
 
   void _onTabHandler() {
     _cubit.setActiveTap(_tabController.index);

@@ -200,6 +200,7 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
     if (widget.typeReport == rCustomerBanlance) {
       return SizedBox.shrink();
     }
+
     return Padding(
       padding: EdgeInsets.all(scaleFontSize(8)),
       child: ValueListenableBuilder(
@@ -315,7 +316,10 @@ class _SaleBottomsheetFilterState extends State<SaleBottomsheetFilter> {
   }
 
   Widget _buildStatusDropdown() {
-    if (widget.hasStatus == false) return const SizedBox.shrink();
+    if (widget.hasStatus == false) {
+      return const SizedBox.shrink();
+    }
+    
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: scaleFontSize(appSpace)),
       child: Column(
