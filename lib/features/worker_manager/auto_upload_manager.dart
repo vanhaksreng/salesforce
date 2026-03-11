@@ -49,7 +49,7 @@ class AutoUploadManager with MessageMixin {
 
         print("=============");
         print(apiSession);
-        print("=============");
+        print("============="); //TODO debug api session when schedule call
 
         await uploadCubit.loadInitialData(DateTime.now());
 
