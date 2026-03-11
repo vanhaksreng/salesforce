@@ -52,9 +52,12 @@ class GeolocatorLocationService implements ILocationService {
       await _ensureLocationServiceEnabled(context);
 
       // Then request permission
-      final permission = await Geolocator.requestPermission();
-      final status = _mapGeolocatorPermission(permission);
-      return status;
+      LocationPermission permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.whileInUse) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      return _mapGeolocatorPermission(permission);
     } catch (e) {
       Logger.log("Error requesting location permission: $e");
       rethrow;
@@ -258,10 +261,10 @@ class GeolocatorLocationService implements ILocationService {
         cancelText: "No, Cancel",
         confirmText: "Yes, Open Settings",
         confirm: () {
-          Navigator.pop(context, true); // ✅ return TRUE
+          Navigator.pop(context, true); // return TRUE
         },
         cancel: () {
-          Navigator.pop(context, false); // ✅ return FALSE
+          Navigator.pop(context, false); //return FALSE
         },
       );
 

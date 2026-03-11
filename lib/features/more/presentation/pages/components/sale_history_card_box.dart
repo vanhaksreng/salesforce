@@ -91,6 +91,7 @@ class SaleHistoryCardBox extends StatelessWidget {
           ),
 
           Row(
+            spacing: 8.scale,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _cardBox(greeting("Customer No"), header.customerNo ?? ""),
@@ -117,7 +118,7 @@ class SaleHistoryCardBox extends StatelessWidget {
                   color: getStatusColor(header.status),
                 ),
                 TextWidget(
-                  fontSize: 16,
+                  fontSize: 18,
                   color: getStatusColor(header.status),
                   text: Helpers.formatNumber(
                     header.totalAmtLine ?? 0.0,
@@ -132,9 +133,10 @@ class SaleHistoryCardBox extends StatelessWidget {
 
           if ((header.shipToAddress ?? "").isNotEmpty)
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(Icons.location_pin, size: 18),
-                TextWidget(text: "${header.shipToAddress}", fontSize: 15),
+                Expanded(child: TextWidget(text: "${header.shipToAddress}", fontSize: 15)),
               ],
             ),
           const Hr(width: double.infinity),
@@ -176,19 +178,20 @@ class SaleHistoryCardBox extends StatelessWidget {
   }
 
   Widget _cardBox(String label, String value) {
-    return Container(
-      padding: EdgeInsets.all(6.scale),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6.scale),
-        color: Colors.grey.withValues(alpha: 0.1),
-      ),
-      width: 180,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextWidget(text: label, fontSize: 14, color: Colors.grey),
-          TextWidget(text: value, fontSize: 14, fontWeight: FontWeight.bold),
-        ],
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.all(8.scale),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(6.scale),
+          color: Colors.grey.withValues(alpha: 0.1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextWidget(text: label, fontSize: 14, color: Colors.grey),
+            TextWidget(text: value, fontSize: 14, fontWeight: FontWeight.bold),
+          ],
+        ),
       ),
     );
   }

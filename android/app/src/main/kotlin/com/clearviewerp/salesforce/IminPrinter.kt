@@ -35,7 +35,7 @@ class IminPrinter(private val context: Context) : MethodChannel.MethodCallHandle
         private val CMD_INIT = byteArrayOf(ESC, 0x40)
         private val CMD_LINE_FEED = byteArrayOf(LF)
         private val CMD_CUT_PAPER = byteArrayOf(GS, 0x56, 0x00)
-        private val CMD_CUT_PAPER_PARTIAL = byteArrayOf(GS, 0x56, 0x01)
+//        private val CMD_CUT_PAPER_PARTIAL = byteArrayOf(GS, 0x56, 0x01)
 
         // Bitmap printing command
         private fun CMD_BITMAP(width: Int, height: Int): ByteArray {
@@ -47,9 +47,9 @@ class IminPrinter(private val context: Context) : MethodChannel.MethodCallHandle
         }
 
         // Character widths for 58mm paper (384px)
-        private const val CHARS_PER_LINE_SMALL = 42
-        private const val CHARS_PER_LINE_NORMAL = 32
-        private const val CHARS_PER_LINE_LARGE = 24
+//        private const val CHARS_PER_LINE_SMALL = 42
+//        private const val CHARS_PER_LINE_NORMAL = 32
+//        private const val CHARS_PER_LINE_LARGE = 24
 
         /**
          * Generate comprehensive list of printer device paths
@@ -1172,16 +1172,12 @@ class IminPrinter(private val context: Context) : MethodChannel.MethodCallHandle
                 return
             }
 
-            Log.d(TAG, "Building receipt...")
-
             val header = receiptData["header"] as? Map<String, Any>
             val items = receiptData["items"] as? List<Map<String, Any>>
             val footer = receiptData["footer"] as? Map<String, Any>
             val options = receiptData["options"] as? Map<String, Any> ?: emptyMap()
 
             buildAndPrintReceipt(header, items, footer, options)
-
-            Log.d(TAG, " Receipt printed successfully")
 
             runOnMainThread {
                 result.success(mapOf("status" to "success"))

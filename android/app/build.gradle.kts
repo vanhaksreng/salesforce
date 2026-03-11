@@ -3,7 +3,6 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -13,41 +12,28 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
 
-val flutterVersionCode: Int =
-    (project.findProperty("flutter.versionCode") as String?)?.toInt() ?: 1
-
-val flutterVersionName: String =
-    project.findProperty("flutter.versionName") as String? ?: "1.0"
-
-
 android {
     namespace = "com.clearviewerp.salesforce"
-    compileSdk = 36
-    // ndkVersion = flutter.ndkVersion
-    ndkVersion = "28.2.13676358"
+    compileSdk = flutter.compileSdkVersion
+    //compileSdk = 36
+    ndkVersion = flutter.ndkVersion
+    //ndkVersion = "28.2.13676358"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
-
-//    packagingOptions {
-//        jniLibs {
-//            useLegacyPackaging = false
-//        }
-//    }
 
     bundle {
         abi {
             enableSplit = true
         }
     }
-
 
     defaultConfig {
         applicationId = "com.clearviewerp.salesforce"
@@ -94,12 +80,13 @@ flutter {
 dependencies {
     implementation(files("libs/iminPrinterSDK.jar"))
     implementation(files("libs/IminLibs1.0.15.jar"))
-//    implementation("com.github.mik3y:usb-serial-for-android:3.7.2")
     implementation("com.google.android.gms:play-services-location:21.3.0")
-    implementation ("androidx.work:work-runtime-ktx:2.10.3")
-    implementation ("io.reactivex.rxjava2:rxjava:2.2.21")
-    implementation ("io.reactivex.rxjava2:rxandroid:2.1.1")
+    implementation("androidx.work:work-runtime-ktx:2.10.3")
+    implementation("io.reactivex.rxjava2:rxjava:2.2.21")
+    implementation("io.reactivex.rxjava2:rxandroid:2.1.1")
+    
+    implementation("com.fasterxml.jackson.core:jackson-core:2.15.2")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
-   
 }

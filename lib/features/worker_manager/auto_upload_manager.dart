@@ -44,10 +44,17 @@ class AutoUploadManager with MessageMixin {
     try {
       if (taskName == _taskName || taskName == Workmanager.iOSBackgroundTask) {
         final uploadCubit = UploadCubit();
+
+        final apiSession = await uploadCubit.apiSessionStillAlive();
+
+        print("=============");
+        print(apiSession);
+        print("=============");
+
         await uploadCubit.loadInitialData(DateTime.now());
 
         await uploadCubit.processUpload();
-        Logger.log("====================================Upload Successfully!");
+        Logger.log("=============Upload Successfully!");
         return true;
       }
 

@@ -73,7 +73,7 @@ class TitleSectionWidget extends StatelessWidget {
           ],
         ),
         if (pt > 0) SizedBox(height: pt),
-        if (child != null) child!,
+        ?child,
         if (line > 0) SizedBox(height: pb),
         if (line > 0)
           Padding(

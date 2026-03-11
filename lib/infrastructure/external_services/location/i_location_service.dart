@@ -5,7 +5,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:salesforce/infrastructure/external_services/location/location_permission_status.dart';
 
 abstract class ILocationService {
+
   Future<bool> isLocationServiceEnabled();
+
   double getDistanceBetween(
     double startLatitude,
     double startLongitude,

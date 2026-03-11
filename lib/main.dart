@@ -39,6 +39,7 @@ void main() async {
       await Workmanager().initialize(callbackDispatcher);
       // HttpOverrides.global = MyHttpOverrides();
       await AutoUploadManager.initialize();
+      
       await _initializeApp();
       await di.getItInit();
 

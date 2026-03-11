@@ -38,9 +38,30 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
 
   @override
   void initState() {
-    _location.requestPermission(context);
     _cubit.getServerLists();
+    _initLoad();
     super.initState();
+  }
+
+  void _initLoad() async {
+
+    // if(!await _location.hasPermission()) {
+    //    if(!mounted) return;
+
+    //   _location.requestPermission(context);
+    // }
+
+    _location.requestPermission(context);
+    
+
+    // final permission = await _location.checkPermission();
+
+    // print("===================");
+    // print(permission.toString());
+    // print("===================");
+
+        // _location.requestPermission(context);
+
   }
 
   final linkStyle = const TextStyle(

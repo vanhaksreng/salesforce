@@ -643,7 +643,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
 
       if (await _networkInfo.isConnected) {
         try {
-          if (!await _remote.isValidApiSession()) {
+          if (await _remote.isValidApiSession()) {
             await _processUploadSale(
               salesHeaders: [saleHeader],
               salesLines: saleLines,

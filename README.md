@@ -1,5 +1,8 @@
 # salesforce
 
+./gradlew clean
+./gradlew build 
+
 Trade B2B.
 
 dart run realm generate
