@@ -163,7 +163,8 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen>
             itemCount: records.length,
             padding: const EdgeInsets.all(appSpace),
             itemBuilder: (context, index) {
-              return ModernReportCardBox(report: records[index]);
+              final record = records[index];
+              return ModernReportCardBox(key: ValueKey(record.no), report: record);
             },
           ),
         );

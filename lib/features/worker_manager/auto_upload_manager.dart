@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/utils/helpers.dart';
-import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/features/more/presentation/pages/upload/upload_cubit.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter/foundation.dart';
@@ -45,16 +44,17 @@ class AutoUploadManager with MessageMixin {
       if (taskName == _taskName || taskName == Workmanager.iOSBackgroundTask) {
         final uploadCubit = UploadCubit();
 
-        final apiSession = await uploadCubit.apiSessionStillAlive();
+        if (!await uploadCubit.isConnectedToNetwork()) {
+          return false;
+        }
 
-        print("=============");
-        print(apiSession);
-        print("============="); //TODO debug api session when schedule call
+        if (!await uploadCubit.apiSessionStillAlive()) {
+          return false;
+        }
 
         await uploadCubit.loadInitialData(DateTime.now());
-
         await uploadCubit.processUpload();
-        Logger.log("=============Upload Successfully!");
+
         return true;
       }
 

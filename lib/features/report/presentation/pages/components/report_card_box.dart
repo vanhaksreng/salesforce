@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:salesforce/core/presentation/widgets/chip_widgett.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
@@ -18,7 +19,12 @@ class ModernReportCardBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10.scale),
-        border: Border.all(color: grey20.withValues(alpha: 0.5), width: 1),
+        border: Border(
+          left: BorderSide(
+            color: getStatusColor(report.status),
+            width: 3.scale,
+          ),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,21 +69,13 @@ class ModernReportCardBox extends StatelessWidget {
             ),
           ),
           Helpers.gapW(8.scale),
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: 8.scale,
-              vertical: 4.scale,
-            ),
-            decoration: BoxDecoration(
-              color: getStatusColor(report.status),
-              borderRadius: BorderRadius.circular(5.scale),
-            ),
-            child: TextWidget(
-              text: (report.status ?? "").toUpperCase(),
-              fontSize: 9,
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
+          ChipWidget(
+            ishadowColor: false,
+            fontSize: 12,
+            vertical: 8.scale,
+            label: (report.status ?? "").toUpperCase(),
+            colorText: getStatusColor(report.status),
+            bgColor: getStatusColor(report.status).withValues(alpha: 0.1),
           ),
         ],
       ),
@@ -138,6 +136,7 @@ class ModernReportCardBox extends StatelessWidget {
                     text: report.uom ?? "N/A",
                     fontSize: 9,
                     fontWeight: FontWeight.w500,
+                    color: getStatusColor(report.status),
                   ),
                 ),
               ],

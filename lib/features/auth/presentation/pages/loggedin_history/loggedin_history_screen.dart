@@ -73,7 +73,6 @@ class _LoggedinHistoryScreenState extends State<LoggedinHistoryScreen> {
             children: [
               // Header section with profile
               Expanded(flex: 2, child: _buildProfileSection()),
-
               Expanded(flex: 3, child: _buildActionSection()),
             ],
           ),
