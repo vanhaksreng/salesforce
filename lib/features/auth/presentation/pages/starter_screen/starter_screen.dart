@@ -228,7 +228,7 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
                       "Get started by scanning your organization's QR code for secure, instant access to your business account.",
                   children: [
                     TextSpan(
-                      text: "Terms of Service",
+                      text: " Terms of Service",
                       style: linkStyle,
                       recognizer: TapGestureRecognizer()..onTap = openTerms,
                     ),
