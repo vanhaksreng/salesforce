@@ -31,7 +31,9 @@ flutter_ios_podfile_setup
 target 'Runner' do
   use_frameworks!
   
-  pod 'GoogleMaps'
+  # unless ENV['SIMCTL_CHILD_TARGET_DEVICE_IDENTIFIER']
+  #   pod 'GoogleMaps'
+  # end
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
@@ -52,9 +54,12 @@ post_install do |installer|
     
     target.build_configurations.each do |config|
       
-      config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
+      config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = $iosVersion
       config.build_settings['ENABLE_BITCODE'] = 'NO'
+      # config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+      config.build_settings["EXCLUDED_ARCHS[sdk=*]"] = "armv7"
+      config.build_settings['OTHER_LDFLAGS'] = '$(inherited) -ld_classic'
 
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
         '$(inherited)',

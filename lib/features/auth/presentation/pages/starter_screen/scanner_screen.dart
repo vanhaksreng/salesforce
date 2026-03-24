@@ -4,8 +4,8 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
@@ -28,7 +28,10 @@ class ScannerScreen extends StatefulWidget {
 class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
   CameraController? cameraController;
 
-  final BarcodeScanner barcodeScanner = BarcodeScanner();
+  // final barcodeScanner = MobileScannerController();
+
+  Barcode? barcodeScanner;
+
   final ImagePicker imagePicker = ImagePicker();
   bool isScanning = false;
   bool isUploading = false;
@@ -101,32 +104,32 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
     _isProcessing = true;
 
     try {
-      final inputImage = _convertToInputImage(image);
-      if (inputImage == null) {
-        _isProcessing = false;
-        return;
-      }
+      // final inputImage = _convertToInputImage(image);
+      // if (inputImage == null) {
+      //   _isProcessing = false;
+      //   return;
+      // }
 
-      final barcodes = await barcodeScanner.processImage(inputImage);
+      // final barcodes = await barcodeScanner.processImage(inputImage);
 
-      if (barcodes.isNotEmpty && mounted) {
-        final code = barcodes.first.rawValue ?? '';
+      // if (barcodes.isNotEmpty && mounted) {
+      //   final code = barcodes.first.rawValue ?? '';
 
-        if (isURL(code) && !isDetected) {
-          setState(() {
-            isDetected = true; // Trigger highlight animation
-          });
+      //   if (isURL(code) && !isDetected) {
+      //     setState(() {
+      //       isDetected = true; // Trigger highlight animation
+      //     });
 
-          // Stop image stream immediately
-          await cameraController?.stopImageStream();
+      //     // Stop image stream immediately
+      //     await cameraController?.stopImageStream();
 
-          // Wait for animation to play
-          await Future.delayed(const Duration(milliseconds: 800));
+      //     // Wait for animation to play
+      //     await Future.delayed(const Duration(milliseconds: 800));
 
-          if (!mounted) return;
-          Navigator.of(context).pop(code);
-        }
-      }
+      //     if (!mounted) return;
+      //     Navigator.of(context).pop(code);
+      //   }
+      // }
     } catch (e) {
       debugPrint('Error processing image: $e');
     } finally {
@@ -134,88 +137,88 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
     }
   }
 
-  InputImage? _convertToInputImage(CameraImage image) {
-    final camera = cameraController!.description;
-    final sensorOrientation = camera.sensorOrientation;
+  // InputImage? _convertToInputImage(CameraImage image) {
+  //   final camera = cameraController!.description;
+  //   final sensorOrientation = camera.sensorOrientation;
 
-    final deviceOrientation = cameraController!.value.deviceOrientation;
-    final rotationCompensation = _orientations[deviceOrientation] ?? 0;
+  //   final deviceOrientation = cameraController!.value.deviceOrientation;
+  //   final rotationCompensation = _orientations[deviceOrientation] ?? 0;
 
-    InputImageRotation rotation;
+  //   InputImageRotation rotation;
 
-    if (Platform.isIOS) {
-      rotation =
-          InputImageRotationValue.fromRawValue(sensorOrientation) ??
-          InputImageRotation.rotation0deg;
-    } else {
-      int adjustedRotation;
-      if (camera.lensDirection == CameraLensDirection.front) {
-        adjustedRotation = (sensorOrientation + rotationCompensation) % 360;
-      } else {
-        adjustedRotation =
-            (sensorOrientation - rotationCompensation + 360) % 360;
-      }
-      rotation =
-          InputImageRotationValue.fromRawValue(adjustedRotation) ??
-          InputImageRotation.rotation0deg;
-    }
+  //   if (Platform.isIOS) {
+  //     rotation =
+  //         InputImageRotationValue.fromRawValue(sensorOrientation) ??
+  //         InputImageRotation.rotation0deg;
+  //   } else {
+  //     int adjustedRotation;
+  //     if (camera.lensDirection == CameraLensDirection.front) {
+  //       adjustedRotation = (sensorOrientation + rotationCompensation) % 360;
+  //     } else {
+  //       adjustedRotation =
+  //           (sensorOrientation - rotationCompensation + 360) % 360;
+  //     }
+  //     rotation =
+  //         InputImageRotationValue.fromRawValue(adjustedRotation) ??
+  //         InputImageRotation.rotation0deg;
+  //   }
 
-    try {
-      // Validate image planes
-      if (image.planes.isEmpty) {
-        debugPrint("Error: No image planes available");
-        return null;
-      }
+  //   try {
+  //     // Validate image planes
+  //     if (image.planes.isEmpty) {
+  //       debugPrint("Error: No image planes available");
+  //       return null;
+  //     }
 
-      if (Platform.isIOS) {
-        // iOS BGRA8888 handling
-        return _createInputImageForIOS(image, rotation);
-      } else {
-        // Android NV21 handling (already in correct format)
-        final Uint8List bytes = image.planes[0].bytes;
+  //     if (Platform.isIOS) {
+  //       // iOS BGRA8888 handling
+  //       return _createInputImageForIOS(image, rotation);
+  //     } else {
+  //       // Android NV21 handling (already in correct format)
+  //       final Uint8List bytes = image.planes[0].bytes;
 
-        return InputImage.fromBytes(
-          bytes: bytes,
-          metadata: InputImageMetadata(
-            size: Size(image.width.toDouble(), image.height.toDouble()),
-            rotation: rotation,
-            format: InputImageFormat.nv21,
-            bytesPerRow: image.planes[0].bytesPerRow,
-          ),
-        );
-      }
-    } catch (e) {
-      Logger.log(e.toString());
-      return null;
-    }
-  }
+  //       return InputImage.fromBytes(
+  //         bytes: bytes,
+  //         metadata: InputImageMetadata(
+  //           size: Size(image.width.toDouble(), image.height.toDouble()),
+  //           rotation: rotation,
+  //           format: InputImageFormat.nv21,
+  //           bytesPerRow: image.planes[0].bytesPerRow,
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     Logger.log(e.toString());
+  //     return null;
+  //   }
+  // }
 
-  InputImage? _createInputImageForIOS(
-    CameraImage image,
-    InputImageRotation rotation,
-  ) {
-    try {
-      if (image.planes.isEmpty) {
-        debugPrint("Error: No image planes available for iOS");
-        return null;
-      }
+  // InputImage? _createInputImageForIOS(
+  //   CameraImage image,
+  //   InputImageRotation rotation,
+  // ) {
+  //   try {
+  //     if (image.planes.isEmpty) {
+  //       debugPrint("Error: No image planes available for iOS");
+  //       return null;
+  //     }
 
-      final plane = image.planes.first;
+  //     final plane = image.planes.first;
 
-      return InputImage.fromBytes(
-        bytes: plane.bytes,
-        metadata: InputImageMetadata(
-          size: Size(image.width.toDouble(), image.height.toDouble()),
-          rotation: rotation,
-          format: InputImageFormat.bgra8888,
-          bytesPerRow: plane.bytesPerRow,
-        ),
-      );
-    } catch (e) {
-      debugPrint("Error creating iOS InputImage: $e");
-      return null;
-    }
-  }
+  //     return InputImage.fromBytes(
+  //       bytes: plane.bytes,
+  //       metadata: InputImageMetadata(
+  //         size: Size(image.width.toDouble(), image.height.toDouble()),
+  //         rotation: rotation,
+  //         format: InputImageFormat.bgra8888,
+  //         bytesPerRow: plane.bytesPerRow,
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     debugPrint("Error creating iOS InputImage: $e");
+  //     return null;
+  //   }
+  // }
 
   bool isURL(String result) {
     final uri = Uri.tryParse(result);
@@ -225,22 +228,22 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
 
   Future<String?> processImage(String imagePath) async {
     try {
-      final inputImage = InputImage.fromFilePath(imagePath);
-      final barcodes = await barcodeScanner.processImage(inputImage);
+      // final inputImage = InputImage.fromFilePath(imagePath);
+      // final barcodes = await barcodeScanner.processImage(inputImage);
 
-      if (barcodes.isNotEmpty) {
-        final code = barcodes.first.rawValue ?? '';
+      // if (barcodes.isNotEmpty) {
+      //   final code = barcodes.first.rawValue ?? '';
 
-        if (isURL(code) && !isDetected) {
-          setState(() {
-            isDetected = true;
-          });
+      //   if (isURL(code) && !isDetected) {
+      //     setState(() {
+      //       isDetected = true;
+      //     });
 
-          await Future.delayed(const Duration(milliseconds: 800));
+      //     await Future.delayed(const Duration(milliseconds: 800));
 
-          return code;
-        }
-      }
+      //     return code;
+      //   }
+      // }
 
       return null;
     } catch (e) {
@@ -282,7 +285,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
   @override
   void dispose() {
     _isProcessing = true; // Prevent further processing
-    barcodeScanner.close();
+    // barcodeScanner.close();
     if (cameraController?.value.isStreamingImages ?? false) {
       cameraController?.stopImageStream();
     }

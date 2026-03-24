@@ -15,7 +15,6 @@ import workmanager_apple
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
-        // let controller = window?.rootViewController as! FlutterViewController
 
         ThermalPrinterPlugin.register(with: self.registrar(forPlugin: "ThermalPrinterPlugin")!)
 
@@ -27,15 +26,11 @@ import workmanager_apple
         FlutterHtmlToPdfPlugin.register(with: self.registrar(forPlugin: "flutter_html_to_pdf")!)
         MyLocationPlugin.register(with: self.registrar(forPlugin: "com.clearviewerp.salesforce/background_service")!)
 
-        //        BluetoothPrinterPlugin.register(
-        //            with: self.registrar(forPlugin: "com.clearviewerp.salesforce/bluetoothprinter")!)
-
         WorkmanagerPlugin.registerPeriodicTask(
             withIdentifier: "com.clearviewerp.salesforce.periodic_task",
             frequency: NSNumber(value: 20 * 60)  // 20 minutes
         )
 
-        // GeneratedPluginRegistrant.register(with: self)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
 

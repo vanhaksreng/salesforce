@@ -17,3 +17,6 @@ flutter clean && flutter pub get && flutter build apk --release
 flutter clean && flutter pub get && flutter run
 
 flutter build ios --release --build-name=13.0.7 --build-number=1
+
+flutter pub add mobile_scanner
+flutter pub remove google_mlkit_barcode_scanning
