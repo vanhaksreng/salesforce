@@ -1,17 +1,10 @@
-import 'dart:io';
-
-import 'package:camera/camera.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
-import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/utils/logger.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/localization/trans.dart';
@@ -26,270 +19,85 @@ class ScannerScreen extends StatefulWidget {
 }
 
 class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
-  CameraController? cameraController;
+  final MobileScannerController _scannerController = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    returnImage: false,
+  );
 
-  // final barcodeScanner = MobileScannerController();
+  final ImagePicker _imagePicker = ImagePicker();
 
-  Barcode? barcodeScanner;
+  bool _isDetected = false;
+  bool _isUploading = false;
 
-  final ImagePicker imagePicker = ImagePicker();
-  bool isScanning = false;
-  bool isUploading = false;
-  late List<CameraDescription> _cameras;
-  bool _isProcessing = false;
-  bool isDetected = false;
-
-  final Map<DeviceOrientation, int> _orientations = {
-    DeviceOrientation.portraitUp: 0,
-    DeviceOrientation.landscapeLeft: 90,
-    DeviceOrientation.portraitDown: 180,
-    DeviceOrientation.landscapeRight: 270,
-  };
-
-  @override
-  void initState() {
-    super.initState();
-    _initCamera();
-  }
-
-  Future<void> _initCamera() async {
-    try {
-      final status = await Permission.camera.request();
-      if (!mounted) return;
-
-      if (!status.isGranted) {
-        showErrorMessage("Camera permission is required to scan QR codes");
-        return;
-      }
-
-      _cameras = await availableCameras();
-
-      if (_cameras.isEmpty) {
-        if (mounted) {
-          showErrorMessage("No camera found on this device");
-        }
-        return;
-      }
-
-      final camera = _cameras.first;
-
-      cameraController = CameraController(
-        camera,
-        ResolutionPreset.high,
-        enableAudio: false,
-        imageFormatGroup: Platform.isAndroid
-            ? ImageFormatGroup.nv21
-            : ImageFormatGroup.bgra8888,
-      );
-
-      await cameraController!.initialize();
-
-      if (Platform.isIOS) {
-        await Future.delayed(const Duration(milliseconds: 500));
-      }
-
-      await cameraController!.startImageStream(_processCameraImage);
-
-      if (mounted) setState(() {});
-    } catch (e) {
-      Logger.log(e.toString());
-      if (mounted) {
-        showErrorMessage("Failed to initialize camera");
-      }
-    }
-  }
-
-  Future<void> _processCameraImage(CameraImage image) async {
-    if (_isProcessing || !mounted) return;
-    _isProcessing = true;
-
-    try {
-      // final inputImage = _convertToInputImage(image);
-      // if (inputImage == null) {
-      //   _isProcessing = false;
-      //   return;
-      // }
-
-      // final barcodes = await barcodeScanner.processImage(inputImage);
-
-      // if (barcodes.isNotEmpty && mounted) {
-      //   final code = barcodes.first.rawValue ?? '';
-
-      //   if (isURL(code) && !isDetected) {
-      //     setState(() {
-      //       isDetected = true; // Trigger highlight animation
-      //     });
-
-      //     // Stop image stream immediately
-      //     await cameraController?.stopImageStream();
-
-      //     // Wait for animation to play
-      //     await Future.delayed(const Duration(milliseconds: 800));
-
-      //     if (!mounted) return;
-      //     Navigator.of(context).pop(code);
-      //   }
-      // }
-    } catch (e) {
-      debugPrint('Error processing image: $e');
-    } finally {
-      _isProcessing = false;
-    }
-  }
-
-  // InputImage? _convertToInputImage(CameraImage image) {
-  //   final camera = cameraController!.description;
-  //   final sensorOrientation = camera.sensorOrientation;
-
-  //   final deviceOrientation = cameraController!.value.deviceOrientation;
-  //   final rotationCompensation = _orientations[deviceOrientation] ?? 0;
-
-  //   InputImageRotation rotation;
-
-  //   if (Platform.isIOS) {
-  //     rotation =
-  //         InputImageRotationValue.fromRawValue(sensorOrientation) ??
-  //         InputImageRotation.rotation0deg;
-  //   } else {
-  //     int adjustedRotation;
-  //     if (camera.lensDirection == CameraLensDirection.front) {
-  //       adjustedRotation = (sensorOrientation + rotationCompensation) % 360;
-  //     } else {
-  //       adjustedRotation =
-  //           (sensorOrientation - rotationCompensation + 360) % 360;
-  //     }
-  //     rotation =
-  //         InputImageRotationValue.fromRawValue(adjustedRotation) ??
-  //         InputImageRotation.rotation0deg;
-  //   }
-
-  //   try {
-  //     // Validate image planes
-  //     if (image.planes.isEmpty) {
-  //       debugPrint("Error: No image planes available");
-  //       return null;
-  //     }
-
-  //     if (Platform.isIOS) {
-  //       // iOS BGRA8888 handling
-  //       return _createInputImageForIOS(image, rotation);
-  //     } else {
-  //       // Android NV21 handling (already in correct format)
-  //       final Uint8List bytes = image.planes[0].bytes;
-
-  //       return InputImage.fromBytes(
-  //         bytes: bytes,
-  //         metadata: InputImageMetadata(
-  //           size: Size(image.width.toDouble(), image.height.toDouble()),
-  //           rotation: rotation,
-  //           format: InputImageFormat.nv21,
-  //           bytesPerRow: image.planes[0].bytesPerRow,
-  //         ),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     Logger.log(e.toString());
-  //     return null;
-  //   }
-  // }
-
-  // InputImage? _createInputImageForIOS(
-  //   CameraImage image,
-  //   InputImageRotation rotation,
-  // ) {
-  //   try {
-  //     if (image.planes.isEmpty) {
-  //       debugPrint("Error: No image planes available for iOS");
-  //       return null;
-  //     }
-
-  //     final plane = image.planes.first;
-
-  //     return InputImage.fromBytes(
-  //       bytes: plane.bytes,
-  //       metadata: InputImageMetadata(
-  //         size: Size(image.width.toDouble(), image.height.toDouble()),
-  //         rotation: rotation,
-  //         format: InputImageFormat.bgra8888,
-  //         bytesPerRow: plane.bytesPerRow,
-  //       ),
-  //     );
-  //   } catch (e) {
-  //     debugPrint("Error creating iOS InputImage: $e");
-  //     return null;
-  //   }
-  // }
-
-  bool isURL(String result) {
-    final uri = Uri.tryParse(result);
+  bool _isURL(String value) {
+    final uri = Uri.tryParse(value);
     return uri != null &&
-        (uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https'));
+        uri.hasScheme &&
+        (uri.scheme == 'http' || uri.scheme == 'https');
   }
 
-  Future<String?> processImage(String imagePath) async {
-    try {
-      // final inputImage = InputImage.fromFilePath(imagePath);
-      // final barcodes = await barcodeScanner.processImage(inputImage);
+  Future<void> _handleBarcode(BarcodeCapture capture) async {
+    if (_isDetected || !mounted) return;
 
-      // if (barcodes.isNotEmpty) {
-      //   final code = barcodes.first.rawValue ?? '';
+    final barcode = capture.barcodes.firstOrNull;
+    final code = barcode?.rawValue ?? '';
 
-      //   if (isURL(code) && !isDetected) {
-      //     setState(() {
-      //       isDetected = true;
-      //     });
+    if (_isURL(code)) {
+      setState(() => _isDetected = true);
 
-      //     await Future.delayed(const Duration(milliseconds: 800));
+      // Brief pause so the success animation is visible
+      await Future.delayed(const Duration(milliseconds: 600));
 
-      //     return code;
-      //   }
-      // }
+      await _scannerController.stop();
 
-      return null;
-    } catch (e) {
-      Logger.log("Image processing error: $e");
-      return null;
+      if (!mounted) return;
+      Navigator.of(context).pop(code);
     }
   }
 
-  Future<void> uploadFromGallery() async {
-    setState(() {
-      isUploading = true;
-    });
+  Future<void> _uploadFromGallery() async {
+    setState(() => _isUploading = true);
 
     try {
-      final XFile? pickedFile = await imagePicker.pickImage(
+      final XFile? pickedFile = await _imagePicker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 100,
       );
 
-      if (pickedFile != null) {
-        final result = await processImage(pickedFile.path);
-        if (result != null && mounted) {
-          Navigator.pop(context, result);
+      if (pickedFile == null) {
+        setState(() => _isUploading = false);
+        return;
+      }
+
+      // Analyse the chosen image with MobileScanner
+      final result = await _scannerController.analyzeImage(pickedFile.path);
+
+      if (!mounted) return;
+
+      if (result != null) {
+        final code = result.barcodes.firstOrNull?.rawValue ?? '';
+
+        if (_isURL(code)) {
+          setState(() => _isDetected = true);
+          await Future.delayed(const Duration(milliseconds: 600));
+          if (!mounted) return;
+          Navigator.of(context).pop(code);
           return;
-        } else {
-          showErrorMessage("Invalid QR code");
         }
       }
+
+      showErrorMessage("Invalid QR code");
     } catch (e) {
       Logger.log("Gallery upload error: $e");
       showErrorMessage("Invalid QR code");
     }
 
-    setState(() {
-      isUploading = false;
-    });
+    if (mounted) setState(() => _isUploading = false);
   }
 
   @override
   void dispose() {
-    _isProcessing = true; // Prevent further processing
-    // barcodeScanner.close();
-    if (cameraController?.value.isStreamingImages ?? false) {
-      cameraController?.stopImageStream();
-    }
-    cameraController?.dispose();
+    _scannerController.dispose();
     super.dispose();
   }
 
@@ -307,7 +115,7 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
               textColor: white,
               icon: Icon(Icons.upload, size: scaleFontSize(26)),
               title: greeting("Upload Organization QR Code"),
-              onPressed: isUploading ? null : () => uploadFromGallery(),
+              onPressed: _isUploading ? null : _uploadFromGallery,
             ),
           ),
         ),
@@ -318,48 +126,61 @@ class _ScannerScreenState extends State<ScannerScreen> with MessageMixin {
   Widget _buildScanner() {
     return Stack(
       children: [
-        if (cameraController == null || !cameraController!.value.isInitialized)
-          const LoadingPageWidget()
-        else
-          Positioned.fill(child: CameraPreview(cameraController!)),
+        
+        MobileScanner(
+          controller: _scannerController,
+          onDetect: _handleBarcode,
+        ),
+
         Center(
-          child: Stack(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeOutBack,
+            width: scaleFontSize(250),
+            height: scaleFontSize(250),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              border: Border.all(
+                color: _isDetected ? success : white,
+                width: _isDetected ? 4 : 2,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: _isDetected
+                  ? [
+                      BoxShadow(
+                        color: success.withAlpha((0.6 * 255).toInt()),
+                        blurRadius: 20,
+                        spreadRadius: 4,
+                      ),
+                    ]
+                  : [],
+            ),
+            child: AnimatedScale(
+              scale: _isDetected ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInCirc,
+              child: Icon(
+                Icons.qr_code_2,
+                size: scaleFontSize(180),
+                color: white,
+              ),
+            ),
+          ),
+        ),
+
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            height: 100,
+            color: const Color.fromRGBO(0, 0, 0, 0.4),
             alignment: Alignment.center,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 350),
-                curve: Curves.easeOutBack,
-                width: scaleFontSize(250),
-                height: scaleFontSize(250),
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  border: Border.all(
-                    color: isDetected ? success : white,
-                    width: isDetected ? 4 : 2,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: isDetected
-                      ? [
-                          BoxShadow(
-                            color: success.withAlpha((0.6 * 255).toInt()),
-                            blurRadius: 20,
-                            spreadRadius: 4,
-                          ),
-                        ]
-                      : [],
-                ),
-              ),
-              AnimatedScale(
-                scale: isDetected ? 1.3 : 0.0,
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.easeInCirc,
-                child: Icon(
-                  Icons.qr_code_2,
-                  size: scaleFontSize(200),
-                  color: white,
-                ),
-              ),
-            ],
+            child: Text(
+              _isDetected
+                  ? greeting("QR Code detected!")
+                  : greeting("Point your camera at a QR code"),
+              overflow: TextOverflow.fade,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
           ),
         ),
       ],

@@ -18,7 +18,9 @@ import workmanager_apple
 
         ThermalPrinterPlugin.register(with: self.registrar(forPlugin: "ThermalPrinterPlugin")!)
 
-        // setupBluetoothPermissionChannel(controller: controller)
+        setupBluetoothPermissionChannel(
+            messenger: self.registrar(forPlugin: "com.clearviewerp.salesforce/bluetooth")!.messenger()
+        )
         
         //GOOGLE MAP KEY
         GMSServices.provideAPIKey("AIzaSyC3pUau1zh5lLPMEKG8-WanuIKMb8895sg")
@@ -39,10 +41,10 @@ import workmanager_apple
     }
 
     // MARK: - Setup Bluetooth Permission Channel
-    private func setupBluetoothPermissionChannel(controller: FlutterViewController) {
+    private func setupBluetoothPermissionChannel(messenger: FlutterBinaryMessenger) {
         bluetoothChannel = FlutterMethodChannel(
             name: "bluetooth_permissions",
-            binaryMessenger: controller.binaryMessenger
+            binaryMessenger: messenger 
         )
 
         bluetoothChannel?.setMethodCallHandler { [weak self] (call, result) in
