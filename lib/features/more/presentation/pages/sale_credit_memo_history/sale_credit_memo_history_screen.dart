@@ -162,6 +162,23 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
   }
 
   Future<void> shareSaleOrder(String documentNo) async {
+    
+    if (!await _cubit.isConnectedToNetwork()) {
+      _cubit.showWarningMessage(
+        "No internet connection. Please check your network settings.",
+      );
+      return;
+    }
+
+    final isNotExpired = await _cubit.apiSessionStillAlive();
+    if (!isNotExpired) {
+      if (!mounted) return;
+      final password = await Helpers.showSessionLoginDialog(context);
+      if (password == null) return;
+    }
+
+    if(!mounted) return;
+
     final l = LoadingOverlay.of(context);
     try {
       l.show();

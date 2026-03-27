@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/mixins/generate_pdf_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
@@ -7,7 +8,7 @@ import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 
 class SaleCreditMemoHistoryCubit extends Cubit<SaleCreditMemoHistoryState>
-    with MessageMixin, GeneratePdfMixin {
+    with MessageMixin, GeneratePdfMixin, AppMixin {
   SaleCreditMemoHistoryCubit()
     : super(const SaleCreditMemoHistoryState(isLoading: true));
   final MoreRepository appRepos = getIt<MoreRepository>();

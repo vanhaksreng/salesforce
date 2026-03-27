@@ -75,17 +75,18 @@ class _ItemShapeState extends State<ItemShapeWidget> with AutomaticKeepAliveClie
                 spacing: 8.scale,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  TextWidget(text: widget.item.no, maxLines: 2),
                   TextWidget(text: widget.item.description ?? "", maxLines: 2, fontWeight: FontWeight.bold),
                   if ((widget.item.description2 ?? "").isNotEmpty)
                     TextWidget(text: widget.item.description2 ?? "", maxLines: 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [_buildItemPrice(), _buildInventoryChip()],
-                  ),
                 ],
               ),
             ),
           ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [_buildItemPrice(), _buildInventoryChip()],
         ),
         const DotLine(),
         _buildFooter(),

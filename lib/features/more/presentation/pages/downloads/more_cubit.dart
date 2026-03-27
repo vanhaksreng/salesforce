@@ -1,12 +1,14 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/enums/enums.dart';
+import 'package:salesforce/core/mixins/app_mixin.dart';
+import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 part 'more_state.dart';
 
-class MoreCubit extends Cubit<MoreState> {
+class MoreCubit extends Cubit<MoreState> with MessageMixin, AppMixin  {
   MoreCubit() : super(MoreState(isLoading: false));
   final appRepos = getIt<MoreRepository>();
 

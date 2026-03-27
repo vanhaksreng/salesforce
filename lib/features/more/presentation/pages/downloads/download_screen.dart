@@ -69,6 +69,23 @@ class _DownloadScreenState extends State<DownloadScreen> with SingleTickerProvid
     if (activeTab.value == 1) {
       return;
     }
+
+    if (!await screenCubit.isConnectedToNetwork()) {
+      screenCubit.showWarningMessage(
+        "No internet connection. Please check your network settings.",
+      );
+      return;
+    }
+
+    final isNotExpired = await screenCubit.apiSessionStillAlive();
+    if (!isNotExpired) {
+      if (!mounted) return;
+      final password = await Helpers.showSessionLoginDialog(context);
+      if (password == null) return;
+    }
+
+    if(!mounted) return;
+
     final l = LoadingOverlay.of(context);
     l.show(1);
 

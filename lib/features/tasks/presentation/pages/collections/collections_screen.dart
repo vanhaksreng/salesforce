@@ -56,7 +56,7 @@ class CollectionsScreenState extends State<CollectionsScreen>
   Future<void> _initializeData() async {
     await _cubit.getPaymentType();
 
-    await _handleDownload();
+    // await _handleDownload();
 
     await _cubit.getCustomerLedgerEntry(
       param: {'customer_no': widget.arg.schedule.customerNo},
@@ -184,6 +184,7 @@ class CollectionsScreenState extends State<CollectionsScreen>
             final journals = state.casReJounals
                 .where((journal) => journal.status == kStatusOpen)
                 .toList();
+                
             return Visibility(
               visible: journals.isNotEmpty,
               child: BtnWidget(
@@ -213,6 +214,7 @@ class CollectionsScreenState extends State<CollectionsScreen>
         final totalAmt = matchingJournals.fold(0.0, (sum, journal) {
           return sum + Helpers.toDouble(journal.amountLcy);
         });
+
         final remainingAmt = Helpers.toDouble(record.amountLcy) - totalAmt;
         return BoxWidget(
           key: ValueKey(record.entryNo),

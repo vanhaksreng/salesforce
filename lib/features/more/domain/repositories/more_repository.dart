@@ -11,7 +11,6 @@ import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/realm/scheme/tasks_schemas.dart';
-import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
 abstract class MoreRepository extends BaseAppRepository {
   Future<Either<Failure, RecordSaleHeader>> getSaleHeaders({
@@ -60,39 +59,13 @@ abstract class MoreRepository extends BaseAppRepository {
     Map<String, dynamic>? params,
   });
 
-  // Future<Either<Failure, CustomerAddress?>> getCustomerAddress({
-  //   Map<String, dynamic>? params,
-  // });
-
   Future<Either<Failure, bool>> processUploadSale({
     required List<SalesHeader> salesHeaders,
     required List<SalesLine> salesLines,
   });
 
-  Future<Either<Failure, List<CustomerItemLedgerEntry>>>
-  processUploadCheckStock({required List<CustomerItemLedgerEntry> records});
-
-  Future<Either<Failure, List<CompetitorItemLedgerEntry>>>
-  processUploadCompetitorCheckStock({
-    required List<CompetitorItemLedgerEntry> records,
-  });
-
-  Future<Either<Failure, bool>> processUploadCollection({
-    required List<CashReceiptJournals> records,
-  });
-
-  Future<Either<Failure, List<SalesPersonScheduleMerchandise>>>
-  processUploadMerchandiseAndPosm({
-    required List<SalesPersonScheduleMerchandise> records,
-  });
-
   Future<Either<Failure, List<SalespersonSchedule>>> processUploadSchedule({
     required List<SalespersonSchedule> records,
-  });
-
-  Future<Either<Failure, List<ItemPrizeRedemptionLineEntry>>>
-  processUploadRedemptions({
-    required List<ItemPrizeRedemptionLineEntry> records,
   });
 
   Future<Either<Failure, String>> getAddressFrmLatLng(double lat, double lng);

@@ -145,16 +145,12 @@ class DetailCollectionsScreenState extends State<DetailCollectionsScreen>
   }
 
   Widget buildBody(DetailCollectionsState state) {
-    final remainingAmt =
-        Helpers.toDouble(cEntry.amountLcy) - state.totalReceiveAmt;
+    final remainingAmt = Helpers.toDouble(cEntry.amountLcy) - state.totalReceiveAmt;
 
     final hasJournals = state.cashReceiptJournals.isNotEmpty;
-    final lastJournalApproved =
-        hasJournals && state.cashReceiptJournals.last.status == kStatusApprove;
+    final lastJournalApproved = hasJournals && state.cashReceiptJournals.last.status == kStatusPosted;
 
-    final shouldShowPaymentBox =
-        (hasJournals && lastJournalApproved && remainingAmt > 0) ||
-        !hasJournals;
+    final shouldShowPaymentBox = (hasJournals && lastJournalApproved && remainingAmt > 0);
 
     return ListView(
       padding: EdgeInsets.all(15.scale),

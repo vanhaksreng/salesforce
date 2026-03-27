@@ -159,6 +159,23 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
   }
 
   Future<void> shareSaleOrder(String documentNo) async {
+
+    if (!await _cubit.isConnectedToNetwork()) {
+      _cubit.showWarningMessage(
+        "No internet connection. Please check your network settings.",
+      );
+      return;
+    }
+
+    final isNotExpired = await _cubit.apiSessionStillAlive();
+    if (!isNotExpired) {
+      if (!mounted) return;
+      final password = await Helpers.showSessionLoginDialog(context);
+      if (password == null) return;
+    }
+
+    if(!mounted) return;
+
     final l = LoadingOverlay.of(context);
     l.show();
 
@@ -178,13 +195,14 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
         documentNo: documentNo,
       );
 
+      l.hide();
+
       if (pdfFile == null) {
-        l.hide();
         return;
       }
 
-      l.hide();
       await SharePlus.instance.share(ShareParams(files: [XFile(pdfFile.path)]));
+
     } catch (e) {
       showErrorMessage(e.toString());
       l.hide();

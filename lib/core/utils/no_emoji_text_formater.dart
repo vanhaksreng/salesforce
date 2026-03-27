@@ -20,7 +20,12 @@ class NoEmojiTextInputFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    
+    // final filtered = newValue.text;
+    // return newValue.copyWith(
+    //   text: filtered,
+    //   selection: TextSelection.collapsed(offset: filtered.length),
+    // );
+
     final filtered = newValue.text.replaceAll(_emojiRegex, '');
     return newValue.copyWith(
       text: filtered,

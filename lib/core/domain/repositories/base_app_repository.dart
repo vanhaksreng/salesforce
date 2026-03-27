@@ -5,6 +5,7 @@ import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
+import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
 abstract class BaseAppRepository {
   Future<Either<Failure, bool>> downloadTranData({
@@ -102,4 +103,26 @@ abstract class BaseAppRepository {
   });
 
   Future<Either<Failure, List<PromotionType>>> getPromotionType();
+
+  Future<Either<Failure, List<CustomerItemLedgerEntry>>>
+  processUploadCheckStock({required List<CustomerItemLedgerEntry> records});
+
+  Future<Either<Failure, List<CompetitorItemLedgerEntry>>>
+  processUploadCompetitorCheckStock({
+    required List<CompetitorItemLedgerEntry> records,
+  });
+
+  Future<Either<Failure, bool>> processUploadCollection({
+    required List<CashReceiptJournals> records,
+  });
+
+  Future<Either<Failure, List<SalesPersonScheduleMerchandise>>>
+  processUploadMerchandiseAndPosm({
+    required List<SalesPersonScheduleMerchandise> records,
+  });
+
+  Future<Either<Failure, List<ItemPrizeRedemptionLineEntry>>>
+  processUploadRedemptions({
+    required List<ItemPrizeRedemptionLineEntry> records,
+  });
 }

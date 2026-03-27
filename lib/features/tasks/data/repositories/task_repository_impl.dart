@@ -452,6 +452,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         businessUnitCode: getBusinessUnitCode(userSetup, customer),
         departmentCode: getDepartmentCode(userSetup, customer),
         projectCode: getProjectCode(userSetup, customer),
+        schedule: schedule,
       );
 
       String priceIncludeVat = customer.priceIncludeVat ?? kStatusNo;
@@ -1097,6 +1098,11 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
   ) async {
     try {
       final cile = await _local.submitCheckStock(records);
+
+      if(await _networkInfo.isConnected && await _remote.isValidApiSessionV2()) {
+       return await processUploadCheckStock(records: records);
+      }
+
       return Right(cile);
     } on GeneralException catch (e) {
       return Left(ServerFailure(e.message));
@@ -1590,6 +1596,11 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
   ) async {
     try {
       final reuslt = await _local.processCashReceiptJournals(journals);
+
+      if(await _networkInfo.isConnected && await _remote.isValidApiSessionV2()) {
+        await processUploadCollection(records: journals);
+      }
+
       return Right(reuslt);
     } on GeneralException catch (e) {
       return Left(ServerFailure(e.message));

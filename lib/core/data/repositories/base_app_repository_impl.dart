@@ -9,8 +9,13 @@ import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/data/datasources/api/base_api_data_source.dart';
 import 'package:salesforce/core/data/datasources/handlers/table_handler_factory.dart';
 import 'package:salesforce/core/data/datasources/realm/base_realm_data_source.dart';
+import 'package:salesforce/core/data/models/extension/cash_receipt_journals_extension.dart';
 import 'package:salesforce/core/data/models/extension/company_info_extension.dart';
+import 'package:salesforce/core/data/models/extension/competitor_item_ledger_entry_extension.dart';
+import 'package:salesforce/core/data/models/extension/customer_item_ledger_entry_extension.dart';
 import 'package:salesforce/core/data/models/extension/gps_tracking_entry_extension.dart';
+import 'package:salesforce/core/data/models/extension/item_prize_redemption_line_entry_extension.dart';
+import 'package:salesforce/core/data/models/extension/salesperson_schedule_merchandise_extenstion.dart';
 import 'package:salesforce/core/domain/repositories/base_app_repository.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/errors/failures.dart';
@@ -21,6 +26,7 @@ import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
+import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
 class BaseAppRepositoryImpl implements BaseAppRepository {
   final BaseApiDataSource _remote;
@@ -631,6 +637,193 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
     );
 
     return Right(localData);
+  }
+
+  @override
+  Future<Either<Failure, List<CustomerItemLedgerEntry>>>
+  processUploadCheckStock({
+    required List<CustomerItemLedgerEntry> records,
+  }) async {
+    try {
+      List<Map<String, dynamic>> jsonData = [];
+      for (var record in records) {
+        jsonData.add(record.toJson());
+      }
+
+      if (jsonData.isEmpty) {
+        return const Left(CacheFailure("Nothing to upload"));
+      }
+
+      final resultRemote = await _remote.processUpload(
+        data: {'table_name': 'check_item_stock', 'data': jsonEncode(jsonData)},
+      );
+
+      final List<CustomerItemLedgerEntry> remoteRecords = [];
+      for (var rr in resultRemote['records']) {
+        remoteRecords.add(CustomerItemLedgerEntryExtension.fromMap(rr));
+      }
+
+      final result = await _local.updateCheckedStockStatus(
+        records,
+        remoteRecords: remoteRecords,
+      );
+
+      return Right(result);
+    } on GeneralException catch (e) {
+      return Left(CacheFailure(e.message));
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> processUploadCollection({
+    required List<CashReceiptJournals> records,
+  }) async {
+    try {
+      List<Map<String, dynamic>> jsonData = [];
+      for (var record in records) {
+        jsonData.add(record.toJson());
+      }
+
+      if (jsonData.isEmpty) {
+        return const Left(CacheFailure("Nothing to upload"));
+      }
+
+      final result = await _remote.processUpload(
+        data: {'table_name': 'cashjournal', 'data': jsonEncode(jsonData)},
+      );
+
+      final List<CashReceiptJournals> remoteJournal = [];
+      for (var rj in result['records']) {
+        remoteJournal.add(CashReceiptJournalsExtension.fromMap(rj));
+      }
+
+      _local.updateCashJournalStatus(records, remoteJournals: remoteJournal);
+
+      return const Right(true);
+    } on GeneralException catch (e) {
+      return Left(CacheFailure(e.message));
+    } on Exception {
+      return const Left(CacheFailure(errorMessage));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<CompetitorItemLedgerEntry>>>
+  processUploadCompetitorCheckStock({
+    required List<CompetitorItemLedgerEntry> records,
+  }) async {
+    try {
+      List<Map<String, dynamic>> jsonData = [];
+      for (var record in records) {
+        jsonData.add(record.toJson());
+      }
+
+      if (jsonData.isEmpty) {
+        return const Left(CacheFailure("Nothing to upload"));
+      }
+
+      final resultRemote = await _remote.processUpload(
+        data: {
+          'table_name': 'check_competitor_item_stock',
+          'data': jsonEncode(jsonData),
+        },
+      );
+
+      final List<CompetitorItemLedgerEntry> remoteRecords = [];
+      for (var rr in resultRemote['records']) {
+        remoteRecords.add(CompetitorItemLedgerEntryExtension.fromMap(rr));
+      }
+
+      final result = await _local.updateCheckedCompititorStockStatus(
+        records,
+        remoteRecords: remoteRecords,
+      );
+
+      return Right(result);
+    } on GeneralException catch (e) {
+      return Left(CacheFailure(e.message));
+    } on Exception catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<SalesPersonScheduleMerchandise>>>
+  processUploadMerchandiseAndPosm({
+    required List<SalesPersonScheduleMerchandise> records,
+  }) async {
+    try {
+      List<Map<String, dynamic>> jsonData = [];
+      for (var record in records) {
+        jsonData.add(record.toJson());
+      }
+
+      if (jsonData.isEmpty) {
+        return const Left(CacheFailure("Nothing to upload"));
+      }
+
+      final resultRemote = await _remote.processUpload(
+        data: {
+          'table_name': 'schedule_merchandise',
+          'data': jsonEncode(jsonData),
+        },
+      );
+
+      final List<SalesPersonScheduleMerchandise> remoteRecords = [];
+      for (var rr in resultRemote['records']) {
+        remoteRecords.add(SalesPersonScheduleMerchandiseExtension.fromMap(rr));
+      }
+
+      final result = await _local.updateScheduleMerchandiseStatus(
+        records,
+        remoteSchedules: remoteRecords,
+      );
+
+      return Right(result);
+    } on GeneralException catch (e) {
+      return Left(CacheFailure(e.message));
+    } on Exception catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<ItemPrizeRedemptionLineEntry>>>
+  processUploadRedemptions({
+    required List<ItemPrizeRedemptionLineEntry> records,
+  }) async {
+    try {
+      List<Map<String, dynamic>> jsonData = [];
+      for (var record in records) {
+        jsonData.add(record.toJson());
+      }
+
+      if (jsonData.isEmpty) {
+        return const Left(CacheFailure("Nothing to upload"));
+      }
+
+      final resultRemote = await _remote.processUpload(
+        data: {'table_name': 'redemption', 'data': jsonEncode(jsonData)},
+      );
+
+      final List<ItemPrizeRedemptionLineEntry> remoteRecords = [];
+      for (var rr in resultRemote['records']) {
+        remoteRecords.add(ItemPrizeRedemptionLineEntryExtension.fromMap(rr));
+      }
+
+      final result = await _local.updateRedemptionsStatus(
+        records,
+        remoteRecords: remoteRecords,
+      );
+
+      return Right(result);
+    } on GeneralException catch (e) {
+      return Left(CacheFailure(e.message));
+    } on Exception catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
   }
 
   ///

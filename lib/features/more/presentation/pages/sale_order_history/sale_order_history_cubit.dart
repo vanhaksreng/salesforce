@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/constants/permission.dart';
+import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/mixins/generate_pdf_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/mixins/permission_mixin.dart';
@@ -10,7 +11,7 @@ import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 
 class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
-    with MessageMixin, GeneratePdfMixin, PermissionMixin {
+    with MessageMixin, GeneratePdfMixin, PermissionMixin,AppMixin {
   SaleOrderHistoryCubit() : super(const SaleOrderHistoryState(isLoading: true));
   final MoreRepository appRepos = getIt<MoreRepository>();
 
