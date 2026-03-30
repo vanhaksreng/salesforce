@@ -1,6 +1,7 @@
 package com.clearviewerp.salesforce
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -86,7 +87,7 @@ enum class ImageAlignment(val value: Int) {
     RIGHT(2);
 
     companion object {
-        fun fromInt(value: Int) = values().firstOrNull { it.value == value } ?: CENTER
+        fun fromInt(value: Int) = entries.firstOrNull { it.value == value } ?: CENTER
     }
 }
 
@@ -219,6 +220,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         preloadFonts()
     }
 
+    @SuppressLint("MissingPermission")
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
 
@@ -290,7 +292,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             } else {
                 if (consecutiveLineFeeds > 0) {
                     // Add all line feeds at once (more efficient)
-                    for (i in 0 until consecutiveLineFeeds) {
+                    for (i in 0..consecutiveLineFeeds) {
                         optimized.add(0x0A.toByte())
                     }
                     consecutiveLineFeeds = 0
@@ -301,7 +303,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         // Add any remaining line feeds
         if (consecutiveLineFeeds > 0) {
-            for (i in 0 until consecutiveLineFeeds) {
+            for (i in 0..consecutiveLineFeeds) {
                 optimized.add(0x0A.toByte())
             }
         }
@@ -386,7 +388,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     ConnectionType.BLUETOOTH_CLASSIC -> {
                         try {
                             val inputStream = bluetoothSocket?.inputStream
-                            if (inputStream?.available() ?: 0 > 0) {
+                            if ((inputStream?.available() ?: 0) > 0) {
                                 val buffer = ByteArray(10)
                                 val read = inputStream?.read(buffer)
                                 "Status bytes read: $read"
@@ -467,6 +469,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         Thread.sleep(200)
     }
 
+    @SuppressLint("MissingPermission")
     private fun cleanupAllConnections() {
         try {
             bluetoothSocket?.close()
@@ -638,6 +641,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun discoverAllPrinters(result: MethodChannel.Result) {
         if (!checkBluetoothPermissions()) {
             result.error("PERMISSION_DENIED", "Bluetooth permissions not granted", null)
@@ -670,7 +674,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     )
                 }
             } catch (e: SecurityException) {
-                //println(" Cannot access device: ${e.message}")
+                // println("Cannot access device: ${e.message}")
             }
         }
 
@@ -687,6 +691,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         result.success(allPrinters)
     }
 
+    @SuppressLint("MissingPermission")
     private fun discoverBluetoothPrinters(result: MethodChannel.Result) {
         if (!checkBluetoothPermissions()) {
             result.error("PERMISSION_DENIED", "Bluetooth permissions not granted", null)
@@ -711,6 +716,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun registerDiscoveryReceiver(result: MethodChannel.Result) {
         discoveryReceiver?.let {
             try {
@@ -758,6 +764,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         context.registerReceiver(receiver, filter)
     }
 
+    @SuppressLint("MissingPermission")
     private fun returnDiscoveredDevices(result: MethodChannel.Result) {
         try {
             val printers = discoveredDevices.map { device ->
@@ -797,6 +804,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun connectClassicBluetooth(address: String, result: MethodChannel.Result) {
         if (!checkBluetoothPermissions()) {
             result.error("PERMISSION_DENIED", "Bluetooth permissions not granted", null)
@@ -855,7 +863,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     try {
                         initializePrinterForSmoothPrinting()
                     } catch (e: Exception) {
-                        //println(" Could not initialize printer settings: ${e.message}")
+                        // println("Could not initialize printer settings: ${e.message}")
                     }
 
                     withContext(Dispatchers.Main) {
@@ -876,6 +884,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun connectBLE(address: String, result: MethodChannel.Result) {
         if (!checkBluetoothPermissions()) {
             result.error("PERMISSION_DENIED", "Bluetooth permissions not granted", null)
@@ -931,7 +940,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 try {
                     initializePrinterForSmoothPrinting()
                 } catch (e: Exception) {
-                    //println(" Could not initialize printer settings: ${e.message}")
+                    // println("Could not initialize printer settings: ${e.message}")
                 }
 
                 withContext(Dispatchers.Main) {
@@ -950,6 +959,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         result.success(true)
     }
 
+    @SuppressLint("MissingPermission")
     private fun createGattCallback(resultKey: String): BluetoothGattCallback {
         return object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
@@ -996,7 +1006,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     try {
                         initializePrinterForSmoothPrinting()
                     } catch (e: Exception) {
-                        //println(" Could not initialize printer settings: ${e.message}")
+                        // println("Could not initialize printer settings: ${e.message}")
                     }
 
                     mainHandler.post {
@@ -1024,6 +1034,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun findWritableCharacteristic(gatt: BluetoothGatt): BluetoothGattCharacteristic? {
         val printerServiceUUIDs = listOf(
             "000018f0-0000-1000-8000-00805f9b34fb",
@@ -1041,7 +1052,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     }
                 }
             } catch (e: Exception) {
-                //println(" Error checking service $serviceUuidStr: ${e.message}")
+                // println("Error checking service $serviceUuidStr: ${e.message}")
             }
         }
 
@@ -1079,6 +1090,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun cleanupBeforeConnect() {
         try {
             bluetoothGatt?.let { gatt ->
@@ -1180,6 +1192,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         outputStream.flush()
     }
 
+    @SuppressLint("MissingPermission")
     private fun writeBLEDataOptimized(data: ByteArray, startTime: Long) {
         val characteristic = writeCharacteristic
         val gatt = bluetoothGatt
@@ -1275,6 +1288,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     // ====================================================================
     // Printer Configuration
     // ====================================================================
+    @SuppressLint("MissingPermission")
     private fun warmUpPrinter() {
         val warmUpData = byteArrayOf(
             ESC, 0x40,
@@ -1537,7 +1551,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val leftMarginOffset = if (paint.textAlign == Paint.Align.LEFT) padding else 0f
 
             val availableWidth = maxWidth - (padding * 2)
-            val lines = if (maxCharsPerLine > 0 && maxCharsPerLine < 100) {
+            val lines = if (maxCharsPerLine in 1..<100) {
                 wrapTextToList(text, maxCharsPerLine)
             } else {
                 try {
@@ -1582,11 +1596,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 y += lineHeight
             }
 
-            val monoData = convertToMonochromeFast(bitmap)
-
-            if (monoData == null) {
-                return null
-            }
+            val monoData = convertToMonochromeFast(bitmap) ?: return null
 
             val widthBytes = (monoData.width + 7) / 8
             val commandSize = 8 + monoData.data.size
@@ -1873,11 +1883,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 currentX += colWidth
             }
 
-            val monoData = convertToMonochromeFast(bitmap)
-
-            if (monoData == null) {
-                return null
-            }
+            val monoData = convertToMonochromeFast(bitmap) ?: return null
 
             val widthBytes = (monoData.width + 7) / 8
             val commandSize = 8 + monoData.data.size
@@ -2243,7 +2249,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     val code = char.code
                     val isCombining = (code in 0x17B6..0x17BD) || // Khmer vowels
                             (code in 0x17C0..0x17D3) || // Khmer signs
-                            (code == 0x17D2)            // Coeng
+                            (code == 0x17D2)  // Coeng
 
                     if (!isCombining) {
                         lastSafeBreak = end
@@ -2433,12 +2439,12 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             val grapheme = text.substring(start, end)
             val code = grapheme.codePointAt(0)
 
-            val charWidth = when {
-                code in 0x17B4..0x17DD -> 0.0   // Khmer combining marks
-                code in 0x1780..0x17FF -> 0.75  // Khmer base characters
-                code in 0x0E00..0x0E7F -> 1.2   // Thai
-                code in 0x4E00..0x9FFF -> 2.0   // CJK
-                code in 0xAC00..0xD7AF -> 2.0   // Korean
+            val charWidth = when (code) {
+                in 0x17B4..0x17DD -> 0.0   // Khmer combining marks
+                in 0x1780..0x17FF -> 0.75  // Khmer base characters
+                in 0x0E00..0x0E7F -> 1.2   // Thai
+                in 0x4E00..0x9FFF -> 2.0   // CJK
+                in 0xAC00..0xD7AF -> 2.0   // Korean
                 else -> 1.0
             }
             width += charWidth

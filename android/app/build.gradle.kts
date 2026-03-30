@@ -39,11 +39,8 @@ android {
         applicationId = "com.clearviewerp.salesforce"
         minSdk = 24
         targetSdk = 36
-        //versionCode = flutterVersionCode
-        //versionName = flutter.versionName
-
-        versionCode = 13020003
-        versionName = "13.0.2"
+        versionCode = 13020004
+        versionName = "13.0.3"
 
         ndk {
             abiFilters += setOf(

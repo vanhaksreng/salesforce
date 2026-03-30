@@ -1,7 +1,8 @@
 package com.clearviewerp.salesforce
 
+import android.Manifest
 import android.content.Context
-import android.util.Log
+import androidx.annotation.RequiresPermission
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.google.android.gms.location.LocationServices
@@ -10,6 +11,7 @@ import java.util.Date
 import java.util.Locale
 
 class LocationWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     override fun doWork(): Result {
         try {
             val fusedLocationClient = LocationServices.getFusedLocationProviderClient(applicationContext)
