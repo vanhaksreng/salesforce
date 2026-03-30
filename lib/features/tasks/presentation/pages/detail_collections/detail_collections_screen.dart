@@ -148,9 +148,7 @@ class DetailCollectionsScreenState extends State<DetailCollectionsScreen>
     final remainingAmt = Helpers.toDouble(cEntry.amountLcy) - state.totalReceiveAmt;
 
     final hasJournals = state.cashReceiptJournals.isNotEmpty;
-    final lastJournalApproved = hasJournals && state.cashReceiptJournals.last.status == kStatusPosted;
-
-    final shouldShowPaymentBox = (hasJournals && lastJournalApproved && remainingAmt > 0);
+    final shouldShowPaymentBox = remainingAmt > 0 && (!hasJournals || state.cashReceiptJournals.last.status == kStatusPosted);
 
     return ListView(
       padding: EdgeInsets.all(15.scale),

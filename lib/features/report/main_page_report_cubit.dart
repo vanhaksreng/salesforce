@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/mixins/app_mixin.dart';
+import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/mixins/permission_mixin.dart';
 import 'package:salesforce/features/report/domain/entities/menu_report.dart';
 import 'package:salesforce/features/report/main_page_report_state.dart';
@@ -10,7 +12,8 @@ import 'package:salesforce/features/report/presentation/pages/so_outstanding_rep
 import 'package:salesforce/features/report/presentation/pages/stock_request_report/stock_request_report_screen.dart';
 import 'package:salesforce/localization/trans.dart';
 
-class MainPageReportCubit extends Cubit<MainPageReportState> with PermissionMixin {
+class MainPageReportCubit extends Cubit<MainPageReportState>
+    with PermissionMixin, AppMixin,MessageMixin {
   MainPageReportCubit() : super(const MainPageReportState(isLoading: true));
 
   Future<void> initLoadData() async {
@@ -79,7 +82,9 @@ class MainPageReportCubit extends Cubit<MainPageReportState> with PermissionMixi
         MenuReport(
           icon: Icons.inventory_2,
           title: greeting("item_inventory"),
-          subTitle: greeting("effficiently_manage_stock_levels_and_availability"),
+          subTitle: greeting(
+            "effficiently_manage_stock_levels_and_availability",
+          ),
           routeName: ItemInventoryReportScreen.routeName,
           show: await hasPermission("item_inventory"),
         ),

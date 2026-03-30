@@ -46,10 +46,6 @@ class ApiClient {
         body: body,
       );
 
-      if (r.statusCode == 500) {
-        throw GeneralException('Cannot connect to server: ${r.statusCode}');
-      }
-
       if (r.statusCode != 200) {
         throw GeneralException('Requested failed with : ${r.statusCode}');
       }

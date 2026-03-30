@@ -106,8 +106,17 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
 
   void _handleDownload() async {
     if (!await _cubit.isConnectedToNetwork()) {
-      showWarningMessage(errorInternetMessage);
+      _cubit.showWarningMessage(
+        "No internet connection. Please check your network settings.",
+      );
       return;
+    }
+
+    final isNotExpired = await _cubit.apiSessionStillAlive();
+    if (!isNotExpired) {
+      if (!mounted) return;
+      final password = await Helpers.showSessionLoginDialog(context);
+      if (password == null) return;
     }
 
     if (!mounted) return;
@@ -225,13 +234,24 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
     return true;
   }
 
-  void _addNewCustomer() async {
-    final connection = getIt.get<NetworkInfo>();
 
-    if (!await connection.isConnected && mounted) {
-      Helpers.showNoInternetDialog(context);
+  void _addNewCustomer() async {
+    if (!await _cubit.isConnectedToNetwork()) {
+      _cubit.showWarningMessage(
+        "No internet connection. Please check your network settings.",
+      );
       return;
     }
+
+    final isNotExpired = await _cubit.apiSessionStillAlive();
+    if (!isNotExpired) {
+      if (!mounted) return;
+      final password = await Helpers.showSessionLoginDialog(context);
+      if (password == null) return;
+    }
+
+    if (!mounted) return;
+
     final l = LoadingOverlay.of(context);
     l.show();
 

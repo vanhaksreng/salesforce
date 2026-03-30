@@ -4,6 +4,7 @@ import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
 import 'package:salesforce/core/presentation/widgets/list_tile_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
+import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/report/domain/entities/menu_report.dart';
 import 'package:salesforce/features/report/main_page_report_cubit.dart';
@@ -29,6 +30,28 @@ class _MainPageReportScreenState extends State<MainPageReportScreen> {
     _cubit.initLoadData();
   }
 
+  void goToRoute(MenuReport menu) async {
+    if (menu.requiredInternet) {
+      if (!await _cubit.isConnectedToNetwork()) {
+        _cubit.showWarningMessage(
+          "No internet connection. Please check your network settings.",
+        );
+        return;
+      }
+
+      final isNotExpired = await _cubit.apiSessionStillAlive();
+      if (!isNotExpired) {
+        if (!mounted) return;
+        final password = await Helpers.showSessionLoginDialog(context);
+        if (password == null) return;
+      }
+    }
+
+    if (!mounted) return;
+
+    Navigator.pushNamed(context, menu.routeName ?? "", arguments: menu.args);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,7 +66,10 @@ class _MainPageReportScreenState extends State<MainPageReportScreen> {
           final reports = state.reports;
 
           return ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: scaleFontSize(appSpace), vertical: 8.scale),
+            padding: EdgeInsets.symmetric(
+              horizontal: scaleFontSize(appSpace),
+              vertical: 8.scale,
+            ),
             itemCount: reports.length,
             itemBuilder: (context, index) => _buildReportItem(reports[index]),
           );
@@ -53,16 +79,12 @@ class _MainPageReportScreenState extends State<MainPageReportScreen> {
   }
 
   Widget _buildReportItem(MenuReport menu) {
-    // if (!menu.show) {
-    //   return const SizedBox.shrink();
-    // }
-
     return Padding(
       padding: EdgeInsets.symmetric(vertical: scaleFontSize(2)),
       child: ListTitleWidget(
         leading: Icon(menu.icon, size: 24.scale, color: mainColor),
         subTitle: menu.subTitle ?? "",
-        onTap: () => Navigator.pushNamed(context, menu.routeName ?? "", arguments: menu.args),
+        onTap: () => goToRoute(menu),
         label: menu.title,
       ),
     );

@@ -8,22 +8,7 @@ import 'package:salesforce/features/report/domain/entities/stock_request_report_
 import 'package:salesforce/realm/scheme/schemas.dart';
 
 abstract class ReportRepository extends BaseAppRepository {
-  // Future<Either<Failure, List<PosSalesHeader>>> getSaleHeaders({
-  //   Map<String, dynamic>? param,
-  //   int page = 1,
-  //   bool fetchingApi = true,
-  // });
-
-  // Future<Either<Failure, List<PosSalesLine>>> getSaleLines({
-  //   Map<String, dynamic>? param,
-  //   int page = 1,
-  //   bool fetchingApi = true,
-  // });
-
-  // Future<Either<Failure, SaleDetail>> getSaleDetails({
-  //   Map<String, dynamic>? param,
-  // });
-
+  
   Future<Either<Failure, List<Salesperson>>> getSalespersons({Map<String, dynamic>? param});
 
   Future<Either<Failure, List<SoOutstandingReportModel>>> getSoOutstandingReport({

@@ -45,6 +45,7 @@ class SoOutstandingReportCubit extends Cubit<SoOutstandingReportState>
         page: page,
         param: param,
       );
+      
       result.fold(
         (l) {
           emit(state.copyWith(isLoading: false, error: l.message));

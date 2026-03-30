@@ -91,9 +91,19 @@ class CustomerInfoScreenState extends State<CustomerformScreen>
   }
 
   void _onUpdateHandler() async {
+
     if (!await _cubit.isConnectedToNetwork()) {
-      showWarningMessage(errorInternetMessage);
+      _cubit.showWarningMessage(
+        "No internet connection. Please check your network settings.",
+      );
       return;
+    }
+
+    final isNotExpired = await _cubit.apiSessionStillAlive();
+    if (!isNotExpired) {
+      if (!mounted) return;
+      final password = await Helpers.showSessionLoginDialog(context);
+      if (password == null) return;
     }
 
     if (!_formKey.currentState!.validate()) {

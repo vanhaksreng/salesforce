@@ -155,6 +155,7 @@ class _SoOutstandingReportScreenState extends State<SoOutstandingReportScreen>
       bloc: _cubit,
       builder: (context, state) {
         final records = state.records ?? [];
+        
         return AppStateHandler(
           isLoading: state.isLoading,
           error: state.error,

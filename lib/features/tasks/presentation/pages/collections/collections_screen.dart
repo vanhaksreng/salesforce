@@ -56,7 +56,7 @@ class CollectionsScreenState extends State<CollectionsScreen>
   Future<void> _initializeData() async {
     await _cubit.getPaymentType();
 
-    // await _handleDownload();
+    await _handleDownload();
 
     await _cubit.getCustomerLedgerEntry(
       param: {'customer_no': widget.arg.schedule.customerNo},

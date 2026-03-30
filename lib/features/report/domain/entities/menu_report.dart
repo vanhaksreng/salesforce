@@ -8,6 +8,15 @@ class MenuReport {
   final ReportArgs? args;
   final IconData? icon;
   final bool show;
+  final bool requiredInternet;
 
-  const MenuReport({required this.title, this.show = false, this.subTitle, this.routeName, this.args, this.icon});
+  const MenuReport({
+    required this.title,
+    this.show = false,
+    this.subTitle,
+    this.routeName,
+    this.args,
+    this.icon,
+    this.requiredInternet = true,
+  });
 }

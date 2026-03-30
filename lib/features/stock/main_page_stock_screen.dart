@@ -100,6 +100,22 @@ class _MainPageStockScreenState extends State<MainPageStockScreen>
   }
 
   void _handleDownload() async {
+    if (!await _cubit.isConnectedToNetwork()) {
+      _cubit.showWarningMessage(
+        "No internet connection. Please check your network settings.",
+      );
+      return;
+    }
+
+    final isNotExpired = await _cubit.apiSessionStillAlive();
+    if (!isNotExpired) {
+      if (!mounted) return;
+      final password = await Helpers.showSessionLoginDialog(context);
+      if (password == null) return;
+    }
+
+    if (!mounted) return;
+
     final l = LoadingOverlay.of(context);
     l.show();
     await Future.delayed(const Duration(milliseconds: 200));

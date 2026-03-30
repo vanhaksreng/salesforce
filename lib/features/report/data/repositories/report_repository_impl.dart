@@ -49,6 +49,7 @@ class ReportRepositoryImpl extends BaseAppRepositoryImpl
         final soOutstandingReport = await _remote.getSoOutstandingReport(
           data: param,
         );
+        
         return Right(soOutstandingReport);
       }
 

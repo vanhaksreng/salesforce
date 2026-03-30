@@ -37,6 +37,22 @@ class _CustomerAddressScreenState extends State<CustomerAddressScreen>
   }
 
   Future<void> _onDeleteAddress(CustomerAddress address) async {
+    if (!await _cubit.isConnectedToNetwork()) {
+      _cubit.showWarningMessage(
+        "No internet connection. Please check your network settings.",
+      );
+      return;
+    }
+
+    final isNotExpired = await _cubit.apiSessionStillAlive();
+    if (!isNotExpired) {
+      if (!mounted) return;
+      final password = await Helpers.showSessionLoginDialog(context);
+      if (password == null) return;
+    }
+
+    if (!mounted) return;
+    
     try {
       Helpers.showDialogAction(
         context,
@@ -55,8 +71,17 @@ class _CustomerAddressScreenState extends State<CustomerAddressScreen>
 
   void _onPushToCreateAddressScreen({CustomerAddress? address}) async {
     if (!await _cubit.isConnectedToNetwork()) {
-      showWarningMessage(errorInternetMessage);
-      // return;
+      _cubit.showWarningMessage(
+        "No internet connection. Please check your network settings.",
+      );
+      return;
+    }
+
+    final isNotExpired = await _cubit.apiSessionStillAlive();
+    if (!isNotExpired) {
+      if (!mounted) return;
+      final password = await Helpers.showSessionLoginDialog(context);
+      if (password == null) return;
     }
 
     if (!mounted) return;
