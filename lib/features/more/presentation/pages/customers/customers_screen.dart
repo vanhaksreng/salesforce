@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
-import 'package:salesforce/core/constants/app_config.dart';
 import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/constants/constants.dart';
@@ -31,8 +30,6 @@ import 'package:salesforce/features/more/presentation/pages/customers/customers_
 import 'package:salesforce/features/more/presentation/pages/customers/filter_distance_custom.dart';
 import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
 import 'package:salesforce/infrastructure/external_services/location/i_location_service.dart';
-import 'package:salesforce/infrastructure/network/network_info.dart';
-import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/core/presentation/widgets/empty_screen.dart';
 import 'package:salesforce/core/presentation/widgets/search_widget.dart';

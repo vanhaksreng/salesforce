@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:salesforce/core/constants/app_config.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/box_widget.dart';
@@ -52,7 +51,7 @@ class _CustomerAddressScreenState extends State<CustomerAddressScreen>
     }
 
     if (!mounted) return;
-    
+
     try {
       Helpers.showDialogAction(
         context,
