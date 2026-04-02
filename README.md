@@ -16,4 +16,4 @@ flutter clean && flutter pub get
 flutter clean && flutter pub get && flutter build apk --release
 flutter clean && flutter pub get && flutter run
 
-flutter build ios --release --build-name=13.0.7 --build-number=1
+flutter build ios --release --build-name=13.0.8 --build-number=1

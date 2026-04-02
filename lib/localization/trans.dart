@@ -3,6 +3,7 @@ import 'package:salesforce/localization/locals.dart';
 
 class Trans {
   static Locals? locals;
+  
   void init(BuildContext context) {
     locals = Locals.of(context);
   }

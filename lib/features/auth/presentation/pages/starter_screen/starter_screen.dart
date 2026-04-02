@@ -114,6 +114,7 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
       if (_cubit.state.servers.isEmpty) {
         await _cubit.getServerLists();
       }
+      
       Future.delayed(Duration(milliseconds: 200));
 
       if (_cubit.state.servers.isEmpty) {

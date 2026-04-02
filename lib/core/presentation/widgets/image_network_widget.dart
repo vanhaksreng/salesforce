@@ -42,13 +42,13 @@ class ImageNetWorkWidget extends StatelessWidget {
     if (imageUrl.isEmpty) return _buildContainer(_errorImg());
     if (!imageUrl.startsWith('http')) return _buildContainer(_localImg());
 
-    late String img = imageUrl;
-    if (img.startsWith('https')) {
-      img = imageUrl.replaceAll("https", "http");
-    }
+    // late String img = imageUrl;
+    // if (img.startsWith('https')) {
+    //   img = imageUrl.replaceAll("https", "http");
+    // }
 
     return CachedNetworkImage(
-      imageUrl: img,
+      imageUrl: imageUrl,
       imageBuilder: (context, imageProvider) =>
           _buildContainer(_buildImageDecoration(imageProvider)),
       placeholder: (context, url) => _buildContainer(_placeHolderImg()),
