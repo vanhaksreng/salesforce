@@ -31,6 +31,8 @@ class LoginArg {
       'source': source,
       "user_agent": userAgent,
       "devVersion": devVersion,
+      "app_version": devVersion,
+      "platform" : platform,
     };
   }
 }

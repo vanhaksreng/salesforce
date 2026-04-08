@@ -248,10 +248,10 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
                 onPressed: () => _pushToQrScanner(),
                 icon: Row(
                   children: [
-                    const Icon(Icons.arrow_forward, color: white),
+                    const Icon(Icons.qr_code, color: white),
                     SizedBox(width: 8.scale),
                     TextWidget(
-                      text: greeting("Get Started"),
+                      text: greeting("Scan QR Code"),
                       fontSize: 16,
                       color: white,
                     ),

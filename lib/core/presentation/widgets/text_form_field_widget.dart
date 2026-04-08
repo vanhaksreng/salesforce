@@ -140,7 +140,7 @@ class TextFormFieldWidget extends TextFormField {
     return InputDecoration(
       alignLabelWithHint: true,
       maintainHintSize: true,
-      floatingLabelBehavior: floatingLabelBehavior,
+      floatingLabelBehavior: floatingLabelBehavior ?? FloatingLabelBehavior.always,
       constraints: BoxConstraints(
         minWidth: scaleFontSize(45),
         minHeight: scaleFontSize(45),

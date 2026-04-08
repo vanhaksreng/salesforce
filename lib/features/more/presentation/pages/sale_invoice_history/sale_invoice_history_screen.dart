@@ -154,6 +154,8 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
   }
 
   Future<void> shareSaleOrder(String documentNo) async {
+    // ស្វែងរក RenderBox របស់ Widget ដែលអ្នកចុច (ឧទាហរណ៍៖ ប៊ូតុង)
+    final box = context.findRenderObject() as RenderBox;
 
     if (!await _cubit.isConnectedToNetwork()) {
       _cubit.showWarningMessage(
@@ -169,8 +171,8 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
       if (password == null) return;
     }
 
-    if(!mounted) return;
-    
+    if (!mounted) return;
+
     final l = LoadingOverlay.of(context);
     try {
       l.show();
@@ -189,16 +191,24 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
         documentNo: documentNo,
       );
 
+      l.hide();
+
       if (pdfFile == null) {
-        l.hide();
+        showWarningMessage("Cannot access to the file");
         return;
       }
 
-      l.hide();
-      await SharePlus.instance.share(ShareParams(files: [XFile(pdfFile.path)]));
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(pdfFile.path)], 
+          
+          // កំណត់ទីតាំងឱ្យផ្ទាំង share បង្ហាញចេញពីប៊ូតុងដែលចុច
+          sharePositionOrigin: box.localToGlobal(Offset.zero) & box.size,
+        ),
+      );
     } catch (e) {
+      debugPrint(e.toString());
       showErrorMessage(e.toString());
-      return;
     }
   }
 
@@ -241,7 +251,8 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
       page: page,
       param: {
         'document_type': kSaleInvoice,
-        "posting_date": "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+        "posting_date":
+            "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
       },
     );
   }
