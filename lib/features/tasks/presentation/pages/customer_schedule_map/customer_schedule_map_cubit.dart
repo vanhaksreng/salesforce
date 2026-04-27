@@ -33,9 +33,16 @@ class CustomerScheduleMapCubit extends Cubit<CustomerScheduleMapState> {
         date.toDateString(),
         requestApi: false,
       );
+
       response.fold(
         (failure) => throw Exception(failure.message),
-        (items) => emit(state.copyWith(isLoading: false, schedules: items)),
+        (items) => emit(
+          state.copyWith(
+            isLoading: false,
+            schedules: items,
+            schedule: items.isNotEmpty ? items.first : null,
+          ),
+        ),
       );
     } catch (error) {
       emit(state.copyWith(isLoading: false));

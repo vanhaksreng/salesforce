@@ -22,6 +22,7 @@ class ScheduleCarousel extends StatelessWidget {
     if (schedules.isEmpty) {
       return const Center(child: Text("No schedules available."));
     }
+
     return SafeArea(
       child: CarouselSlider.builder(
         carouselController: carouselController,
@@ -33,7 +34,7 @@ class ScheduleCarousel extends StatelessWidget {
           viewportFraction: .9,
           aspectRatio: 1.7,
           onPageChanged: (index, reason) => onPageChanged(schedules[index]),
-          initialPage: schedules.length > 2 ? 2 : 0,
+          // initialPage: schedules.length > 2 ? 2 : 0,
         ),
         itemCount: schedules.length,
         itemBuilder: (context, index, _) {

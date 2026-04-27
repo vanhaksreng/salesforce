@@ -19,6 +19,8 @@ class MainPageStockState {
     this.currentPage = 1,
   });
 
+  Object? get itemRequest => null;
+
   MainPageStockState copyWith({
     bool? isLoading,
     bool? loadingUpdate,

@@ -238,7 +238,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       param["schedule_date"] = visitDate;
     }
 
-    late List<SalespersonSchedule> localSchedules = [];
+    // late List<SalespersonSchedule> localSchedules = [];
 
     try {
       final date = DateTime.parse(visitDate);
@@ -247,7 +247,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         return Right(schedules);
       }
 
-      localSchedules = await _local.getSchedules(param: param);
+      // localSchedules = await _local.getSchedules(param: param);
 
       //IF NEED REQUEST API
       if (requestApi && await _networkInfo.isConnected) {
@@ -255,24 +255,27 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
 
         final schedules = await _remote.getSchedules(visitDate);
 
-        if (localSchedules.length == schedules.length) {
-          return Right(localSchedules);
-        }
+        // if (localSchedules.length == schedules.length) {
+        //   return Right(localSchedules);
+        // }
 
-        final localIds = localSchedules.map((e) => e.id).toSet();
+        // final localIds = localSchedules.map((e) => e.id).toSet();
 
-        final newSchedules = schedules.where((s) {
-          return !localIds.contains(s.id);
-        }).toList();
+        // final newSchedules = schedules.where((s) {
+        //   return !localIds.contains(s.id);
+        // }).toList();
 
-        _local.storeSchedules(newSchedules);
+        // _local.storeSchedules(newSchedules);
+        await _local.storeSchedules(schedules);
 
-        return Right([...localSchedules, ...newSchedules]);
+        // return Right([...localSchedules, ...newSchedules]);
       }
+
+      final localSchedules = await _local.getSchedules(param: param);
 
       return Right(localSchedules);
     } on Exception {
-      return Right(localSchedules);
+      return const Left(CacheFailure(errorMessage));
     }
   }
 
@@ -1099,8 +1102,9 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
     try {
       final cile = await _local.submitCheckStock(records);
 
-      if(await _networkInfo.isConnected && await _remote.isValidApiSessionV2()) {
-       return await processUploadCheckStock(records: records);
+      if (await _networkInfo.isConnected &&
+          await _remote.isValidApiSessionV2()) {
+        return await processUploadCheckStock(records: records);
       }
 
       return Right(cile);
@@ -1597,7 +1601,8 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
     try {
       final reuslt = await _local.processCashReceiptJournals(journals);
 
-      if(await _networkInfo.isConnected && await _remote.isValidApiSessionV2()) {
+      if (await _networkInfo.isConnected &&
+          await _remote.isValidApiSessionV2()) {
         await processUploadCollection(records: journals);
       }
 

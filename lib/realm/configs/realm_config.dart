@@ -25,7 +25,7 @@ class RealmConfig {
     final documents = await getApplicationDocumentsDirectory();
     String realmPath = path.join(documents.path, 'ClearViewSalesforce.realm');
 
-    Logger.log(realmPath);
+    // Logger.log(realmPath);
 
     var config = Configuration.local(
       [

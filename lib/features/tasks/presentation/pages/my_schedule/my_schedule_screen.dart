@@ -76,14 +76,14 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
   bool get wantKeepAlive => true;
 
   void refreshSchedule() {
-    _cubit.getSchedules(context, scheduleDate);
+    _cubit.getSchedules(context, scheduleDate, text: widget.searchText);
     _cubit.getSaleLine(scheduleDate);
   }
 
   @override
   void didUpdateWidget(MyScheduleScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _cubit.getSchedules(context, scheduleDate, text: widget.searchText);
+    // _cubit.getSchedules(context, scheduleDate, text: widget.searchText);
     if (oldWidget.refresh != widget.refresh) {
       refreshSchedule();
     }
@@ -157,7 +157,6 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
       final String useGps = await _cubit.getSetting(kGpsRealTimeTracking);
 
       if (_cubit.state.isCheckInWithLocation == "Yes" || useGps == kStatusYes) {
-
         if (!await _location.hasPermission()) {
           l.hide();
           _showPermissionDialog(
@@ -172,7 +171,8 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
           l.hide();
           _showPermissionDialog(
             title: "Background Location Permission Required",
-            body: "As required by your company, the app needs access to your location even when running in the background. This is essential for tracking your check-in and check-out activities at customer sites.",
+            body:
+                "As required by your company, the app needs access to your location even when running in the background. This is essential for tracking your check-in and check-out activities at customer sites.",
           );
           return;
         }

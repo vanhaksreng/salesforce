@@ -1,9 +1,11 @@
 import 'dart:async';
+
 import 'package:carousel_slider/carousel_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/text_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -32,180 +34,241 @@ class CustomerScheduleMapScreen extends StatefulWidget {
 }
 
 class _MapScheduleScreenState extends State<CustomerScheduleMapScreen> {
-  final Set<Polyline> _polylines = {};
-  final String googleAPIKey = kGoogleKey;
-  final CarouselSliderController carouselController =
-      CarouselSliderController();
-
-  final ILocationService _location = GeolocatorLocationService();
-
-  final ValueNotifier<bool> isLoadingNotifier = ValueNotifier<bool>(false);
+  final ILocationService _locationService = GeolocatorLocationService();
+  final PolylinePoints _polylinePoints = PolylinePoints(apiKey: kGoogleKey);
+  final carouselController = CarouselSliderController();
   final _cubit = CustomerScheduleMapCubit();
-  CameraPosition _phnomPenhLatlong() {
-    return const CameraPosition(target: LatLng(11.5564, 104.9282), zoom: 15);
-  }
+
+  /// Active driving-route polyline drawn on the map.
+  Set<Polyline> _polylines = {};
+
+  /// True while a polyline API call is in-flight.
+  bool _polylineLoading = false;
+
+  StreamSubscription<Position>? _locationStream;
 
   @override
   void initState() {
     super.initState();
-    _cubit.getCustomer();
-    onGetCurrentLocation();
-    _cubit.getCamPosition(_phnomPenhLatlong());
-    getMarkerSale();
+    _bootstrap();
   }
 
   @override
   void dispose() {
-    _polylines.clear();
+    _locationStream?.cancel();
+    _cubit.close();
     super.dispose();
   }
 
-  Future<void> getMarkerSale() async {
+  void _getCamPosition(LatLng position) {
+    _cubit.getCamPosition(CameraPosition(target: position, zoom: 14));
+  }
+
+  Future<void> _bootstrap() async {
+    final position = await _locationService.getCurrentLocation(
+      context: context,
+    );
+
+    await Future.wait([
+      _cubit.getSchedules(DateTime.now()),
+      _cubit.getCustomer(),
+    ]);
+
+    _getCamPosition(LatLng(position.latitude, position.longitude));
+
+    await _loadAllMarkers();
+
+    final first = _cubit.state.schedule;
+
+    if (first != null) {
+      await _drawRouteTo(
+        Helpers.toDouble(first.latitude),
+        Helpers.toDouble(first.longitude),
+      );
+    }
+
+    // Start tracking movement AFTER the first route is drawn.
+    _startLocationTracking();
+  }
+
+  void _startLocationTracking() {
+    const locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 20,
+    );
+
+    _locationStream =
+        Geolocator.getPositionStream(locationSettings: locationSettings).listen(
+          (position) {
+            _getCamPosition(LatLng(position.latitude, position.longitude));
+
+            // Redraw the route from the new position to the currently
+            // selected customer — only if a destination is already set.
+            final current = _cubit.state.schedule;
+            if (current != null && mounted) {
+              _drawRouteTo(
+                Helpers.toDouble(current.latitude),
+                Helpers.toDouble(current.longitude),
+              );
+            }
+          },
+        );
+  }
+
+  Future<void> _loadAllMarkers() async {
     if (!widget.isMore) return;
-    await _cubit.getSchedules(DateTime.now());
 
     final schedules = _cubit.state.schedules ?? [];
+    final customers = _cubit.state.customers;
 
-    for (var schedule in schedules) {
-      final lat = Helpers.toDouble(schedule.latitude);
-      final lng = Helpers.toDouble(schedule.longitude);
-      final position = LatLng(lat, lng);
+    for (final schedule in schedules) {
+      final match = customers.where((c) => c.no == schedule.customerNo);
+      if (match.isEmpty) continue;
 
-      List<Customer> customers = _cubit.state.customers;
-      final customer = customers.firstWhere((e) => e.no == schedule.customerNo);
-
-      BitmapDescriptor? customIcon;
-
-      customIcon = await _getCustomMarkerIcon(
+      final customer = match.first;
+      final icon = await _buildMarkerIcon(
         customer.avatar128,
-        customer.name ?? "",
+        customer.name ?? '',
       );
+
       _cubit.getMarker(
         Marker(
           markerId: MarkerId(schedule.id),
-          position: position,
-          icon: customIcon,
+          position: LatLng(
+            Helpers.toDouble(schedule.latitude),
+            Helpers.toDouble(schedule.longitude),
+          ),
+          icon: icon,
           infoWindow: InfoWindow(title: customer.name),
         ),
       );
     }
   }
 
-  Future<void> onGetCurrentLocation() async {
-    try {
-      await _cubit.getSchedules(DateTime.now());
-      final schedules = _cubit.state.schedules;
-      if (schedules == null || schedules.isEmpty) return;
-      if (!mounted) return;
-      final position = await _location.getCurrentLocation(context: context);
-      if ((position.latitude == 0 && position.longitude == 0)) {
-        throw GeneralException(
-          greeting("Your current location is not available."),
-        );
-      }
-
-      final userLat = position.latitude;
-      final userLng = position.longitude;
-
-      SalespersonSchedule? nearestSchedule;
-      double shortestDistance = double.infinity;
-      int nearestIndex = 0;
-
-      for (int i = 0; i < schedules.length; i++) {
-        final schedule = schedules[i];
-        final lat = Helpers.toDouble(schedule.latitude);
-        final lng = Helpers.toDouble(schedule.longitude);
-
-        final distance = Helpers.calculateDistanceInMeters(
-          userLat,
-          userLng,
-          lat,
-          lng,
-        );
-
-        if (distance < shortestDistance) {
-          shortestDistance = distance;
-          nearestSchedule = schedule;
-          nearestIndex = i;
-        }
-      }
-
-      if (nearestSchedule == null) return;
-
-      carouselController.animateToPage(
-        nearestIndex,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-      );
-
-      await _getDataOnChange(
-        LatLng(
-          Helpers.toDouble(nearestSchedule.latitude),
-          Helpers.toDouble(nearestSchedule.longitude),
-        ),
-        schedule: nearestSchedule,
-      );
-    } catch (e) {
-      _cubit.getCamPosition(_phnomPenhLatlong());
-    }
-  }
-
-  Future<BitmapDescriptor> _getCustomMarkerIcon(
-    String? imageUrl,
-    String customerName,
+  Future<void> _updateMarkerFor(
+    SalespersonSchedule schedule,
+    LatLng position,
   ) async {
-    return await Helpers.createPinMarkerWithImageAndTitle(
-      title: customerName,
-      imageUrl ?? "",
-      size: 150,
-      borderColor: error,
-      borderWidth: 4,
+    final match = _cubit.state.customers.where(
+      (c) => c.no == schedule.customerNo,
     );
-  }
+    if (match.isEmpty) return;
 
-  Future<void>? _getDataOnChange(
-    LatLng position, {
-    SalespersonSchedule? schedule,
-  }) async {
-    if (schedule == null) return;
-
-    _cubit.state.mapController?.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(target: position, zoom: widget.isMore ? 15 : 15),
-      ),
-    );
-
-    List<Customer> customers = _cubit.state.customers;
-    final customer = customers.firstWhere((e) => e.no == schedule.customerNo);
-
-    BitmapDescriptor? customIcon;
-
-    customIcon = await _getCustomMarkerIcon(
+    final customer = match.first;
+    final icon = await _buildMarkerIcon(
       customer.avatar128,
-      customer.name ?? "",
+      customer.name ?? '',
     );
 
     _cubit.getMarker(
       Marker(
         markerId: MarkerId(schedule.id),
         position: position,
-        icon: customIcon,
+        icon: icon,
         infoWindow: InfoWindow(title: customer.name),
       ),
     );
   }
 
-  void _onChangePageCustomer(SalespersonSchedule schedule) async {
-    if (schedule.latitude == null || schedule.longitude == null) {
-      Logger.log('Schedule location data is null');
+  Future<BitmapDescriptor> _buildMarkerIcon(String? imageUrl, String name) {
+    return Helpers.createPinMarkerWithImageAndTitle(
+      title: name,
+      imageUrl ?? '',
+      size: 150,
+      borderColor: error,
+      borderWidth: 4,
+    );
+  }
+
+  Future<void> _drawRouteTo(double destLat, double destLng) async {
+    final origin = _cubit.state.kGooglePostition;
+    if (origin == null) {
+      Logger.log('GPS not ready yet');
       return;
     }
+
+    if (mounted) setState(() => _polylineLoading = true);
+
+    try {
+      final response = await _polylinePoints.getRouteBetweenCoordinatesV2(
+        request: RoutesApiRequest(
+          origin: PointLatLng(origin.target.latitude, origin.target.longitude),
+          destination: PointLatLng(destLat, destLng),
+          travelMode: TravelMode.driving,
+          routingPreference: RoutingPreference.trafficAware,
+          polylineQuality: PolylineQuality.highQuality,
+        ),
+      );
+
+      if (!mounted) return;
+
+      if (response.routes.isEmpty) {
+        Logger.log('No routes returned');
+        return;
+      }
+
+      final points = (response.routes.first.polylinePoints ?? [])
+          .map((p) => LatLng(p.latitude, p.longitude))
+          .toList();
+
+      setState(() {
+        _polylines = {
+          Polyline(
+            polylineId: const PolylineId('route'),
+            color: const Color(0xFF5B4FD9),
+            points: points,
+            width: 5,
+            startCap: Cap.roundCap,
+            endCap: Cap.roundCap,
+            jointType: JointType.round,
+          ),
+        };
+      });
+
+      _fitCameraToRoute(origin.target, LatLng(destLat, destLng));
+    } catch (e) {
+      Logger.log('Polyline error: $e');
+    } finally {
+      if (mounted) setState(() => _polylineLoading = false);
+    }
+  }
+
+  void _fitCameraToRoute(LatLng a, LatLng b, {double padding = 80}) {
+    final controller = _cubit.state.mapController;
+    if (controller == null) return;
+
+    controller.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: LatLng(
+            a.latitude < b.latitude ? a.latitude : b.latitude,
+            a.longitude < b.longitude ? a.longitude : b.longitude,
+          ),
+          northeast: LatLng(
+            a.latitude > b.latitude ? a.latitude : b.latitude,
+            a.longitude > b.longitude ? a.longitude : b.longitude,
+          ),
+        ),
+        padding,
+      ),
+    );
+  }
+
+  // ── carousel callback ────────────────────────────────────────────────────
+  void _onCarouselPageChanged(SalespersonSchedule schedule) async {
+    if (schedule.latitude == null || schedule.longitude == null) {
+      Logger.log('Schedule has no coordinates');
+      return;
+    }
+
     final lat = Helpers.toDouble(schedule.latitude);
     final lng = Helpers.toDouble(schedule.longitude);
 
-    final position = LatLng(lat, lng);
+    // Update the pin for this customer.
+    await _updateMarkerFor(schedule, LatLng(lat, lng));
 
-    await _getDataOnChange(position, schedule: schedule);
+    // Redraw route from the user's fixed GPS to this customer.
+    await _drawRouteTo(lat, lng);
   }
 
   @override
@@ -218,113 +281,163 @@ class _MapScheduleScreenState extends State<CustomerScheduleMapScreen> {
           if (state.kGooglePostition == null) {
             return const LoadingPageWidget();
           }
-          return GoogleMap(
-            polylines: _polylines,
-            initialCameraPosition:
-                state.kGooglePostition ?? _phnomPenhLatlong(),
-            mapType: MapType.normal,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            compassEnabled: true,
-            markers: state.markers,
-            onMapCreated: (controller) => _cubit.getController(controller),
+
+          return Stack(
+            children: [
+              GoogleMap(
+                initialCameraPosition: state.kGooglePostition!,
+                mapType: MapType.normal,
+                myLocationEnabled: true,
+                myLocationButtonEnabled: true,
+                compassEnabled: true,
+                markers: state.markers,
+                polylines: _polylines,
+                onMapCreated: (c) => _cubit.getController(c),
+              ),
+
+              // Route-loading badge shown at the top of the map.
+              if (_polylineLoading)
+                const Positioned(
+                  top: 16,
+                  left: 0,
+                  right: 0,
+                  child: Center(child: _RouteLoadingBadge()),
+                ),
+            ],
           );
         },
       ),
-      bottomSheet:
-          BlocBuilder<CustomerScheduleMapCubit, CustomerScheduleMapState>(
-            bloc: _cubit,
-            builder: (context, state) {
-              final schedules = state.schedules ?? [];
-              final customers = state.customers;
-
-              return DraggableScrollableSheet(
-                expand: false,
-                minChildSize: 0.1,
-                maxChildSize: 0.40,
-                initialChildSize: 0.1,
-                builder:
-                    (BuildContext context, ScrollController scrollController) {
-                      return Column(
-                        children: [
-                          Container(
-                            margin: EdgeInsets.all(scaleFontSize(8)),
-                            width: scaleFontSize(40),
-                            height: scaleFontSize(4),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              color: grey,
-                            ),
-                          ),
-                          Expanded(
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                  left: 0,
-                                  right: 0,
-                                  child: _buildHeader(schedules, customers),
-                                ),
-                                SingleChildScrollView(
-                                  padding: EdgeInsets.only(
-                                    top: scaleFontSize(16),
-                                  ),
-                                  controller: scrollController,
-                                  child: Column(
-                                    children: [
-                                      Padding(
-                                        padding: EdgeInsets.only(
-                                          top: scaleFontSize(16),
-                                        ),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            ScheduleCarousel(
-                                              customers: state.customers,
-                                              carouselController:
-                                                  carouselController,
-                                              schedules: schedules,
-                                              onPageChanged:
-                                                  _onChangePageCustomer,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-              );
-            },
-          ),
+      bottomSheet: _ScheduleBottomSheet(
+        cubit: _cubit,
+        carouselController: carouselController,
+        onPageChanged: _onCarouselPageChanged,
+      ),
     );
   }
+}
 
-  Widget _buildHeader(
-    List<SalespersonSchedule> schedules,
-    List<Customer> customers,
-  ) {
-    List<Customer> newCustomer = [];
+class _RouteLoadingBadge extends StatelessWidget {
+  const _RouteLoadingBadge();
 
-    for (final schedule in schedules) {
-      newCustomer.addAll(
-        customers.where((e) => e.no == schedule.customerNo).toList(),
-      );
-    }
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: scaleFontSize(16)),
-      child: TextWidget(
-        text: greeting("Customer schedule"),
-        fontWeight: FontWeight.w400,
-        fontSize: 18,
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            greeting('Finding route…'),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScheduleBottomSheet extends StatelessWidget {
+  const _ScheduleBottomSheet({
+    required this.cubit,
+    required this.carouselController,
+    required this.onPageChanged,
+  });
+
+  final CustomerScheduleMapCubit cubit;
+  final CarouselSliderController carouselController;
+  final void Function(SalespersonSchedule) onPageChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CustomerScheduleMapCubit, CustomerScheduleMapState>(
+      bloc: cubit,
+      builder: (context, state) {
+        final schedules = state.schedules ?? [];
+
+        return DraggableScrollableSheet(
+          expand: false,
+          minChildSize: 0.18,
+          maxChildSize: 0.40,
+          initialChildSize: 0.35,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 10),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+
+                  // Header label.
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: scaleFontSize(16),
+                      right: scaleFontSize(16),
+                      bottom: scaleFontSize(8),
+                    ),
+                    child: TextWidget(
+                      text: greeting("Customer schedule"),
+                      fontWeight: FontWeight.w400,
+                      fontSize: 18,
+                    ),
+                  ),
+
+                  // Carousel — scrolls with the sheet.
+                  Expanded(
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      child: ScheduleCarousel(
+                        customers: state.customers,
+                        carouselController: carouselController,
+                        schedules: schedules,
+                        onPageChanged: onPageChanged,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

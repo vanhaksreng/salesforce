@@ -78,11 +78,18 @@ class _MainPageStockScreenState extends State<MainPageStockScreen>
     );
   }
 
-  void _navigateToStockRequest(String docNo) {
+  void _navigateToStockRequest() {
+    final docNo = _cubit.state.itemWorkSheet;
+
+    if (docNo.isEmpty) {
+      _cubit.showWarningMessage("Please select your item for request.");
+      return;
+    }
+
     Navigator.pushNamed(
       context,
       StockRequestScreen.routeName,
-      arguments: StockRequestArg(documentNo: docNo),
+      arguments: StockRequestArg(documentNo: docNo.first.documentNo ?? ""),
     ).then((value) async {
       await _cubit.getItemWorkSheets();
       if (Helpers.shouldReload(value)) {
@@ -249,8 +256,7 @@ class _MainPageStockScreenState extends State<MainPageStockScreen>
             child: FloatingActionButton(
               backgroundColor: mainColor,
               heroTag: null,
-              onPressed: () =>
-                  _navigateToStockRequest(itemRequest.first.documentNo ?? ""),
+              onPressed: () => _navigateToStockRequest(),
               child: Badge(
                 isLabelVisible: itemRequest.isEmpty ? false : true,
                 offset: Offset(5, -10.scale),
