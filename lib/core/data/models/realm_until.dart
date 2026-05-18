@@ -90,13 +90,6 @@ List<AppSyncLog> appSyncLogs = [
   ),
   AppSyncLog("salesperson", type: "M", displayName: "SALESPERSON", lastSynchedDatetime: "", total: "0"),
   AppSyncLog("sub_contract_type", type: "M", displayName: "SUB CONTRACT TYPE", lastSynchedDatetime: "", total: "0"),
-  // AppSyncLog(
-  //   "unit_of_measure",
-  //   type: "M",
-  //   displayName: "UNIT OF MEASURE",
-  //   lastSynchedDatetime: "",
-  //   total: "0",
-  // ),
   AppSyncLog("vat_posting_setup", type: "M", displayName: "VAT POSTING SETUP", lastSynchedDatetime: "", total: "0"),
   AppSyncLog(
     "customer_item_ledger_entry",
@@ -133,13 +126,6 @@ List<AppSyncLog> appSyncLogs = [
     lastSynchedDatetime: "",
     total: "0",
   ),
-  // AppSyncLog(
-  //   "item_inventory",
-  //   type: "T",
-  //   displayName: "ITEM INVENTORY",
-  //   lastSynchedDatetime: "",
-  //   total: "0",
-  // ),
   AppSyncLog(
     "item_prize_redemption_line_entry",
     type: "T",
@@ -147,13 +133,6 @@ List<AppSyncLog> appSyncLogs = [
     lastSynchedDatetime: "",
     total: "0",
   ),
-  // AppSyncLog(
-  //   "salesperson_schedule",
-  //   type: "T",
-  //   displayName: "SALESPERSON SCHEDULE",
-  //   lastSynchedDatetime: "",
-  //   total: "0",
-  // ),
   AppSyncLog(
     "salesperson_schedule_merchandise",
     type: "T",
@@ -161,13 +140,6 @@ List<AppSyncLog> appSyncLogs = [
     lastSynchedDatetime: "",
     total: "0",
   ),
-  // AppSyncLog(
-  //   "user",
-  //   type: "T",
-  //   displayName: "USER",
-  //   lastSynchedDatetime: "",
-  //   total: "0",
-  // ),
   AppSyncLog(
     "cash_receipt_journals",
     type: "T",

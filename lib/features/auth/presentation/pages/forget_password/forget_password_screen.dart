@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pinput/pinput.dart';
+// import 'package:pinput/pinput.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/presentation/widgets/btn_wiget.dart';
 import 'package:salesforce/core/presentation/widgets/image_network_widget.dart';
@@ -100,7 +100,7 @@ class ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
             color: textColor50,
           ),
           Helpers.gapH(20),
-          pinputField(),
+          // pinputField(), TODO
           Helpers.gapH(16),
           buildfooter(),
           Helpers.gapH(16),
@@ -114,54 +114,54 @@ class ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
     );
   }
 
-  Widget pinputField() {
-    final defaultPinTheme = PinTheme(
-      width: scaleFontSize(50),
-      height: scaleFontSize(50),
-      textStyle: TextStyle(
-        fontSize: 20,
-        color: primary,
-        fontWeight: FontWeight.w600,
-      ),
-      decoration: BoxDecoration(
-        border: Border.all(color: primary),
-        borderRadius: BorderRadius.circular(scaleFontSize(8)),
-      ),
-    );
+  // Widget pinputField() {
+  //   final defaultPinTheme = PinTheme(
+  //     width: scaleFontSize(50),
+  //     height: scaleFontSize(50),
+  //     textStyle: TextStyle(
+  //       fontSize: 20,
+  //       color: primary,
+  //       fontWeight: FontWeight.w600,
+  //     ),
+  //     decoration: BoxDecoration(
+  //       border: Border.all(color: primary),
+  //       borderRadius: BorderRadius.circular(scaleFontSize(8)),
+  //     ),
+  //   );
 
-    final focusedPinTheme = defaultPinTheme.copyDecorationWith(
-      border: Border.all(color: primary),
-      borderRadius: BorderRadius.circular(scaleFontSize(8)),
-    );
+  //   final focusedPinTheme = defaultPinTheme.copyDecorationWith(
+  //     border: Border.all(color: primary),
+  //     borderRadius: BorderRadius.circular(scaleFontSize(8)),
+  //   );
 
-    final submittedPinTheme = defaultPinTheme.copyWith(
-      decoration: defaultPinTheme.decoration!.copyWith(color: primary20),
-    );
-    return Align(
-      alignment: Alignment.center,
-      child: Column(
-        spacing: scaleFontSize(16),
-        children: [
-          TextWidget(
-            text: greeting("Enter your 6-digit code here"),
-            color: textColor50,
-          ),
-          Pinput(
-            defaultPinTheme: defaultPinTheme,
-            focusedPinTheme: focusedPinTheme,
-            length: 6,
-            submittedPinTheme: submittedPinTheme,
-            validator: (s) {
-              return s == '2222' ? null : 'Pin is incorrect';
-            },
-            pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
-            showCursor: true,
-            // onCompleted: (pin) => print(pin),
-          ),
-        ],
-      ),
-    );
-  }
+  //   final submittedPinTheme = defaultPinTheme.copyWith(
+  //     decoration: defaultPinTheme.decoration!.copyWith(color: primary20),
+  //   );
+  //   return Align(
+  //     alignment: Alignment.center,
+  //     child: Column(
+  //       spacing: scaleFontSize(16),
+  //       children: [
+  //         TextWidget(
+  //           text: greeting("Enter your 6-digit code here"),
+  //           color: textColor50,
+  //         ),
+  //         Pinput(
+  //           defaultPinTheme: defaultPinTheme,
+  //           focusedPinTheme: focusedPinTheme,
+  //           length: 6,
+  //           submittedPinTheme: submittedPinTheme,
+  //           validator: (s) {
+  //             return s == '2222' ? null : 'Pin is incorrect';
+  //           },
+  //           pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
+  //           showCursor: true,
+  //           // onCompleted: (pin) => print(pin),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget buildfooter() {
     return Align(

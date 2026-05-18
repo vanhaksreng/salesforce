@@ -292,7 +292,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             } else {
                 if (consecutiveLineFeeds > 0) {
                     // Add all line feeds at once (more efficient)
-                    for (i in 0..consecutiveLineFeeds) {
+                    for (i in 0 until consecutiveLineFeeds) {
                         optimized.add(0x0A.toByte())
                     }
                     consecutiveLineFeeds = 0
@@ -303,7 +303,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
         // Add any remaining line feeds
         if (consecutiveLineFeeds > 0) {
-            for (i in 0..consecutiveLineFeeds) {
+            for (i in 0 until consecutiveLineFeeds) {
                 optimized.add(0x0A.toByte())
             }
         }
@@ -314,66 +314,66 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     // ====================================================================
     // Diagnostic Tests
     // ====================================================================
-    private fun testPaperFeed(result: MethodChannel.Result) {
-        scope.launch(Dispatchers.IO) {
-            try {
+    // private fun testPaperFeed(result: MethodChannel.Result) {
+    //     scope.launch(Dispatchers.IO) {
+    //         try {
 
-                // Test A: Feed paper only (no printing)
-                val feedCommand = ByteArray(10) { 0x0A.toByte() } // 10 line feeds
-                writeDataSmooth(feedCommand)
-                Thread.sleep(2000)
+    //             // Test A: Feed paper only (no printing)
+    //             val feedCommand = ByteArray(10) { 0x0A.toByte() } // 10 line feeds
+    //             writeDataSmooth(feedCommand)
+    //             Thread.sleep(2000)
 
-                withContext(Dispatchers.Main) {
-                    result.success(mapOf(
-                        "test" to "paper_feed",
-                        "instruction" to "Did you hear 'stuck stuck' during paper feed? YES = Paper problem, NO = Code problem"
-                    ))
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    result.error("TEST_ERROR", e.message, null)
-                }
-            }
-        }
-    }
+    //             withContext(Dispatchers.Main) {
+    //                 result.success(mapOf(
+    //                     "test" to "paper_feed",
+    //                     "instruction" to "Did you hear 'stuck stuck' during paper feed? YES = Paper problem, NO = Code problem"
+    //                 ))
+    //             }
+    //         } catch (e: Exception) {
+    //             withContext(Dispatchers.Main) {
+    //                 result.error("TEST_ERROR", e.message, null)
+    //             }
+    //         }
+    //     }
+    // }
 
-    private fun testSlowPrint(result: MethodChannel.Result) {
-        scope.launch(Dispatchers.IO) {
-            try {
-                val commands = mutableListOf<Byte>()
-                commands.addAll(listOf(ESC, 0x40)) // Initialize
-                commands.addAll("TEST LINE 1".toByteArray(charset("CP437")).toList())
-                commands.add(0x0A.toByte())
+    // private fun testSlowPrint(result: MethodChannel.Result) {
+    //     scope.launch(Dispatchers.IO) {
+    //         try {
+    //             val commands = mutableListOf<Byte>()
+    //             commands.addAll(listOf(ESC, 0x40)) // Initialize
+    //             commands.addAll("TEST LINE 1".toByteArray(charset("CP437")).toList())
+    //             commands.add(0x0A.toByte())
 
-                writeDataSmooth(commands.toByteArray())
-                Thread.sleep(1000)
+    //             writeDataSmooth(commands.toByteArray())
+    //             Thread.sleep(1000)
 
-                commands.clear()
-                commands.addAll("TEST LINE 2".toByteArray(charset("CP437")).toList())
-                commands.add(0x0A.toByte())
+    //             commands.clear()
+    //             commands.addAll("TEST LINE 2".toByteArray(charset("CP437")).toList())
+    //             commands.add(0x0A.toByte())
 
-                writeDataSmooth(commands.toByteArray())
-                Thread.sleep(1000)
+    //             writeDataSmooth(commands.toByteArray())
+    //             Thread.sleep(1000)
 
-                commands.clear()
-                commands.addAll("TEST LINE 3".toByteArray(charset("CP437")).toList())
-                commands.add(0x0A.toByte())
+    //             commands.clear()
+    //             commands.addAll("TEST LINE 3".toByteArray(charset("CP437")).toList())
+    //             commands.add(0x0A.toByte())
 
-                writeDataSmooth(commands.toByteArray())
+    //             writeDataSmooth(commands.toByteArray())
 
-                withContext(Dispatchers.Main) {
-                    result.success(mapOf(
-                        "test" to "slow_print",
-                        "instruction" to "Was it smooth? If YES → code was too fast before, If NO → hardware issue"
-                    ))
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    result.error("TEST_ERROR", e.message, null)
-                }
-            }
-        }
-    }
+    //             withContext(Dispatchers.Main) {
+    //                 result.success(mapOf(
+    //                     "test" to "slow_print",
+    //                     "instruction" to "Was it smooth? If YES → code was too fast before, If NO → hardware issue"
+    //                 ))
+    //             }
+    //         } catch (e: Exception) {
+    //             withContext(Dispatchers.Main) {
+    //                 result.error("TEST_ERROR", e.message, null)
+    //             }
+    //         }
+    //     }
+    // }
 
     private fun checkPrinterStatus(result: MethodChannel.Result) {
         scope.launch(Dispatchers.IO) {
@@ -519,8 +519,8 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(true)
             }
 
-            "testPaperFeed" -> testPaperFeed(result)
-            "testSlowPrint" -> testSlowPrint(result)
+            // "testPaperFeed" -> testPaperFeed(result)
+            // "testSlowPrint" -> testSlowPrint(result)
             "checkPrinterStatus" -> checkPrinterStatus(result)
             "runDiagnostic" -> runCompleteDiagnostic(result)
             "initializePrinter" -> {
@@ -1395,7 +1395,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         result: MethodChannel.Result
     ) {
         val startTime = System.currentTimeMillis()
-
+        
         scope.launch {
             printMutex.withLock {
                 try {
@@ -1403,6 +1403,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     val shouldRenderAsImage = !isSeparator && (fontSize < 20 || containsComplexUnicode(text))
 
                     if (shouldRenderAsImage) {
+
                         val imageData = renderTextToData(text, fontSize, bold, align, maxCharsPerLine)
 
                         if (imageData == null || imageData.isEmpty()) {
@@ -1504,8 +1505,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         try {
             val config = getPrinterConfig()
             val khmerTypeface = getKhmerTypeface(bold)
-
-
+            
             val scaledFontSize = when {
                 fontSize >= 30 -> fontSize * 1.8f  // Large text
                 fontSize >= 24 -> fontSize * 1.5f  // XLarge
@@ -1521,8 +1521,10 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 textSize = scaledFontSize
                 typeface = khmerTypeface
                 isFakeBoldText = bold
-                strokeWidth =  if (bold ) 0.8f else 0.5f
-                style = if (bold) Paint.Style.FILL_AND_STROKE else Paint.Style.FILL_AND_STROKE
+                // strokeWidth =  if (bold ) 0.8f else 0.5f
+                // style = if (bold) Paint.Style.FILL_AND_STROKE else Paint.Style.FILL_AND_STROKE
+                style = if (bold) Paint.Style.FILL_AND_STROKE else Paint.Style.FILL
+                strokeWidth = if (bold) 0.5f else 0f
                 isAntiAlias = true
                 color = Color.BLACK
                 textAlign = when (align.lowercase()) {
@@ -1763,14 +1765,17 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 fontSize >= 12 -> 0.9f
                 else -> 0.8f
             }
+
             val khmerBoost = if (hasKhmer) 1.2f else 1.0f  // 20% larger for Khmer
             val scaledFontSize = fontSize * baseScaling * khmerBoost
+
             val basePaint = Paint().apply {
-                textSize = scaledFontSize  // ✅ Now using the same scaling
+                textSize = scaledFontSize
                 isAntiAlias = true
                 color = Color.BLACK
-                style = Paint.Style.FILL_AND_STROKE
-                strokeWidth = 0.5f
+                // style = Paint.Style.FILL_AND_STROKE
+                // strokeWidth = 0.5f
+                // strokeWidth = 10f
             }
 
             var maxLines = 1
@@ -1781,13 +1786,14 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 val colWidth = columnWidths[i]
                 val availableWidth = colWidth - 4f
 
-                // ✅ Create paint with EXACT same settings for all columns
+                // println("columns 1, ${column.bold}") 
+
                 val columnPaint = Paint(basePaint).apply {
-                    textSize = scaledFontSize  // ✅ Force same size
+                    textSize = scaledFontSize
                     typeface = getKhmerTypeface(column.bold)
-                    isFakeBoldText = column.bold
-                    strokeWidth = if (column.bold) 0.7f else 0.5f
-                    style = Paint.Style.FILL_AND_STROKE
+                    // isFakeBoldText = column.bold
+                    // strokeWidth = if (column.bold) 0.7f else 0.5f
+                    // style = Paint.Style.FILL_AND_STROKE
                     isAntiAlias = true
                     color = Color.BLACK
                 }
@@ -1848,15 +1854,17 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 val colWidth = columnWidths[i]
                 val lines = columnLinesList[i]
 
+                // println("columns 2, ${column.bold}") 
+
                 val columnTypeface = getKhmerTypeface(column.bold)
 
                 // ✅ Ensure EXACT same size for rendering
                 basePaint.apply {
-                    textSize = scaledFontSize  // ✅ Re-apply size
+                    textSize = scaledFontSize
                     typeface = columnTypeface
-                    isFakeBoldText = column.bold
-                    strokeWidth = if (column.bold) 0.7f else 0.5f
-                    style = Paint.Style.FILL_AND_STROKE
+                    // isFakeBoldText = column.bold
+                    // strokeWidth = if (column.bold) 0.7f else 0.5f
+                    // style = Paint.Style.FILL_AND_STROKE
                     isAntiAlias = true
                     color = Color.BLACK
                     textAlign = when (column.align.lowercase()) {
@@ -2156,24 +2164,23 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 for (x in 0 until width) {
                     val index = y * width + x
                     val oldPixel = grayscale[index]
-
                     val newPixel = if (oldPixel > 128f) 255f else 0f
                     grayscale[index] = newPixel
 
-                    val error = oldPixel - newPixel
+                    // val error = oldPixel - newPixel
+                    // if (x + 1 < width) {
+                    //     grayscale[index + 1] += error * 7f / 16f
+                    // }
 
-                    if (x + 1 < width) {
-                        grayscale[index + 1] += error * 7f / 16f
-                    }
-                    if (y + 1 < height) {
-                        if (x > 0) {
-                            grayscale[index + width - 1] += error * 3f / 16f
-                        }
-                        grayscale[index + width] += error * 5f / 16f
-                        if (x + 1 < width) {
-                            grayscale[index + width + 1] += error * 1f / 16f
-                        }
-                    }
+                    // if (y + 1 < height) {
+                    //     if (x > 0) {
+                    //         grayscale[index + width - 1] += error * 3f / 16f
+                    //     }
+                    //     grayscale[index + width] += error * 5f / 16f
+                    //     if (x + 1 < width) {
+                    //         grayscale[index + width + 1] += error * 1f / 16f
+                    //     }
+                    // } TODO
                 }
             }
 
@@ -2529,7 +2536,7 @@ class ThermalPrinterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         result.success(checkBluetoothPermissions())
     }
 
-    private fun checkBluetoothPermissions(): Boolean {
+    public fun checkBluetoothPermissions(): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             return ActivityCompat.checkSelfPermission(
                 context,

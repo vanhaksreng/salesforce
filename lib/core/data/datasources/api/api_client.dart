@@ -39,6 +39,9 @@ class ApiClient {
       'Content-Type': 'application/json',
     };
 
+    print(await _getBaseUrl(customUrl: customUrl, endpoint: endpoint));
+    print(body);
+
     try {
       final r = await client.post(
         await _getBaseUrl(customUrl: customUrl, endpoint: endpoint),
@@ -68,6 +71,7 @@ class ApiClient {
     String endpoint, {
     Map<String, String>? headers,
     String? customUrl,
+    // Object? body,
   }) async {
     await _checkNetworkConnection();
 

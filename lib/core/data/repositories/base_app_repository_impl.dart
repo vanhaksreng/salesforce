@@ -42,24 +42,98 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
        _networkInfo = networkInfo;
 
   @override
-  Future<void> storeAppSyncLog(List<AppSyncLog> logs) async {
+  Future<Either<Failure, T>> handleCacheException<T>(
+    Future<T> Function() action,
+  ) async {
     try {
-      await _local.storeAppSyncLog(logs);
-    } catch (e) {
-      rethrow;
+      final result = await action();
+      return Right(result);
+    } on GeneralException catch (e) {
+      return Left(CacheFailure(e.message));
+    } on Exception catch (e) {
+      return Left(CacheFailure(e.toString()));
     }
+  }
+
+  @override
+  Future<void> storeAppSyncLog(List<AppSyncLog> logs) async {
+    await _local.storeAppSyncLog(logs);
   }
 
   @override
   Future<Either<Failure, List<AppSyncLog>>> getAppSyncLogs({
     Map<String, dynamic>? arg,
   }) async {
-    try {
-      final download = await _local.getAppSyncLogs(arg: arg);
-      return Right(download);
-    } catch (e) {
-      rethrow;
-    }
+    return Right(await _local.getAppSyncLogs(arg: arg));
+  }
+
+  @override
+  Future<Either<Failure, bool>> downloadTranDataBatch({
+    Function(double, int, String, String)? onProgress,
+    Map<String, dynamic>? param,
+  }) async {
+    // await _remote.isValidApiSession();
+
+    final datas = await _remote.downloadTranDataBatch(data: param);
+    // print(datas['records']);
+
+    // for(var record in datas['records'].keys) {
+    //     print(record['']);
+    // }
+
+    int countTables = datas['records'].length;
+    int countErrors = 0;
+    int excuted = 0;
+    String errorText = '';
+
+    datas['records'].forEach((key, value) async {
+      final String displayName = value['displayName'];
+      final date = datas['datetime'] as String;
+      final tableName = key;
+
+      try {
+        final handler = TableHandlerFactory.getHandler(tableName);
+        if (handler == null) {
+          return throw GeneralException(
+            "No handler found for table: $tableName",
+          );
+        }
+
+        final records = (value["records"] as List).map((item) {
+          return handler.fromMap(item as Map<String, dynamic>);
+        }).toList();
+
+        final reset = datas["reset"] ?? false;
+
+        await _local.storeData(
+          records,
+          handler.extractKey,
+          date,
+          tableName,
+          reset: reset,
+        );
+      } catch (e) {
+        errorText = "$displayName Error: ${e.toString()}";
+        countErrors++;
+
+        if (countErrors > 3) {
+          //TODO : do something
+        }
+      }
+
+      String textMsg = "${displayName.toLowerCase()}...";
+      if (countErrors > 0) {
+        textMsg =
+            "${displayName.toLowerCase()}...(Failed : $countErrors / $countTables)";
+      }
+
+      double percent = (excuted / countTables) * 100;
+      if (onProgress != null) {
+        onProgress(percent, countTables, textMsg, errorText);
+      }
+    });
+
+    return Right(true);
   }
 
   @override
@@ -140,7 +214,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
           onProgress(percent, countTables, textMsg, errorText);
         }
 
-        await Future.delayed(const Duration(milliseconds: 300));
+        await Future.delayed(const Duration(milliseconds: 500));
       }
 
       return const Right(true);
@@ -824,6 +898,33 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
     } on Exception catch (e) {
       return Left(CacheFailure(e.toString()));
     }
+  }
+
+  @override
+  Future<Either<Failure, List<DevicePrinter>>> getDevicePrinter({
+    Map<String, dynamic>? param,
+  }) async {
+    return handleCacheException(() async {
+      return await _local.getDevicePrinter(param: param);
+    });
+  }
+
+
+  @override
+  Future<Either<Failure, DevicePrinter>> storeDevicePrinter(
+    DevicePrinter device,
+  ) async {
+
+     return handleCacheException(() async {
+      return await _local.storeDevicePrinter(device);
+    });
+
+    // try {
+    //   final response = await _local.storeDevicePrinter(device);
+    //   return Right(response);
+    // } catch (e) {
+    //   return Left(CacheFailure(e.toString()));
+    // }
   }
 
   ///

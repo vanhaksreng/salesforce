@@ -11,7 +11,7 @@ class FirstDownloadState {
   const FirstDownloadState({
     this.isLoading = false,
     this.tableLogs = const [],
-    this.textLoading,
+    this.textLoading = "Download master data...",
     this.progressValue = 1,
     this.totalValue = 0,
     this.errors = const [],

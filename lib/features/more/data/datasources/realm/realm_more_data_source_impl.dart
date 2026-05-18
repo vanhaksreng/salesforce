@@ -141,18 +141,6 @@ class RealmMoreDataSourceImpl extends BaseRealmDataSourceImpl
   }
 
   @override
-  Future<DevicePrinter> storeDevicePrinter(DevicePrinter customer) async {
-    return await ils.add(customer);
-  }
-
-  @override
-  Future<List<DevicePrinter>> getDevicePrinter({
-    Map<String, dynamic>? param,
-  }) async {
-    return await ils.getAll<DevicePrinter>();
-  }
-
-  @override
   Future<void> deletePrinter(DevicePrinter device) async {
     return await ils.delete<DevicePrinter>(device);
   }

@@ -407,7 +407,6 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   Future<List<SalespersonSchedule>> updateSalepersonScheduleLastSyncDate(
     List<SalespersonSchedule> schedules,
   ) async {
-    
     final now = DateTime.now().toDateTimeString();
     return await _storage.writeTransaction((realm) {
       for (var schedule in schedules) {
@@ -722,5 +721,17 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
 
       return true;
     });
+  }
+
+  @override
+  Future<List<DevicePrinter>> getDevicePrinter({
+    Map<String, dynamic>? param,
+  }) async {
+    return await _storage.getAll<DevicePrinter>();
+  }
+
+    @override
+  Future<DevicePrinter> storeDevicePrinter(DevicePrinter device) async {
+    return await _storage.add(device);
   }
 }

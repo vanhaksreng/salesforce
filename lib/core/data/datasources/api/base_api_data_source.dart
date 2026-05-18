@@ -13,6 +13,7 @@ abstract class BaseApiDataSource {
   });
 
   Future<Map<String, dynamic>> downloadTranData({Map<String, dynamic>? data});
+  Future<Map<String, dynamic>> downloadTranDataBatch({Map<String, dynamic>? data});
   Future<Map<String, dynamic>> downloadAppSetting();
   Future<void> gpsTrackingEntry({required Map<String, dynamic> data});
 

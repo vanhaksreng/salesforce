@@ -23,8 +23,8 @@
 
      <!-- Scan Bluetooth -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
-
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    
     <!-- For Android 12+ -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" 
         android:usesPermissionFlags="neverForLocation" />

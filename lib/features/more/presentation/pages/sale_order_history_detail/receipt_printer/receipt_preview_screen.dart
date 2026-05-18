@@ -30,7 +30,7 @@ class ReceiptPreviewScreen extends StatefulWidget {
 class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     with SingleTickerProviderStateMixin, DevicePrinterMixin {
   final ReceiptBuilder _builder = ReceiptBuilder();
-  final _bluetoothService = BluetoothPrinterService();
+  // final _bluetoothService = BluetoothPrinterService(); TODO
 
   bool isPrinting = false;
   bool isReceiptBuilt = false;
@@ -64,6 +64,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     if (printerWidth == 384) {
       return 32;
     }
+
     return 48;
   }
 
@@ -93,20 +94,21 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
     super.dispose();
   }
 
-  bool isConnected() => _bluetoothService.isConnected;
+  bool isConnected() => false;
+  // bool isConnected() => _bluetoothService.isConnected;
 
   Future<void> _initializeReceipt() async {
     try {
       await _buildSampleReceipt();
 
-      if (!_bluetoothService.isConnected) {
-        if (mounted) {
-          Helpers.showMessage(
-            status: MessageStatus.warning,
-            msg: "No printer connected. You can preview but cannot print.",
-          );
-        }
-      }
+      // if (!_bluetoothService.isConnected) {
+      //   if (mounted) {
+      //     Helpers.showMessage(
+      //       status: MessageStatus.warning,
+      //       msg: "No printer connected. You can preview but cannot print.",
+      //     );
+      //   }
+      // } TODO
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -123,16 +125,17 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
   }
 
   void _configurePrinterSize() async {
-    printerWidth = Helpers.toInt(_bluetoothService.connectedDevice?.paperSize);
-    if (printerWidth == 384) {
-      // 58mm printer configuration
-      debugPrint(' Configuring for 58mm paper (384 pixels)');
-      columnWidths = [1, 3, 2, 2, 2, 2];
-    } else {
-      // 80mm printer configuration
-      debugPrint(' Configuring for 80mm paper (576 pixels)');
-      columnWidths = [1, 3, 2, 2, 2, 2]; // Standard layout - totals to 12
-    }
+    //TODO
+    // printerWidth = Helpers.toInt(_bluetoothService.connectedDevice?.paperSize);
+    // if (printerWidth == 384) {
+    //   // 58mm printer configuration
+    //   debugPrint(' Configuring for 58mm paper (384 pixels)');
+    //   columnWidths = [1, 3, 2, 2, 2, 2];
+    // } else {
+    //   // 80mm printer configuration
+    //   debugPrint(' Configuring for 80mm paper (576 pixels)');
+    //   columnWidths = [1, 3, 2, 2, 2, 2]; // Standard layout - totals to 12
+    // }
     lengText();
   }
 
@@ -275,30 +278,26 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
 
       _builder.addRow(
         [
-          PosColumn(text: 'ល.រ', width: columnWidths[0], bold: false),
-          PosColumn(text: 'ឈ្មោះទំនិញ', width: columnWidths[1], bold: false),
+          PosColumn(text: 'ល.រ', width: columnWidths[0]),
+          PosColumn(text: 'ឈ្មោះទំនិញ', width: columnWidths[1]),
           PosColumn(
             text: 'ចំនួន',
             width: columnWidths[2],
-            bold: false,
             align: AlignStyle.center,
           ),
           PosColumn(
             text: 'តម្លៃ',
             width: columnWidths[3],
-            bold: false,
             align: AlignStyle.center,
           ),
           PosColumn(
             text: 'ចុះតម្លៃ',
             width: columnWidths[4],
-            bold: false,
             align: AlignStyle.center,
           ),
           PosColumn(
             text: 'សរុប',
             width: columnWidths[5],
-            bold: false,
             align: AlignStyle.center,
           ),
         ],
@@ -307,30 +306,26 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       ); // Smaller font for 58mm
 
       _builder.addRow([
-        PosColumn(text: 'No.', width: columnWidths[0], bold: false),
-        PosColumn(text: 'Item', width: columnWidths[1], bold: false),
+        PosColumn(text: 'No.', width: columnWidths[0]),
+        PosColumn(text: 'Item', width: columnWidths[1]),
         PosColumn(
           text: 'Qty',
           width: columnWidths[2],
-          bold: false,
           align: AlignStyle.center,
         ),
         PosColumn(
           text: 'Price',
           width: columnWidths[3],
-          bold: false,
           align: AlignStyle.center,
         ),
         PosColumn(
           text: 'Disc',
           width: columnWidths[4],
-          bold: false,
           align: AlignStyle.center,
         ),
         PosColumn(
           text: 'Total',
           width: columnWidths[5],
-          bold: false,
           align: AlignStyle.center,
         ),
       ], fontSize: printerWidth == 384 ? 16 : 14); // Smaller font for 58mm
@@ -347,9 +342,8 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
       for (var i = 0; i < lines.length; i++) {
         final item = lines[i];
         _builder.addRow([
-          PosColumn(text: '${i + 1}', width: columnWidths[0], bold: false),
+          PosColumn(text: '${i + 1}', width: columnWidths[0]),
           PosColumn(
-            bold: false,
             text: item.description ?? "",
             width: columnWidths[1],
             align: AlignStyle.left,
@@ -360,7 +354,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
               option: FormatType.quantity,
             ),
             align: AlignStyle.center,
-            bold: false,
             width: columnWidths[2],
           ),
           PosColumn(
@@ -371,7 +364,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
             ),
             align: AlignStyle.center,
             width: columnWidths[3],
-            bold: false,
           ),
 
           PosColumn(
@@ -379,10 +371,8 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
               disAmount: item.discountAmount,
               disPer: item.discountPercentage,
             ),
-
             align: AlignStyle.center,
             width: columnWidths[4],
-            bold: false,
           ),
           PosColumn(
             text: Helpers.formatNumber(
@@ -392,7 +382,6 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
             ),
             align: AlignStyle.center,
             width: columnWidths[5],
-            bold: false,
           ),
         ], fontSize: printerWidth == 384 ? 14 : 16); // Smaller for 58mm
         _builder.addText(
@@ -475,7 +464,7 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
 
         await ThermalPrinter.setPrinterWidth(printerWidth);
         debugPrint(
-          '📏 Printer width set to $printerWidth (${printerWidth == 384 ? "58mm" : "80mm"})',
+          'Printer width set to $printerWidth (${printerWidth == 384 ? "58mm" : "80mm"})',
         );
 
         await ThermalPrinter.warmUpPrinter();
@@ -583,21 +572,21 @@ class _ReceiptPreviewScreenState extends State<ReceiptPreviewScreen>
                             size: 16,
                           ),
                           const SizedBox(width: 6),
-                          StreamBuilder(
-                            stream: _bluetoothService.connectionStream,
-                            builder: (context, snapshot) {
-                              final device = snapshot.data;
-                              final isConnected = device != null;
-                              return Text(
-                                isConnected ? 'Connected' : 'Disconnected',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              );
-                            },
-                          ),
+                          // StreamBuilder( TODO
+                          //   stream: _bluetoothService.connectionStream,
+                          //   builder: (context, snapshot) {
+                          //     final device = snapshot.data;
+                          //     final isConnected = device != null;
+                          //     return Text(
+                          //       isConnected ? 'Connected' : 'Disconnected',
+                          //       style: const TextStyle(
+                          //         color: Colors.white,
+                          //         fontSize: 12,
+                          //         fontWeight: FontWeight.bold,
+                          //       ),
+                          //     );
+                          //   },
+                          // ),
                         ],
                       ),
                     ),

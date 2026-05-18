@@ -36,15 +36,29 @@ void main() async {
     () async {
       WidgetsFlutterBinding.ensureInitialized();
 
-      await Workmanager().initialize(callbackDispatcher);
-      await AutoUploadManager.initialize();
-      
-      await _initializeApp();
       await di.getItInit();
 
       runApp(const TradeB2b());
 
-      OneSignalNotificationService.initialize();
+      Future.microtask(() async {
+        try {
+          await Workmanager().initialize(callbackDispatcher);
+          await AutoUploadManager.initialize();
+
+          await _initializeApp();
+
+          OneSignalNotificationService.initialize();
+        } catch (e, st) {
+          debugPrint('Deferred init error: $e');
+
+          if (!kDebugMode) {
+            CrashReport.sendCrashReport(
+              e.toString(),
+              stackTrace: st.toString(),
+            );
+          }
+        }
+      });
     },
     (error, stackTrace) {
       debugPrint('Initialization error: $error');

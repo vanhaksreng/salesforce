@@ -33,7 +33,6 @@ class _FirstDownloadScreenState extends State<FirstDownloadScreen> {
 
   Future<void> _handleDownload() async {
     try {
-      
       await Future.delayed(Duration(seconds: 1));
 
       await _cubit.getAppSyncLog();
@@ -47,9 +46,8 @@ class _FirstDownloadScreenState extends State<FirstDownloadScreen> {
       await _cubit.cleanAllData();
       await _cubit.downloadMasterData();
       await _cubit.downLoadAppSetting();
-
+      // await _cubit.downloadTransactionData();
       await _cubit.getSchedules();
-
       await setApplicationSetupInjectionIfNeed();
 
       if (!mounted) return;
@@ -102,7 +100,8 @@ class _FirstDownloadScreenState extends State<FirstDownloadScreen> {
                 const BuildLogoHeaderWidget(),
                 SizedBox(height: scaleFontSize(32)),
                 const TextWidget(
-                  text: "Please wait, Downloading ...",
+                  text:
+                      "Please wait, It will take some time",
                   fontSize: 18,
                   textAlign: TextAlign.center,
                   fontWeight: FontWeight.bold,

@@ -154,4 +154,8 @@ abstract class BaseRealmDataSource {
   Future<bool> storeGps(List<GpsRouteTracking> records);
 
   Future<PosSalesHeader?> getPosSaleHeader({Map<String, dynamic>? params});
+
+  Future<List<DevicePrinter>> getDevicePrinter({Map<String, dynamic>? param});
+    Future<DevicePrinter> storeDevicePrinter(DevicePrinter device);
+
 }

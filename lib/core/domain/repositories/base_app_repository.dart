@@ -8,8 +8,18 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/realm/scheme/transaction_schemas.dart';
 
 abstract class BaseAppRepository {
+
+  Future<Either<Failure, T>> handleCacheException<T>(
+    Future<T> Function() action,
+  );
+  
   Future<Either<Failure, bool>> downloadTranData({
     required List<AppSyncLog> tables,
+    Function(double, int, String, String)? onProgress,
+    Map<String, dynamic>? param,
+  });
+
+  Future<Either<Failure, bool>> downloadTranDataBatch({
     Function(double, int, String, String)? onProgress,
     Map<String, dynamic>? param,
   });
@@ -124,5 +134,9 @@ abstract class BaseAppRepository {
   Future<Either<Failure, List<ItemPrizeRedemptionLineEntry>>>
   processUploadRedemptions({
     required List<ItemPrizeRedemptionLineEntry> records,
+  });
+
+  Future<Either<Failure, List<DevicePrinter>>> getDevicePrinter({
+    Map<String, dynamic>? param,
   });
 }

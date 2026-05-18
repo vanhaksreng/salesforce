@@ -75,7 +75,7 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
   @override
   bool get wantKeepAlive => true;
 
-  void refreshSchedule() {
+  void refreshSchedule() async {
     _cubit.getSchedules(context, scheduleDate, text: widget.searchText);
     _cubit.getSaleLine(scheduleDate);
   }

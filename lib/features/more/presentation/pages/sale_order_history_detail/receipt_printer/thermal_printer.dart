@@ -29,24 +29,6 @@ Alignment getAlignmentImage(int align) {
   }
 }
 
-// class PosColumn {
-//   final String text;
-//   final int width; // Width out of 12 (12 = full width)
-//   final AlignStyle align; // 'left', 'center', 'right'
-//   final bool bold;
-
-//   PosColumn({
-//     required this.text,
-//     required this.width,
-//     this.align = AlignStyle.left,
-//     this.bold = false,
-//   });
-
-//   Map<String, dynamic> toMap() {
-//     return {'text': text, 'width': width, 'align': align.value, 'bold': bold};
-//   }
-// }
-
 class PosColumn {
   final String text;
   final int width;
@@ -64,7 +46,6 @@ class PosColumn {
     return {'text': text, 'width': width, 'align': align.value, 'bold': bold};
   }
 
-  // ✅ Add this method
   PosColumn copyWith({
     String? text,
     int? width,
@@ -176,10 +157,6 @@ class ThermalPrinter {
     }
   }
 
-  // ====================================================================
-  // CONNECTION METHODS (3)
-  // ====================================================================
-
   /// Connect to a printer
   static Future<bool> connect(PrinterDeviceDiscover device) async {
     try {
@@ -245,10 +222,6 @@ class ThermalPrinter {
     }
   }
 
-  // ====================================================================
-  // PRINTING METHODS (5)
-  // ====================================================================
-
   /// Print text with formatting options
   static Future<bool> printText(
     String text, {
@@ -258,14 +231,14 @@ class ThermalPrinter {
     String align = "left",
   }) async {
     try {
-      final bool result = await _channel.invokeMethod('printText', {
+      return await _channel.invokeMethod('printText', {
         'text': text,
         'fontSize': fontSize,
         'bold': bold,
         "maxCharsPerLine": maxCharPerLine,
         "align": align,
       });
-      return result;
+
     } catch (e) {
       throw Exception('Failed to print text: $e');
     }

@@ -1,12 +1,15 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
 import 'package:salesforce/injection_container.dart';
+import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
 part 'sale_order_history_detail_state.dart';
 
-class SaleOrderHistoryDetailCubit extends Cubit<SaleOrderHistoryDetailState> {
+class SaleOrderHistoryDetailCubit extends Cubit<SaleOrderHistoryDetailState>
+    with MessageMixin {
   SaleOrderHistoryDetailCubit()
     : super(const SaleOrderHistoryDetailState(isLoading: true));
   final MoreRepository appRepos = getIt<MoreRepository>();
@@ -35,22 +38,6 @@ class SaleOrderHistoryDetailCubit extends Cubit<SaleOrderHistoryDetailState> {
     }
   }
 
-  // void scaningBluetooth(bool isScan) {
-  //   emit(state.copyWith(isScanning: isScan));
-  // }
-
-  // void setConnectingBluetooth(bool isConnect) {
-  //   emit(state.copyWith(isConnected: isConnect));
-  // }
-
-  // void setBluetoothAdapterState(BluetoothAdapterState adapter) {
-  //   emit(state.copyWith(adapterState: adapter));
-  // }
-
-  // void setBluetoothDevice(BluetoothDevice? device) {
-  //   emit(state.copyWith(connectedDevice: device));
-  // }
-
   Future<void> getComapyInfo() async {
     final stableState = state;
     try {
@@ -66,7 +53,33 @@ class SaleOrderHistoryDetailCubit extends Cubit<SaleOrderHistoryDetailState> {
     }
   }
 
-  // void getPreviewReceipt(ReceiptPreview? generated) {
-  //   emit(state.copyWith(preview: generated));
-  // }
+  Future<List<DevicePrinter>> getPrinterConfig() async {
+    final result = await appRepos.getDevicePrinter();
+    return result.fold((l) => [], (record) => record);
+  }
+
+  Future<void> storeDevicePrinter(DevicePrinter device) async {
+    final result = await appRepos.storeDevicePrinter(device);
+
+    // try {
+    //   final result = await appRepos.storeDevicePrinter(device);
+
+    //   return result.fold(
+    //     (failure) {
+    //       showErrorMessage(failure.message);
+    //       emit(state.copyWith(isLoading: false));
+    //       return false;
+    //     },
+    //     (records) {
+    //       final updatedList = [...state.devicePrinter, device];
+
+    //       emit(state.copyWith(isLoading: false, devicePrinter: updatedList));
+    //       return true;
+    //     },
+    //   );
+    // } catch (error) {
+    //   emit(state.copyWith(isLoading: false, error: error.toString()));
+    //   return false;
+    // }
+  }
 }

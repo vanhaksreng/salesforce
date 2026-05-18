@@ -21,7 +21,7 @@ class AdministrationCubit extends Cubit<AdministrationState>
     with MessageMixin, DevicePrinterMixin, IminPrinterMixin {
   AdministrationCubit() : super(AdministrationState(isLoading: true));
   final _repos = getIt<MoreRepository>();
-  final _bluetoothService = BluetoothPrinterService();
+  // final _bluetoothService = BluetoothPrinterService(); TODO
   StreamSubscription? _connectionSubscription;
   StreamSubscription? _statusSubscription;
   final _bluetoothPermission = BluetoothPermissionHandler();
@@ -205,36 +205,36 @@ class AdministrationCubit extends Cubit<AdministrationState>
         emit(state.copyWith(isLoading: false));
       } else {
         debugPrint("📱 Non-iMin device - initializing Bluetooth printer");
-
+  //TODO
         // Listen to connection changes from the Bluetooth service
-        _connectionSubscription = _bluetoothService.connectionStream.listen((
-          device,
-        ) {
-          emit(state.copyWith(selectedDevice: device));
-        });
+        // _connectionSubscription = _bluetoothService.connectionStream.listen((
+        //   device,
+        // ) {
+        //   emit(state.copyWith(selectedDevice: device));
+        // });
 
-        _statusSubscription = _bluetoothService.statusStream.listen((status) {
-          if (status == ConnectionStatus.connecting) {
-            debugPrint(" Bluetooth printer connecting...");
-          } else if (status == ConnectionStatus.connected) {
-            debugPrint(" Bluetooth printer connected");
-          } else if (status == ConnectionStatus.disconnected) {
-            debugPrint(" Bluetooth printer disconnected");
-          }
-        });
+        // _statusSubscription = _bluetoothService.statusStream.listen((status) {
+          // if (status == ConnectionStatus.connecting) {
+          //   debugPrint(" Bluetooth printer connecting...");
+          // } else if (status == ConnectionStatus.connected) {
+          //   debugPrint(" Bluetooth printer connected");
+          // } else if (status == ConnectionStatus.disconnected) {
+          //   debugPrint(" Bluetooth printer disconnected");
+          // } 
+        // });
 
         // Initialize the bluetooth service (will auto-reconnect if saved)
-        await _bluetoothService.initialize();
+        // await _bluetoothService.initialize();
 
         // Load saved devices
-        await getDevicePrinter();
+        // await getDevicePrinter();
 
-        emit(
-          state.copyWith(
-            selectedDevice: _bluetoothService.connectedDevice,
-            isLoading: false,
-          ),
-        );
+        // emit(
+        //   state.copyWith(
+        //     selectedDevice: _bluetoothService.connectedDevice,
+        //     isLoading: false,
+        //   ),
+        // );
       }
     } catch (error) {
       debugPrint("Initialization error: $error");
@@ -245,15 +245,15 @@ class AdministrationCubit extends Cubit<AdministrationState>
 
   Future<void> disconnectFromPrinter(DevicePrinter device) async {
     try {
-      final result = await _bluetoothService.disconnect();
+      // final result = await _bluetoothService.disconnect();
 
-      if (result) {
-        emit(state.copyWith(clearSelectedDevice: true, isLoading: false));
-        showSuccessMessage("Disconnected from ${device.deviceName}");
-      } else {
-        emit(state.copyWith(isLoading: false));
-        showErrorMessage("Failed to disconnect");
-      }
+      // if (result) { TODO
+      //   emit(state.copyWith(clearSelectedDevice: true, isLoading: false));
+      //   showSuccessMessage("Disconnected from ${device.deviceName}");
+      // } else {
+      //   emit(state.copyWith(isLoading: false));
+      //   showErrorMessage("Failed to disconnect");
+      // }
     } catch (error) {
       emit(state.copyWith(isLoading: false));
       showErrorMessage("Disconnection error: ${error.toString()}");
@@ -274,21 +274,22 @@ class AdministrationCubit extends Cubit<AdministrationState>
         ),
       );
 
-      bool result = await _bluetoothService.connect(device);
+      // TODO
+      // bool result = await _bluetoothService.connect(device);
 
-      if (result) {
-        emit(
-          state.copyWith(
-            selectedDevice: device,
-            clearConnectingDeviceId: true, // Clear connecting state
-            isLoading: false,
-          ),
-        );
-        showSuccessMessage("Connected to ${device.deviceName}");
-      } else {
-        emit(state.copyWith(clearConnectingDeviceId: true, isLoading: false));
-        showErrorMessage("Failed to connect");
-      }
+      // if (result) {
+      //   emit(
+      //     state.copyWith(
+      //       selectedDevice: device,
+      //       clearConnectingDeviceId: true, // Clear connecting state
+      //       isLoading: false,
+      //     ),
+      //   );
+      //   showSuccessMessage("Connected to ${device.deviceName}");
+      // } else {
+      //   emit(state.copyWith(clearConnectingDeviceId: true, isLoading: false));
+      //   showErrorMessage("Failed to connect");
+      // }
     } catch (error) {
       emit(state.copyWith(clearConnectingDeviceId: true, isLoading: false));
       showErrorMessage("Connection error: ${error.toString()}");

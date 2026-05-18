@@ -35,10 +35,9 @@ dependencies:
   shared_preferences: ^2.5.3
   device_info_plus: ^12.1.0
   realm: ^20.2.0
-  pinput: ^6.0.1
+  # pinput: ^6.0.1
   country_code_picker: ^3.4.0
   workmanager: ^0.9.0+3
-  lottie: ^3.3.2
   flutter_inappwebview: ^6.1.5
   onesignal_flutter: ^5.3.4
   mobile_scanner: ^7.2.0

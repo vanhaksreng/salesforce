@@ -28,7 +28,7 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
         "username": auth?.email ?? "",
         "source": Platform.isIOS ? "ios" : "android",
         "app_version": packageInfo.version,
-        "installer_store": packageInfo.installerStore,
+        "installer_store": packageInfo.installerStore ?? "",
       };
 
       var body = param;
@@ -44,40 +44,32 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
 
   @override
   Future<List<SalespersonSchedule>> createSchedules(Map data) async {
-    try {
-      final response = await apiClient.post(
-        'v2/add-schedule',
-        body: await getParams(params: data),
-      );
+    final response = await apiClient.post(
+      'v2/add-schedule',
+      body: await getParams(params: data),
+    );
 
-      final List<SalespersonSchedule> records = [];
-      for (var item in response["records"]) {
-        records.add(SalespersonScheduleExtension.fromMap(item));
-      }
-
-      return records;
-    } catch (e) {
-      rethrow;
+    final List<SalespersonSchedule> records = [];
+    for (var item in response["records"]) {
+      records.add(SalespersonScheduleExtension.fromMap(item));
     }
+
+    return records;
   }
 
   @override
   Future<List<SalespersonSchedule>> getSchedules(String date) async {
-    try {
-      final response = await apiClient.post(
-        'v2/get-schedule',
-        body: await getParams(params: {"visit_date": date}),
-      );
+    final response = await apiClient.post(
+      'v2/get-schedule',
+      body: await getParams(params: {"visit_date": date}),
+    );
 
-      final List<SalespersonSchedule> records = [];
-      for (var item in response["records"]) {
-        records.add(SalespersonScheduleExtension.fromMap(item));
-      }
-
-      return records;
-    } catch (e) {
-      rethrow;
+    final List<SalespersonSchedule> records = [];
+    for (var item in response["records"]) {
+      records.add(SalespersonScheduleExtension.fromMap(item));
     }
+
+    return records;
   }
 
   @override
@@ -184,6 +176,16 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
     } catch (e) {
       rethrow;
     }
+  }
+
+  @override
+  Future<Map<String, dynamic>> downloadTranDataBatch({
+    Map<String, dynamic>? data,
+  }) async {
+    return await apiClient.post(
+      'v2/download-transaction-data-batch',
+      body: await getParams(params: data),
+    );
   }
 
   @override

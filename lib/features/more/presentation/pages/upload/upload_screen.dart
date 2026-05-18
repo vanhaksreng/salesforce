@@ -98,7 +98,7 @@ class _UploadScreenState extends State<UploadScreen> {
       if (!_cubit.state.isconnect) {
         l.hide();
         if (!mounted) return;
-        Helpers.showNoInternetDialog(context);
+        // Helpers.showNoInternetDialog(context);
         return;
       }
 

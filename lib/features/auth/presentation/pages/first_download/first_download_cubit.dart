@@ -70,6 +70,57 @@ class FirstDownloadCubit extends Cubit<FirstDownloadState> with MessageMixin {
 
       List<String> errors = List<String>.from(state.errors);
 
+      // await _repos.downloadTranDataBatch(
+      //   onProgress: (progressValue, total, tableName, errorMsg) {
+      //     if (errorMsg.isNotEmpty) {
+      //       errors.add(errorMsg);
+      //     }
+
+      //     emit(state.copyWith(
+      //       progressValue: progressValue,
+      //       textLoading: "Download master data completed",
+      //       totalValue: total,
+      //       errors: errors,
+      //     ));
+      //   },
+      // );
+
+      await _repos.downloadTranData(
+        tables: tables,
+        onProgress: (progressValue, total, tableName, errorMsg) {
+          if (errorMsg.isNotEmpty) {
+            errors.add(errorMsg);
+          }
+
+          emit(
+            state.copyWith(
+              progressValue: progressValue,
+              textLoading: tableName,
+              totalValue: total,
+              errors: errors,
+            ),
+          );
+        },
+      );
+    } on GeneralException catch (e) {
+      showWarningMessage(e.message);
+    } on Exception {
+      showErrorMessage();
+    } finally {
+      emit(state.copyWith(isLoading: false));
+    }
+  }
+
+  Future<void> downloadTransactionData() async {
+    try {
+      final tables = state.tableLogs.where((e) => e.type == "T").toList();
+      if (tables.isEmpty) {
+        showWarningMessage("Nothing to download");
+        return;
+      }
+
+      List<String> errors = List<String>.from(state.errors);
+
       await _repos.downloadTranData(
         tables: tables,
         onProgress: (progressValue, total, tableName, errorMsg) {

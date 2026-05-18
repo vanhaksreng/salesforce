@@ -37,7 +37,6 @@ class SaleHistoryDetailBox extends StatelessWidget {
       children: [
         _buildHeaderBoxV2(),
         _buildCustomerInfo(),
-        // _buildHeaderBox(),
         _buildListItem(),
       ],
     );

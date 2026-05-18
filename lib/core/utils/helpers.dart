@@ -8,7 +8,7 @@ import 'package:http/http.dart' as https;
 import 'package:http/io_client.dart';
 import 'package:image/image.dart' as img;
 import 'package:intl/intl.dart';
-import 'package:lottie/lottie.dart';
+// import 'package:lottie/lottie.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/constants.dart';
@@ -337,13 +337,24 @@ class Helpers {
     dynamic value, {
     FormatType option = FormatType.quantity,
     bool display = true,
+    bool showZeroWhenEmpty = false,
   }) {
     try {
       if (value == null || value.toString().isEmpty) {
+        if (showZeroWhenEmpty) {
+          return "0.00";
+        }
+
         return "";
       }
 
-      if (value == 0 || value == "-") return "";
+      if (value == 0 || value == "-") {
+        if (showZeroWhenEmpty) {
+          return "0.00";
+        }
+
+        return "";
+      }
 
       double number = Helpers.toDouble(value);
       int decimal = 0;
@@ -383,6 +394,10 @@ class Helpers {
 
       final formatted = number.toStringAsFixed(decimal);
       if (formatted == "0" && display) {
+        if (showZeroWhenEmpty) {
+          return "0.00";
+        }
+
         return "";
       }
 
@@ -525,52 +540,52 @@ class Helpers {
     }
   }
 
-  static void showNoInternetDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Lottie.asset(
-                kConnectInternetLottie,
-                width: 200,
-                height: 200,
-                fit: BoxFit.cover,
-                repeat: true,
-              ),
-              const SizedBox(height: 16),
-              TextWidget(
-                text: 'No Internet Connection',
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-                textAlign: TextAlign.center,
-              ),
-              Helpers.gapH(scaleFontSize(12)),
+  // static void showNoInternetDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (context) => Dialog(
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+  //       child: Padding(
+  //         padding: const EdgeInsets.all(24.0),
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             // Lottie.asset(
+  //             //   kConnectInternetLottie,
+  //             //   width: 200,
+  //             //   height: 200,
+  //             //   fit: BoxFit.cover,
+  //             //   repeat: true,
+  //             // ),
+  //             const SizedBox(height: 16),
+  //             TextWidget(
+  //               text: 'No Internet Connection',
+  //               fontSize: 20,
+  //               fontWeight: FontWeight.bold,
+  //               color: Colors.grey[800],
+  //               textAlign: TextAlign.center,
+  //             ),
+  //             Helpers.gapH(scaleFontSize(12)),
 
-              TextWidget(
-                text: 'Please check your internet connection and try again.',
-                fontSize: 14,
-                color: Colors.grey[600],
-                textAlign: TextAlign.center,
-              ),
-              Helpers.gapH(scaleFontSize(24)),
-              BtnWidget(
-                onPressed: () => Navigator.pop(context),
-                title: "Okay",
-                bgColor: mainColor,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  //             TextWidget(
+  //               text: 'Please check your internet connection and try again.',
+  //               fontSize: 14,
+  //               color: Colors.grey[600],
+  //               textAlign: TextAlign.center,
+  //             ),
+  //             Helpers.gapH(scaleFontSize(24)),
+  //             BtnWidget(
+  //               onPressed: () => Navigator.pop(context),
+  //               title: "Okay",
+  //               bgColor: mainColor,
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   static Future<BitmapDescriptor> createPinMarkerWithImageAndTitle(
     String imageUrl, {
