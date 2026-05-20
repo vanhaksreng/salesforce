@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:salesforce/core/enums/enums.dart';
+import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:http/http.dart' as http;
@@ -23,7 +24,7 @@ class InvoiceItem {
   Map<String, dynamic> toMap() => {'name': name, 'qty': qty, 'price': price};
 }
 
-class BluetoothPrinterService {
+class BluetoothPrinterService with MessageMixin {
   static const MethodChannel _channel = MethodChannel(
     'com.clearviewerp.pos_printer/bluetooth',
   );
@@ -76,6 +77,10 @@ class BluetoothPrinterService {
     return "-" * length;
   }
 
+  int getPrinterPixelWidth(String size) {
+    return size == "58" ? 384 : 576;
+  }
+
   Future<String?> printReceipt({
     required CompanyInformation company,
     required String customer,
@@ -86,10 +91,12 @@ class BluetoothPrinterService {
     required double vatAmount,
     required double amountDue,
     required String paymentMethod,
+    String paperWidth = "80",
     String? printerName,
   }) async {
     try {
-      final int fullWidth = 75;
+
+      final int fullWidth = paperWidth == "58" ? 65 : 72;
       final String logoPath = company.logo128 ?? "";
       Uint8List? logoBytes;
 
@@ -115,7 +122,6 @@ class BluetoothPrinterService {
       // ១. ផ្នែកក្បាលវិក្កយបត្រ (Header)
       buffer.writeln("[C]<b>${company.name}</b>");
       buffer.writeln("[C]${company.address}");
-      // buffer.writeln("[C]<b>បង្កាន់ដៃទទួលប្រាក់</b>");
 
       //42 for 80mm and 32 for 58mm
       buffer.writeln(underLine(fullWidth));
@@ -127,10 +133,8 @@ class BluetoothPrinterService {
       buffer.writeln("ទូទាត់ដោយ (Payment): $paymentMethod");
 
       buffer.writeln(underLine(fullWidth));
-      buffer.writeln(
-        "[TABLE]<b>ល.រ, ឈ្មោះទំនិញ, ចំនួន, តម្លៃ, ចុះតម្លៃ, សរុប</b>",
-      );
-      buffer.writeln("[TABLE]<b>No, Item Name, Qty, Price, Dis, Total</b>");
+      buffer.writeln("[TABLE]<b>ល.រ, ឈ្មោះទំនិញ, ចំនួន, តម្លៃ, ចុះតម្លៃ, សរុប</b>");
+      buffer.writeln("[TABLE]<b>No, Item Name, Qty, Price, Disc., Total</b>");
       buffer.writeln(underLine(fullWidth));
 
       // ៣. រង្វិលជុំទាញយកមុខទំនិញនីមួយៗ (Items Loop)
@@ -143,7 +147,7 @@ class BluetoothPrinterService {
 
         // បញ្ជូនតាមលំដាប់៖ ល.រ, ឈ្មោះ, ចំនួន, តម្លៃ, ចុះតម្លៃ, សរុប
         buffer.writeln(
-          "[TABLE]$index, ${item.name}, ${item.qty}, ${Helpers.formatNumber(item.price, option: FormatType.amount)}, ${Helpers.formatNumber(item.discount, option: FormatType.percentage)}, ${Helpers.formatNumber(itemTotal, option: FormatType.amount)}",
+          "[TABLE]$index, ${item.name}, ${item.qty}, ${Helpers.formatNumber(item.price, option: FormatType.amount,display: false)}, ${Helpers.formatNumber(item.discount, option: FormatType.percentage)}, ${Helpers.formatNumber(itemTotal, option: FormatType.amount)}",
         );
       }
 
@@ -168,11 +172,13 @@ class BluetoothPrinterService {
         'text': buffer.toString(),
         'printerName': printerName,
         'logoBytes': logoBytes,
+        'paperWidth': getPrinterPixelWidth(paperWidth),
       });
 
       return result;
     } on PlatformException catch (e) {
       debugPrint("Printing failed: ${e.message}");
+      showWarningMessage(e.message ?? "Failed to print receipt");
       return e.message;
     }
   }

@@ -91,11 +91,11 @@ abstract class MoreRepository extends BaseAppRepository {
   });
 
   Future<Either<Failure, bool>> insertSale(SaleItemArg saleArg);
-  Future<Either<Failure, DevicePrinter>> storeDevicePrinter(
-    DevicePrinter customer,
-  );
+  // Future<Either<Failure, DevicePrinter>> storeDevicePrinter(
+  //   DevicePrinter customer,
+  // );
  
-  Future<Either<Failure, bool>> deletePrinter({required DevicePrinter device});
+  // Future<Either<Failure, bool>> deletePrinter({required DevicePrinter device});
 
   Future<Either<Failure, AppVersion?>> checkAppVersion({
     Map<String, dynamic>? param,

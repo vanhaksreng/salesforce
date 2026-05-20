@@ -77,6 +77,7 @@ class _SaleOrderHistoryDetailScreenState
     bool hasPerm = await _printerService.requestPermissions();
     if (hasPerm) {
       final list = await _printerService.getPairedDevices();
+
       setState(() => _devices = list);
     }
   }
@@ -91,6 +92,12 @@ class _SaleOrderHistoryDetailScreenState
     required String deviceName,
     required String printerSize,
   }) async {
+
+    if(_devices.every((d) => d['address'] != address)) {
+      showWarningMessage("The configured printer is not available. Please check your printer connection.");
+      return;
+    }
+
     final device = DevicePrinter(
       deviceName,
       deviceName,
@@ -103,12 +110,27 @@ class _SaleOrderHistoryDetailScreenState
     await _cubit.storeDevicePrinter(device);
     await _connectTo(address);
 
+    if (!_isConnected) {
+      showWarningMessage(
+        "Failed to connect to printer. Please check the connection and try again.",
+      );
+      return;
+    }
+
     if (_cubit.state.record != null && _cubit.state.comPanyInfo != null) {
-      PrintReceipt().print(_cubit.state.record!, _cubit.state.comPanyInfo!);
+      await PrintReceipt().print(
+        _cubit.state.record!,
+        _cubit.state.comPanyInfo!,
+        printerSize,
+      );
     }
   }
 
-  Future<String?> showSessionLoginDialog(BuildContext context) {
+  Future<String?> showSessionLoginDialog(BuildContext context) async {
+
+    final devices = await _cubit.getPrinterConfig();
+    if(!context.mounted) return null;
+
     return showGeneralDialog<String>(
       context: context,
       barrierDismissible: false,
@@ -127,22 +149,47 @@ class _SaleOrderHistoryDetailScreenState
       pageBuilder: (context, _, _) => BluetoothListWidget(
         devices: _devices,
         onConfirm: onConfirmSetupPrinter,
+        printerConfig: devices.isNotEmpty ? devices.first : null,
       ),
     );
   }
 
-  void pushToPrintReceipt() async {
+  void _printReceiptSetting() async {
+    if (_cubit.state.record == null || _cubit.state.comPanyInfo == null) {
+      showErrorMessage("Sale details or company information is missing.");
+      return;
+    }
+
+    await _loadDevices();
+
+    if (!mounted) return;
+    showSessionLoginDialog(context);
+  }
+
+  void _printReceipt() async {
+
     await _loadDevices();
 
     final devices = await _cubit.getPrinterConfig();
     if (devices.isNotEmpty) {
+
+      if(_devices.every((d) => d['address'] != devices.first.macAddress)) {
+        showWarningMessage("The configured printer is not available. Please check your printer connection.");
+        return;
+      }
+
       await _connectTo(devices.first.macAddress);
     }
 
-    if (!mounted) return;
-    if (_isConnected) {
-      PrintReceipt().print(_cubit.state.record!, _cubit.state.comPanyInfo!);
+    if (_isConnected && devices.isNotEmpty) {
+      await PrintReceipt().print(
+        _cubit.state.record!,
+        _cubit.state.comPanyInfo!,
+        devices.first.paperSize.toString(),
+      );
     } else {
+      
+      if (!mounted) return;
       showSessionLoginDialog(context);
     }
 
@@ -175,11 +222,20 @@ class _SaleOrderHistoryDetailScreenState
       appBar: AppBarWidget(
         title: greeting(_getTitle()),
         actions: [
+          BtnIconCircleWidget(
+            onPressed: _printReceiptSetting,
+            icons: const Icon(Icons.settings, color: white),
+            rounded: appBtnRound,
+          ),
           BlocBuilder<SaleOrderHistoryDetailCubit, SaleOrderHistoryDetailState>(
             bloc: _cubit,
             builder: (tx, state) {
+              if (state.isLoading) {
+                return const SizedBox.shrink();
+              }
+
               return BtnIconCircleWidget(
-                onPressed: pushToPrintReceipt,
+                onPressed: _printReceipt,
                 icons: const Icon(Icons.print_rounded, color: white),
                 rounded: appBtnRound,
               );

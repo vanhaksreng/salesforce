@@ -22,8 +22,10 @@ class MainActivity : FlutterActivity() {
     private val locationMethodChannel = "com.clearviewerp.salesforce/background_service"
     private val printPosMethodChannel = "com.clearviewerp.pos_printer/bluetooth"
     private val locationPermissionRequestCode = 101
-    private val PERMISSION_REQUEST_CODE = 1001
-    private val BLUETOOTH_ENABLE_REQUEST = 1002
+    // private val PERMISSION_REQUEST_CODE = 1001
+    // private val BLUETOOTH_ENABLE_REQUEST = 1002
+
+    private val PERM_REQUEST = 1001 // លេខកូដសម្គាល់ ត្រូវដូចក្នុង Plugin
 
     private lateinit var iminPrinter: IminPrinter
     private val printerChannelImin = "com.imin.printersdk"
@@ -93,34 +95,65 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun setupBluetoothPermissionChannel(flutterEngine: FlutterEngine) {
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, bluetoothPermissionChannel)
-                .setMethodCallHandler { call, result ->
-                    when (call.method) {
-                        "requestBluetoothPermissions" -> {
-                            requestBluetoothPermissionsIfNeeded()
-                            result.success(true)
-                        }
-                        "checkBluetoothPermissions" -> {
-                            val hasPermissions = checkBluetoothPermissions()
-                            result.success(hasPermissions)
-                        }
-                        "enableBluetooth" -> {
-                            ensureBluetoothEnabled()
-                            result.success(true)
-                        }
-                        "isBluetoothEnabled" -> {
-                            val isEnabled = isBluetoothEnabled()
-                            result.success(isEnabled)
-                        }
-                        "getBluetoothStatus" -> {
-                            val status = getBluetoothStatus()
-                            result.success(status)
-                        }
-                        else -> result.notImplemented()
-                    }
-                }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        // ── Bluetooth printer ──
+        printerPlugin?.handlePermissionResult(requestCode, grantResults)
+
+        // ── Location service ──
+        if (requestCode == locationPermissionRequestCode) {
+            val granted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+            permissionResultCallback?.invoke(granted)
+            permissionResultCallback = null
+        }
+        
+        if (requestCode == PERM_REQUEST) {
+
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // អ្នកប្រើប្រាស់បានចុចព្រមព្រៀងផ្ដល់សិទ្ធិ (Granted)
+                // លោកអ្នកអាចធ្វើការហៅទៅកាន់មុខងារ Scan ឡើងវិញដោយស្វ័យប្រវត្តិក៏បាន
+                println("Bluetooth/Location Permission Granted!")
+            } else {
+                // អ្នកប្រើប្រាស់បានបដិសេធ (Denied)
+                println("Bluetooth/Location Permission Denied!")
+            }
+        }
     }
+
+    // private fun setupBluetoothPermissionChannel(flutterEngine: FlutterEngine) {
+    //     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, bluetoothPermissionChannel)
+    //             .setMethodCallHandler { call, result ->
+    //                 when (call.method) {
+    //                     "requestBluetoothPermissions" -> {
+    //                         requestBluetoothPermissionsIfNeeded()
+    //                         result.success(true)
+    //                     }
+    //                     "checkBluetoothPermissions" -> {
+    //                         val hasPermissions = checkBluetoothPermissions()
+    //                         result.success(hasPermissions)
+    //                     }
+    //                     "enableBluetooth" -> {
+    //                         ensureBluetoothEnabled()
+    //                         result.success(true)
+    //                     }
+    //                     "isBluetoothEnabled" -> {
+    //                         val isEnabled = isBluetoothEnabled()
+    //                         result.success(isEnabled)
+    //                     }
+    //                     "getBluetoothStatus" -> {
+    //                         val status = getBluetoothStatus()
+    //                         result.success(status)
+    //                     }
+    //                     else -> result.notImplemented()
+    //                 }
+    //             }
+    // }
 
     private fun setupLocationService(flutterEngine: FlutterEngine) {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, locationMethodChannel)
@@ -190,6 +223,7 @@ class MainActivity : FlutterActivity() {
                 }
     }
 
+    // Requests location permissions based on the specified mode (foreground or background)
     private fun requestPermissions(mode: String) {
         try {
 
@@ -222,6 +256,7 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    // Helper function to request the necessary location permissions based on the mode
     private fun requestLocationPermissions(mode: String) {
         try {
             val permissions =
@@ -278,37 +313,36 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    override fun onRequestPermissionsResult(
-            requestCode: Int,
-            permissions: Array<out String>,
-            grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == locationPermissionRequestCode) {
-            val granted =
-                    grantResults.isNotEmpty() &&
-                            grantResults.all { it == PackageManager.PERMISSION_GRANTED }
-            safeInvokeFlutterMethod(
-                    "permissionChanged",
-                    mapOf("status" to PermissionUtils.getPermissionStatus(this))
-            )
-            permissionResultCallback?.invoke(granted)
-            permissionResultCallback = null
-        }
+    // override fun onRequestPermissionsResult(
+    //         requestCode: Int,
+    //         permissions: Array<out String>,
+    //         grantResults: IntArray
+    // ) {
+    //     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    //     if (requestCode == locationPermissionRequestCode) {
+    //         val granted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+    //         safeInvokeFlutterMethod(
+    //                 "permissionChanged",
+    //                 mapOf("status" to PermissionUtils.getPermissionStatus(this))
+    //         )
+    //         permissionResultCallback?.invoke(granted)
+    //         permissionResultCallback = null
+    //     }
 
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            val allGranted =
-                    grantResults.isNotEmpty() &&
-                            grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+    //     if (requestCode == PERMISSION_REQUEST_CODE) {
+    //         val allGranted =
+    //                 grantResults.isNotEmpty() &&
+    //                         grantResults.all { it == PackageManager.PERMISSION_GRANTED }
 
-            if (allGranted) {
-                println("All Bluetooth permissions granted")
-                ensureBluetoothEnabled()
-            } else {
-                println("Some Bluetooth permissions denied")
-            }
-        }
-    }
+    //         if (allGranted) {
+    //             println("All Bluetooth permissions granted")
+    //             ensureBluetoothEnabled()
+    //         } else {
+    //             println("Some Bluetooth permissions denied")
+    //         }
+    //     }
+    // }
+    
     private fun safeInvokeFlutterMethod(method: String, arguments: Any?) {
         try {
             LocationService.getChannel()?.invokeMethod(method, arguments)
@@ -355,125 +389,125 @@ class MainActivity : FlutterActivity() {
     }
 
     // ======================================printer===================
-    private fun requestBluetoothPermissionsIfNeeded() {
-        val hasPermissions = checkBluetoothPermissions()
+    // private fun requestBluetoothPermissionsIfNeeded() {
+    //     val hasPermissions = checkBluetoothPermissions()
 
-        if (!hasPermissions) {
-            println("📱 Requesting Bluetooth permissions...")
-            val permissions =
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        arrayOf(
-                                Manifest.permission.BLUETOOTH_CONNECT,
-                                Manifest.permission.BLUETOOTH_SCAN
-                        )
-                    } else {
-                        arrayOf(
-                                Manifest.permission.BLUETOOTH,
-                                Manifest.permission.BLUETOOTH_ADMIN,
-                                Manifest.permission.ACCESS_FINE_LOCATION
-                        )
-                    }
-            ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE)
-        } else {
-            println("✅ Bluetooth permissions already granted")
-            ensureBluetoothEnabled()
-        }
-    }
+    //     if (!hasPermissions) {
+    //         println("📱 Requesting Bluetooth permissions...")
+    //         val permissions =
+    //                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    //                     arrayOf(
+    //                             Manifest.permission.BLUETOOTH_CONNECT,
+    //                             Manifest.permission.BLUETOOTH_SCAN
+    //                     )
+    //                 } else {
+    //                     arrayOf(
+    //                             Manifest.permission.BLUETOOTH,
+    //                             Manifest.permission.BLUETOOTH_ADMIN,
+    //                             Manifest.permission.ACCESS_FINE_LOCATION
+    //                     )
+    //                 }
+    //         ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE)
+    //     } else {
+    //         println("✅ Bluetooth permissions already granted")
+    //         ensureBluetoothEnabled()
+    //     }
+    // }
 
-    private fun isBluetoothEnabled(): Boolean {
-        val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager
-        val bluetoothAdapter = bluetoothManager?.adapter
+    // private fun isBluetoothEnabled(): Boolean {
+    //     val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager
+    //     val bluetoothAdapter = bluetoothManager?.adapter
 
-        return bluetoothAdapter?.isEnabled ?: false
-    }
+    //     return bluetoothAdapter?.isEnabled ?: false
+    // }
 
-    private fun getBluetoothStatus(): Map<String, Any> {
-        val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager
-        val bluetoothAdapter = bluetoothManager?.adapter
+    // private fun getBluetoothStatus(): Map<String, Any> {
+    //     val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager
+    //     val bluetoothAdapter = bluetoothManager?.adapter
 
-        val hasPermissions = checkBluetoothPermissions()
-        val isEnabled = bluetoothAdapter?.isEnabled ?: false
-        val isSupported = bluetoothAdapter != null
+    //     val hasPermissions = checkBluetoothPermissions()
+    //     val isEnabled = bluetoothAdapter?.isEnabled ?: false
+    //     val isSupported = bluetoothAdapter != null
 
-        return mapOf(
-                "hasPermissions" to hasPermissions,
-                "isEnabled" to isEnabled,
-                "isSupported" to isSupported,
-                "canUse" to (hasPermissions && isEnabled)
-        )
-    }
+    //     return mapOf(
+    //             "hasPermissions" to hasPermissions,
+    //             "isEnabled" to isEnabled,
+    //             "isSupported" to isSupported,
+    //             "canUse" to (hasPermissions && isEnabled)
+    //     )
+    // }
 
-    private fun checkBluetoothPermissions(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) ==
-                    PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) ==
-                            PackageManager.PERMISSION_GRANTED
-        } else {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) ==
-                    PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) ==
-                            PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(
-                            this,
-                            Manifest.permission.ACCESS_FINE_LOCATION
-                    ) == PackageManager.PERMISSION_GRANTED
-        }
-    }
+    // private fun checkBluetoothPermissions(): Boolean {
+    //     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    //         ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) ==
+    //                 PackageManager.PERMISSION_GRANTED &&
+    //                 ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) ==
+    //                         PackageManager.PERMISSION_GRANTED
+    //     } else {
+    //         ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) ==
+    //                 PackageManager.PERMISSION_GRANTED &&
+    //                 ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) ==
+    //                         PackageManager.PERMISSION_GRANTED &&
+    //                 ContextCompat.checkSelfPermission(
+    //                         this,
+    //                         Manifest.permission.ACCESS_FINE_LOCATION
+    //                 ) == PackageManager.PERMISSION_GRANTED
+    //     }
+    // }
 
-    private fun ensureBluetoothEnabled() {
-        val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager
-        val bluetoothAdapter = bluetoothManager?.adapter
+    // private fun ensureBluetoothEnabled() {
+    //     val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager
+    //     val bluetoothAdapter = bluetoothManager?.adapter
 
-        if (bluetoothAdapter?.isEnabled == false) {
-            println("📱 Bluetooth is OFF, requesting to enable...")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (ContextCompat.checkSelfPermission(
-                                this,
-                                Manifest.permission.BLUETOOTH_CONNECT
-                        ) == PackageManager.PERMISSION_GRANTED
-                ) {
-                    val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                    startActivityForResult(enableBtIntent, BLUETOOTH_ENABLE_REQUEST)
-                }
-            } else {
-                val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                startActivityForResult(enableBtIntent, BLUETOOTH_ENABLE_REQUEST)
-            }
-        } else {
-            println("Bluetooth is already enabled")
-        }
-    }
+    //     if (bluetoothAdapter?.isEnabled == false) {
+    //         println("📱 Bluetooth is OFF, requesting to enable...")
+    //         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    //             if (ContextCompat.checkSelfPermission(
+    //                             this,
+    //                             Manifest.permission.BLUETOOTH_CONNECT
+    //                     ) == PackageManager.PERMISSION_GRANTED
+    //             ) {
+    //                 val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+    //                 startActivityForResult(enableBtIntent, BLUETOOTH_ENABLE_REQUEST)
+    //             }
+    //         } else {
+    //             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+    //             startActivityForResult(enableBtIntent, BLUETOOTH_ENABLE_REQUEST)
+    //         }
+    //     } else {
+    //         println("Bluetooth is already enabled")
+    //     }
+    // }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
+    // override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    //     super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == BLUETOOTH_ENABLE_REQUEST) {
-            if (resultCode == RESULT_OK) {
-                println(" Bluetooth enabled by user")
-            } else {
-                println("User declined to enable Bluetooth")
-            }
-        }
-    }
+    //     if (requestCode == BLUETOOTH_ENABLE_REQUEST) {
+    //         if (resultCode == RESULT_OK) {
+    //             println(" Bluetooth enabled by user")
+    //         } else {
+    //             println("User declined to enable Bluetooth")
+    //         }
+    //     }
+    // }
 
-    private fun byteToBitmap(imgByte: ByteArray): Bitmap? {
-        return try {
-            val options =
-                    BitmapFactory.Options().apply {
-                        inSampleSize = 1
-                        inPreferredConfig = Bitmap.Config.RGB_565 // Use less memory
-                    }
+    // private fun byteToBitmap(imgByte: ByteArray): Bitmap? {
+    //     return try {
+    //         val options =
+    //                 BitmapFactory.Options().apply {
+    //                     inSampleSize = 1
+    //                     inPreferredConfig = Bitmap.Config.RGB_565 // Use less memory
+    //                 }
 
-            val bitmap = BitmapFactory.decodeByteArray(imgByte, 0, imgByte.size, options)
-            if (bitmap == null) {
-                // Log.e("ByteToBitmap", "BitmapFactory.decodeByteArray returned null")
-            }
-            bitmap
-        } catch (e: Exception) {
-            null
-        } catch (e: OutOfMemoryError) {
-            null
-        }
-    }
+    //         val bitmap = BitmapFactory.decodeByteArray(imgByte, 0, imgByte.size, options)
+    //         if (bitmap == null) {
+    //             // Log.e("ByteToBitmap", "BitmapFactory.decodeByteArray returned null")
+    //         }
+    //         bitmap
+    //     } catch (e: Exception) {
+    //         null
+    //     } catch (e: OutOfMemoryError) {
+    //         null
+    //     }
+    // }
 }

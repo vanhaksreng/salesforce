@@ -139,4 +139,6 @@ abstract class BaseAppRepository {
   Future<Either<Failure, List<DevicePrinter>>> getDevicePrinter({
     Map<String, dynamic>? param,
   });
+  
+  Future<Either<Failure, DevicePrinter>> storeDevicePrinter(DevicePrinter device);
 }

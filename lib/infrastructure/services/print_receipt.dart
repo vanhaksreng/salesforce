@@ -5,11 +5,13 @@ import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
 class PrintReceipt {
-
   final _printerService = BluetoothPrinterService();
 
-  void print(SaleDetail inv, CompanyInformation company) async {
-    
+  Future<void> print(
+    SaleDetail inv,
+    CompanyInformation company,
+    String paperWidth,
+  ) async {
     final List<SalesLine> lines = inv.lines;
 
     await _printerService.printReceipt(
@@ -37,8 +39,7 @@ class PrintReceipt {
         );
       }).toList(),
       paymentMethod: inv.header.paymentMethodCode ?? "",
+      paperWidth: paperWidth,
     );
   }
 }
-
-// storeDevicePrinter

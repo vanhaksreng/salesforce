@@ -240,6 +240,10 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     });
   }
 
+  void printReceipt(SalesHeader record) {
+    //TODO: Implement print receipt function
+  }
+
   Future<void> pushToAddCustomer() =>
       Navigator.pushNamed(
         context,
@@ -350,6 +354,7 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
                   header: records[index],
                   onTapShare: () => shareSaleOrder(records[index].no ?? ""),
                   onTap: () => navigatorToSaleCard(context, records[index]),
+                  onTapPrint: () => printReceipt(records[index]),
                 );
               },
             );

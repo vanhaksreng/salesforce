@@ -732,6 +732,13 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
 
     @override
   Future<DevicePrinter> storeDevicePrinter(DevicePrinter device) async {
-    return await _storage.add(device);
+    
+    return _storage.writeTransaction((realm) {
+      realm.deleteMany(realm.all<DevicePrinter>().toList());
+
+      realm.add(device);
+
+      return device;
+    });
   }
 }

@@ -135,15 +135,15 @@ class AdministrationScreenState extends State<AdministrationScreen>
             devices: state.devicePrinter,
             selectedDevice: state.selectedDevice,
             onDelete: (DevicePrinter device) async {
-              Helpers.showDialogAction(
-                context,
-                labelAction: "Deletee",
-                subtitle: "Do you want to delete ${device.deviceName}",
-                confirm: () async {
-                  Navigator.pop(context);
-                  await _cubit.deletePrinter(device: device);
-                },
-              );
+              // Helpers.showDialogAction(
+              //   context,
+              //   labelAction: "Deletee",
+              //   subtitle: "Do you want to delete ${device.deviceName}",
+              //   confirm: () async {
+              //     Navigator.pop(context);
+              //     await _cubit.deletePrinter(device: device);
+              //   },
+              // ); TODO : clean code
             },
             connectingDeviceId: state.connectingDeviceId,
             onDeviceTap: (DevicePrinter device) async {

@@ -7,6 +7,7 @@ import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/features/auth/domain/entities/login_arg.dart';
 import 'package:salesforce/features/auth/domain/repositories/auth_repository.dart';
 import 'package:salesforce/injection_container.dart';
+import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
 /// Printer size options
@@ -33,6 +34,7 @@ class BluetoothListWidget extends StatefulWidget {
   const BluetoothListWidget({
     super.key,
     required this.devices,
+    required this.printerConfig,
     this.onConfirm,
   });
 
@@ -40,6 +42,7 @@ class BluetoothListWidget extends StatefulWidget {
 
   /// Optional callback fired when the user presses "Connect & Save".
   final OnPrinterConfirmed? onConfirm;
+  final DevicePrinter? printerConfig;
 
   @override
   State<BluetoothListWidget> createState() => _BlueToothDialogState();
@@ -47,7 +50,7 @@ class BluetoothListWidget extends StatefulWidget {
 
 class _BlueToothDialogState extends State<BluetoothListWidget> {
   static const _primary = Color(0xFF4A1A8D);
-  static const _accent = Color(0xFF2979FF);
+  // static const _accent = Color(0xFF2979FF);
   static const _errorRed = Color(0xFFE53935);
   static const _textDark = Color(0xFF1A1A2E);
   static const _textMuted = Color(0xFF8E8E9A);
@@ -62,6 +65,25 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
 
   bool _isConnecting = false;
   String? _errorMessage;
+
+  @override
+  initState() {
+    super.initState();
+    _initializeState();
+  }
+
+  void _initializeState() {
+    if (widget.printerConfig != null) {
+      _selectedAddress = widget.printerConfig!.macAddress;
+      _selectedDeviceName = widget.printerConfig!.deviceName;
+      _connectedDevice = widget.printerConfig!.macAddress;
+      _selectedSize = widget.printerConfig!.paperSize.toInt().toString() == "58"
+          ? PrinterSize.mm58
+          : PrinterSize.mm80;
+    }
+
+    print("Initialized BluetoothListWidget with address: $_selectedAddress, deviceName: $_selectedDeviceName, paperSize: ${_selectedSize.value}");
+  }
 
   @override
   Widget build(BuildContext context) {

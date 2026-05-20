@@ -153,6 +153,10 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
     _getSaleInvoice();
   }
 
+  void printReceipt(SalesHeader record) {
+    //TODO: Implement print receipt function
+  }
+
   Future<void> shareSaleOrder(String documentNo) async {
     // ស្វែងរក RenderBox របស់ Widget ដែលអ្នកចុច (ឧទាហរណ៍៖ ប៊ូតុង)
     final box = context.findRenderObject() as RenderBox;
@@ -251,8 +255,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
       page: page,
       param: {
         'document_type': kSaleInvoice,
-        "posting_date":
-            "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
+        "posting_date": "${initialFromDate?.toDateString()} .. ${initialToDate?.toDateString()}",
       },
     );
   }
@@ -343,6 +346,7 @@ class _SaleInvoiceScreenState extends State<SaleInvoiceHistoryScreen>
                   header: record,
                   onTapShare: () => shareSaleOrder(record.no ?? ""),
                   onTap: () => _navigatorToSaleHistoryList(context, record),
+                  onTapPrint: () => printReceipt(record),
                 );
               },
             );

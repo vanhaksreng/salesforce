@@ -3,6 +3,7 @@ package com.clearviewerp.salesforce
 import android.Manifest
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.content.pm.PackageManager
@@ -34,18 +35,25 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
 
         // ESC/POS Commands
         private val ESC_INIT = byteArrayOf(0x1B, 0x40)
-        // private val FEED_LINES = byteArrayOf(0x1B, 0x64, 0x04)
         private val FEED_LINES = byteArrayOf(0x1B, 0x64, 0x01)
         private val FULL_CUT = byteArrayOf(0x1D, 0x56, 0x00)
         private val ALIGN_CENTER = byteArrayOf(0x1B, 0x61, 0x01)
     }
 
-    private var bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+    private var bluetoothAdapter: BluetoothAdapter? = null
     private var bluetoothSocket: BluetoothSocket? = null
     private var outputStream: BufferedOutputStream? = null
     private val executor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
     private var pendingPermResult: MethodChannel.Result? = null
+
+    private var bluetoothReceiver: android.content.BroadcastReceiver? = null
+    private val discoveredDevicesList = mutableListOf<Map<String, String>>()
+
+    init {
+        val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
+        bluetoothAdapter = bluetoothManager?.adapter
+    }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
@@ -57,8 +65,9 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
                 val text = call.argument<String>("text") ?: ""
                 val printerName = call.argument<String>("printerName") ?: ""
                 val logoBytes = call.argument<ByteArray>("logoBytes")
+                val paperWidth = call.argument<Int>("paperWidth") ?: 576
 
-                printKhmerReceipt(text, printerName, logoBytes, result)
+                printKhmerReceipt(text, paperWidth, printerName, logoBytes, result)
             }
             else -> result.notImplemented()
         }
@@ -113,22 +122,126 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
                             return
                         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                        ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.BLUETOOTH_CONNECT
-                        ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            result.error("NO_PERM", "BLUETOOTH_CONNECT permission missing", null)
+        if (!adapter.isEnabled) {
+            result.error("BT_OFF", "Bluetooth is turned off", null)
             return
         }
 
+        // ត្រួតពិនិត្យសិទ្ធិ (Permissions) ឱ្យបានគ្រប់ជ្រុងជ្រោយសម្រាប់រាល់ជំនាន់ Android
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val hasConnect =
+                    ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.BLUETOOTH_CONNECT
+                    ) == PackageManager.PERMISSION_GRANTED
+            val hasScan =
+                    ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.BLUETOOTH_SCAN
+                    ) == PackageManager.PERMISSION_GRANTED
+
+            if (!hasConnect || !hasScan) {
+                result.error("NO_PERM", "Bluetooth Scan or Connect permission missing", null)
+                return
+            }
+        } else {
+            // សម្រាប់ Android 11 ចុះក្រោម ត្រូវមានសិទ្ធិ Location ដាច់ខាត ទើបស្កេនឃើញឧបករណ៍ថ្មីៗ
+            val hasLocation =
+                    ContextCompat.checkSelfPermission(
+                            context,
+                            android.Manifest.permission.ACCESS_FINE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+            if (!hasLocation) {
+                result.error("NO_PERM", "Location permission missing (Required for BT Scan)", null)
+                return
+            }
+        }
+
+        // សម្អាតទិន្នន័យចាស់ចោលមុនពេលរាវរកថ្មី
+        discoveredDevicesList.clear()
+
+        // កូនជំហានទី ១៖ ទាញយកឧបករណ៍ដែលធ្លាប់ Paired (Bonded) ក្នុងទូរស័ព្ទស្រាប់ ដាក់ចូលក្នុង List
+        // មុនគេ
         val paired = adapter.bondedDevices ?: emptySet()
-        val list =
-                paired.map { device ->
+        paired.forEach { device ->
+            discoveredDevicesList.add(
                     mapOf("name" to (device.name ?: "Unknown"), "address" to device.address)
+            )
+        }
+
+        // កូនជំហានទី ២៖ រៀបចំបង្កើត BroadcastReceiver ដើម្បីស្ដាប់សញ្ញាម៉ាស៊ីនបោះពុម្ភ 58mm
+        // ថ្មីៗតាមអាកាស
+        if (bluetoothReceiver != null) {
+            try {
+                context.unregisterReceiver(bluetoothReceiver)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        bluetoothReceiver =
+                object : android.content.BroadcastReceiver() {
+                    override fun onReceive(ctx: Context, intent: android.content.Intent) {
+                        val action = intent.action
+                        if (android.bluetooth.BluetoothDevice.ACTION_FOUND == action) {
+                            val device =
+                                    intent.getParcelableExtra<android.bluetooth.BluetoothDevice>(
+                                            android.bluetooth.BluetoothDevice.EXTRA_DEVICE
+                                    )
+                            if (device != null) {
+                                val deviceName = device.name ?: ""
+
+                                // ពិនិត្យការពារកុំឱ្យបូកបញ្ចូលជាន់ Mac Address
+                                // គ្នាជាមួយឧបករណ៍ដែលមានក្នុង List ស្រាប់
+                                val isAlreadyAdded =
+                                        discoveredDevicesList.any {
+                                            it["address"] == device.address
+                                        }
+                                if (!isAlreadyAdded && deviceName != "") {
+                                    discoveredDevicesList.add(
+                                            mapOf("name" to deviceName, "address" to device.address)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
-        result.success(list)
+
+        // ចុះឈ្មោះ Receiver ជាមួយប្រព័ន្ធ Android
+        context.registerReceiver(
+                bluetoothReceiver,
+                android.content.IntentFilter(android.bluetooth.BluetoothDevice.ACTION_FOUND)
+        )
+
+        // កូនជំហានទី ៣៖ បញ្ជាឱ្យបន្ទះឈីប Bluetooth ចាប់ផ្ដើមរាវរកតាមរលកធាតុអាកាស (Classic
+        // Discovery)
+        if (adapter.isDiscovering) {
+            adapter.cancelDiscovery()
+        }
+        adapter.startDiscovery()
+
+        // កូនជំហានទី ៤៖ ទុកពេល ៤ វិនាទីឱ្យវាប្រមូលឧបករណ៍ រួចបញ្ជូន List ទាំងអស់ទៅ Flutter
+        Handler(Looper.getMainLooper())
+                .postDelayed(
+                        {
+                            try {
+                                if (adapter.isDiscovering) {
+                                    adapter.cancelDiscovery()
+                                }
+                                if (bluetoothReceiver != null) {
+                                    context.unregisterReceiver(bluetoothReceiver)
+                                    bluetoothReceiver = null
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+
+                            // បញ្ជូនលទ្ធផលរួមដែលមានទាំង Paired និង ឧបករណ៍ដែលទើបស្កេនឃើញថ្មីៗ ទៅកាន់
+                            // Flutter
+                            result.success(discoveredDevicesList)
+                        },
+                        4000
+                )
     }
 
     private fun handleConnect(address: String?, result: MethodChannel.Result) {
@@ -142,7 +255,9 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
                 closeConnection()
                 val adapter = bluetoothAdapter ?: throw IOException("Bluetooth adapter unavailable")
                 val device = adapter.getRemoteDevice(address)
+
                 val socket = device.createRfcommSocketToServiceRecord(SPP_UUID)
+                // val socket = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID)
 
                 adapter.cancelDiscovery()
                 socket.connect()
@@ -152,6 +267,7 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
 
                 mainHandler.post { result.success(true) }
             } catch (e: Exception) {
+                e.printStackTrace()
                 mainHandler.post { result.error("CONNECT_FAILED", e.message, null) }
             }
         }
@@ -177,6 +293,7 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
 
     private fun printKhmerReceipt(
             text: String,
+            paperWidth: Int,
             printerName: String,
             logoBytes: ByteArray?,
             result: MethodChannel.Result
@@ -188,7 +305,7 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
                 stream.write(ESC_INIT)
                 stream.write(ALIGN_CENTER)
 
-                val bitmap = createKhmerBitmap(text,logoBytes)
+                val bitmap = createKhmerBitmap(text, logoBytes, paperWidth)
                 sendImageToPrinter(stream, bitmap)
 
                 stream.write(FEED_LINES)
@@ -202,11 +319,19 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
         }
     }
 
-    private fun createKhmerBitmap(text: String, logoBytes: ByteArray?): Bitmap {
+    private fun createKhmerBitmap(text: String, logoBytes: ByteArray?, paperWidth: Int): Bitmap {
 
-        val printerWidth = 576 // 80mm
+        val printerWidth = paperWidth // 80mm or 58mm
         val padding = 20
         val maxTextWidth = printerWidth - (padding * 2)
+
+        // បន្ថយទំហំអក្សរបន្តិចបើប្រើក្រដាសតូច 58mm ដើម្បីកុំឱ្យធ្លាក់ជួរខ្លាំង
+        var textFontSize =
+                when (printerWidth) {
+                    384 -> 16.0 // For 58mm paper, use smaller font size
+                    576 -> 23.0 // For 80mm paper, use larger font size
+                    else -> 23.0 // Default to larger font if unknown width
+                }
 
         val typefaceRegular =
                 try {
@@ -214,8 +339,8 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
                 } catch (e: Exception) {
                     Typeface.DEFAULT
                 }
-        val typefaceBold = Typeface.create(typefaceRegular, Typeface.BOLD)
 
+        val typefaceBold = Typeface.create(typefaceRegular, Typeface.BOLD)
         val lines = text.split("\n")
 
         // Layout, X-offset, Y-offset
@@ -226,11 +351,14 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
         var totalHeight = 10
         var logoBitmap: Bitmap? = null
 
-        val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            strokeWidth = 2f
-            style = Paint.Style.STROKE
-        }
+        val linePaint =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = Color.BLACK
+                    strokeWidth = 2f
+                    style = Paint.Style.STROKE
+
+                    isAntiAlias = false // Prevents lines from having blurry edge halos
+                }
 
         // ១. ប្រសិនបើមានទិន្នន័យឡូហ្គោ បំប្លែងវាទៅជា Bitmap និងគណនាកម្ពស់
         if (logoBytes != null && logoBytes.isNotEmpty()) {
@@ -241,10 +369,12 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
                     val desiredWidth = 170
                     val aspectRatio = rawBitmap.height.toFloat() / rawBitmap.width.toFloat()
                     val desiredHeight = (desiredWidth * aspectRatio).toInt()
-                    
-                    logoBitmap = Bitmap.createScaledBitmap(rawBitmap, desiredWidth, desiredHeight, true)
-                    
-                    // បន្ថែមកម្ពស់ឡូហ្គោ ចូលទៅក្នុងទំហំក្រដាសសរុប (បូកបន្ថែម 5px សម្រាប់គម្លាតខាងក្រោមឡូហ្គោ)
+
+                    logoBitmap =
+                            Bitmap.createScaledBitmap(rawBitmap, desiredWidth, desiredHeight, true)
+
+                    // បន្ថែមកម្ពស់ឡូហ្គោ ចូលទៅក្នុងទំហំក្រដាសសរុប (បូកបន្ថែម 5px
+                    // សម្រាប់គម្លាតខាងក្រោមឡូហ្គោ)
                     totalHeight += desiredHeight + 5
                 }
             } catch (e: Exception) {
@@ -252,8 +382,50 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
             }
         }
 
-        val colWidths = intArrayOf(36, 160, 65, 100, 75, 100)
-        val colPositions = intArrayOf(0, 36, 196, 261, 361, 436)
+        // កែសម្រួល៖ គណនាសមាមាត្រជួរឈររបស់តារាងទៅតាមទំហំក្រដាស (Responsive Columns)
+        // 80mm (576px) -> [36, 170, 65, 100, 65, 100]
+        // 58mm (384px) -> នឹងត្រូវរួមតូចទៅតាមសមាមាត្រ % នៃក្រដាស
+        val scaleFactor = printerWidth.toFloat() / 576f
+
+        // val colWidths = intArrayOf(36, 170, 65, 100, 65, 100)
+        val colWidths =
+                intArrayOf(
+                        (36 * scaleFactor).toInt(),
+                        (170 * scaleFactor).toInt(),
+                        (65 * scaleFactor).toInt(),
+                        (100 * scaleFactor).toInt(),
+                        (65 * scaleFactor).toInt(),
+                        (100 * scaleFactor).toInt()
+                )
+
+        // val colPositions = intArrayOf(0, 36, 206, 271, 371, 436)
+        // បង្កើតទីតាំងជួរឈរឡើងវិញដោយស្វ័យប្រវត្តិផ្អែកលើទំហំដែលបានគណនារួច
+        val colPositions = IntArray(colWidths.size)
+        var currentPos = 0
+        for (i in colWidths.indices) {
+            colPositions[i] = currentPos
+            currentPos += colWidths[i]
+        }
+
+        fun buildStaticLayout(
+                source: CharSequence,
+                paint: TextPaint,
+                width: Int,
+                alignment: Layout.Alignment
+        ): StaticLayout {
+            val builder =
+                    StaticLayout.Builder.obtain(source, 0, source.length, paint, width)
+                            .setAlignment(alignment)
+                            .setLineSpacing(0f, 1.2f)
+                            .setIncludePad(true)
+                            .setTextDirection(TextDirectionHeuristics.LTR)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                builder.setBreakStrategy(LineBreaker.BREAK_STRATEGY_HIGH_QUALITY)
+            }
+
+            return builder.build()
+        }
 
         for (line in lines) {
             var cleanLine = line
@@ -265,15 +437,27 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
                 isTable = true
                 cleanLine = cleanLine.replace("[TABLE]", "")
             }
+
             if (cleanLine.contains("<b>") && cleanLine.contains("</b>")) {
                 isBold = true
                 cleanLine = cleanLine.replace("<b>", "").replace("</b>", "")
             }
 
-            val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            val paint =
+                    TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
                         color = Color.BLACK
-                        textSize = 23f // Slightly smaller font so table rows fit nicely
+                        textSize = textFontSize.toFloat()
                         typeface = if (isBold) typefaceBold else typefaceRegular
+
+                        isAntiAlias = false // Disables edge smoothing (gray pixels)
+                        isLinearText =
+                                true // Ensures proper geometric font scaling without smoothing
+                        isSubpixelText = false // Turns off subpixel glyph positioning adjustments
+                        isFilterBitmap = false // Disables scaling filters
+
+                        if (isBold) {
+                            isFakeBoldText = true
+                        }
                     }
 
             if (isTable) {
@@ -307,42 +491,24 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
                                 // Price, Dis, Total)
                                 // ត្រូវតម្រឹមទៅខាងស្តាំ (ALIGN_OPPOSITE)
                                 // ដើម្បីឱ្យស្មើគែមប្រអប់ទិន្នន័យ
-                                line.contains("Qty", ignoreCase = true) ||
-                                        line.contains("Price", ignoreCase = true) ||
-                                        line.contains("Total", ignoreCase = true) ||
-                                        line.contains("ចំនួន") ||
-                                        line.contains("តម្លៃ") ||
-                                        line.contains("ចុះតម្លៃ") ||
-                                        line.contains("សរុប") -> Layout.Alignment.ALIGN_OPPOSITE
+                                // line.contains("Qty", ignoreCase = true) ||
+                                //         line.contains("Price", ignoreCase = true) ||
+                                //         line.contains("Total", ignoreCase = true) ||
+                                //         line.contains("ចំនួន") ||
+                                //         line.contains("តម្លៃ") ||
+                                //         line.contains("ចុះតម្លៃ") ||
+                                //         line.contains("សរុប") -> Layout.Alignment.ALIGN_OPPOSITE
 
                                 // បើជាជួរទិន្នន័យទំនិញធម្មតា គឺដាក់នៅចំកណ្តាល (Center)
-                                else -> Layout.Alignment.ALIGN_CENTER
+                                else -> Layout.Alignment.ALIGN_OPPOSITE
                             }
 
-                    val builder =
-                            StaticLayout.Builder.obtain(
-                                            cellText,
-                                            0,
-                                            cellText.length,
-                                            paint,
-                                            colWidths[i]
-                                    )
-                                    .setAlignment(cellAlign)
-                                    .setLineSpacing(0f, 1.2f)
-                                    .setIncludePad(true)
-                                    .setTextDirection(TextDirectionHeuristics.LTR)
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        builder.setBreakStrategy(LineBreaker.BREAK_STRATEGY_HIGH_QUALITY)
-                    }
-
-                    val cellLayout = builder.build()
+                    val cellLayout = buildStaticLayout(cellText, paint, colWidths[i], cellAlign)
                     if (cellLayout.height > maxHeightInRow) {
                         maxHeightInRow = cellLayout.height
                     }
 
                     // Save layouts with their horizontal column placement relative to current row
-                    // height
                     val _trible = Triple(cellLayout, colPositions[i] + padding, totalHeight)
                     layoutsWithPositions.add(_trible)
                 }
@@ -358,24 +524,8 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
                     cleanLine = cleanLine.replace("[R]", "")
                 }
 
-                val builder =
-                        StaticLayout.Builder.obtain(
-                                        cleanLine,
-                                        0,
-                                        cleanLine.length,
-                                        paint,
-                                        maxTextWidth
-                                )
-                                .setAlignment(alignment)
-                                .setLineSpacing(0f, 1.2f)
-                                .setIncludePad(true)
-                                .setTextDirection(TextDirectionHeuristics.LTR)
+                val layout = buildStaticLayout(cleanLine, paint, maxTextWidth, alignment)
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    builder.setBreakStrategy(LineBreaker.BREAK_STRATEGY_HIGH_QUALITY)
-                }
-
-                val layout = builder.build()
                 layoutsWithPositions.add(Triple(layout, padding, totalHeight))
                 totalHeight += layout.height
             }
@@ -385,10 +535,8 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
         val canvas = Canvas(bitmap)
         canvas.drawColor(Color.WHITE)
 
-         println("canvas write");
         // គូររូបភាពឡូហ្គោចូលទៅក្នុង Canvas ចំកណ្តាល (Center) បំផុតនៃផ្នែកខាងលើ
         if (logoBitmap != null) {
-            println("Logo excuted");
             val logoX = (printerWidth - logoBitmap.width) / 2f
             val logoY = 10f
             canvas.drawBitmap(logoBitmap, logoX, logoY, null)
@@ -396,7 +544,13 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
 
         // គូរបន្ទាត់ផ្ដេក [LINE] ទាំងអស់
         for (lineY in horizontalLinesY) {
-            canvas.drawLine(padding.toFloat(), lineY.toFloat(), (printerWidth - padding).toFloat(), lineY.toFloat(), linePaint)
+            canvas.drawLine(
+                    padding.toFloat(),
+                    lineY.toFloat(),
+                    (printerWidth - padding).toFloat(),
+                    lineY.toFloat(),
+                    linePaint
+            )
         }
 
         // Draw all calculated components into their designated coordinates
@@ -457,6 +611,19 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
 
     fun dispose() {
         closeConnection()
+        val adapter = bluetoothAdapter
+        if (adapter != null && adapter.isDiscovering) {
+            adapter.cancelDiscovery()
+        }
+        if (bluetoothReceiver != null) {
+            try {
+                context.unregisterReceiver(bluetoothReceiver)
+                bluetoothReceiver = null
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         executor.shutdown()
     }
 }

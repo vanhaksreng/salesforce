@@ -62,54 +62,54 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
     return 384;
   }
 
-  Future<void> storeDevice() async {
-    bool isDeviceAlreadyAdded = widget.devicePrinter.any(
-      (e) =>
-          e.macAddress == selectDevice?.address &&
-          e.originDeviceName == selectDevice?.name,
-    );
+  // Future<void> storeDevice() async { TODO : clean code
+  //   bool isDeviceAlreadyAdded = widget.devicePrinter.any(
+  //     (e) =>
+  //         e.macAddress == selectDevice?.address &&
+  //         e.originDeviceName == selectDevice?.name,
+  //   );
 
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-    if (isDeviceAlreadyAdded) {
-      Helpers.showDialogAction(
-        context,
-        labelAction: "Wuhh! 😲 Seriously?",
-        confirmText: "Okay, Let me change.",
-        canCancel: false,
-        confirm: () => Navigator.pop(context),
-        subtitle:
-            "This printer (${selectDevice?.name ?? 'Unknown'}) has been created.\nPlease choose another printer to connect.", // Corrected "other" to "another"
-      );
-      return;
-    }
+  //   if (!_formKey.currentState!.validate()) {
+  //     return;
+  //   }
+  //   if (isDeviceAlreadyAdded) {
+  //     Helpers.showDialogAction(
+  //       context,
+  //       labelAction: "Wuhh! 😲 Seriously?",
+  //       confirmText: "Okay, Let me change.",
+  //       canCancel: false,
+  //       confirm: () => Navigator.pop(context),
+  //       subtitle:
+  //           "This printer (${selectDevice?.name ?? 'Unknown'}) has been created.\nPlease choose another printer to connect.", // Corrected "other" to "another"
+  //     );
+  //     return;
+  //   }
 
-    final deviceType = _character.toString().split('.').last;
+  //   final deviceType = _character.toString().split('.').last;
 
-    final data = DevicePrinter(
-      _nameDevice.text,
-      _modelPrinter.text,
-      deviceType,
-      selectDevice?.name ?? "Unknown",
-      selectDevice?.address ?? "Unknown",
-      getPaperWidget(),
-    );
+  //   final data = DevicePrinter(
+  //     _nameDevice.text,
+  //     _modelPrinter.text,
+  //     deviceType,
+  //     selectDevice?.name ?? "Unknown",
+  //     selectDevice?.address ?? "Unknown",
+  //     getPaperWidget(),
+  //   );
 
-    try {
-      final result = await _cubit.storeDevicePrinter(device: data);
+  //   try {
+  //     final result = await _cubit.storeDevicePrinter(device: data);
 
-      if (!mounted) return;
+  //     if (!mounted) return;
 
-      if (result) {
-        actionState = ActionState.created;
-        _cubit.showSuccessMessage("Device printer created successfully!");
-        Navigator.pop(context, actionState);
-      }
-    } catch (e) {
-      _cubit.showErrorMessage(e.toString());
-    }
-  }
+  //     if (result) {
+  //       actionState = ActionState.created;
+  //       _cubit.showSuccessMessage("Device printer created successfully!");
+  //       Navigator.pop(context, actionState);
+  //     }
+  //   } catch (e) {
+  //     _cubit.showErrorMessage(e.toString());
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -117,11 +117,11 @@ class _FormConnectPrinterState extends State<FormConnectPrinter> {
       appBar: AppBarWidget(title: "Create Printer"),
       body: _buildBody(),
       persistentFooterButtons: [
-        BtnWidget(
-          onPressed: () => storeDevice(),
-          title: "Save",
-          gradient: linearGradient,
-        ),
+        // BtnWidget(
+        //   onPressed: () => storeDevice(),
+        //   title: "Save",
+        //   gradient: linearGradient,
+        // ), TODO : clean code
       ],
     );
   }

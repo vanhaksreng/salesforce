@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
+		272D1F7F2FBC59A400C41A1F /* BluetoothPrinterPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 272D1F7E2FBC59A200C41A1F /* BluetoothPrinterPlugin.swift */; };
 		2F40A48C4BCB367CF342ADC2 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A6217CA356D13BE88E9C1D8 /* Pods_Runner.framework */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
@@ -76,6 +77,7 @@
 		0A6217CA356D13BE88E9C1D8 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
+		272D1F7E2FBC59A200C41A1F /* BluetoothPrinterPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothPrinterPlugin.swift; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
@@ -225,6 +227,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				272D1F7E2FBC59A200C41A1F /* BluetoothPrinterPlugin.swift */,
 				6328D2392F679CD400842463 /* SceneDelegate.swift */,
 				FAD790452ED58DA600E536D4 /* Assets */,
 				632D8EFD2E5EAA810011C00E /* MyLocationManager.swift */,
@@ -574,6 +577,7 @@
 				FA4D5A5C2E4C7B4600945787 /* FileHelper.swift in Sources */,
 				FA4D5A5F2E4C7B5200945787 /* FlutterHtmlToPdfPlugin.swift in Sources */,
 				FA4D5A5D2E4C7B4600945787 /* PDFCreator.swift in Sources */,
+				272D1F7F2FBC59A400C41A1F /* BluetoothPrinterPlugin.swift in Sources */,
 				632D8EFE2E5EAA810011C00E /* MyLocationManager.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				FAFBD4012ECC536D00951AE1 /* ThermalPrinterPlugin.swift in Sources */,

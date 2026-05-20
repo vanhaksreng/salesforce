@@ -59,27 +59,6 @@ class SaleOrderHistoryDetailCubit extends Cubit<SaleOrderHistoryDetailState>
   }
 
   Future<void> storeDevicePrinter(DevicePrinter device) async {
-    final result = await appRepos.storeDevicePrinter(device);
-
-    // try {
-    //   final result = await appRepos.storeDevicePrinter(device);
-
-    //   return result.fold(
-    //     (failure) {
-    //       showErrorMessage(failure.message);
-    //       emit(state.copyWith(isLoading: false));
-    //       return false;
-    //     },
-    //     (records) {
-    //       final updatedList = [...state.devicePrinter, device];
-
-    //       emit(state.copyWith(isLoading: false, devicePrinter: updatedList));
-    //       return true;
-    //     },
-    //   );
-    // } catch (error) {
-    //   emit(state.copyWith(isLoading: false, error: error.toString()));
-    //   return false;
-    // }
-  }
+    await appRepos.storeDevicePrinter(device);
+  } 
 }

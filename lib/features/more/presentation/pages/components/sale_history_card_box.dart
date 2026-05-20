@@ -18,12 +18,14 @@ class SaleHistoryCardBox extends StatelessWidget {
   final SalesHeader header;
   final VoidCallback? onTap;
   final VoidCallback? onTapShare;
+  final VoidCallback? onTapPrint;
 
   const SaleHistoryCardBox({
     super.key,
     required this.header,
     this.onTap,
     this.onTapShare,
+    this.onTapPrint,
   });
 
   @override
@@ -157,19 +159,36 @@ class SaleHistoryCardBox extends StatelessWidget {
                 ],
               ),
               InkWell(
-                onTap: onTapShare,
+                onTap: onTapPrint,
                 child: Row(
                   spacing: 4.scale,
                   children: [
-                    Icon(Icons.share, color: mainColor, size: 14.scale),
+                    Icon(Icons.print, color: mainColor, size: 18.scale),
                     TextWidget(
                       fontWeight: FontWeight.w400,
-                      text: greeting("Share"),
+                      text: greeting("Print"),
                       color: mainColor,
+                      fontSize: 18.scale,
                     ),
                   ],
                 ),
               ),
+              InkWell(
+                onTap: onTapShare,
+                child: Row(
+                  spacing: 4.scale,
+                  children: [
+                    Icon(Icons.share, color: mainColor, size: 18.scale),
+                    TextWidget(
+                      fontWeight: FontWeight.w400,
+                      text: greeting("Share"),
+                      color: mainColor,
+                      fontSize: 18.scale,
+                    ),
+                  ],
+                ),
+              ),
+              
             ],
           ),
         ],

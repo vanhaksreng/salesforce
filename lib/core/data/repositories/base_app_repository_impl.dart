@@ -909,22 +909,13 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
     });
   }
 
-
   @override
   Future<Either<Failure, DevicePrinter>> storeDevicePrinter(
     DevicePrinter device,
   ) async {
-
      return handleCacheException(() async {
       return await _local.storeDevicePrinter(device);
     });
-
-    // try {
-    //   final response = await _local.storeDevicePrinter(device);
-    //   return Right(response);
-    // } catch (e) {
-    //   return Left(CacheFailure(e.toString()));
-    // }
   }
 
   ///

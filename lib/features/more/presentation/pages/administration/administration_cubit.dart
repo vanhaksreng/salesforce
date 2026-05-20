@@ -106,59 +106,59 @@ class AdministrationCubit extends Cubit<AdministrationState>
     }
   }
 
-  Future<bool> storeDevicePrinter({required DevicePrinter device}) async {
-    emit(state.copyWith(isLoading: true));
+  // Future<bool> storeDevicePrinter({required DevicePrinter device}) async {
+  //   emit(state.copyWith(isLoading: true));
 
-    try {
-      final result = await _repos.storeDevicePrinter(device);
+  //   try {
+  //     final result = await _repos.storeDevicePrinter(device);
 
-      return result.fold(
-        (failure) {
-          showErrorMessage(failure.message);
-          emit(state.copyWith(isLoading: false));
-          return false;
-        },
-        (records) {
-          final updatedList = [...state.devicePrinter, device];
+  //     return result.fold(
+  //       (failure) {
+  //         showErrorMessage(failure.message);
+  //         emit(state.copyWith(isLoading: false));
+  //         return false;
+  //       },
+  //       (records) {
+  //         final updatedList = [...state.devicePrinter, device];
 
-          emit(state.copyWith(isLoading: false, devicePrinter: updatedList));
-          return true;
-        },
-      );
-    } catch (error) {
-      emit(state.copyWith(isLoading: false, error: error.toString()));
-      return false;
-    }
-  }
+  //         emit(state.copyWith(isLoading: false, devicePrinter: updatedList));
+  //         return true;
+  //       },
+  //     );
+  //   } catch (error) {
+  //     emit(state.copyWith(isLoading: false, error: error.toString()));
+  //     return false;
+  //   }
+  // }
 
-  Future<bool> deletePrinter({required DevicePrinter device}) async {
-    final updatedList = List<DevicePrinter>.from(state.devicePrinter);
-    final List<DevicePrinter> data = updatedList
-      ..removeWhere((e) => e.macAddress == device.macAddress);
-    emit(state.copyWith(devicePrinter: data));
+  // Future<bool> deletePrinter({required DevicePrinter device}) async {
+  //   final updatedList = List<DevicePrinter>.from(state.devicePrinter);
+  //   final List<DevicePrinter> data = updatedList
+  //     ..removeWhere((e) => e.macAddress == device.macAddress);
+  //   emit(state.copyWith(devicePrinter: data));
 
-    try {
-      emit(state.copyWith(isLoading: true));
+  //   try {
+  //     emit(state.copyWith(isLoading: true));
 
-      final result = await _repos.deletePrinter(device: device);
+  //     final result = await _repos.deletePrinter(device: device);
 
-      return result.fold(
-        (failure) {
-          showErrorMessage(failure.message);
-          emit(state.copyWith(isLoading: false));
-          return false;
-        },
-        (_) {
-          emit(state.copyWith(devicePrinter: updatedList, isLoading: false));
+  //     return result.fold(
+  //       (failure) {
+  //         showErrorMessage(failure.message);
+  //         emit(state.copyWith(isLoading: false));
+  //         return false;
+  //       },
+  //       (_) {
+  //         emit(state.copyWith(devicePrinter: updatedList, isLoading: false));
 
-          return true;
-        },
-      );
-    } catch (_) {
-      emit(state.copyWith(isLoading: false));
-      return false;
-    }
-  }
+  //         return true;
+  //       },
+  //     );
+  //   } catch (_) {
+  //     emit(state.copyWith(isLoading: false));
+  //     return false;
+  //   }
+  // }
 
   Future<void> initialize() async {
     emit(state.copyWith(isLoading: true));
