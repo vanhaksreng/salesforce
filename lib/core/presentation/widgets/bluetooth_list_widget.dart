@@ -73,7 +73,7 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
   }
 
   void _initializeState() {
-    if (widget.printerConfig != null) {
+    if (widget.printerConfig != null && widget.devices.any((d) => d['address'] == widget.printerConfig!.macAddress)) {
       _selectedAddress = widget.printerConfig!.macAddress;
       _selectedDeviceName = widget.printerConfig!.deviceName;
       _connectedDevice = widget.printerConfig!.macAddress;
@@ -81,8 +81,6 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
           ? PrinterSize.mm58
           : PrinterSize.mm80;
     }
-
-    print("Initialized BluetoothListWidget with address: $_selectedAddress, deviceName: $_selectedDeviceName, paperSize: ${_selectedSize.value}");
   }
 
   @override
@@ -517,7 +515,7 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

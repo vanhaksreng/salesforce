@@ -71,7 +71,7 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
   void _handleDownload() async {
     final l = LoadingOverlay.of(context);
     try {
-      l.show(1);
+      l.show(progress: 1);
 
       if (!await _cubit.isValidApiSession()) {
         l.hide();

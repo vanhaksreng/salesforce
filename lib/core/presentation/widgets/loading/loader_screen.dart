@@ -10,10 +10,12 @@ class LoaderScreen extends StatefulWidget {
     super.key,
     this.progress = 0.0,
     this.displayText = "Please wait..",
+    this.message = "Processing...",
   });
 
   final double progress;
   final String displayText;
+  final String message;
 
   @override
   State<LoaderScreen> createState() => _LoaderScreenState();
@@ -144,7 +146,7 @@ class _LoaderScreenState extends State<LoaderScreen>
       );
     }
 
-    return _buildLoadingText();
+    return _buildLoadingText(text: widget.message);
   }
 
   Widget _buildProgressBar() {
@@ -189,7 +191,9 @@ class _LoaderScreenState extends State<LoaderScreen>
     );
   }
 
-  Widget _buildLoadingText() {
+  Widget _buildLoadingText({
+    String text = "Processing...",
+  }) {
     return Container(
       width: 180.scale,
       height: 180.scale,
@@ -205,7 +209,7 @@ class _LoaderScreenState extends State<LoaderScreen>
           ),
         ],
       ),
-      child: LoadingPageWidget(label: "Processing..."),
+      child: LoadingPageWidget(label: text),
     );
   }
 }

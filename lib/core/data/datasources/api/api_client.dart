@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
@@ -39,8 +40,10 @@ class ApiClient {
       'Content-Type': 'application/json',
     };
 
-    print(await _getBaseUrl(customUrl: customUrl, endpoint: endpoint));
-    print(body);
+    if (kDebugMode) {
+      // print(await _getBaseUrl(customUrl: customUrl, endpoint: endpoint));
+      // print(body);
+    }
 
     try {
       final r = await client.post(

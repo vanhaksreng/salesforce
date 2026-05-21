@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/bottom_sheet_fn.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
-import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
@@ -146,6 +146,27 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
     _cubit.getSaleCreditMemo(param: param, page: 1, fetchingApi: true);
   }
 
+  void _openPrintReceiptSetting() async {
+    _cubit.openPrintReceiptSetting(context);
+  }
+
+  void printReceipt(SalesHeader header) async {
+    final lines = await _cubit.getSaleLine(header.no ?? "");
+    if (lines.isEmpty) {
+      showWarningMessage("Failed to fetch sale line for printing.");
+      return;
+    }
+
+    if (!mounted) return;
+
+    try {
+      await _cubit.printReceipt(context, header: header, lines: lines);
+    } catch (e) {
+      debugPrint(e.toString());
+      showErrorMessage("An error occurred while printing the receipt.");
+    }
+  }
+
   Future<Object?> navigatorToSaleHistoryList(
     BuildContext context,
     List<dynamic> records,
@@ -163,60 +184,11 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
   }
 
   Future<void> shareSaleOrder(String documentNo) async {
-    // ស្វែងរក RenderBox របស់ Widget ដែលអ្នកចុច (ឧទាហរណ៍៖ ប៊ូតុង)
-    final box = context.findRenderObject() as RenderBox;
-
-    if (!await _cubit.isConnectedToNetwork()) {
-      _cubit.showWarningMessage(
-        "No internet connection. Please check your network settings.",
-      );
-      return;
-    }
-
-    final isNotExpired = await _cubit.apiSessionStillAlive();
-    if (!isNotExpired) {
-      if (!mounted) return;
-      final password = await Helpers.showSessionLoginDialog(context);
-      if (password == null) return;
-    }
-
-    if (!mounted) return;
-
-    final l = LoadingOverlay.of(context);
-    try {
-      l.show();
-      final html = await _cubit.getInvoiceHtml(
-        documentNo: documentNo,
-        documenType: "Credit Memo",
-      );
-
-      if (html.isEmpty) {
-        l.hide();
-        return;
-      }
-
-      final pdfFile = await Helpers.generateToPdfDocument(
-        htmlContent: html,
-        documentNo: documentNo,
-      );
-
-      if (pdfFile == null) {
-        l.hide();
-        return;
-      }
-      l.hide();
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(pdfFile.path)],
-
-          // កំណត់ទីតាំងឱ្យផ្ទាំង share បង្ហាញចេញពីប៊ូតុងដែលចុច
-          sharePositionOrigin: box.localToGlobal(Offset.zero) & box.size,
-        ),
-      );
-    } catch (e) {
-      showErrorMessage(e.toString());
-      l.hide();
-    }
+    await _cubit.shareSaleDocument(
+      context,
+      documentNo: documentNo,
+      documenType: kSaleCreditMemo,
+    );
   }
 
   @override
@@ -227,34 +199,9 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
         onBack: () => Navigator.of(context).pop(ActionState.updated),
         title: greeting("sale_credit_memo"),
         actions: [
-          // BlocBuilder<SaleCreditMemoHistoryCubit, SaleCreditMemoHistoryState>(
-          //   bloc: _cubit,
-          //   builder: (context, state) {
-          //     bool isHasUpload = state.records.any(
-          //       (e) => e.isSync == kStatusNo,
-          //     );
-          //     if (!isHasUpload) {
-          //       return SizedBox.shrink();
-          //     }
-          //     return BtnIconCircleWidget(
-          //       isShowBadge: true,
-          //       onPressed: () {
-          //         Navigator.pushNamed(context, UploadScreen.routeName);
-          //       },
-          //       icons: Icon(Icons.upload, color: white),
-          //       rounded: appBtnRound,
-          //     );
-          //   },
-          // ),
           BtnIconCircleWidget(
-            onPressed: () => _showModalFiltter(context),
-            icons: SvgWidget(
-              assetName: kAppOptionIcon,
-              colorSvg: white,
-              padding: EdgeInsets.all(4.scale),
-              width: 18,
-              height: 18,
-            ),
+            onPressed: () => _openPrintReceiptSetting(),
+            icons: const Icon(Icons.print_outlined, color: white),
             rounded: appBtnRound,
           ),
           Helpers.gapW(appSpace),
@@ -262,7 +209,29 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
         heightBottom: heightBottomSearch,
         bottom: SearchWidget(
           onSubmitted: (text) => _onSearch(text: text),
-          hintText: greeting("Find Sale Credit Memo..."),
+          hintText: greeting("Find Sale Invoice..."),
+          showPrefixIcon: true,
+          suffixIcon: Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: 4.scale,
+              horizontal: 2.scale,
+            ),
+            child: BtnIconCircleWidget(
+              widthIcon: 20,
+              heightIcon: 23,
+              padiingIcon: 2,
+              isShowBadge: false,
+              onPressed: () => _showModalFiltter(context),
+              rounded: 6,
+              icons: SvgWidget(
+                assetName: kAppOptionIcon,
+                colorSvg: white,
+                padding: EdgeInsets.all(4.scale),
+                width: 18,
+                height: 18,
+              ),
+            ),
+          ),
         ),
       ),
       body: BlocBuilder<SaleCreditMemoHistoryCubit, SaleCreditMemoHistoryState>(
@@ -290,6 +259,7 @@ class _SaleCreditMemoScreenState extends State<SaleCreditMemoHistoryScreen>
         header: records[index],
         onTapShare: () => shareSaleOrder(records[index].no ?? ""),
         onTap: () => navigatorToSaleHistoryList(context, records, index),
+        onTapPrint: () => printReceipt(records[index]),
       ),
     );
   }

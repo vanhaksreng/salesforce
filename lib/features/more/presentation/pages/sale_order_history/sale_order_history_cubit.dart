@@ -11,7 +11,7 @@ import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
 
 class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
-    with MessageMixin, GeneratePdfMixin, PermissionMixin,AppMixin {
+    with MessageMixin, GeneratePdfMixin, PermissionMixin, AppMixin {
   SaleOrderHistoryCubit() : super(const SaleOrderHistoryState(isLoading: true));
   final MoreRepository appRepos = getIt<MoreRepository>();
 
@@ -78,7 +78,6 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
   }
 
   Future<List<SalesLine>> loadSalesLines(List<SalesHeader> salesHeaders) async {
-    
     if (salesHeaders.isEmpty) return [];
 
     final headerNumbers = salesHeaders.map((h) => '"${h.no}"').toList();
@@ -96,6 +95,11 @@ class SaleOrderHistoryCubit extends Cubit<SaleOrderHistoryState>
         return data;
       },
     );
+  }
+
+  Future<List<SalesLine>> getSaleLine(String no) async {
+    final result = await appRepos.getSaleLineBaseSaleHeader(documentNo: no);
+    return result.fold((failure) => [], (lines) => lines);
   }
 
   Future<void> chooseDate({DateTime? startDate, DateTime? toDate}) async {

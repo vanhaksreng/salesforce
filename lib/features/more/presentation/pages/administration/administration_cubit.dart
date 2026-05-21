@@ -9,7 +9,6 @@ import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/features/more/domain/entities/device_info.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_state.dart';
-import 'package:salesforce/features/more/presentation/pages/administration/bletooth_printer_service.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/device_printer_mixin.dart';
 import 'package:salesforce/features/more/presentation/pages/bluetooth_page/bluetooth_permission_handler.dart';
 import 'package:salesforce/features/more/presentation/pages/imin_device/imin_mixin.dart';
@@ -21,7 +20,6 @@ class AdministrationCubit extends Cubit<AdministrationState>
     with MessageMixin, DevicePrinterMixin, IminPrinterMixin {
   AdministrationCubit() : super(AdministrationState(isLoading: true));
   final _repos = getIt<MoreRepository>();
-  // final _bluetoothService = BluetoothPrinterService(); TODO
   StreamSubscription? _connectionSubscription;
   StreamSubscription? _statusSubscription;
   final _bluetoothPermission = BluetoothPermissionHandler();

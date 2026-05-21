@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/features/more/domain/entities/sale_detail.dart';
 import 'package:salesforce/features/more/domain/repositories/more_repository.dart';
@@ -9,7 +10,7 @@ import 'package:salesforce/realm/scheme/schemas.dart';
 part 'sale_order_history_detail_state.dart';
 
 class SaleOrderHistoryDetailCubit extends Cubit<SaleOrderHistoryDetailState>
-    with MessageMixin {
+    with MessageMixin, AppMixin {
   SaleOrderHistoryDetailCubit()
     : super(const SaleOrderHistoryDetailState(isLoading: true));
   final MoreRepository appRepos = getIt<MoreRepository>();

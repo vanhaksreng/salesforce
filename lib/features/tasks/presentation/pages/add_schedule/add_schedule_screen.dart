@@ -189,7 +189,7 @@ class _AddScheduleScreenState extends State<AddScheduleScreen> with AppMixin {
   void _handleDownload() async {
     final l = LoadingOverlay.of(context);
     try {
-      l.show(1);
+      l.show(progress: 1);
       if (!await _cubit.isConnectedToNetwork()) {
         _cubit.showErrorMessage(errorInternetMessage);
         l.hide();

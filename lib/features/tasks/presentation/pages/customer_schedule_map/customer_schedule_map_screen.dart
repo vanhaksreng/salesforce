@@ -19,7 +19,6 @@ import 'package:salesforce/infrastructure/external_services/location/geolocator_
 import 'package:salesforce/infrastructure/external_services/location/i_location_service.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
-import 'package:salesforce/realm/scheme/schemas.dart';
 import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 

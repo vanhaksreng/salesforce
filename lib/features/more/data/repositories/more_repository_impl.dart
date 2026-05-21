@@ -54,7 +54,6 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
-
       if (fetchingApi && await _networkInfo.isConnected) {
         final isNotExpired = await _remote.isValidApiSessionV2();
 
@@ -66,7 +65,7 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
             cloudRecords.add(SalesHeaderExtension.fromMap(item));
           }
 
-          if(cloudRecords.isNotEmpty) {
+          if (cloudRecords.isNotEmpty) {
             await _local.storeSaleHeaders(saleHeader: cloudRecords);
           }
         }
@@ -92,7 +91,6 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     bool fetchingApi = true,
   }) async {
     try {
-      
       if (fetchingApi && await _networkInfo.isConnected) {
         final isNotExpired = await _remote.isValidApiSessionV2();
 
@@ -124,7 +122,6 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
           }
 
           await _local.storeSaleLine(saleLine: saleLineCloud);
-          
         }
       }
 
@@ -135,6 +132,39 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
       return Left(CacheFailure(e.message));
     } catch (_) {
       rethrow;
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<SalesLine>>> getSaleLineBaseSaleHeader({
+    required String documentNo,
+  }) async {
+    try {
+      final localSale = await _local.getSaleLines(
+        args: {"document_no": documentNo},
+      );
+
+      if (localSale.isEmpty && await _networkInfo.isConnected) {
+        final isNotExpired = await _remote.isValidApiSessionV2();
+
+        if (isNotExpired) {
+          final saleLineCloud = await _remote.getSaleLinesV2(
+            data: {"document_no": documentNo},
+          );
+
+          await _local.storeSaleLine(saleLine: saleLineCloud);
+        }
+      }
+
+      final localeSaleLines = await _local.getSaleLines(
+        args: {"document_no": documentNo},
+      );
+
+      return Right(localeSaleLines);
+    } on GeneralException catch (e) {
+      return Left(CacheFailure(e.message));
+    } catch (_) {
+      return Left(CacheFailure("An error occurred while fetching sale line."));
     }
   }
 
@@ -165,6 +195,12 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
       }
 
       lines = await _local.getSaleLines(args: {"document_no": header.no});
+
+      if (lines.isEmpty) {
+        throw GeneralException(
+          "Sale lines not found for document_no: ${param?["document_no"]}",
+        );
+      }
 
       final saleDetail = SaleDetail(header: header, lines: lines);
 
@@ -315,8 +351,6 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     }
   }
 
-
-
   @override
   Future<Either<Failure, String>> getAddressFrmLatLng(
     double lat,
@@ -400,7 +434,6 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
     }
   }
 
-  
   @override
   Future<Either<Failure, bool>> processUploadSale({
     required List<SalesHeader> salesHeaders,

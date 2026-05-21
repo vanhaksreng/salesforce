@@ -120,7 +120,7 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
 
     final l = LoadingOverlay.of(context);
     try {
-      l.show(1);
+      l.show(progress: 1);
 
       final tables = await _cubit.getAppSyncLogs({
         'tableName': 'IN {"customer","customer_address"}',

@@ -5,17 +5,15 @@ import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/app_bar_widget.dart';
-import 'package:salesforce/core/presentation/widgets/bluetooth_list_widget.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/utils/helpers.dart';
+import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/more/presentation/pages/components/sale_history_detail_box.dart';
 import 'package:salesforce/features/more/presentation/pages/imin_device/imin_mixin.dart';
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_cubit.dart';
-import 'package:salesforce/infrastructure/external_services/bluetooth_printer_service.dart';
-import 'package:salesforce/infrastructure/services/print_receipt.dart';
 import 'package:salesforce/localization/trans.dart';
-import 'package:salesforce/realm/scheme/general_schemas.dart';
+import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class SaleOrderHistoryDetailScreen extends StatefulWidget {
@@ -40,10 +38,6 @@ class _SaleOrderHistoryDetailScreenState
     extends State<SaleOrderHistoryDetailScreen>
     with MessageMixin, IminPrinterMixin {
   final _cubit = SaleOrderHistoryDetailCubit();
-
-  final _printerService = BluetoothPrinterService();
-  List<Map<String, dynamic>> _devices = [];
-  bool _isConnected = false;
 
   bool connected = false;
   String? connectedMac;
@@ -73,124 +67,19 @@ class _SaleOrderHistoryDetailScreenState
     }
   }
 
-  Future<void> _loadDevices() async {
-    bool hasPerm = await _printerService.requestPermissions();
-    if (hasPerm) {
-      final list = await _printerService.getPairedDevices();
-
-      setState(() => _devices = list);
-    }
+  void _openPrintReceiptSetting(SalesHeader header) async {
+    final lines = _cubit.state.record?.lines ?? [];
+    _cubit.openPrintReceiptSetting(context, header: header, lines: lines);
   }
 
-  Future<void> _connectTo(String address) async {
-    bool success = await _printerService.connect(address);
-    setState(() => _isConnected = success);
-  }
+  void _printReceipt(SalesHeader header) async {
+    final lines = _cubit.state.record?.lines ?? [];
 
-  void onConfirmSetupPrinter({
-    required String address,
-    required String deviceName,
-    required String printerSize,
-  }) async {
-
-    if(_devices.every((d) => d['address'] != address)) {
-      showWarningMessage("The configured printer is not available. Please check your printer connection.");
-      return;
-    }
-
-    final device = DevicePrinter(
-      deviceName,
-      deviceName,
-      "Bluetooth",
-      deviceName,
-      address,
-      Helpers.toDouble(printerSize),
-    );
-
-    await _cubit.storeDevicePrinter(device);
-    await _connectTo(address);
-
-    if (!_isConnected) {
-      showWarningMessage(
-        "Failed to connect to printer. Please check the connection and try again.",
-      );
-      return;
-    }
-
-    if (_cubit.state.record != null && _cubit.state.comPanyInfo != null) {
-      await PrintReceipt().print(
-        _cubit.state.record!,
-        _cubit.state.comPanyInfo!,
-        printerSize,
-      );
-    }
-  }
-
-  Future<String?> showSessionLoginDialog(BuildContext context) async {
-
-    final devices = await _cubit.getPrinterConfig();
-    if(!context.mounted) return null;
-
-    return showGeneralDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.6),
-      transitionDuration: const Duration(milliseconds: 300),
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutBack,
-        );
-        return ScaleTransition(
-          scale: curved,
-          child: FadeTransition(opacity: animation, child: child),
-        );
-      },
-      pageBuilder: (context, _, _) => BluetoothListWidget(
-        devices: _devices,
-        onConfirm: onConfirmSetupPrinter,
-        printerConfig: devices.isNotEmpty ? devices.first : null,
-      ),
-    );
-  }
-
-  void _printReceiptSetting() async {
-    if (_cubit.state.record == null || _cubit.state.comPanyInfo == null) {
-      showErrorMessage("Sale details or company information is missing.");
-      return;
-    }
-
-    await _loadDevices();
-
-    if (!mounted) return;
-    showSessionLoginDialog(context);
-  }
-
-  void _printReceipt() async {
-
-    await _loadDevices();
-
-    final devices = await _cubit.getPrinterConfig();
-    if (devices.isNotEmpty) {
-
-      if(_devices.every((d) => d['address'] != devices.first.macAddress)) {
-        showWarningMessage("The configured printer is not available. Please check your printer connection.");
-        return;
-      }
-
-      await _connectTo(devices.first.macAddress);
-    }
-
-    if (_isConnected && devices.isNotEmpty) {
-      await PrintReceipt().print(
-        _cubit.state.record!,
-        _cubit.state.comPanyInfo!,
-        devices.first.paperSize.toString(),
-      );
-    } else {
-      
-      if (!mounted) return;
-      showSessionLoginDialog(context);
+    try {
+      await _cubit.printReceipt(context, header: header, lines: lines);
+    } catch (e) {
+      debugPrint(e.toString());
+      showErrorMessage("An error occurred while printing the receipt.");
     }
 
     // if (await checkIminDevice()) {
@@ -216,33 +105,66 @@ class _SaleOrderHistoryDetailScreenState
     // }
   }
 
+  void _shareReceipt(SalesHeader header) async {
+    await _cubit.shareSaleDocument(
+      context,
+      documentNo: header.no ?? "",
+      documenType: header.documentType ?? "",
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBarWidget(
         title: greeting(_getTitle()),
-        actions: [
-          BtnIconCircleWidget(
-            onPressed: _printReceiptSetting,
-            icons: const Icon(Icons.settings, color: white),
-            rounded: appBtnRound,
-          ),
-          BlocBuilder<SaleOrderHistoryDetailCubit, SaleOrderHistoryDetailState>(
-            bloc: _cubit,
-            builder: (tx, state) {
-              if (state.isLoading) {
-                return const SizedBox.shrink();
-              }
+        heightBottom: 50.scale,
+        bottom:
+            BlocBuilder<
+              SaleOrderHistoryDetailCubit,
+              SaleOrderHistoryDetailState
+            >(
+              bloc: _cubit,
+              builder: (tx, state) {
+                if (state.isLoading) {
+                  return const SizedBox.shrink();
+                }
 
-              return BtnIconCircleWidget(
-                onPressed: _printReceipt,
-                icons: const Icon(Icons.print_rounded, color: white),
-                rounded: appBtnRound,
-              );
-            },
-          ),
-          Helpers.gapW(appSpace),
-        ],
+                final header = state.record?.header;
+                if (header == null) {
+                  return const SizedBox.shrink();
+                }
+
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: appSpace,
+                    vertical: 8.scale,
+                  ),
+                  child: Row(
+                    spacing: 6.scale,
+                    children: [
+                      BtnIconCircleWidget(
+                        onPressed: () => _openPrintReceiptSetting(header),
+                        icons: const Icon(Icons.tune, color: white),
+                        rounded: appBtnRound,
+                      ),
+                      Spacer(),
+                      BtnIconCircleWidget(
+                        onPressed: () => _shareReceipt(header),
+                        icons: const Icon(Icons.share, color: white),
+                        rounded: appBtnRound,
+                      ),
+
+                      BtnIconCircleWidget(
+                        onPressed: () => _printReceipt(header),
+                        icons: const Icon(Icons.print_rounded, color: white),
+                        rounded: appBtnRound,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
       ),
       body:
           BlocBuilder<SaleOrderHistoryDetailCubit, SaleOrderHistoryDetailState>(

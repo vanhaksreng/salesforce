@@ -93,6 +93,9 @@ final class BluetoothPrinterPlugin: NSObject, FlutterPlugin {
         case "disconnect":
             handleDisconnect(result: result)
 
+        case "isDeviceAvailable":
+            handleIsDeviceAvailable(call: call, result: result)
+
         case "printReceipt":
             let args = call.arguments as? [String: Any]
             let text = args?["text"] as? String ?? ""
@@ -168,26 +171,24 @@ final class BluetoothPrinterPlugin: NSObject, FlutterPlugin {
             self.discoveredPeripherals.removeAll()
             self.pendingScanResult = result
 
-            // Start scanning (nil services = all peripherals, mirrors bondedDevices breadth).
+            // ចាប់ផ្ដើមស្កេន BLE — mirrors `adapter.startDiscovery()`. We scan for all
             self.centralManager.scanForPeripherals(
                 withServices: nil,
-                options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
+                options: [CBCentralManagerScanOptionAllowDuplicatesKey: true]
             )
 
-            // Stop after 3 seconds and return the collected list — mirrors
+            // Stop after 5 seconds and return the collected list — mirrors
             // the synchronous `bondedDevices` call by settling after a fixed window.
-            self.executor.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+            self.executor.asyncAfter(deadline: .now() + 5.0) { [weak self] in
                 guard let self = self else { return }
                 self.centralManager.stopScan()
 
                 // Filter to include only peripherals with a valid, non-nil name
                 let list: [[String: String]] = self.discoveredPeripherals
-                    .filter { $0.name != nil }
-                    .map { peripheral in
-                        let name = peripheral.name! // Safe to unwrap due to filter
-                        let address = peripheral.identifier.uuidString
-                        return ["name": name, "address": address]
-                    }
+                .filter { $0.name != nil && !$0.name!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                .map { peripheral in
+                    return ["name": peripheral.name!, "address": peripheral.identifier.uuidString]
+                }
 
                 DispatchQueue.main.async { [weak self] in
                     self?.pendingScanResult?(list)
@@ -288,6 +289,23 @@ final class BluetoothPrinterPlugin: NSObject, FlutterPlugin {
         pendingWriteData = nil
         isWritingChunks = false
         writeDataOffset = 0
+    }
+
+    /// Checks if a device with the given address is currently available (either bonded or discovered). 
+    /// Mirrors `handleIsDeviceAvailable`, replacing the bonded device check with a lookup in the `discoveredPeripherals` array, which is populated during BLE scans.
+    private func handleIsDeviceAvailable(call: FlutterMethodCall, result: @escaping FlutterResult) {
+
+        guard let args = call.arguments as? [String: Any],
+              let targetAddress = args["address"] as? String else {
+            result(false)
+            return
+        }
+
+        let isAvailable = discoveredPeripherals.contains { peripheral in
+            return peripheral.identifier.uuidString.lowercased() == targetAddress.lowercased()
+        }
+        
+        result(isAvailable)
     }
 
     // ===================================================================
@@ -845,11 +863,26 @@ extension BluetoothPrinterPlugin: CBCentralManagerDelegate {
         // 127 is the sentinel for "RSSI not available" — skip such peripherals.
         guard rssiValue != 127 else { return }
 
-        guard !discoveredPeripherals.contains(where: {
-            $0.identifier == peripheral.identifier
-        }) else { return }
+        if let index = discoveredPeripherals.firstIndex(where: { $0.identifier == peripheral.identifier }) {
+            
+            // ប្រសិនបើពីមុនវាអត់ទាន់មានឈ្មោះ (nil) ប៉ុន្តែពេលនេះវាទើបតែរកឈ្មោះឃើញពីប្រព័ន្ធ
+            // ឬមានឈ្មោះដេកចាំនៅក្នុងកញ្ចប់ Advertisement Data
+            let existingPeripheral = discoveredPeripherals[index]
+            if existingPeripheral.name == nil {
+                let newName = peripheral.name ?? advertisementData[CBAdvertisementDataLocalNameKey] as? String
+                if newName != nil {
+                    discoveredPeripherals[index] = peripheral
+                }
+            }
+        } else {
+            discoveredPeripherals.append(peripheral)
+        }
 
-        discoveredPeripherals.append(peripheral)
+        // guard !discoveredPeripherals.contains(where: {
+        //     $0.identifier == peripheral.identifier
+        // }) else { return }
+
+        // discoveredPeripherals.append(peripheral)
     }
 
     /// Called when the connection to a peripheral succeeds.

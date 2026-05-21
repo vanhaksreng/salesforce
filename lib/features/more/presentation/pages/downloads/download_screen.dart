@@ -87,7 +87,7 @@ class _DownloadScreenState extends State<DownloadScreen> with SingleTickerProvid
     if(!mounted) return;
 
     final l = LoadingOverlay.of(context);
-    l.show(1);
+    l.show(progress: 1);
 
     if (screenCubit.state.isSelectAll) {
       await screenCubit.fetchMasterDataTables();

@@ -25,6 +25,10 @@ abstract class MoreRepository extends BaseAppRepository {
     bool fetchingApi = true,
   });
 
+  Future<Either<Failure, List<SalesLine>>> getSaleLineBaseSaleHeader({
+    required String documentNo,
+  });
+
   Future<Either<Failure, List<PosSalesLine>>> getPosSaleLines({
     Map<String, dynamic>? params,
   });

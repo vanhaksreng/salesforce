@@ -92,6 +92,11 @@ class SaleCreditMemoHistoryCubit extends Cubit<SaleCreditMemoHistoryState>
     );
   }
 
+  Future<List<SalesLine>> getSaleLine(String no) async {
+    final result = await appRepos.getSaleLineBaseSaleHeader(documentNo: no);
+    return result.fold((failure) => [], (lines) => lines);
+  }
+
   Future<void> chooseDate({DateTime? startDate, DateTime? toDate}) async {
     try {
       emit(state.copyWith(startDate: startDate, toDate: toDate));

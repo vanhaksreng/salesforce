@@ -83,6 +83,11 @@ class SaleInvoiceHistoryCubit extends Cubit<SaleInvoiceHistoryState>
     }
   }
 
+  Future<List<SalesLine>> getSaleLine(String no) async {
+    final result = await appRepos.getSaleLineBaseSaleHeader(documentNo: no);
+    return result.fold((failure) => [], (lines) => lines);
+  }
+
   Future<List<SalesLine>> loadSalesLines(List<SalesHeader> salesHeaders) async {
     if (salesHeaders.isEmpty) return [];
 

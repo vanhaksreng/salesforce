@@ -73,6 +73,16 @@ class BluetoothPrinterService with MessageMixin {
     }
   }
 
+  Future<bool> isPrinterReachable(String macAddress) async {
+    try {
+      return await _channel.invokeMethod('isDeviceAvailable', {
+        'address': macAddress,
+      });
+    } catch (e) {
+      return false;
+    }
+  }
+
   String underLine(int length) {
     return "-" * length;
   }

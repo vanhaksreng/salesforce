@@ -67,7 +67,7 @@ class _SalesItemScreenState extends State<SalesItemScreen>
     if (!mounted) return;
 
     final l = LoadingOverlay.of(context);
-    l.show(1);
+    l.show(progress: 1);
     await Future.delayed(const Duration(milliseconds: 200));
     try {
       List<String> tables = [

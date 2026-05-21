@@ -7,13 +7,11 @@ import 'package:salesforce/features/more/presentation/pages/add_customer/add_cus
 import 'package:salesforce/features/more/presentation/pages/sale_order_history_detail/sale_order_history_detail_screen.dart';
 import 'package:salesforce/features/more/presentation/pages/upload/upload_screen.dart';
 import 'package:salesforce/realm/scheme/sales_schemas.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/presentation/widgets/bottom_sheet_fn.dart';
 import 'package:salesforce/core/presentation/widgets/btn_icon_circle_widget.dart';
-import 'package:salesforce/core/presentation/widgets/loading/loading_overlay.dart';
 import 'package:salesforce/core/presentation/widgets/loading_page_widget.dart';
 import 'package:salesforce/core/presentation/widgets/svg_widget.dart';
 import 'package:salesforce/core/utils/date_extensions.dart';
@@ -159,65 +157,11 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
   }
 
   Future<void> shareSaleOrder(String documentNo) async {
-
-    // ស្វែងរក RenderBox របស់ Widget ដែលអ្នកចុច (ឧទាហរណ៍៖ ប៊ូតុង)
-    final box = context.findRenderObject() as RenderBox;
-
-    if (!await _cubit.isConnectedToNetwork()) {
-      _cubit.showWarningMessage(
-        "No internet connection. Please check your network settings.",
-      );
-      return;
-    }
-
-    final isNotExpired = await _cubit.apiSessionStillAlive();
-    if (!isNotExpired) {
-      if (!mounted) return;
-      final password = await Helpers.showSessionLoginDialog(context);
-      if (password == null) return;
-    }
-
-    if (!mounted) return;
-
-    final l = LoadingOverlay.of(context);
-    l.show();
-
-    try {
-      final html = await _cubit.getInvoiceHtml(
-        documentNo: documentNo,
-        documenType: "Order",
-      );
-
-      if (html.isEmpty) {
-        l.hide();
-        return;
-      }
-
-      final pdfFile = await Helpers.generateToPdfDocument(
-        htmlContent: html,
-        documentNo: documentNo,
-      );
-
-      l.hide();
-
-      if (pdfFile == null) {
-        showWarningMessage("Cannot access to the file");
-        return;
-      }
-
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(pdfFile.path)],
-
-          // កំណត់ទីតាំងឱ្យផ្ទាំង share បង្ហាញចេញពីប៊ូតុងដែលចុច
-          sharePositionOrigin: box.localToGlobal(Offset.zero) & box.size,
-        ),
-      );
-    } catch (e) {
-      debugPrint(e.toString());
-      showErrorMessage(e.toString());
-      l.hide();
-    }
+    await _cubit.shareSaleDocument(
+      context,
+      documentNo: documentNo,
+      documenType: kSaleOrder,
+    );
   }
 
   Future<void> _getSaleOrder([int page = 1]) {
@@ -240,8 +184,25 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
     });
   }
 
-  void printReceipt(SalesHeader record) {
-    //TODO: Implement print receipt function
+  void printReceipt(SalesHeader header) async {
+    final lines = await _cubit.getSaleLine(header.no ?? "");
+    if (lines.isEmpty) {
+      showWarningMessage("Failed to fetch sale line for printing.");
+      return;
+    }
+
+    if (!mounted) return;
+
+    try {
+      await _cubit.printReceipt(context, header: header, lines: lines);
+    } catch (e) {
+      debugPrint(e.toString());
+      showErrorMessage("An error occurred while printing the receipt.");
+    }
+  }
+
+  void _openPrintReceiptSetting() async {
+    _cubit.openPrintReceiptSetting(context);
   }
 
   Future<void> pushToAddCustomer() =>
@@ -283,6 +244,11 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
               return Row(
                 spacing: 6.scale,
                 children: [
+                  BtnIconCircleWidget(
+                    onPressed: () => _openPrintReceiptSetting(),
+                    icons: const Icon(Icons.print_outlined, color: white),
+                    rounded: appBtnRound,
+                  ),
                   if (state.hasPendingUpload)
                     BtnIconCircleWidget(
                       isShowBadge: true,
@@ -305,6 +271,8 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
         ],
         heightBottom: heightBottomSearch,
         bottom: SearchWidget(
+          onSubmitted: (text) => _onSearch(text: text),
+          hintText: greeting("Find Sale Orders..."),
           showPrefixIcon: true,
           suffixIcon: Padding(
             padding: EdgeInsets.symmetric(
@@ -327,8 +295,6 @@ class _SaleOrderScreenState extends State<SaleOrderHistoryScreen>
               ),
             ),
           ),
-          onSubmitted: (text) => _onSearch(text: text),
-          hintText: greeting("Find Sale Orders..."),
         ),
       ),
       body: RefreshIndicator(
