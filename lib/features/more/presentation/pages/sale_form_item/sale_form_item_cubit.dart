@@ -1,8 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/constants/permission.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
+import 'package:salesforce/core/mixins/app_mixin.dart';
+import 'package:salesforce/core/mixins/download_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/mixins/permission_mixin.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -17,40 +20,45 @@ import 'package:salesforce/realm/scheme/sales_schemas.dart';
 import 'package:salesforce/realm/scheme/schemas.dart';
 
 class SaleFormItemCubit extends Cubit<SaleFormItemState>
-    with PermissionMixin, MessageMixin {
+    with PermissionMixin, MessageMixin, AppMixin, DownloadMixin {
   SaleFormItemCubit() : super(SaleFormItemState(isLoading: true));
   final _moreRepos = getIt<MoreRepository>();
 
   PosSalesLine? stdSaleLine;
 
   Future<void> getPromotionType() async {
-    try {
-      final res = await _moreRepos.getPromotionType();
-      res.fold((l) => throw Exception(l.message), (promotion) {
-        List<SaleFormInput> frmInput =
-            promotion.map((p) => SaleFormInput.fromJson(p)).toList()
-              ..sort((a, b) {
-                if (a.code == "STD") return -1;
-                if (b.code == "STD") return 1;
-                return a.code.compareTo(b.code);
-              });
+    final res = await _moreRepos.getPromotionType();
 
-        emit(
-          state.copyWith(
-            saleForm: frmInput,
-            isExistedStd: frmInput.any((e) => e.code == "STD"),
-          ),
-        );
-      });
-    } catch (e) {
-      //
-    }
+    res.fold((failure) => showErrorMessage(failure.message), (promotion) {
+      final saleForms = promotion.map(SaleFormInput.fromJson).toList()
+        ..sort(_sortPromotion);
+
+      emit(
+        state.copyWith(
+          saleForm: saleForms,
+          isExistedStd: saleForms.any((e) => e.code == 'STD'),
+        ),
+      );
+    });
+  }
+
+  int _sortPromotion(SaleFormInput a, SaleFormInput b) {
+    if (a.code == 'STD') return -1;
+    if (b.code == 'STD') return 1;
+    return a.code.compareTo(b.code);
   }
 
   Future<void> loadInitialData(ItemSaleArg arg) async {
     final stableState = state;
     try {
       emit(state.copyWith(isLoading: true));
+
+      final canDiscount = await hasPermission(kManualSellingDiscount);
+      final canModifyPrice = await hasPermission(kManualSellingPrice);
+
+      final canChoosePriceGroup = await getSetting(kChooseLinePrice);
+      final defaultShowFoc = await getSetting(kPromotionTypeExpanded);
+      late List<ItemSalesLinePrices> salePrice = [];
 
       final customerResult = await _moreRepos.getCustomer(
         params: {"no": arg.customer.no},
@@ -65,6 +73,13 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
         throw Exception("Customer not found.");
       }
 
+      if (canChoosePriceGroup == "Yes") {
+        final salePriceResult = await _moreRepos.getItemSaleLinePriceByItem(
+          arg.item?.no ?? "",
+        );
+        salePrice = await salePriceResult.fold((l) => [], (r) => r);
+      }
+
       final saleNo = Helpers.getSaleDocumentNo(
         scheduleId: customer.no,
         documentType: arg.documentType,
@@ -75,9 +90,6 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
       );
 
       List<PosSalesLine> lines = getSaleLines.fold((l) => [], (r) => r);
-
-      final canDiscount = await hasPermission(kManualSellingDiscount);
-      final canModifyPrice = await hasPermission(kManualSellingPrice);
 
       final String itemNo = arg.item?.no ?? "";
       String salesUomCode = arg.item?.salesUomCode ?? "";
@@ -134,7 +146,6 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
           canDiscount: canDiscount,
           canModifyPrice: canModifyPrice,
           customer: customer,
-          schedule: null,
           item: arg.item,
           itemUnitPrice: unitPrice,
           documentType: arg.documentType,
@@ -146,6 +157,8 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
           discountPercentage: stdSaleLine != null
               ? stdSaleLine?.discountPercentage
               : 0,
+          saleLinePrice: salePrice,
+          isFocExpanded: defaultShowFoc == "Yes" || defaultShowFoc == '',
         ),
       );
     } catch (error) {
@@ -154,15 +167,42 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
     }
   }
 
+  Future<void> applyChangePriceBySaleLinePrice(ItemSalesLinePrices line) async {
+    final double lineQty = Helpers.toDouble(line.minimumQuantity);
+
+    final updatedForms = state.saleForm.map((form) {
+      if (form.code == kPromotionTypeStd) {
+        final updatedForm = form.copyWith(
+          quantity: form.quantity < lineQty ? lineQty : form.quantity,
+          uomCode: line.uomCode,
+        );
+
+        _updateItemPrice(
+          orderQty: updatedForm.quantity.toString(),
+          uomCode: updatedForm.uomCode,
+          salePrice: line,
+        );
+
+        return updatedForm;
+      }
+
+      return form;
+    }).toList();
+
+    emit(state.copyWith(saleForm: updatedForms));
+  }
+
   void _updateItemPrice({
     required String orderQty,
     required String uomCode,
+    ItemSalesLinePrices? salePrice,
   }) async {
-    ItemSalesLinePrices? salePrice = await _getItemSalelinePrice(
-      customer: state.customer,
-      uomCode: uomCode,
-      orderQty: orderQty,
-    );
+    salePrice ??
+        await _getItemSalelinePrice(
+          customer: state.customer,
+          uomCode: uomCode,
+          orderQty: orderQty,
+        );
 
     salePrice ??
         await _getItemSalelinePrice(
@@ -183,6 +223,8 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
     }
 
     if (salePrice == null) {
+      ItemUnitOfMeasure? itemUom;
+
       final itemUomResponse = await _moreRepos.getItemUom(
         params: {
           'item_no': state.item?.no ?? "",
@@ -191,7 +233,7 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
       );
 
       if (itemUnitPrice == 0) {
-        ItemUnitOfMeasure? itemUom = await itemUomResponse.fold(
+        itemUom = await itemUomResponse.fold(
           (failure) => null,
           (itemUom) => itemUom,
         );
@@ -211,6 +253,9 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
           discountAmt: disAmt,
           discountPercentage: disPercent,
           manualPrice: manualPrice,
+          saleUomCode: itemUom?.unitOfMeasureCode ?? state.item?.salesUomCode,
+          selectedLinePriceId: '',
+          salePrice: salePrice,
         ),
       );
 
@@ -239,6 +284,8 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
         discountAmt: disAmt,
         discountPercentage: disPercent,
         manualPrice: manualPrice,
+        saleUomCode: salePrice.uomCode ?? state.item?.salesUomCode,
+        selectedLinePriceId: salePrice.id,
       ),
     );
   }
@@ -457,6 +504,7 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
       manualPrice: _getManualPrice(),
       documentType: state.documentType,
       itemUnitPrice: state.itemUnitPrice,
+      salePrice: state.salePrice,
     );
   }
 
@@ -494,5 +542,9 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
     }
 
     return null;
+  }
+
+  void updateExpanded(bool value) {
+    emit(state.copyWith(isFocExpanded: !value));
   }
 }

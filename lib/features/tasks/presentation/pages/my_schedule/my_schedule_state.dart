@@ -34,7 +34,7 @@ class MyScheduleState {
   final String selectedStatus;
   final String isCheckInWithLocation;
   final LatLng? latLng;
-
+  final Customer? customer;
 
   const MyScheduleState({
     this.isLoading = false,
@@ -63,7 +63,8 @@ class MyScheduleState {
     this.isSortDistance = false,
     this.selectedStatus = "All",
     this.latLng,
-    this.isCheckInWithLocation = kStatusNo
+    this.isCheckInWithLocation = kStatusNo,
+    this.customer,
   });
 
   MyScheduleState copyWith({
@@ -73,6 +74,7 @@ class MyScheduleState {
     UserSetup? userSetup,
     List<SalesLine>? saleLines,
     List<Customer>? customers,
+    Customer? customer,
     int? countCheckStock,
     int? countSaleOrder,
     int? countSaleInvoice,
@@ -99,7 +101,8 @@ class MyScheduleState {
     return MyScheduleState(
       isLoading: isLoading ?? this.isLoading,
       isLoadingId: isLoadingId ?? this.isLoadingId,
-      isCheckInWithLocation: isCheckInWithLocation ?? this.isCheckInWithLocation,
+      isCheckInWithLocation:
+          isCheckInWithLocation ?? this.isCheckInWithLocation,
       schedules: schedules ?? this.schedules,
       userSetup: userSetup ?? this.userSetup,
       saleLines: saleLines ?? this.saleLines,
@@ -130,6 +133,7 @@ class MyScheduleState {
       isSortDistance: isSortDistance ?? this.isSortDistance,
       selectedStatus: selectedStatus ?? this.selectedStatus,
       latLng: latLng ?? this.latLng,
+      customer: customer ?? this.customer,
     );
   }
 }

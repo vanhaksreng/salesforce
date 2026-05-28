@@ -730,9 +730,8 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
     return await _storage.getAll<DevicePrinter>();
   }
 
-    @override
+  @override
   Future<DevicePrinter> storeDevicePrinter(DevicePrinter device) async {
-    
     return _storage.writeTransaction((realm) {
       realm.deleteMany(realm.all<DevicePrinter>().toList());
 
@@ -740,5 +739,23 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
 
       return device;
     });
+  }
+
+  @override
+  Future<List<ItemSalesLinePrices>> getItemSaleLinePriceByItem(
+    String itemNo,
+  ) async {
+    return await _storage.getAll<ItemSalesLinePrices>(
+      args: {'item_no': itemNo},
+    );
+  }
+
+  @override
+  Future<ItemSalesLinePrices?> getItemSaleLinePriceById(
+    String id,
+  ) async {
+    return await _storage.getFirst<ItemSalesLinePrices>(
+      args: {'id': id},
+    );
   }
 }

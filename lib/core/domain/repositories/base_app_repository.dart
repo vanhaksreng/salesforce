@@ -141,4 +141,7 @@ abstract class BaseAppRepository {
   });
   
   Future<Either<Failure, DevicePrinter>> storeDevicePrinter(DevicePrinter device);
+
+  Future<Either<Failure, List<ItemSalesLinePrices>>> getItemSaleLinePriceByItem(String itemNo);
+  Future<Either<Failure, ItemSalesLinePrices?>> getItemSaleLinePriceById(String id);
 }

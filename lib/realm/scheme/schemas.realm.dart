@@ -1438,6 +1438,7 @@ class Customer extends _Customer
     String? approvedDate,
     String? status = 'Open',
     String? isSync = 'Yes',
+    double checkedInArea = 0,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -1455,6 +1456,7 @@ class Customer extends _Customer
         'sunday': 'No',
         'status': 'Open',
         'is_sync': 'Yes',
+        'checked_in_area': 0,
       });
     }
     RealmObjectBase.set(this, 'no', no);
@@ -1528,6 +1530,7 @@ class Customer extends _Customer
     RealmObjectBase.set(this, 'approved_date', approvedDate);
     RealmObjectBase.set(this, 'status', status);
     RealmObjectBase.set(this, 'is_sync', isSync);
+    RealmObjectBase.set(this, 'checked_in_area', checkedInArea);
     RealmObjectBase.set(this, 'created_at', createdAt);
     RealmObjectBase.set(this, 'updated_at', updatedAt);
   }
@@ -1934,6 +1937,13 @@ class Customer extends _Customer
   set isSync(String? value) => RealmObjectBase.set(this, 'is_sync', value);
 
   @override
+  double get checkedInArea =>
+      RealmObjectBase.get<double>(this, 'checked_in_area') as double;
+  @override
+  set checkedInArea(double value) =>
+      RealmObjectBase.set(this, 'checked_in_area', value);
+
+  @override
   String? get createdAt =>
       RealmObjectBase.get<String>(this, 'created_at') as String?;
   @override
@@ -2023,6 +2033,7 @@ class Customer extends _Customer
       'approved_date': approvedDate.toEJson(),
       'status': status.toEJson(),
       'is_sync': isSync.toEJson(),
+      'checked_in_area': checkedInArea.toEJson(),
       'created_at': createdAt.toEJson(),
       'updated_at': updatedAt.toEJson(),
     };
@@ -2102,6 +2113,7 @@ class Customer extends _Customer
         approvedDate: fromEJson(ejson['approved_date']),
         status: fromEJson(ejson['status'], defaultValue: 'Open'),
         isSync: fromEJson(ejson['is_sync'], defaultValue: 'Yes'),
+        checkedInArea: fromEJson(ejson['checked_in_area'], defaultValue: 0),
         createdAt: fromEJson(ejson['created_at']),
         updatedAt: fromEJson(ejson['updated_at']),
       ),
@@ -2370,6 +2382,11 @@ class Customer extends _Customer
         RealmPropertyType.string,
         mapTo: 'is_sync',
         optional: true,
+      ),
+      SchemaProperty(
+        'checkedInArea',
+        RealmPropertyType.double,
+        mapTo: 'checked_in_area',
       ),
       SchemaProperty(
         'createdAt',

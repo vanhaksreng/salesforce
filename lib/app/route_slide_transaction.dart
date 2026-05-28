@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class RouteST {
   static SlideTransition st(
-    animation,
-    child, {
+    Animation<double> animation,
+    Widget? child, {
     double begin = 1,
     double end = 0,
   }) {

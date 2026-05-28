@@ -1,8 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/constants/permission.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
+import 'package:salesforce/core/mixins/app_mixin.dart';
+import 'package:salesforce/core/mixins/download_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/mixins/permission_mixin.dart';
 import 'package:salesforce/core/utils/helpers.dart';
@@ -18,7 +21,7 @@ import 'package:salesforce/realm/scheme/tasks_schemas.dart';
 part 'sale_form_state.dart';
 
 class SaleFormCubit extends Cubit<SaleFormState>
-    with PermissionMixin, MessageMixin {
+    with PermissionMixin, MessageMixin, AppMixin, DownloadMixin {
   SaleFormCubit() : super(const SaleFormState(isLoading: true));
 
   final _taskRepos = getIt<TaskRepository>();
@@ -26,33 +29,38 @@ class SaleFormCubit extends Cubit<SaleFormState>
   PosSalesLine? stdSaleLine;
 
   Future<void> getPromotionType() async {
-    try {
-      final res = await _taskRepos.getPromotionType();
-      res.fold((l) => throw Exception(l.message), (promotion) {
-        List<SaleFormInput> frmInput =
-            promotion.map((p) => SaleFormInput.fromJson(p)).toList()
-              ..sort((a, b) {
-                if (a.code == "STD") return -1;
-                if (b.code == "STD") return 1;
-                return a.code.compareTo(b.code);
-              });
+    final res = await _taskRepos.getPromotionType();
 
-        emit(
-          state.copyWith(
-            saleForm: frmInput,
-            isExistedStd: frmInput.any((e) => e.code == "STD"),
-          ),
-        );
-      });
-    } catch (e) {
-      //
-    }
+    res.fold((failure) => showErrorMessage(failure.message), (promotion) {
+      final saleForms = promotion.map(SaleFormInput.fromJson).toList()
+        ..sort(_sortPromotion);
+
+      emit(
+        state.copyWith(
+          saleForm: saleForms,
+          isExistedStd: saleForms.any((e) => e.code == 'STD'),
+        ),
+      );
+    });
+  }
+
+  int _sortPromotion(SaleFormInput a, SaleFormInput b) {
+    if (a.code == 'STD') return -1;
+    if (b.code == 'STD') return 1;
+    return a.code.compareTo(b.code);
   }
 
   Future<void> loadInitialData(SaleFormArg arg) async {
     final stableState = state;
     try {
       emit(state.copyWith(isLoading: true));
+
+      final canDiscount = await hasPermission(kManualSellingDiscount);
+      final canModifyPrice = await hasPermission(kManualSellingPrice);
+
+      final canChoosePriceGroup = await getSetting(kChooseLinePrice);
+      final defaultShowFoc = await getSetting(kPromotionTypeExpanded);
+      late List<ItemSalesLinePrices> salePrice = [];
 
       final customerResult = await _taskRepos.getCustomer(
         no: arg.schedule.customerNo ?? "",
@@ -67,6 +75,13 @@ class SaleFormCubit extends Cubit<SaleFormState>
         throw GeneralException("Customer not found.");
       }
 
+      if (canChoosePriceGroup == "Yes") {
+        final salePriceResult = await _taskRepos.getItemSaleLinePriceByItem(
+          arg.item.no,
+        );
+        salePrice = await salePriceResult.fold((l) => [], (r) => r);
+      }
+
       final saleNo = Helpers.getSaleDocumentNo(
         scheduleId: arg.schedule.id,
 
@@ -75,16 +90,13 @@ class SaleFormCubit extends Cubit<SaleFormState>
 
       final getSaleLines = await _taskRepos.getPosSaleLines(
         params: {
-          'document_type': arg.documentType, 
+          'document_type': arg.documentType,
           'document_no': saleNo,
           'special_type_no': '_', //_ mean empty
         },
       );
 
       List<PosSalesLine> lines = getSaleLines.fold((l) => [], (r) => r);
-
-      final canDiscount = await hasPermission(kManualSellingDiscount);
-      final canModifyPrice = await hasPermission(kManualSellingPrice);
 
       final String itemNo = arg.item.no;
       double manualPrice = 0;
@@ -104,8 +116,6 @@ class SaleFormCubit extends Cubit<SaleFormState>
           manualPrice = Helpers.formatNumberDb(stdSaleLine?.manualUnitPrice);
         }
       }
-
-      emit(state.copyWith(itemUnitPrice: unitPrice));
 
       //Update form base on each lines
       final updatedForms = state.saleForm.map((form) {
@@ -138,21 +148,6 @@ class SaleFormCubit extends Cubit<SaleFormState>
         return form.copyWith(quantity: quantity, uomCode: uomCode);
       }).toList();
 
-      // double unitPrice = Helpers.toDouble(arg.item.unitPrice);
-      // if (lines.isNotEmpty) {
-      //   int rIndex = lines.indexWhere((e) {
-      //     return e.no == itemNo && e.specialType == kPromotionTypeStd;
-      //   });
-
-      //   if (rIndex != -1) {
-      //     unitPrice = Helpers.toDouble(lines[rIndex].unitPrice);
-      //   }
-      // }
-
-      // print("print(unitPrice)");
-      // print(unitPrice);
-      // print("print(unitPrice)");
-
       emit(
         state.copyWith(
           isLoading: false,
@@ -171,6 +166,8 @@ class SaleFormCubit extends Cubit<SaleFormState>
           discountPercentage: stdSaleLine != null
               ? stdSaleLine?.discountPercentage
               : 0,
+          saleLinePrice: salePrice,
+          isFocExpanded: defaultShowFoc == "Yes" || defaultShowFoc == '',
         ),
       );
     } on GeneralException catch (error) {
@@ -182,15 +179,46 @@ class SaleFormCubit extends Cubit<SaleFormState>
     }
   }
 
+  void updateExpanded(bool value) {
+    emit(state.copyWith(isFocExpanded: !value));
+  }
+
+  Future<void> applyChangePriceBySaleLinePrice(ItemSalesLinePrices line) async {
+    final double lineQty = Helpers.toDouble(line.minimumQuantity);
+
+    final updatedForms = state.saleForm.map((form) {
+      if (form.code == kPromotionTypeStd) {
+        final updatedForm = form.copyWith(
+          quantity: form.quantity < lineQty ? lineQty : form.quantity,
+          uomCode: line.uomCode,
+        );
+
+        _updateItemPrice(
+          orderQty: updatedForm.quantity.toString(),
+          uomCode: updatedForm.uomCode,
+          salePrice: line,
+        );
+
+        return updatedForm;
+      }
+
+      return form;
+    }).toList();
+
+    emit(state.copyWith(saleForm: updatedForms));
+  }
+
   void _updateItemPrice({
     required String orderQty,
     required String uomCode,
+    ItemSalesLinePrices? salePrice,
   }) async {
-    ItemSalesLinePrices? salePrice = await _getItemSalelinePrice(
-      customer: state.customer,
-      uomCode: uomCode,
-      orderQty: orderQty,
-    );
+    salePrice ??
+        await _getItemSalelinePrice(
+          customer: state.customer,
+          uomCode: uomCode,
+          orderQty: orderQty,
+        );
 
     salePrice ??
         await _getItemSalelinePrice(
@@ -211,6 +239,8 @@ class SaleFormCubit extends Cubit<SaleFormState>
     }
 
     if (salePrice == null) {
+      ItemUnitOfMeasure? itemUom;
+
       final itemUomResponse = await _taskRepos.getItemUom(
         params: {
           'item_no': state.item?.no ?? "",
@@ -218,15 +248,13 @@ class SaleFormCubit extends Cubit<SaleFormState>
         },
       );
 
-      if (itemUnitPrice == 0) {
-        ItemUnitOfMeasure? itemUom = await itemUomResponse.fold(
-          (failure) => null,
-          (itemUom) => itemUom,
-        );
+      itemUom = await itemUomResponse.fold(
+        (failure) => null,
+        (itemUom) => itemUom,
+      );
 
-        if (itemUom != null) {
-          itemUnitPrice = Helpers.toDouble(itemUom.price);
-        }
+      if (itemUom != null) {
+        itemUnitPrice = Helpers.toDouble(itemUom.price);
       }
 
       if (itemUnitPrice == 0) {
@@ -239,7 +267,9 @@ class SaleFormCubit extends Cubit<SaleFormState>
           discountAmt: disAmt,
           discountPercentage: disPercent,
           manualPrice: manualPrice,
-          // saleUomCode: uomCode,
+          saleUomCode: itemUom?.unitOfMeasureCode ?? state.item?.salesUomCode,
+          selectedLinePriceId: '',
+          salePrice: salePrice,
         ),
       );
 
@@ -268,7 +298,8 @@ class SaleFormCubit extends Cubit<SaleFormState>
         discountAmt: disAmt,
         discountPercentage: disPercent,
         manualPrice: manualPrice,
-        // saleUomCode: uomCode,
+        saleUomCode: salePrice.uomCode ?? state.item?.salesUomCode,
+        selectedLinePriceId: salePrice.id,
       ),
     );
   }
@@ -281,6 +312,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
           _updateItemPrice(
             uomCode: form.uomCode,
             orderQty: Helpers.toStrings(quantity),
+            salePrice: state.salePrice,
           );
         }
 
@@ -293,13 +325,18 @@ class SaleFormCubit extends Cubit<SaleFormState>
     emit(state.copyWith(saleForm: updatedForms));
   }
 
-  void updateSaleUom(String code, String uomCode) {
+  void updateSaleUom(
+    String code,
+    String uomCode, {
+    ItemSalesLinePrices? salePrice,
+  }) {
     final updatedForms = state.saleForm.map((form) {
       if (form.code == code) {
         if (code == kPromotionTypeStd) {
           _updateItemPrice(
             uomCode: uomCode,
             orderQty: Helpers.toStrings(form.quantity),
+            salePrice: salePrice,
           );
         }
 
@@ -493,6 +530,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
       manualPrice: _getManualPrice(),
       documentType: state.documentType,
       itemUnitPrice: state.itemUnitPrice,
+      salePrice: state.salePrice,
     );
   }
 

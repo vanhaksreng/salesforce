@@ -178,9 +178,16 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
         }
       }
 
-      final areaByMeters = Helpers.toDouble(
-        await _cubit.getSetting(kCheckedInAreaKey),
-      );
+      late double areaByMeters = 0;
+      final checkedInAreaMode = await _cubit.getSetting(kCheckedInAreaMode);
+
+      if (checkedInAreaMode == "By Customer") {
+        areaByMeters = _cubit.state.customer?.checkedInArea ?? 0;
+      } else {
+        areaByMeters = Helpers.toDouble(
+          await _cubit.getSetting(kCheckedInAreaKey),
+        );
+      }
 
       if (areaByMeters > 0) {
         final currentLocation = await getCurrentLocation();

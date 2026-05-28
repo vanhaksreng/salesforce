@@ -43,7 +43,11 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
   }
 
   Future<void> loadCheckInitWithLocationSetting() async {
-    emit(state.copyWith(isCheckInWithLocation: await getSetting(kCheckInWithLocation)));
+    emit(
+      state.copyWith(
+        isCheckInWithLocation: await getSetting(kCheckInWithLocation),
+      ),
+    );
   }
 
   Future<void> getUserSetup() async {
@@ -64,12 +68,14 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
       (customer) => customer,
     );
 
+    emit(state.copyWith(customer: customer));
+
     return customer != null;
   }
 
   Future<void> pendingScheduleValidate() async {
     if (state.userSetup == null) {
-     await getUserSetup();
+      await getUserSetup();
     }
 
     if (state.userSetup == null) {
@@ -145,7 +151,9 @@ class MyScheduleCubit extends Cubit<MyScheduleState>
             isLoading: false,
             schedules: schedules,
             totalVisit: schedules.length,
-            countCheckOut: schedules.where((e) => e.status == kStatusCheckOut).length,
+            countCheckOut: schedules
+                .where((e) => e.status == kStatusCheckOut)
+                .length,
           ),
         );
       });

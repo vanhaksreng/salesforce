@@ -61,6 +61,7 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
             "scanDevices" -> handleScanDevices(result)
             "connect" -> handleConnect(call.argument<String>("address"), result)
             "disconnect" -> handleDisconnect(result)
+            "isDeviceAvailable" -> handleIsDeviceAvailable(call, result)
             "printReceipt" -> {
                 val text = call.argument<String>("text") ?: ""
                 val printerName = call.argument<String>("printerName") ?: ""
@@ -108,6 +109,35 @@ class BluetoothPrinterPlugin(private val context: Context, private val activity:
             return true
         }
         return false
+    }
+
+    private fun handleIsDeviceAvailable(call: MethodCall, result: MethodChannel.Result) {
+        val address = call.argument<String>("address")
+        val adapter = bluetoothAdapter
+        
+        // ប្រសិនបើមិនមានទិន្នន័យ Mac Address បាញ់មក ឬទូរស័ព្ទគ្មានបន្ទះឈីប Bluetooth ទេ ឱ្យបោះ false ទៅវិញ
+        if (adapter == null || address.isNullOrBlank()) {
+            result.success(false)
+            return
+        }
+
+        // ១. ឆែកមើលក្នុងបញ្ជីឧបករណ៍ដែលធ្លាប់បាន Paired (Bonded) នៅក្នុងទូរស័ព្ទស្រាប់
+        val isPaired = adapter.bondedDevices?.any { 
+            it.address.equals(address, ignoreCase = true) 
+        } == true
+
+        if (isPaired) {
+            result.success(true)
+            return
+        }
+
+        // ២. បើមិនទាន់បាន Paired ទេ ឆែកមើលក្នុងបញ្ជីដែលយើងទើបតែស្កេនឃើញតាមអាកាស (discoveredDevicesList)
+        val isDiscovered = discoveredDevicesList.any { 
+            it["address"]?.equals(address, ignoreCase = true) == true 
+        }
+
+        // បោះលទ្ធផល true ឬ false ត្រឡប់ទៅកាន់ Flutter វិញភ្លាមៗ
+        result.success(isDiscovered)
     }
 
     // ===================================================================

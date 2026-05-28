@@ -149,6 +149,7 @@ class SaleArg {
   final String remark;
   final String documentType;
   final double itemUnitPrice;
+  final ItemSalesLinePrices? salePrice;
 
   const SaleArg({
     required this.item,
@@ -160,6 +161,7 @@ class SaleArg {
     this.manualPrice,
     this.remark = '',
     this.itemUnitPrice = 0,
+    this.salePrice,
   });
 }
 

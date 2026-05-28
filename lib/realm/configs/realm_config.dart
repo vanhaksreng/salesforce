@@ -24,7 +24,7 @@ class RealmConfig {
     final documents = await getApplicationDocumentsDirectory();
     String realmPath = path.join(documents.path, 'ClearViewSalesforce.realm');
 
-    // Logger.log(realmPath);
+    // print(realmPath);
 
     var config = Configuration.local(
       [
@@ -89,7 +89,7 @@ class RealmConfig {
         DevicePrinter.schema,
       ],
       path: realmPath,
-      schemaVersion: 5,
+      schemaVersion: 6,
       shouldDeleteIfMigrationNeeded: false,
       migrationCallback: _performMigration,
     );

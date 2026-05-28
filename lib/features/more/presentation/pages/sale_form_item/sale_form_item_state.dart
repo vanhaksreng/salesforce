@@ -24,6 +24,10 @@ class SaleFormItemState {
   final Item? item;
   final Customer? customer;
   final String documentType;
+   final List<ItemSalesLinePrices> saleLinePrice;
+  final bool isFocExpanded;
+  final String selectedLinePriceId;
+  final ItemSalesLinePrices? salePrice;
 
   const SaleFormItemState({
     this.isLoading = false,
@@ -44,6 +48,10 @@ class SaleFormItemState {
     this.schedule,
     this.saleLines = const [],
     this.documentType = kSaleOrder,
+    this.saleLinePrice = const [],
+    this.isFocExpanded = true,
+    this.selectedLinePriceId = "",
+    this.salePrice,
   });
 
   SaleFormItemState copyWith({
@@ -65,6 +73,10 @@ class SaleFormItemState {
     SalespersonSchedule? schedule,
     List<PosSalesLine>? saleLines,
     String? documentType,
+    List<ItemSalesLinePrices>? saleLinePrice,
+    bool? isFocExpanded,
+    String? selectedLinePriceId,
+    ItemSalesLinePrices? salePrice
   }) {
     return SaleFormItemState(
       isLoading: isLoading ?? this.isLoading,
@@ -85,6 +97,10 @@ class SaleFormItemState {
       saleLines: saleLines ?? this.saleLines,
       documentType: documentType ?? this.documentType,
       schedule: schedule ?? this.schedule,
+      saleLinePrice : saleLinePrice ?? this.saleLinePrice,
+      isFocExpanded: isFocExpanded ?? this.isFocExpanded,
+      selectedLinePriceId : selectedLinePriceId ?? this.selectedLinePriceId,
+      salePrice : salePrice ?? this.salePrice,
     );
   }
 }

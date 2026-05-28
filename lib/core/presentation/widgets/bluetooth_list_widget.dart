@@ -1,14 +1,6 @@
-import 'dart:io';
 
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:onesignal_flutter/onesignal_flutter.dart';
-import 'package:salesforce/core/errors/exceptions.dart';
-import 'package:salesforce/features/auth/domain/entities/login_arg.dart';
-import 'package:salesforce/features/auth/domain/repositories/auth_repository.dart';
-import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
-import 'package:salesforce/realm/scheme/schemas.dart';
 
 /// Printer size options
 enum PrinterSize {

@@ -253,6 +253,8 @@ class _PosSalesLine {
   String? isManualEdit = "No";
   @MapTo('is_sync')
   String? isSync = "Yes";
+  @MapTo('sale_line_price_id')
+  int? saleLinePriceId;
 }
 
 @MapTo('SALES_HEADER')
@@ -516,6 +518,8 @@ class _SalesLine {
   String? isManualEdit = "No";
   @MapTo('is_sync')
   String? isSync = "Yes";
+  @MapTo('sale_line_price_id')
+  int? saleLinePriceId;
 }
 
 @MapTo("TMP_SALES_SHIPMENT_PLANING")

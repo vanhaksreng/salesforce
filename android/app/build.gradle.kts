@@ -39,8 +39,8 @@ android {
         applicationId = "com.clearviewerp.salesforce"
         minSdk = 24
         targetSdk = 36
-        versionCode = 13020005
-        versionName = "13.0.4"
+        versionCode = 13020006
+        versionName = "13.0.5"
 
         ndk {
             abiFilters += setOf(

@@ -26,6 +26,7 @@ class SaleItemArg {
   final String remark;
   final String documentType;
   final double itemUnitPrice;
+  final ItemSalesLinePrices? salePrice;
 
   const SaleItemArg({
     required this.item,
@@ -37,5 +38,6 @@ class SaleItemArg {
     this.manualPrice,
     this.remark = '',
     this.itemUnitPrice = 0,
+    this.salePrice,
   });
 }

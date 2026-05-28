@@ -156,6 +156,8 @@ abstract class BaseRealmDataSource {
   Future<PosSalesHeader?> getPosSaleHeader({Map<String, dynamic>? params});
 
   Future<List<DevicePrinter>> getDevicePrinter({Map<String, dynamic>? param});
-    Future<DevicePrinter> storeDevicePrinter(DevicePrinter device);
+  Future<DevicePrinter> storeDevicePrinter(DevicePrinter device);
 
+  Future<List<ItemSalesLinePrices>> getItemSaleLinePriceByItem(String itemNo);
+  Future<ItemSalesLinePrices?> getItemSaleLinePriceById(String id);
 }

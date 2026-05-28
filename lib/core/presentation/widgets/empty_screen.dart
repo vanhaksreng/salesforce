@@ -6,7 +6,9 @@ import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class EmptyScreen extends StatefulWidget {
-  const EmptyScreen({super.key});
+  const EmptyScreen({super.key ,this.message = "Nothing to see here yet.\nTry adding some items or check back later!"});
+
+  final String message;
 
   @override
   State<EmptyScreen> createState() => _EmptyScreenState();
@@ -73,35 +75,13 @@ class _EmptyScreenState extends State<EmptyScreen>
                     constraints: BoxConstraints(maxWidth: 320.scale),
                     child: TextWidget(
                       textAlign: TextAlign.center,
-                      text: greeting(
-                        'Nothing to see here yet.\nTry adding some items or check back later!',
-                      ),
+                      text: widget.message,
                       color: mainColor50.withValues(alpha: 0.65),
                       fontWeight: FontWeight.w500,
                       fontSize: 16,
                       height: 1.7,
                     ),
                   ),
-                  // Helpers.gapH(32.scale),
-
-                  // Row(
-                  //   mainAxisAlignment: MainAxisAlignment.center,
-                  //   children: List.generate(
-                  //     5,
-                  //     (index) => AnimatedContainer(
-                  //       duration: Duration(milliseconds: 300 + (index * 100)),
-                  //       margin: EdgeInsets.symmetric(horizontal: 3.scale),
-                  //       width: index == 2 ? 10.scale : 6.scale,
-                  //       height: index == 2 ? 10.scale : 6.scale,
-                  //       decoration: BoxDecoration(
-                  //         shape: BoxShape.circle,
-                  //         color: mainColor50.withValues(
-                  //           alpha: index == 2 ? 0.4 : 0.2,
-                  //         ),
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
                 ],
               ),
             ),

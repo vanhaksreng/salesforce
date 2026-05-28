@@ -28,6 +28,7 @@ extension CustomerExtension on Customer {
       latitude: Helpers.toDouble(item['latitude']),
       longitude: Helpers.toDouble(item['longitude']),
       phoneNo: item['phone_no'] as String?,
+      checkedInArea: Helpers.toDouble(item['check_in_area'] ?? 0),
     );
   }
 
@@ -55,6 +56,7 @@ extension CustomerExtension on Customer {
       'latitude': latitude,
       'longitude': longitude,
       'phone_no': phoneNo,
+      'check_in_area': checkedInArea,
     };
   }
 
@@ -82,6 +84,7 @@ extension CustomerExtension on Customer {
       latitude: latitude,
       longitude: longitude,
       phoneNo: phoneNo ?? this.phoneNo,
+      checkedInArea: checkedInArea,
     );
   }
 }

@@ -954,6 +954,7 @@ class PosSalesLine extends _PosSalesLine
     String? documentDate,
     String? isManualEdit = "No",
     String? isSync = "Yes",
+    int? saleLinePriceId,
   }) {
     if (!_defaultsSet) {
       _defaultsSet = RealmObjectBase.setDefaults<PosSalesLine>({
@@ -1058,6 +1059,7 @@ class PosSalesLine extends _PosSalesLine
     RealmObjectBase.set(this, 'document_date', documentDate);
     RealmObjectBase.set(this, 'is_manual_edit', isManualEdit);
     RealmObjectBase.set(this, 'is_sync', isSync);
+    RealmObjectBase.set(this, 'sale_line_price_id', saleLinePriceId);
   }
 
   PosSalesLine._();
@@ -1551,6 +1553,13 @@ class PosSalesLine extends _PosSalesLine
   set isSync(String? value) => RealmObjectBase.set(this, 'is_sync', value);
 
   @override
+  int? get saleLinePriceId =>
+      RealmObjectBase.get<int>(this, 'sale_line_price_id') as int?;
+  @override
+  set saleLinePriceId(int? value) =>
+      RealmObjectBase.set(this, 'sale_line_price_id', value);
+
+  @override
   Stream<RealmObjectChanges<PosSalesLine>> get changes =>
       RealmObjectBase.getChanges<PosSalesLine>(this);
 
@@ -1636,6 +1645,7 @@ class PosSalesLine extends _PosSalesLine
       'document_date': documentDate.toEJson(),
       'is_manual_edit': isManualEdit.toEJson(),
       'is_sync': isSync.toEJson(),
+      'sale_line_price_id': saleLinePriceId.toEJson(),
     };
   }
 
@@ -1723,6 +1733,7 @@ class PosSalesLine extends _PosSalesLine
         documentDate: fromEJson(ejson['document_date']),
         isManualEdit: fromEJson(ejson['is_manual_edit'], defaultValue: "No"),
         isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
+        saleLinePriceId: fromEJson(ejson['sale_line_price_id']),
       ),
       _ => raiseInvalidEJson(ejson),
     };
@@ -2131,6 +2142,12 @@ class PosSalesLine extends _PosSalesLine
           'isSync',
           RealmPropertyType.string,
           mapTo: 'is_sync',
+          optional: true,
+        ),
+        SchemaProperty(
+          'saleLinePriceId',
+          RealmPropertyType.int,
+          mapTo: 'sale_line_price_id',
           optional: true,
         ),
       ],
@@ -3125,6 +3142,7 @@ class SalesLine extends _SalesLine
     String? documentDate,
     String? isManualEdit = "No",
     String? isSync = "Yes",
+    int? saleLinePriceId,
   }) {
     if (!_defaultsSet) {
       _defaultsSet = RealmObjectBase.setDefaults<SalesLine>({
@@ -3230,6 +3248,7 @@ class SalesLine extends _SalesLine
     RealmObjectBase.set(this, 'document_date', documentDate);
     RealmObjectBase.set(this, 'is_manual_edit', isManualEdit);
     RealmObjectBase.set(this, 'is_sync', isSync);
+    RealmObjectBase.set(this, 'sale_line_price_id', saleLinePriceId);
   }
 
   SalesLine._();
@@ -3727,6 +3746,13 @@ class SalesLine extends _SalesLine
   set isSync(String? value) => RealmObjectBase.set(this, 'is_sync', value);
 
   @override
+  int? get saleLinePriceId =>
+      RealmObjectBase.get<int>(this, 'sale_line_price_id') as int?;
+  @override
+  set saleLinePriceId(int? value) =>
+      RealmObjectBase.set(this, 'sale_line_price_id', value);
+
+  @override
   Stream<RealmObjectChanges<SalesLine>> get changes =>
       RealmObjectBase.getChanges<SalesLine>(this);
 
@@ -3812,6 +3838,7 @@ class SalesLine extends _SalesLine
       'document_date': documentDate.toEJson(),
       'is_manual_edit': isManualEdit.toEJson(),
       'is_sync': isSync.toEJson(),
+      'sale_line_price_id': saleLinePriceId.toEJson(),
     };
   }
 
@@ -3900,6 +3927,7 @@ class SalesLine extends _SalesLine
         documentDate: fromEJson(ejson['document_date']),
         isManualEdit: fromEJson(ejson['is_manual_edit'], defaultValue: "No"),
         isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
+        saleLinePriceId: fromEJson(ejson['sale_line_price_id']),
       ),
       _ => raiseInvalidEJson(ejson),
     };
@@ -4310,6 +4338,12 @@ class SalesLine extends _SalesLine
         'isSync',
         RealmPropertyType.string,
         mapTo: 'is_sync',
+        optional: true,
+      ),
+      SchemaProperty(
+        'saleLinePriceId',
+        RealmPropertyType.int,
+        mapTo: 'sale_line_price_id',
         optional: true,
       ),
     ]);

@@ -125,7 +125,6 @@
 //   }
 
 //   void _configurePrinterSize() async {
-//     //TODO
 //     // printerWidth = Helpers.toInt(_bluetoothService.connectedDevice?.paperSize);
 //     // if (printerWidth == 384) {
 //     //   // 58mm printer configuration

@@ -187,6 +187,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
           }).toList();
 
           final reset = datas["reset"] ?? false;
+
           await _local.storeData(
             records,
             handler.extractKey,
@@ -707,7 +708,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
     // }
 
     final localData = await _local.getPromotionType(
-      param: {'allow_manual': 'Yes'},
+      param: {'allow_manual': 'Yes', 'inactived': 'Yes'},
     );
 
     return Right(localData);
@@ -913,8 +914,26 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   Future<Either<Failure, DevicePrinter>> storeDevicePrinter(
     DevicePrinter device,
   ) async {
-     return handleCacheException(() async {
+    return handleCacheException(() async {
       return await _local.storeDevicePrinter(device);
+    });
+  }
+
+  @override
+  Future<Either<Failure, List<ItemSalesLinePrices>>> getItemSaleLinePriceByItem(
+    String itemNo,
+  ) async {
+    return handleCacheException(() async {
+      return await _local.getItemSaleLinePriceByItem(itemNo);
+    });
+  }
+
+  @override
+  Future<Either<Failure, ItemSalesLinePrices?>> getItemSaleLinePriceById(
+    String id,
+  ) async {
+    return handleCacheException(() async {
+      return await _local.getItemSaleLinePriceById(id);
     });
   }
 
