@@ -126,38 +126,41 @@ class AdministrationScreenState extends State<AdministrationScreen>
     return BlocBuilder<AdministrationCubit, AdministrationState>(
       bloc: _cubit,
       builder: (context, state) {
-        return HeaderWidget(
-          title: "Print via Bluetooth",
-          subtitle: "Manage wireless printing operations",
-          bgIcon: primary,
-          icon: Icon(Icons.bluetooth, color: white),
-          child: BluetoothDeviceList(
-            devices: state.devicePrinter,
-            selectedDevice: state.selectedDevice,
-            onDelete: (DevicePrinter device) async {
-              // Helpers.showDialogAction(
-              //   context,
-              //   labelAction: "Deletee",
-              //   subtitle: "Do you want to delete ${device.deviceName}",
-              //   confirm: () async {
-              //     Navigator.pop(context);
-              //     await _cubit.deletePrinter(device: device);
-              //   },
-              // ); TODO : clean code
-            },
-            connectingDeviceId: state.connectingDeviceId,
-            onDeviceTap: (DevicePrinter device) async {
-              // _cubit.s(device);
-            },
-            onConnect: (DevicePrinter device) async {
-              await _cubit.connectToPrinter(device);
-            },
 
-            onDisconnect: (DevicePrinter device) async {
-              await _cubit.disconnectFromPrinter(device);
-            },
-          ),
-        );
+        return SizedBox.shrink();
+        
+        // return HeaderWidget(
+        //   title: "Print via Bluetooth",
+        //   subtitle: "Manage wireless printing operations",
+        //   bgIcon: primary,
+        //   icon: Icon(Icons.bluetooth, color: white),
+        //   child: BluetoothDeviceList(
+        //     devices: state.devicePrinter,
+        //     selectedDevice: state.selectedDevice,
+        //     onDelete: (DevicePrinter device) async {
+        //       // Helpers.showDialogAction(
+        //       //   context,
+        //       //   labelAction: "Deletee",
+        //       //   subtitle: "Do you want to delete ${device.deviceName}",
+        //       //   confirm: () async {
+        //       //     Navigator.pop(context);
+        //       //     await _cubit.deletePrinter(device: device);
+        //       //   },
+        //       // ); TODO : clean code
+        //     },
+        //     connectingDeviceId: state.connectingDeviceId,
+        //     onDeviceTap: (DevicePrinter device) async {
+        //       // _cubit.s(device);
+        //     },
+        //     onConnect: (DevicePrinter device) async {
+        //       await _cubit.connectToPrinter(device);
+        //     },
+
+        //     onDisconnect: (DevicePrinter device) async {
+        //       await _cubit.disconnectFromPrinter(device);
+        //     },
+        //   ),
+        // );
       },
     );
   }

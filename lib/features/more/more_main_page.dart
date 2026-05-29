@@ -149,10 +149,10 @@ class _MoreMainPageState extends State<MoreMainPage>
                   listActionMore: state.listMenus,
                   lable: greeting("operations"),
                 ),
-                BuildMore(
-                  listActionMore: listSettings,
-                  lable: greeting("account_&_security"),
-                ),
+                // BuildMore(
+                //   listActionMore: listSettings,
+                //   lable: greeting("account_&_security"),
+                // ),
                 BuildMore(
                   listActionMore: listSupport,
                   lable: greeting("support"),

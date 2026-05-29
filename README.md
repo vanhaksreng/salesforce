@@ -25,3 +25,6 @@ ALTER TABLE distribution_setup
 
 ALTER TABLE customer 
     ADD COLUMN IF NOT EXISTS check_in_area INT(11) DEFAULT 0;
+
+ALTER TABLE sales_line 
+    ADD COLUMN IF NOT EXISTS sale_line_price_id INT(11) DEFAULT 0 AFTER line_no;

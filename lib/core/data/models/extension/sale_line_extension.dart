@@ -128,6 +128,7 @@ extension SalesLineExtension on SalesLine {
       isManualEdit: json["is_manual_edit"] ?? "",
       isSync: "Yes",
       headerId: Helpers.toInt(json["header_id"] ?? 0),
+      saleLinePriceId: Helpers.toInt(json["sale_line_price_id"] ?? 0),
     );
   }
 
@@ -265,6 +266,7 @@ extension SalesLineExtension on SalesLine {
       'document_date': documentDate,
       'source_no': sourceNo,
       'header_id': headerId,
+      'sale_line_price_id' : saleLinePriceId,
     };
   }
 }

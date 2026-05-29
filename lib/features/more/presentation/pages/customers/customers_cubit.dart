@@ -18,34 +18,6 @@ class CustomersCubit extends Cubit<CustomersState>
   final _repos = getIt<MoreRepository>();
   final ILocationService _location = GeolocatorLocationService();
 
-  // Future<void> getCustomers({
-  //   required BuildContext context,
-  //   Map<String, dynamic>? params,
-  //   int page = 1,
-  //   bool append = false,
-  // }) async {
-  //   try {
-  //     emit(state.copyWith(isLoading: true));
-  //     final result = await _repos.getCustomers(params: params, page: page);
-  //     if (!context.mounted) return;
-  //     final currentLatLng = await _location.getCurrentLocation(
-  //       context: context,
-  //     );
-  //     result.fold((l) => throw Exception(), (records) {
-  //       for (var a in records) {
-  //         a.distance = _location.getDistanceBetween(
-  //           a.latitude ?? 0,
-  //           a.longitude ?? 0,
-  //           currentLatLng.latitude,
-  //           currentLatLng.longitude,
-  //         );
-  //       }
-  //       emit(state.copyWith(isLoading: false, records: records));
-  //     });
-  //   } catch (error) {
-  //     emit(state.copyWith(error: error.toString()));
-  //   }
-  // }
   Future<void> getCustomers({
     required BuildContext context,
     Map<String, dynamic>? params,

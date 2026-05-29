@@ -24,7 +24,7 @@ class CustomersState {
     this.isSortdistance = false,
     this.messageCode = "",
     this.latLng,
-    this.distanceValue = 0,
+    this.distanceValue = 100,
     this.currentPage = 1,
     this.lastPage = 1,
     this.isFetching = false,

@@ -708,7 +708,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
     // }
 
     final localData = await _local.getPromotionType(
-      param: {'allow_manual': 'Yes', 'inactived': 'Yes'},
+      param: {'allow_manual': 'Yes', 'inactived': 'No'},
     );
 
     return Right(localData);

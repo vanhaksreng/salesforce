@@ -104,7 +104,7 @@ class FilterDistanceCustom extends StatelessWidget {
                       ),
                       TextWidget(
                         text:
-                            'Find within ${distancevalue.toStringAsFixed(0)} km',
+                            'Find within ${distancevalue.toStringAsFixed(0)} m',
                         color: textColor,
                         // fontWeight: FontWeight.w500,
                       ),
@@ -115,7 +115,7 @@ class FilterDistanceCustom extends StatelessWidget {
                     fontSize: 14,
                     colorText: mainColor,
                     bgColor: mainColor.withValues(alpha: 0.2),
-                    label: '${distancevalue.toStringAsFixed(0)} km',
+                    label: '${distancevalue.toStringAsFixed(0)} m',
                   ),
                 ],
               ),
@@ -144,27 +144,26 @@ class FilterDistanceCustom extends StatelessWidget {
                     child: Slider(
                       value: distancevalue,
                       min: 0,
-                      max: 100,
-                      divisions: 100,
+                      max: 1000,
+                      divisions: 1000,
                       onChanged: onChanged,
                     ),
                   ),
 
-                  const SizedBox(height: 8),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildRangeLabel('0 km', Colors.grey.shade600),
-                        _buildRangeLabel('25 km', Colors.grey.shade500),
-                        _buildRangeLabel('50 km', Colors.grey.shade500),
-                        _buildRangeLabel('75 km', Colors.grey.shade500),
-                        _buildRangeLabel('100 km', Colors.grey.shade600),
-                      ],
-                    ),
-                  ),
+                  // const SizedBox(height: 8),
+                  // Padding(
+                  //   padding: const EdgeInsets.symmetric(horizontal: 12),
+                  //   child: Row(
+                  //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //     children: [
+                  //       _buildRangeLabel('10 m', Colors.grey.shade600),
+                  //       _buildRangeLabel('25 m', Colors.grey.shade500),
+                  //       _buildRangeLabel('50 m', Colors.grey.shade500),
+                  //       _buildRangeLabel('75 m', Colors.grey.shade500),
+                  //       _buildRangeLabel('100 m', Colors.grey.shade600),
+                  //     ],
+                  //   ),
+                  // ),
                 ],
               ),
 
@@ -172,11 +171,11 @@ class FilterDistanceCustom extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildQuickButton('5 km', 5),
-                  _buildQuickButton('15 km', 15),
-                  _buildQuickButton('30 km', 30),
-                  _buildQuickButton('50 km', 50),
-                  _buildQuickButton('100 km', 100),
+                  _buildQuickButton('5 m', 5),
+                  _buildQuickButton('50 m', 50),
+                  _buildQuickButton('100 m', 100),
+                  _buildQuickButton('500 m', 500),
+                  _buildQuickButton('1000 m', 1000),
                 ],
               ),
             ],
@@ -186,14 +185,14 @@ class FilterDistanceCustom extends StatelessWidget {
     );
   }
 
-  Widget _buildRangeLabel(String text, Color color) {
-    return TextWidget(
-      text: text,
-      fontSize: 12,
-      color: color,
-      fontWeight: FontWeight.w500,
-    );
-  }
+  // Widget _buildRangeLabel(String text, Color color) {
+  //   return TextWidget(
+  //     text: text,
+  //     fontSize: 12,
+  //     color: color,
+  //     fontWeight: FontWeight.w500,
+  //   );
+  // }
 
   Widget _buildQuickButton(String label, double value) {
     bool isSelected = distancevalue == value;

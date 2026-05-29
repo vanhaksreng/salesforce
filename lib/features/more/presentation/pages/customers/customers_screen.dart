@@ -509,7 +509,7 @@ class _CustomersScreenState extends State<CustomersScreen> with MessageMixin {
           ),
           onApply: () => _onApplyFilter(
             isSort: state.isSortdistance,
-            distance: state.distanceValue * 1000,
+            distance: state.distanceValue,
           ),
         );
       },
