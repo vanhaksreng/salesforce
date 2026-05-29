@@ -738,6 +738,7 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
       List<PosSalesLine> saleLines = [];
       int lineNo = 0;
       int referentLineNo = Helpers.generateUniqueNumber();
+      int saleLinePrice = Helpers.toInt(saleArg.salePrice?.id);
 
       await Future.wait(
         inputs.map((input) async {
@@ -821,70 +822,8 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
             manualPrice: manualPrice,
             qtyPerUnit: qtyPerUnit,
             unitOfMeasureCode: "${itemUom.unitOfMeasureCode}",
+            saleLinePriceId: saleLinePrice,
           );
-
-          // final saleLine = PosSalesLine(
-          //   lineId,
-          //   documentNo: saleHeader?.no,
-          //   specialType: input.code,
-          //   specialTypeNo: "",
-          //   type: kTypeItem,
-          //   lineNo: lineNo,
-          //   sourceNo: "",
-          //   referLineNo: referentLineNo,
-          //   customerNo: customer.no,
-          //   no: item.no,
-          //   description: item.description,
-          //   description2: item.description2,
-          //   itemBrandCode: item.itemBrandCode,
-          //   itemCategoryCode: item.itemCategoryCode,
-          //   itemGroupCode: item.itemGroupCode,
-          //   itemDiscGroupCode: item.itemDiscountGroupCode,
-          //   postingGroup: item.invPostingGroupCode,
-          //   genProdPostingGroupCode: item.genProdPostingGroupCode,
-          //   vatProdPostingGroupCode: item.vatProdPostingGroupCode,
-          //   genBusPostingGroupCode: saleHeader?.genBusPostingGroupCode,
-          //   vatBusPostingGroupCode: saleHeader?.vatBusPostingGroupCode,
-          //   locationCode: saleHeader?.locationCode,
-          //   documentType: saleHeader?.documentType,
-          //   salespersonCode: saleHeader?.salespersonCode,
-          //   storeCode: saleHeader?.storeCode,
-          //   divisionCode: saleHeader?.divisionCode,
-          //   distributorCode: saleHeader?.distributorCode,
-          //   departmentCode: saleHeader?.departmentCode,
-          //   businessUnitCode: saleHeader?.businessUnitCode,
-          //   projectCode: saleHeader?.projectCode,
-          //   requestShipmentDate: saleHeader?.requestShipmentDate,
-          //   currencyCode: saleHeader?.currencyCode,
-          //   currencyFactor: saleHeader?.currencyFactor,
-          //   vatCalculationType: vatSetup.vatCalculationType,
-          //   vatPercentage: Helpers.toDouble(vatSetup.vatAmount),
-          //   unitOfMeasure: itemUom.unitOfMeasureCode,
-          //   qtyPerUnitOfMeasure: qtyPerUnit,
-          //   quantity: input.quantity,
-          //   quantityToShip: input.quantity,
-          //   quantityToInvoice: input.quantity,
-          //   outstandingQuantity: input.quantity,
-          //   outstandingQuantityBase: input.quantity * qtyPerUnit,
-          //   quantityInvoiced: 0,
-          //   quantityShipped: 0,
-          //   unitPrice: unitPrice,
-          //   unitPriceLcy: unitPrice,
-          //   discountAmount: discountAmt,
-          //   discountPercentage: discountPercent,
-          //   vatAmount: calculated.vatAmount,
-          //   vatBaseAmount: calculated.vatBaseAmount,
-          //   amount: calculated.amount,
-          //   amountIncludingVat: calculated.amountIncludeVat,
-          //   amountIncludingVatLcy: calculated.amountIncludeVat,
-          //   manualUnitPrice: manualPrice,
-          //   isManualEdit: manualPrice > 0 ? kStatusYes : kStatusNo,
-          //   documentDate: DateTime.now().toDateString(),
-          //   unitPriceOri: Helpers.formatNumberDb(
-          //     saleArg.itemUnitPrice,
-          //     option: FormatType.price,
-          //   ),
-          // );
 
           saleLines.add(saleLine);
         }),

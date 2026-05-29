@@ -67,6 +67,7 @@ extension PosSalesLineExtension on PosSalesLine {
     String? sourceNo,
     String type = kTypeItem,
     double headerQuantity = 0,
+    int saleLinePriceId = 0,
   }) {
     return PosSalesLine(
       lineId,
@@ -133,6 +134,7 @@ extension PosSalesLineExtension on PosSalesLine {
       ),
       serialNo: serialNo,
       sourceNo: sourceNo,
+      saleLinePriceId: saleLinePriceId,
     );
   }
 }

@@ -476,6 +476,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       List<PosSalesLine> saleLines = [];
       int lineNo = 0;
       int referentLineNo = Helpers.generateUniqueNumber();
+      int saleLinePriceId = Helpers.toInt(saleArg.salePrice?.id);
 
       await Future.wait(
         inputs.map((input) async {
@@ -559,6 +560,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
             qtyPerUnit: qtyPerUnit,
             unitOfMeasureCode: "${itemUom.unitOfMeasureCode}",
             sourceNo: schedule.id,
+            saleLinePriceId: saleLinePriceId
           );
 
           saleLines.add(saleLine);

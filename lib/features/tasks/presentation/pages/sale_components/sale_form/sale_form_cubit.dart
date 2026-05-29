@@ -168,6 +168,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
               : 0,
           saleLinePrice: salePrice,
           isFocExpanded: defaultShowFoc == "Yes" || defaultShowFoc == '',
+          selectedLinePriceId: stdSaleLine?.saleLinePriceId.toString(),
         ),
       );
     } on GeneralException catch (error) {
@@ -300,6 +301,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
         manualPrice: manualPrice,
         saleUomCode: salePrice.uomCode ?? state.item?.salesUomCode,
         selectedLinePriceId: salePrice.id,
+        salePrice: salePrice,
       ),
     );
   }
@@ -520,6 +522,8 @@ class SaleFormCubit extends Cubit<SaleFormState>
         'Discount amount cannot exceed subtotal of $subTotal',
       );
     }
+
+    print(state.salePrice?.toEJson());
 
     return SaleArg(
       item: item,

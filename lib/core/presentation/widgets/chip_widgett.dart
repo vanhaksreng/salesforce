@@ -61,7 +61,7 @@ class ChipWidget extends StatelessWidget {
     if (label.isNotEmpty && child != null) {
       return Row(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
+        // crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           TextWidget(
             text: label,

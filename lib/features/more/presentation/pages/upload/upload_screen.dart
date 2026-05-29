@@ -59,7 +59,6 @@ class _UploadScreenState extends State<UploadScreen> {
 
     final isNotExpired = await _cubit.apiSessionStillAlive();
     if (!isNotExpired) {
-      
       if (!mounted) return;
       final password = await Helpers.showSessionLoginDialog(context);
       if (password == null) return;
@@ -127,8 +126,14 @@ class _UploadScreenState extends State<UploadScreen> {
     if (schedule.status != kStatusCheckOut) {
       return "Pending : ${schedule.name}".toUpperCase();
     }
-
     return "Visited : ${schedule.name}".toUpperCase();
+  }
+
+  String _getScheduleStatusText(SalespersonSchedule schedule) {
+    if (schedule.status != kStatusCheckOut) {
+      return "Pending";
+    }
+    return "Visited";
   }
 
   @override
@@ -563,6 +568,7 @@ class _UploadScreenState extends State<UploadScreen> {
     if (salesHeaders.isEmpty) {
       return _buildEmptyBox();
     }
+
     final modifiedSchedules = [
       ...schedules,
       SalespersonSchedule("", name: "Non Schedule"),
@@ -617,18 +623,38 @@ class _UploadScreenState extends State<UploadScreen> {
               key: ValueKey("row${schedule.id}"),
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ChipWidget(
-                  key: ValueKey("text${schedule.id}"),
-                  bgColor: getScheduleColor(
-                    schedule.status ?? "",
-                  ).withValues(alpha: 0.08),
-                  colorText: getScheduleColor(schedule.status ?? ""),
-                  radius: 8.scale,
-                  label: _getScheduleText(schedule),
+                Flexible(
+                  child: ChipWidget(
+                    key: ValueKey("text${schedule.id}"),
+                    bgColor: getScheduleColor(
+                      schedule.status ?? "",
+                    ).withValues(alpha: 0.08),
+                    colorText: getScheduleColor(schedule.status ?? ""),
+                    radius: 8.scale,
+                    child: Text.rich(
+                      TextSpan(
+                        style: TextStyle(
+                              color: getScheduleColor(schedule.status ?? ""),
+                            ),
+                        text:
+                            "${_getScheduleStatusText(schedule).toUpperCase()}: ",
+                        children: [
+                          TextSpan(
+                            text: (schedule.name ?? "").toUpperCase(),
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // label: _getScheduleText(schedule),
+                  ),
                 ),
-                Expanded(child: _getDateBox(schedule.scheduleDate ?? "")),
+                _getDateBox(schedule.scheduleDate ?? ""),
               ],
             ),
+
             ListView.builder(
               shrinkWrap: true,
               padding: EdgeInsets.only(bottom: 15.scale),
@@ -1141,6 +1167,10 @@ class _UploadScreenState extends State<UploadScreen> {
   }
 
   Widget _getDateBox(String date) {
+    if (date.isEmpty) {
+      return SizedBox.shrink();
+    }
+
     return ChipWidget(
       key: ValueKey("date$date"),
       bgColor: primary.withValues(alpha: 0.06),

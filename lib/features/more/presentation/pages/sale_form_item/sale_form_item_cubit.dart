@@ -159,6 +159,7 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
               : 0,
           saleLinePrice: salePrice,
           isFocExpanded: defaultShowFoc == "Yes" || defaultShowFoc == '',
+          selectedLinePriceId: stdSaleLine?.saleLinePriceId.toString(),
         ),
       );
     } catch (error) {
@@ -286,6 +287,7 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
         manualPrice: manualPrice,
         saleUomCode: salePrice.uomCode ?? state.item?.salesUomCode,
         selectedLinePriceId: salePrice.id,
+        salePrice: salePrice,
       ),
     );
   }

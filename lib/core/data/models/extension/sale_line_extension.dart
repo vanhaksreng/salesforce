@@ -201,6 +201,7 @@ extension SalesLineExtension on SalesLine {
       documentDate: DateTime.now().toDateString(),
       unitPriceOri: line.unitPriceOri,
       serialNo: line.sourceNo,
+      saleLinePriceId: line.saleLinePriceId,
     );
   }
 
