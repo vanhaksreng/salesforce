@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/domain/entities/app_args.dart';
 import 'package:salesforce/core/enums/enums.dart';
+import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/stock/presentation/pages/build_uom_selected/build_uom_selected_cubit.dart';
 import 'package:salesforce/core/presentation/widgets/header_bottom_sheet.dart';
@@ -58,6 +59,7 @@ class _BuildUomSelectedState extends State<BuildUomSelected> {
                 return ListTitleWidget(
                   onTap: () => _onSelectedUomCode(itemUom),
                   label: itemUom.unitOfMeasureCode ?? '',
+                  subTitle: Helpers.formatNumber(itemUom.qtyPerUnit,option: FormatType.quantity),
                   borderRadius: 0,
                   isSelected: state.uomCode == itemUom.unitOfMeasureCode,
                   type: ListTileType.trailingSelect,

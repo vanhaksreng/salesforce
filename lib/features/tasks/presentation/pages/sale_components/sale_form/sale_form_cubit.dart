@@ -60,7 +60,8 @@ class SaleFormCubit extends Cubit<SaleFormState>
 
       final canChoosePriceGroup = await getSetting(kChooseLinePrice);
       final defaultShowFoc = await getSetting(kPromotionTypeExpanded);
-      late List<ItemSalesLinePrices> salePrice = [];
+      late List<ItemSalesLinePrices> salePrices = [];
+      ItemSalesLinePrices? salePrice;
 
       final customerResult = await _taskRepos.getCustomer(
         no: arg.schedule.customerNo ?? "",
@@ -79,12 +80,11 @@ class SaleFormCubit extends Cubit<SaleFormState>
         final salePriceResult = await _taskRepos.getItemSaleLinePriceByItem(
           arg.item.no,
         );
-        salePrice = await salePriceResult.fold((l) => [], (r) => r);
+        salePrices = await salePriceResult.fold((l) => [], (r) => r);
       }
 
       final saleNo = Helpers.getSaleDocumentNo(
         scheduleId: arg.schedule.id,
-
         documentType: arg.documentType,
       );
 
@@ -114,6 +114,14 @@ class SaleFormCubit extends Cubit<SaleFormState>
           unitPrice = Helpers.toDouble(stdSaleLine?.unitPrice);
           salesUomCode = stdSaleLine?.unitOfMeasure ?? "";
           manualPrice = Helpers.formatNumberDb(stdSaleLine?.manualUnitPrice);
+
+          if (salePrices.isNotEmpty) {
+            final matches = salePrices.where(
+              (e) => e.id == stdSaleLine?.saleLinePriceId.toString(),
+            );
+
+            salePrice = matches.isNotEmpty ? matches.first : null;
+          }
         }
       }
 
@@ -166,9 +174,10 @@ class SaleFormCubit extends Cubit<SaleFormState>
           discountPercentage: stdSaleLine != null
               ? stdSaleLine?.discountPercentage
               : 0,
-          saleLinePrice: salePrice,
+          saleLinePrice: salePrices,
           isFocExpanded: defaultShowFoc == "Yes" || defaultShowFoc == '',
           selectedLinePriceId: stdSaleLine?.saleLinePriceId.toString(),
+          salePrice: salePrice,
         ),
       );
     } on GeneralException catch (error) {
@@ -313,8 +322,10 @@ class SaleFormCubit extends Cubit<SaleFormState>
     );
   }
 
-  void updateQuantity(String code, String value) {
+  void updateQuantity(String code, String value) async {
     final quantity = Helpers.toDouble(value);
+    final kabasSetting = await getAppSetting(kKabasSellingPrice);
+
     final updatedForms = state.saleForm.map((form) {
       if (form.code == code) {
         if (code == kPromotionTypeStd) {
@@ -322,6 +333,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
             uomCode: form.uomCode,
             orderQty: Helpers.toStrings(quantity),
             salePrice: state.salePrice,
+            isKabase: kabasSetting == kStatusYes,
           );
         }
 

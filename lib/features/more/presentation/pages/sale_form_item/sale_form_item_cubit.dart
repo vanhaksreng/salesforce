@@ -58,7 +58,8 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
 
       final canChoosePriceGroup = await getSetting(kChooseLinePrice);
       final defaultShowFoc = await getSetting(kPromotionTypeExpanded);
-      late List<ItemSalesLinePrices> salePrice = [];
+      late List<ItemSalesLinePrices> salePrices = [];
+      ItemSalesLinePrices? salePrice;
 
       final customerResult = await _moreRepos.getCustomer(
         params: {"no": arg.customer.no},
@@ -77,7 +78,7 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
         final salePriceResult = await _moreRepos.getItemSaleLinePriceByItem(
           arg.item?.no ?? "",
         );
-        salePrice = await salePriceResult.fold((l) => [], (r) => r);
+        salePrices = await salePriceResult.fold((l) => [], (r) => r);
       }
 
       final saleNo = Helpers.getSaleDocumentNo(
@@ -107,6 +108,14 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
           unitPrice = Helpers.toDouble(stdSaleLine?.unitPrice);
           salesUomCode = stdSaleLine?.unitOfMeasure ?? "";
           manualPrice = Helpers.formatNumberDb(stdSaleLine?.manualUnitPrice);
+
+          if (salePrices.isNotEmpty) {
+            final matches = salePrices.where(
+              (e) => e.id == stdSaleLine?.saleLinePriceId.toString(),
+            );
+
+            salePrice = matches.isNotEmpty ? matches.first : null;
+          }
         }
       }
 
@@ -157,9 +166,10 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
           discountPercentage: stdSaleLine != null
               ? stdSaleLine?.discountPercentage
               : 0,
-          saleLinePrice: salePrice,
+          saleLinePrice: salePrices,
           isFocExpanded: defaultShowFoc == "Yes" || defaultShowFoc == '',
           selectedLinePriceId: stdSaleLine?.saleLinePriceId.toString(),
+          salePrice: salePrice,
         ),
       );
     } catch (error) {
