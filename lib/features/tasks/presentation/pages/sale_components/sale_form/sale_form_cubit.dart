@@ -186,18 +186,20 @@ class SaleFormCubit extends Cubit<SaleFormState>
 
   Future<void> applyChangePriceBySaleLinePrice(ItemSalesLinePrices line) async {
     final double lineQty = Helpers.toDouble(line.minimumQuantity);
+    final kabasSetting = await getAppSetting(kKabasSellingPrice);
 
     final updatedForms = state.saleForm.map((form) {
       if (form.code == kPromotionTypeStd) {
         final updatedForm = form.copyWith(
           quantity: form.quantity < lineQty ? lineQty : form.quantity,
-          uomCode: line.uomCode,
+          uomCode: kabasSetting == kStatusYes ? form.uomCode : line.uomCode,
         );
 
         _updateItemPrice(
           orderQty: updatedForm.quantity.toString(),
           uomCode: updatedForm.uomCode,
           salePrice: line,
+          isKabase: kabasSetting == kStatusYes,
         );
 
         return updatedForm;
@@ -213,6 +215,7 @@ class SaleFormCubit extends Cubit<SaleFormState>
     required String orderQty,
     required String uomCode,
     ItemSalesLinePrices? salePrice,
+    bool isKabase = false,
   }) async {
     salePrice ??
         await _getItemSalelinePrice(
@@ -239,21 +242,19 @@ class SaleFormCubit extends Cubit<SaleFormState>
       manualPrice = Helpers.toDouble(stdSaleLine?.manualUnitPrice);
     }
 
+    final itemUomResponse = await _taskRepos.getItemUom(
+      params: {
+        'item_no': state.item?.no ?? "",
+        'unit_of_measure_code': uomCode,
+      },
+    );
+
+    final itemUom = itemUomResponse.fold(
+      (failure) => null,
+      (itemUom) => itemUom,
+    );
+
     if (salePrice == null) {
-      ItemUnitOfMeasure? itemUom;
-
-      final itemUomResponse = await _taskRepos.getItemUom(
-        params: {
-          'item_no': state.item?.no ?? "",
-          'unit_of_measure_code': uomCode,
-        },
-      );
-
-      itemUom = await itemUomResponse.fold(
-        (failure) => null,
-        (itemUom) => itemUom,
-      );
-
       if (itemUom != null) {
         itemUnitPrice = Helpers.toDouble(itemUom.price);
       }
@@ -293,13 +294,19 @@ class SaleFormCubit extends Cubit<SaleFormState>
       itemUnitPrice = Helpers.toDouble(state.itemUnitPrice);
     }
 
+    if (isKabase && itemUom != null) {
+      itemUnitPrice = itemUnitPrice * Helpers.toDouble(itemUom.qtyPerUnit);
+    }
+
     emit(
       state.copyWith(
         itemUnitPrice: itemUnitPrice,
         discountAmt: disAmt,
         discountPercentage: disPercent,
         manualPrice: manualPrice,
-        saleUomCode: salePrice.uomCode ?? state.item?.salesUomCode,
+        saleUomCode: isKabase
+            ? uomCode
+            : salePrice.uomCode ?? state.item?.salesUomCode,
         selectedLinePriceId: salePrice.id,
         salePrice: salePrice,
       ),
@@ -325,6 +332,51 @@ class SaleFormCubit extends Cubit<SaleFormState>
     }).toList();
 
     emit(state.copyWith(saleForm: updatedForms));
+  }
+
+  Future<void> updateSaleUomBaseSellingPrice(
+    String code,
+    String uomCode,
+    ItemSalesLinePrices salePrice,
+  ) async {
+    final itemUomResponse = await _taskRepos.getItemUom(
+      params: {
+        'item_no': state.item?.no ?? "",
+        'unit_of_measure_code': uomCode,
+      },
+    );
+
+    final itemUom = itemUomResponse.fold(
+      (failure) => null,
+      (itemUom) => itemUom,
+    );
+
+    if (itemUom == null) {
+      showWarningMessage("Uom code not found.");
+      return;
+    }
+
+    final updatedForms = state.saleForm.map((form) {
+      if (form.code == code) {
+        return form.copyWith(uomCode: uomCode);
+      }
+
+      return form;
+    }).toList();
+
+    emit(
+      state.copyWith(
+        itemUnitPrice:
+            Helpers.toDouble(salePrice.unitPrice) *
+            Helpers.toDouble(itemUom.qtyPerUnit),
+        discountAmt: Helpers.toDouble(salePrice.discountAmount),
+        discountPercentage: Helpers.toDouble(salePrice.discountPercentage),
+        saleUomCode: itemUom.unitOfMeasureCode,
+        selectedLinePriceId: salePrice.id,
+        salePrice: salePrice,
+        saleForm: updatedForms,
+      ),
+    );
   }
 
   void updateSaleUom(
@@ -522,8 +574,6 @@ class SaleFormCubit extends Cubit<SaleFormState>
         'Discount amount cannot exceed subtotal of $subTotal',
       );
     }
-
-    print(state.salePrice?.toEJson());
 
     return SaleArg(
       item: item,

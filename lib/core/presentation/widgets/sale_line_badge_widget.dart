@@ -74,7 +74,7 @@ class SaleLineBadge extends StatelessWidget {
             ),
             SizedBox(height: scaleFontSize(4)),
             Text(
-              "${Helpers.formatNumber(item.unitPrice, option: FormatType.amount)} / ${item.uomCode}",
+              "${Helpers.formatNumber(item.unitPrice, option: FormatType.price)} / ${item.uomCode}",
               style: TextStyle(
                 fontSize: scaleFontSize(13),
                 fontWeight: FontWeight.bold,

@@ -38,7 +38,7 @@ class AdministrationScreenState extends State<AdministrationScreen>
     _cubit.checkInforDevice();
     _cubit.checkImin();
     _initializeScreen();
-    _cubit.initialize();
+    // _cubit.initialize();
   }
 
   Future<void> _initializeScreen() async {

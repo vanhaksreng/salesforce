@@ -29,7 +29,12 @@ abstract class BaseAppRepository {
   Future<Either<Failure, bool>> downloadAppSetting();
 
   Future<bool> hasPermission(String name);
+
+  //Distribute Setup
   Future<String> getSetting(String settingKey);
+
+  //Setting
+  Future<String> getAppSetting(String settingKey);
 
   Future<void> storeAppSyncLog(List<AppSyncLog> logs);
   Future<Either<Failure, List<AppSyncLog>>> getAppSyncLogs({

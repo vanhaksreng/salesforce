@@ -52,8 +52,14 @@ mixin AppMixin {
     return _appRepo.isConnectedToNetwork();
   }
 
+  //Distribute Setup
   Future<String> getSetting(String settingKey) async {
     return _appRepo.getSetting(settingKey);
+  }
+
+  //App setting
+  Future<String> getAppSetting(String settingKey) async {
+    return _appRepo.getAppSetting(settingKey);
   }
 
   Future<GpsRouteTracking?> getLastGpsRequest() async {

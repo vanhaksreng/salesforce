@@ -245,6 +245,12 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   }
 
   @override
+  Future<String> getAppSetting(String settingKey) async {
+    final permission = await _local.getAppSetting(settingKey);
+    return Helpers.toStrings(permission?.value);
+  }
+
+  @override
   Future<Either<Failure, bool>> downloadAppSetting() async {
     if (!await _networkInfo.isConnected) {
       return const Left(CacheFailure("No internet connection"));

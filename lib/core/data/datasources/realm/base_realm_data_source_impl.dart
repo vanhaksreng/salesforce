@@ -328,6 +328,11 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
+  Future<AppSetting?> getAppSetting(String id) async {
+    return _storage.find<AppSetting>(id);
+  }
+
+  @override
   Future<List<PromotionType>> getPromotionType({
     Map<String, dynamic>? param,
   }) async {

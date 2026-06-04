@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_config.dart';
+import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/domain/entities/app_args.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
@@ -147,9 +149,29 @@ class SaleFormItemScreenState extends State<SaleFormItemScreen> {
     );
   }
 
-  void _onSelectedUomHandler(String inputCode, String uomCode) {
+  void _onSelectedUomHandler(String inputCode, String uomCode) async {
     _uomCntr[inputCode] = TextEditingController(text: uomCode);
-    _cubit.updateSaleUom(inputCode, uomCode);
+
+    final value = await _cubit.getAppSetting(kKabasSellingPrice);
+    if (value == kStatusYes && _cubit.state.salePrice != null) {
+      _cubit.updateSaleUomBaseSellingPrice(
+        inputCode,
+        uomCode,
+        _cubit.state.salePrice!,
+      );
+    } else {
+      if (_cubit.state.salePrice?.uomCode == uomCode) {
+        _cubit.updateSaleUom(
+          inputCode,
+          uomCode,
+          salePrice: _cubit.state.salePrice,
+        );
+      } else {
+        _cubit.updateSaleUom(inputCode, uomCode);
+      }
+    }
+
+    // _cubit.updateSaleUom(inputCode, uomCode);
   }
 
   void _applyChangePrice(ItemSalesLinePrices line) async {

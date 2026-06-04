@@ -158,88 +158,88 @@ class AdministrationCubit extends Cubit<AdministrationState>
   //   }
   // }
 
-  Future<void> initialize() async {
-    emit(state.copyWith(isLoading: true));
+  // Future<void> initialize() async {
+  //   emit(state.copyWith(isLoading: true));
 
-    try {
-      if (state.isIminDevice) {
-        bool initialized = false;
-        int attempts = 0;
+  //   try {
+  //     if (state.isIminDevice) {
+  //       bool initialized = false;
+  //       int attempts = 0;
 
-        while (!initialized && attempts < 3) {
-          attempts++;
+  //       while (!initialized && attempts < 3) {
+  //         attempts++;
 
-          try {
-            await initializeIminPrinter();
+  //         try {
+  //           await initializeIminPrinter();
 
-            await Future.delayed(Duration(seconds: 3));
+  //           await Future.delayed(Duration(seconds: 3));
 
-            final status = await checkIminPrinterStatus(showMessage: false);
+  //           final status = await checkIminPrinterStatus(showMessage: false);
 
-            if (status != null) {
-              final statusCode = status['status'] as int;
-              if (statusCode == 0 || statusCode == -1) {
-                initialized = true;
-                debugPrint(" iMin printer initialized successfully");
-              } else {
-                debugPrint("Printer status: ${status['message']}, retrying...");
-                await Future.delayed(Duration(seconds: 2));
-              }
-            }
-          } catch (e) {
-            debugPrint("Initialization attempt $attempts failed: $e");
-            if (attempts < 3) {
-              await Future.delayed(Duration(seconds: 2));
-            }
-          }
-        }
+  //           if (status != null) {
+  //             final statusCode = status['status'] as int;
+  //             if (statusCode == 0 || statusCode == -1) {
+  //               initialized = true;
+  //               debugPrint(" iMin printer initialized successfully");
+  //             } else {
+  //               debugPrint("Printer status: ${status['message']}, retrying...");
+  //               await Future.delayed(Duration(seconds: 2));
+  //             }
+  //           }
+  //         } catch (e) {
+  //           debugPrint("Initialization attempt $attempts failed: $e");
+  //           if (attempts < 3) {
+  //             await Future.delayed(Duration(seconds: 2));
+  //           }
+  //         }
+  //       }
 
-        if (!initialized) {
-          showErrorMessage(
-            "Failed to initialize printer after $attempts attempts",
-          );
-        }
+  //       if (!initialized) {
+  //         showErrorMessage(
+  //           "Failed to initialize printer after $attempts attempts",
+  //         );
+  //       }
 
-        emit(state.copyWith(isLoading: false));
-      } else {
-        debugPrint("📱 Non-iMin device - initializing Bluetooth printer");
-  //TODO
-        // Listen to connection changes from the Bluetooth service
-        // _connectionSubscription = _bluetoothService.connectionStream.listen((
-        //   device,
-        // ) {
-        //   emit(state.copyWith(selectedDevice: device));
-        // });
+  //       emit(state.copyWith(isLoading: false));
+  //     } else {
+  //       debugPrint("📱 Non-iMin device - initializing Bluetooth printer");
+  // //TODO
+  //       // Listen to connection changes from the Bluetooth service
+  //       // _connectionSubscription = _bluetoothService.connectionStream.listen((
+  //       //   device,
+  //       // ) {
+  //       //   emit(state.copyWith(selectedDevice: device));
+  //       // });
 
-        // _statusSubscription = _bluetoothService.statusStream.listen((status) {
-          // if (status == ConnectionStatus.connecting) {
-          //   debugPrint(" Bluetooth printer connecting...");
-          // } else if (status == ConnectionStatus.connected) {
-          //   debugPrint(" Bluetooth printer connected");
-          // } else if (status == ConnectionStatus.disconnected) {
-          //   debugPrint(" Bluetooth printer disconnected");
-          // } 
-        // });
+  //       // _statusSubscription = _bluetoothService.statusStream.listen((status) {
+  //         // if (status == ConnectionStatus.connecting) {
+  //         //   debugPrint(" Bluetooth printer connecting...");
+  //         // } else if (status == ConnectionStatus.connected) {
+  //         //   debugPrint(" Bluetooth printer connected");
+  //         // } else if (status == ConnectionStatus.disconnected) {
+  //         //   debugPrint(" Bluetooth printer disconnected");
+  //         // } 
+  //       // });
 
-        // Initialize the bluetooth service (will auto-reconnect if saved)
-        // await _bluetoothService.initialize();
+  //       // Initialize the bluetooth service (will auto-reconnect if saved)
+  //       // await _bluetoothService.initialize();
 
-        // Load saved devices
-        // await getDevicePrinter();
+  //       // Load saved devices
+  //       // await getDevicePrinter();
 
-        // emit(
-        //   state.copyWith(
-        //     selectedDevice: _bluetoothService.connectedDevice,
-        //     isLoading: false,
-        //   ),
-        // );
-      }
-    } catch (error) {
-      debugPrint("Initialization error: $error");
-      emit(state.copyWith(isLoading: false));
-      showErrorMessage("Initialization failed: ${error.toString()}");
-    }
-  }
+  //       // emit(
+  //       //   state.copyWith(
+  //       //     selectedDevice: _bluetoothService.connectedDevice,
+  //       //     isLoading: false,
+  //       //   ),
+  //       // );
+  //     }
+  //   } catch (error) {
+  //     debugPrint("Initialization error: $error");
+  //     emit(state.copyWith(isLoading: false));
+  //     showErrorMessage("Initialization failed: ${error.toString()}");
+  //   }
+  // }
 
   Future<void> disconnectFromPrinter(DevicePrinter device) async {
     try {

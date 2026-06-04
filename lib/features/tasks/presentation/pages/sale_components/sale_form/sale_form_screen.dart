@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_config.dart';
+import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/domain/entities/app_args.dart';
 import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
@@ -142,17 +144,28 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
     );
   }
 
-  void _onSelectedUomHandler(String inputCode, String uomCode) {
+  void _onSelectedUomHandler(String inputCode, String uomCode) async {
     _uomCntr[inputCode] = TextEditingController(text: uomCode);
 
-    if (_cubit.state.salePrice?.uomCode == uomCode) {
-      _cubit.updateSaleUom(
+    final value = await _cubit.getAppSetting(kKabasSellingPrice);
+
+    //Customize for Kabase
+    if (value == kStatusYes && _cubit.state.salePrice != null) {
+      _cubit.updateSaleUomBaseSellingPrice(
         inputCode,
         uomCode,
-        salePrice: _cubit.state.salePrice,
+        _cubit.state.salePrice!,
       );
     } else {
-      _cubit.updateSaleUom(inputCode, uomCode);
+      if (_cubit.state.salePrice?.uomCode == uomCode) {
+        _cubit.updateSaleUom(
+          inputCode,
+          uomCode,
+          salePrice: _cubit.state.salePrice,
+        );
+      } else {
+        _cubit.updateSaleUom(inputCode, uomCode);
+      }
     }
   }
 
@@ -348,7 +361,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                         Expanded(
                           child: TextWidget(
                             text:
-                                "${Helpers.formatNumber(state.itemUnitPrice, option: FormatType.amount)} / ${state.saleUomCode}",
+                                "${Helpers.formatNumber(state.itemUnitPrice, option: FormatType.price)} / ${state.saleUomCode}",
                             fontWeight: FontWeight.bold,
                             color: primary,
                             fontSize: 16,

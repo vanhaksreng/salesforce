@@ -170,18 +170,20 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
 
   Future<void> applyChangePriceBySaleLinePrice(ItemSalesLinePrices line) async {
     final double lineQty = Helpers.toDouble(line.minimumQuantity);
+    final kabasSetting = await getAppSetting(kKabasSellingPrice);
 
     final updatedForms = state.saleForm.map((form) {
       if (form.code == kPromotionTypeStd) {
         final updatedForm = form.copyWith(
           quantity: form.quantity < lineQty ? lineQty : form.quantity,
-          uomCode: line.uomCode,
+          uomCode: kabasSetting == kStatusYes ? form.uomCode : line.uomCode,
         );
 
         _updateItemPrice(
           orderQty: updatedForm.quantity.toString(),
           uomCode: updatedForm.uomCode,
           salePrice: line,
+          isKabase: kabasSetting == kStatusYes,
         );
 
         return updatedForm;
@@ -197,6 +199,7 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
     required String orderQty,
     required String uomCode,
     ItemSalesLinePrices? salePrice,
+    bool isKabase = false,
   }) async {
     salePrice ??
         await _getItemSalelinePrice(
@@ -223,25 +226,21 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
       manualPrice = Helpers.toDouble(stdSaleLine?.manualUnitPrice);
     }
 
+    final itemUomResponse = await _moreRepos.getItemUom(
+      params: {
+        'item_no': state.item?.no ?? "",
+        'unit_of_measure_code': uomCode,
+      },
+    );
+
+    final itemUom = itemUomResponse.fold(
+      (failure) => null,
+      (itemUom) => itemUom,
+    );
+
     if (salePrice == null) {
-      ItemUnitOfMeasure? itemUom;
-
-      final itemUomResponse = await _moreRepos.getItemUom(
-        params: {
-          'item_no': state.item?.no ?? "",
-          'unit_of_measure_code': uomCode,
-        },
-      );
-
-      if (itemUnitPrice == 0) {
-        itemUom = await itemUomResponse.fold(
-          (failure) => null,
-          (itemUom) => itemUom,
-        );
-
-        if (itemUom != null) {
-          itemUnitPrice = Helpers.toDouble(itemUom.price);
-        }
+      if (itemUom != null) {
+        itemUnitPrice = Helpers.toDouble(itemUom.price);
       }
 
       if (itemUnitPrice == 0) {
@@ -279,13 +278,19 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
       itemUnitPrice = Helpers.toDouble(state.itemUnitPrice);
     }
 
+    if (isKabase && itemUom != null) {
+      itemUnitPrice = itemUnitPrice * Helpers.toDouble(itemUom.qtyPerUnit);
+    }
+
     emit(
       state.copyWith(
         itemUnitPrice: itemUnitPrice,
         discountAmt: disAmt,
         discountPercentage: disPercent,
         manualPrice: manualPrice,
-        saleUomCode: salePrice.uomCode ?? state.item?.salesUomCode,
+        saleUomCode: isKabase
+            ? uomCode
+            : salePrice.uomCode ?? state.item?.salesUomCode,
         selectedLinePriceId: salePrice.id,
         salePrice: salePrice,
       ),
@@ -312,13 +317,63 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
     emit(state.copyWith(saleForm: updatedForms));
   }
 
-  void updateSaleUom(String code, String uomCode) {
+  Future<void> updateSaleUomBaseSellingPrice(
+    String code,
+    String uomCode,
+    ItemSalesLinePrices salePrice,
+  ) async {
+    final itemUomResponse = await _moreRepos.getItemUom(
+      params: {
+        'item_no': state.item?.no ?? "",
+        'unit_of_measure_code': uomCode,
+      },
+    );
+
+    final itemUom = itemUomResponse.fold(
+      (failure) => null,
+      (itemUom) => itemUom,
+    );
+
+    if (itemUom == null) {
+      showWarningMessage("Uom code not found.");
+      return;
+    }
+
+    final updatedForms = state.saleForm.map((form) {
+      if (form.code == code) {
+        return form.copyWith(uomCode: uomCode);
+      }
+
+      return form;
+    }).toList();
+
+    emit(
+      state.copyWith(
+        itemUnitPrice:
+            Helpers.toDouble(salePrice.unitPrice) *
+            Helpers.toDouble(itemUom.qtyPerUnit),
+        discountAmt: Helpers.toDouble(salePrice.discountAmount),
+        discountPercentage: Helpers.toDouble(salePrice.discountPercentage),
+        saleUomCode: itemUom.unitOfMeasureCode,
+        selectedLinePriceId: salePrice.id,
+        salePrice: salePrice,
+        saleForm: updatedForms,
+      ),
+    );
+  }
+
+  void updateSaleUom(
+    String code,
+    String uomCode, {
+    ItemSalesLinePrices? salePrice,
+  }) {
     final updatedForms = state.saleForm.map((form) {
       if (form.code == code) {
         if (code == kPromotionTypeStd) {
           _updateItemPrice(
             uomCode: uomCode,
             orderQty: Helpers.toStrings(form.quantity),
+            salePrice: salePrice,
           );
         }
         return form.copyWith(uomCode: uomCode);

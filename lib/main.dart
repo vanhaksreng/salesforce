@@ -110,14 +110,6 @@ class _TradeB2bState extends State<TradeB2b> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializePrinter();
-    });
-  }
-
-  Future<void> _initializePrinter() async {
-    await _printerCubit.checkImin();
-    await _printerCubit.initialize();
   }
 
   @override

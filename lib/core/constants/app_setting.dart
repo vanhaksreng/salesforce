@@ -27,3 +27,5 @@ const String kAllowDuplicateSchedule = "allow_duplicate_schedule";
 
 const String kPromotionTypeExpanded = "promotion_type_expanded";
 const String kChooseLinePrice = "choose_sale_price";
+
+const String kKabasSellingPrice = "kabas_selling_price";

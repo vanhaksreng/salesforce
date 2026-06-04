@@ -45,7 +45,12 @@ abstract class BaseRealmDataSource {
 
   Future<List<Permission>> getPermissions({Map<String, dynamic>? param});
   Future<Permission?> getPermission({Map<String, dynamic>? param});
+
+  //Distribut Setup
   Future<DistributionSetUp?> getSetting(String id);
+
+  //Setting
+  Future<AppSetting?> getAppSetting(String id);
 
   Future<void> storeInitAppData(Map<String, dynamic> args);
 
