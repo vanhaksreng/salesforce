@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
@@ -19,7 +18,6 @@ import 'package:salesforce/features/auth/presentation/pages/policy_screen.dart';
 import 'package:salesforce/features/auth/presentation/pages/server_option/server_option_cubit.dart';
 import 'package:salesforce/features/auth/presentation/pages/server_option/server_option_state.dart';
 import 'package:salesforce/features/auth/presentation/pages/starter_screen/scanner_screen.dart';
-import 'package:salesforce/infrastructure/external_services/location/geolocator_location_service.dart';
 import 'package:salesforce/injection_container.dart';
 import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/theme/app_colors.dart';
@@ -34,7 +32,6 @@ class StarterScreen extends StatefulWidget {
 
 class _StarterScreenState extends State<StarterScreen> with MessageMixin {
   final _cubit = ServerOptionCubit();
-  final _location = GeolocatorLocationService();
 
   @override
   void initState() {
@@ -44,24 +41,10 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
   }
 
   void _initLoad() async {
-
-    // if(!await _location.hasPermission()) {
-    //    if(!mounted) return;
-
-    //   _location.requestPermission(context);
-    // }
-
-    _location.requestPermission(context);
-    
-
-    // final permission = await _location.checkPermission();
-
-    // print("===================");
-    // print(permission.toString());
-    // print("===================");
-
-        // _location.requestPermission(context);
-
+    LocationPermission permission = await Geolocator.checkPermission();    
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
   }
 
   final linkStyle = const TextStyle(
@@ -114,7 +97,7 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
       if (_cubit.state.servers.isEmpty) {
         await _cubit.getServerLists();
       }
-      
+
       Future.delayed(Duration(milliseconds: 200));
 
       if (_cubit.state.servers.isEmpty) {
@@ -123,12 +106,15 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
         );
       }
 
-      if (kDebugMode && Platform.isIOS) {
+      if (kDebugMode) {
         // _navigateToNextScreen("https://sme-new.clearview-erp.com/qr/ODA1"); //Seng Nary Book
         // _navigateToNextScreen("https://sme-new.clearview-erp.com/qr/Nzk4"); //Hearo UAT
         // _navigateToNextScreen("https://smb.clearview-erp.com/qr/MjM2"); // Demo
         // _navigateToNextScreen("https://192.168.40.20/qr/Mg==");
-        // return;
+        _navigateToNextScreen(
+          "https://sme-new.clearview-erp.com/qr/Nzk5",
+        ); //Kabase
+        return;
       }
 
       if (!mounted) return;

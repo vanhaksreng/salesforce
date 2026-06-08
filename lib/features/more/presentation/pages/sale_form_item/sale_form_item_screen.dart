@@ -29,7 +29,6 @@ import 'package:salesforce/features/more/presentation/pages/sale_form_item/sale_
 import 'package:salesforce/features/more/presentation/pages/sale_form_item/sale_form_item_state.dart';
 import 'package:salesforce/features/tasks/domain/entities/sale_form_input.dart';
 import 'package:salesforce/features/tasks/presentation/pages/task_component/build_uom_selected/build_uom_selected.dart';
-import 'package:salesforce/localization/trans.dart';
 import 'package:salesforce/realm/scheme/item_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
@@ -328,7 +327,7 @@ class SaleFormItemScreenState extends State<SaleFormItemScreen> {
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.symmetric(horizontal: scaleFontSize(2)),
               itemCount: state.saleLinePrice.length,
-              separatorBuilder: (_, __) => SizedBox(width: scaleFontSize(8)),
+              separatorBuilder: (_, _) => SizedBox(width: scaleFontSize(8)),
               itemBuilder: (context, index) {
                 final item = state.saleLinePrice[index];
 

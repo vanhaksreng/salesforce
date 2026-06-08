@@ -166,16 +166,16 @@ class MyScheduleScreenState extends State<MyScheduleScreen>
           return;
         }
 
-        final permStatus1 = await perm.Permission.locationAlways.status;
-        if (permStatus1 != perm.PermissionStatus.granted) {
-          l.hide();
-          _showPermissionDialog(
-            title: "Background Location Permission Required",
-            body:
-                "As required by your company, the app needs access to your location even when running in the background. This is essential for tracking your check-in and check-out activities at customer sites.",
-          );
-          return;
-        }
+        // final permStatus1 = await perm.Permission.locationAlways.status;
+        // if (permStatus1 != perm.PermissionStatus.granted) {
+        //   l.hide();
+        //   _showPermissionDialog(
+        //     title: "Background Location Permission Required",
+        //     body:
+        //         "As required by your company, the app needs access to your location even when running in the background. This is essential for tracking your check-in and check-out activities at customer sites.",
+        //   );
+        //   return;
+        // }
       }
 
       late double areaByMeters = 0;

@@ -15,9 +15,7 @@ import 'package:salesforce/features/more/domain/entities/device_info.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_cubit.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_state.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/form_connect_printer.dart';
-import 'package:salesforce/features/more/presentation/pages/administration/form_connection_printer/list_device_connection.dart';
 import 'package:salesforce/localization/trans.dart';
-import 'package:salesforce/realm/scheme/general_schemas.dart';
 import 'package:salesforce/theme/app_colors.dart';
 
 class AdministrationScreen extends StatefulWidget {

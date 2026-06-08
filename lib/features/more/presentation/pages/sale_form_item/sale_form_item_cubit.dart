@@ -307,14 +307,18 @@ class SaleFormItemCubit extends Cubit<SaleFormItemState>
     );
   }
 
-  void updateQuantity(String code, String value) {
+  void updateQuantity(String code, String value) async {
     final quantity = Helpers.toDouble(value);
+    final kabasSetting = await getAppSetting(kKabasSellingPrice);
+
     final updatedForms = state.saleForm.map((form) {
       if (form.code == code) {
         if (code == kPromotionTypeStd) {
           _updateItemPrice(
             uomCode: form.uomCode,
             orderQty: Helpers.toStrings(quantity),
+            salePrice: state.salePrice,
+            isKabase: kabasSetting == kStatusYes,
           );
         }
 

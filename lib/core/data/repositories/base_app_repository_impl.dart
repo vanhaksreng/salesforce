@@ -227,6 +227,7 @@ class BaseAppRepositoryImpl implements BaseAppRepository {
   @override
   Future<bool> hasPermission(String name) async {
     final permission = await _local.getPermission(param: {'key': name});
+
     if (permission == null) {
       return false;
     }

@@ -206,6 +206,7 @@ class _MainTapScreenState extends State<MainTapScreen>
           'authorizedAlways',
           'authorizedWhenInUse',
         ].contains(data['status']))) {
+
       if (data['status'] == "authorizedWhenInUse") {
         await _requestPermissions();
       }
