@@ -53,6 +53,7 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
   final _shipmentDateCntr = TextEditingController();
   final _shipmentCodeCtr = TextEditingController();
   final _paymentAmoutCtr = TextEditingController();
+  final _paymentDisPercentCtr = TextEditingController();
   final _paymentTypeCtr = TextEditingController();
   final _paymentTermCtr = TextEditingController();
   final _commentCtr = TextEditingController();
@@ -61,13 +62,11 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
   PaymentMethod? _paymentMethod;
   Distributor? _distributor;
   DateTime? pickDate;
-  String? kHidePayment;
 
   @override
   void initState() {
     super.initState();
-    checkHidePaymentInv();
-    _cubit.loadInitialData(widget.arg.salesHeader);
+    _cubit.loadInitialData(widget.arg);
     _shipmentCodeCtr.text = widget.arg.salesHeader.shipToCode ?? "";
     _initLoad();
   }
@@ -89,12 +88,19 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
     }
   }
 
-  Future<void> checkHidePaymentInv() async {
-    kHidePayment = await _cubit.getSetting(kHidePaymentInv);
-  }
+  // Future<void> checkHidePaymentInv() async {
+  //   kHidePayment = await _cubit.getSetting(kHidePaymentInv);
+  // }
 
   void _onCheckoutHandler() async {
     try {
+      final payAmt = Helpers.toDouble(_paymentAmoutCtr.text);
+      if (_cubit.state.amountToPay < payAmt) {
+        throw GeneralException(
+          "Payment amount cannot exceed ${Helpers.formatNumber(_cubit.state.amountToPay, option: FormatType.amount)}",
+        );
+      }
+
       if (widget.arg.salesHeader.documentType == kSaleInvoice) {
         await _validateSaleInvoice();
       } else if (widget.arg.salesHeader.documentType == kSaleCreditMemo) {
@@ -116,7 +122,10 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
   void _processCheckout() async {
     final l = LoadingOverlay.of(context);
     l.show();
+
     try {
+      final payAmt = Helpers.toDouble(_paymentAmoutCtr.text);
+
       final result = await _cubit.processCheckout(
         CheckoutSubmitArg(
           salesHeader: widget.arg.salesHeader,
@@ -129,9 +138,10 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
           comments: _commentCtr.text,
           distributor: _distributor,
           paymentMethod: _paymentMethod,
-          paymentAmount: Helpers.toDouble(_paymentAmoutCtr.text),
+          paymentAmount: payAmt,
           paymentTerm: _cubit.state.paymentTerm,
           requestShipmentDate: _shipmentDateCntr.text,
+          paymentDisPercent: Helpers.toDouble(_paymentDisPercentCtr.text),
         ),
       );
 
@@ -368,7 +378,7 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
         Helpers.gapH(15),
         _headerBoxInfo(),
         Helpers.gapH(15),
-        if (widget.arg.salesHeader.documentType != kSaleOrder) _paymentBox(),
+        _paymentBox(state),
       ],
     );
   }
@@ -529,10 +539,16 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
     );
   }
 
-  Widget _paymentBox() {
-    if (kHidePayment == kStatusYes) {
+  Widget _paymentBox(SaleCheckoutState state) {
+    final isSaleOrder = widget.arg.salesHeader.documentType == kSaleOrder;
+    if (isSaleOrder && !state.showPaymentInputOnSaleOrder) {
       return SizedBox.shrink();
     }
+
+    if (state.hidePayment) {
+      return SizedBox.shrink();
+    }
+
     return BoxWidget(
       padding: EdgeInsets.all(15.scale),
       child: Column(
@@ -557,8 +573,42 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
+              Spacer(),
+
+              Text.rich(
+                TextSpan(
+                  style: TextStyle(fontSize: 15.scale),
+                  children: [
+                    TextSpan(text: "Amount Due: "),
+                    TextSpan(
+                      text: Helpers.formatNumber(
+                        state.amountToPay,
+                        option: FormatType.amount,
+                      ),
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
+
+          TextFormFieldWidget(
+            controller: _paymentDisPercentCtr,
+            isDense: true,
+            keyboardType: const TextInputType.numberWithOptions(
+              signed: true,
+              decimal: true,
+            ),
+            inputFormatters: const [QuantityInputFormatter(decimalRange: 8)],
+            textColor: textColor50,
+            label: greeting("Discount Percent"),
+            isDefaultTextForm: true,
+            floatingLabeColor: warning,
+            onChanged: (value) =>
+                _cubit.calcPaymentDiscount(widget.arg, Helpers.toDouble(value)),
+          ),
+
           TextFormFieldWidget(
             controller: _paymentAmoutCtr,
             isDense: true,
@@ -570,6 +620,16 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
             textColor: textColor50,
             label: greeting("Payment Amount"),
             isDefaultTextForm: true,
+            // autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: (value) {
+              final number = Helpers.toDouble(value);
+
+              if (number > state.amountToPay) {
+                return 'Value cannot be greater than ${state.amountToPay}';
+              }
+
+              return null;
+            },
           ),
           TextFormFieldWidget(
             onTap: () => _navigatorToPaymentScreen(),

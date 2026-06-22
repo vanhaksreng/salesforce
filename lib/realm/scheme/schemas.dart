@@ -264,6 +264,8 @@ class _Customer {
   late String? isSync = 'Yes';
   @MapTo('checked_in_area')
   late double checkedInArea = 0;
+  @MapTo('default_discount_percent')
+  late double defaultDiscountPercent = 0;
   @MapTo('created_at')
   late String? createdAt;
   @MapTo('updated_at')

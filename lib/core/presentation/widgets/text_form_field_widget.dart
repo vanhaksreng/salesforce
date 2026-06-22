@@ -52,6 +52,7 @@ class TextFormFieldWidget extends TextFormField {
     String? hintText,
     this.isOption = false,
     FloatingLabelBehavior? floatingLabelBehavior,
+    floatingLabeColor = primary,
     this.isRequired = false,
   }) : super(
          inputFormatters: [NoEmojiTextInputFormatter(), ...?inputFormatters],
@@ -90,6 +91,7 @@ class TextFormFieldWidget extends TextFormField {
            readOnly: readOnly,
            isOption: isOption,
            isRequired: isRequired,
+           floatingLabeColor: floatingLabeColor
          ),
        );
 
@@ -119,10 +121,11 @@ class TextFormFieldWidget extends TextFormField {
     bool readOnly = false,
     bool isOption = false,
     bool isRequired = false,
+    Color? floatingLabeColor,
   }) {
     final defaultBorder = OutlineInputBorder(
       borderSide: BorderSide(
-        color: primary.withValues(alpha: 0.5),
+        color: (floatingLabeColor ?? primary).withValues(alpha: 0.5),
         width: scaleFontSize(1),
       ),
       borderRadius: BorderRadius.circular(scaleFontSize(8)),
@@ -164,7 +167,7 @@ class TextFormFieldWidget extends TextFormField {
       labelText: greeting(label) + star,
       labelStyle: TextStyle(color: textColor50, fontSize: scaleFontSize(12)),
       floatingLabelStyle: TextStyle(
-        color: primary,
+        color: floatingLabeColor,
         fontSize: scaleFontSize(15),
       ),
       errorStyle: TextStyle(

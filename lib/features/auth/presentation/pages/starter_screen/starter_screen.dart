@@ -41,7 +41,7 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
   }
 
   void _initLoad() async {
-    LocationPermission permission = await Geolocator.checkPermission();    
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
@@ -111,10 +111,10 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
         // _navigateToNextScreen("https://sme-new.clearview-erp.com/qr/Nzk4"); //Hearo UAT
         // _navigateToNextScreen("https://smb.clearview-erp.com/qr/MjM2"); // Demo
         // _navigateToNextScreen("https://192.168.40.20/qr/Mg==");
-        _navigateToNextScreen(
-          "https://sme-new.clearview-erp.com/qr/Nzk5",
-        ); //Kabase
-        return;
+        // _navigateToNextScreen(
+        //   "https://sme-new.clearview-erp.com/qr/Nzk5",
+        // ); //Kabase
+        // return;
       }
 
       if (!mounted) return;
@@ -221,7 +221,7 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
                     ),
                     const TextSpan(text: " & "),
                     TextSpan(
-                      text: "Privacy Policy",
+                      text: greeting("Privacy Policy"),
                       style: linkStyle,
                       recognizer: TapGestureRecognizer()..onTap = openTerms,
                     ),
@@ -233,9 +233,9 @@ class _StarterScreenState extends State<StarterScreen> with MessageMixin {
                 gradient: linearGradient,
                 onPressed: () => _pushToQrScanner(),
                 icon: Row(
+                  spacing: 8.scale,
                   children: [
-                    const Icon(Icons.qr_code, color: white),
-                    SizedBox(width: 8.scale),
+                    Icon(Icons.qr_code, color: white, size: 16.scale),
                     TextWidget(
                       text: greeting("Scan QR Code"),
                       fontSize: 16,

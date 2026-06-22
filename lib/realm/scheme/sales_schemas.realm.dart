@@ -2215,10 +2215,12 @@ class SalesHeader extends _SalesHeader
     String isSync = "Yes",
     String? orderDate,
     String? orderDateTime,
+    double discountPercent = 0,
   }) {
     if (!_defaultsSet) {
       _defaultsSet = RealmObjectBase.setDefaults<SalesHeader>({
         'is_sync': "Yes",
+        'discount_percent': 0,
       });
     }
     RealmObjectBase.set(this, 'id', id);
@@ -2281,6 +2283,7 @@ class SalesHeader extends _SalesHeader
     RealmObjectBase.set(this, 'is_sync', isSync);
     RealmObjectBase.set(this, 'order_date', orderDate);
     RealmObjectBase.set(this, 'order_datetime', orderDateTime);
+    RealmObjectBase.set(this, 'discount_percent', discountPercent);
   }
 
   SalesHeader._();
@@ -2636,6 +2639,13 @@ class SalesHeader extends _SalesHeader
       RealmObjectBase.set(this, 'order_datetime', value);
 
   @override
+  double get discountPercent =>
+      RealmObjectBase.get<double>(this, 'discount_percent') as double;
+  @override
+  set discountPercent(double value) =>
+      RealmObjectBase.set(this, 'discount_percent', value);
+
+  @override
   Stream<RealmObjectChanges<SalesHeader>> get changes =>
       RealmObjectBase.getChanges<SalesHeader>(this);
 
@@ -2701,6 +2711,7 @@ class SalesHeader extends _SalesHeader
       'is_sync': isSync.toEJson(),
       'order_date': orderDate.toEJson(),
       'order_datetime': orderDateTime.toEJson(),
+      'discount_percent': discountPercent.toEJson(),
     };
   }
 
@@ -2761,6 +2772,7 @@ class SalesHeader extends _SalesHeader
         isSync: fromEJson(ejson['is_sync'], defaultValue: "Yes"),
         orderDate: fromEJson(ejson['order_date']),
         orderDateTime: fromEJson(ejson['order_datetime']),
+        discountPercent: fromEJson(ejson['discount_percent'], defaultValue: 0),
       ),
       _ => raiseInvalidEJson(ejson),
     };
@@ -3055,6 +3067,11 @@ class SalesHeader extends _SalesHeader
           RealmPropertyType.string,
           mapTo: 'order_datetime',
           optional: true,
+        ),
+        SchemaProperty(
+          'discountPercent',
+          RealmPropertyType.double,
+          mapTo: 'discount_percent',
         ),
       ],
     );

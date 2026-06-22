@@ -1439,6 +1439,7 @@ class Customer extends _Customer
     String? status = 'Open',
     String? isSync = 'Yes',
     double checkedInArea = 0,
+    double defaultDiscountPercent = 0,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -1457,6 +1458,7 @@ class Customer extends _Customer
         'status': 'Open',
         'is_sync': 'Yes',
         'checked_in_area': 0,
+        'default_discount_percent': 0,
       });
     }
     RealmObjectBase.set(this, 'no', no);
@@ -1531,6 +1533,11 @@ class Customer extends _Customer
     RealmObjectBase.set(this, 'status', status);
     RealmObjectBase.set(this, 'is_sync', isSync);
     RealmObjectBase.set(this, 'checked_in_area', checkedInArea);
+    RealmObjectBase.set(
+      this,
+      'default_discount_percent',
+      defaultDiscountPercent,
+    );
     RealmObjectBase.set(this, 'created_at', createdAt);
     RealmObjectBase.set(this, 'updated_at', updatedAt);
   }
@@ -1944,6 +1951,13 @@ class Customer extends _Customer
       RealmObjectBase.set(this, 'checked_in_area', value);
 
   @override
+  double get defaultDiscountPercent =>
+      RealmObjectBase.get<double>(this, 'default_discount_percent') as double;
+  @override
+  set defaultDiscountPercent(double value) =>
+      RealmObjectBase.set(this, 'default_discount_percent', value);
+
+  @override
   String? get createdAt =>
       RealmObjectBase.get<String>(this, 'created_at') as String?;
   @override
@@ -2034,6 +2048,7 @@ class Customer extends _Customer
       'status': status.toEJson(),
       'is_sync': isSync.toEJson(),
       'checked_in_area': checkedInArea.toEJson(),
+      'default_discount_percent': defaultDiscountPercent.toEJson(),
       'created_at': createdAt.toEJson(),
       'updated_at': updatedAt.toEJson(),
     };
@@ -2114,6 +2129,10 @@ class Customer extends _Customer
         status: fromEJson(ejson['status'], defaultValue: 'Open'),
         isSync: fromEJson(ejson['is_sync'], defaultValue: 'Yes'),
         checkedInArea: fromEJson(ejson['checked_in_area'], defaultValue: 0),
+        defaultDiscountPercent: fromEJson(
+          ejson['default_discount_percent'],
+          defaultValue: 0,
+        ),
         createdAt: fromEJson(ejson['created_at']),
         updatedAt: fromEJson(ejson['updated_at']),
       ),
@@ -2387,6 +2406,11 @@ class Customer extends _Customer
         'checkedInArea',
         RealmPropertyType.double,
         mapTo: 'checked_in_area',
+      ),
+      SchemaProperty(
+        'defaultDiscountPercent',
+        RealmPropertyType.double,
+        mapTo: 'default_discount_percent',
       ),
       SchemaProperty(
         'createdAt',

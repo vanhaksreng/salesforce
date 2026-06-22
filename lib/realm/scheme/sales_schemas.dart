@@ -364,6 +364,8 @@ class _SalesHeader {
   String? orderDate;
   @MapTo('order_datetime')
   String? orderDateTime;
+  @MapTo('discount_percent')
+  late double discountPercent = 0;
 
   @Ignored()
   String? totalAmtLine;

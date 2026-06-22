@@ -59,45 +59,36 @@ class PaymentScreenScreenState extends State<PaymentScreenScreen> {
   Widget buildBody(PaymentScreenState state) {
     return Padding(
       padding: EdgeInsets.all(scaleFontSize(appSpace)),
-      child: Column(
-        spacing: 8.scale,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextWidget(text: "${state.paymentMethods.length} Items"),
-          _buildItemGroups(state),
-        ],
-      ),
+      child: _buildItemGroups(state),
     );
   }
 
   Widget _buildItemGroups(PaymentScreenState state) {
     final paymentMethods = state.paymentMethods;
-    return Expanded(
-      child: ListView.separated(
-        itemCount: paymentMethods.length,
-        physics: const AlwaysScrollableScrollPhysics(),
-        shrinkWrap: true,
-        itemBuilder: (context, index) {
-          if (index == paymentMethods.length) {
-            return const LoadingPageWidget();
-          }
-
-          final paymentType = paymentMethods[index];
-          return ListTitleWidget(
-            key: ValueKey(paymentType.code),
-            label: paymentType.description ?? "",
-            subTitle: paymentType.code,
-            type: ListTileType.trailingSelect,
-            onTap: () => _onSelectedCode(paymentType),
-            fontWeight: FontWeight.normal,
-            isSelected: state.codePayment == paymentType.code,
-          );
-        },
-        separatorBuilder: (context, index) => Padding(
-          key: ValueKey(index),
-          padding: const EdgeInsets.symmetric(horizontal: appSpace8),
-          child: Hr(key: ValueKey(index), width: double.infinity),
-        ),
+    return ListView.separated(
+      itemCount: paymentMethods.length,
+      physics: const AlwaysScrollableScrollPhysics(),
+      shrinkWrap: true,
+      itemBuilder: (context, index) {
+        if (index == paymentMethods.length) {
+          return const LoadingPageWidget();
+        }
+    
+        final paymentType = paymentMethods[index];
+        return ListTitleWidget(
+          key: ValueKey(paymentType.code),
+          label: paymentType.description ?? "",
+          subTitle: paymentType.code,
+          type: ListTileType.trailingSelect,
+          onTap: () => _onSelectedCode(paymentType),
+          fontWeight: FontWeight.normal,
+          isSelected: state.codePayment == paymentType.code,
+        );
+      },
+      separatorBuilder: (context, index) => Padding(
+        key: ValueKey(index),
+        padding: const EdgeInsets.symmetric(horizontal: appSpace8,vertical: 6),
+        child: SizedBox.shrink(),
       ),
     );
   }

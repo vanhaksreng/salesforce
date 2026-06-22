@@ -30,6 +30,7 @@ class CheckoutSubmitArg {
   final double vatAmount;
   final double amountDue;
   final double paymentAmount;
+  final double paymentDisPercent;
   final CustomerAddress shipmentAddress;
   final String requestShipmentDate;
   final Distributor? distributor;
@@ -52,6 +53,7 @@ class CheckoutSubmitArg {
     this.paymentMethod,
     this.paymentTerm,
     this.paymentAmount = 0,
+    this.paymentDisPercent = 0,
   });
 }
 

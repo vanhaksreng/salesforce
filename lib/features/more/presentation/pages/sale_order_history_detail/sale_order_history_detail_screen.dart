@@ -118,7 +118,7 @@ class _SaleOrderHistoryDetailScreenState
     return Scaffold(
       appBar: AppBarWidget(
         title: greeting(_getTitle()),
-        heightBottom: 50.scale,
+        heightBottom: 50,
         bottom:
             BlocBuilder<
               SaleOrderHistoryDetailCubit,

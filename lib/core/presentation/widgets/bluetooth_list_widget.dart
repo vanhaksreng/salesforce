@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/realm/scheme/general_schemas.dart';
 
 /// Printer size options
@@ -16,11 +16,12 @@ enum PrinterSize {
 /// [address]     – Bluetooth MAC address of the selected device.
 /// [deviceName]  – Human-readable device name.
 /// [printerSize] – Chosen paper width ('80' or '58').
-typedef OnPrinterConfirmed = void Function({
-  required String address,
-  required String deviceName,
-  required String printerSize,
-});
+typedef OnPrinterConfirmed =
+    void Function({
+      required String address,
+      required String deviceName,
+      required String printerSize,
+    });
 
 class BluetoothListWidget extends StatefulWidget {
   const BluetoothListWidget({
@@ -65,7 +66,10 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
   }
 
   void _initializeState() {
-    if (widget.printerConfig != null && widget.devices.any((d) => d['address'] == widget.printerConfig!.macAddress)) {
+    if (widget.printerConfig != null &&
+        widget.devices.any(
+          (d) => d['address'] == widget.printerConfig!.macAddress,
+        )) {
       _selectedAddress = widget.printerConfig!.macAddress;
       _selectedDeviceName = widget.printerConfig!.deviceName;
       _connectedDevice = widget.printerConfig!.macAddress;
@@ -141,20 +145,16 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
             color: _primary.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(
-            Icons.print_rounded,
-            color: _primary,
-            size: 22,
-          ),
+          child: Icon(Icons.print_rounded, color: _primary, size: 22.scale),
         ),
         const SizedBox(width: 14),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             Text(
               'Setup Printer',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 18.scale,
                 fontWeight: FontWeight.w700,
                 color: _textDark,
                 letterSpacing: -0.3,
@@ -163,7 +163,7 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
             Text(
               'POS Receipt Printer',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 13.scale,
                 color: _textMuted,
                 fontWeight: FontWeight.w400,
               ),
@@ -180,14 +180,16 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
       icon: Icons.straighten_rounded,
       child: Row(
         children: PrinterSize.values
-            .map((size) => Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      right: size == PrinterSize.mm80 ? 8 : 0,
-                    ),
-                    child: _buildSizeToggle(size),
+            .map(
+              (size) => Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    right: size == PrinterSize.mm80 ? 8 : 0,
                   ),
-                ))
+                  child: _buildSizeToggle(size),
+                ),
+              ),
+            )
             .toList(),
       ),
     );
@@ -222,14 +224,14 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
           children: [
             Icon(
               Icons.receipt_long_rounded,
-              size: 22,
+              size: 22.scale,
               color: isSelected ? Colors.white : _textMuted,
             ),
             const SizedBox(height: 6),
             Text(
               size.label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.scale,
                 fontWeight: FontWeight.w700,
                 color: isSelected ? Colors.white : _textDark,
                 letterSpacing: 0.5,
@@ -253,7 +255,7 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
                 Text(
                   'ឧបករណ៍ដែលរកឃើញ:',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.scale,
                     fontFamily: 'KhmerOS',
                     color: _textMuted,
                   ),
@@ -271,13 +273,16 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.bluetooth_disabled_rounded,
-              size: 18, color: Colors.grey.shade400),
+          Icon(
+            Icons.bluetooth_disabled_rounded,
+            size: 18.scale,
+            color: Colors.grey.shade400,
+          ),
           const SizedBox(width: 8),
           Text(
             'រកមិនឃើញឧបករណ៍',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 13.scale,
               fontFamily: 'KhmerOS',
               color: Colors.grey.shade500,
             ),
@@ -312,20 +317,22 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
             color: isConnected
                 ? Colors.green.shade400
                 : isSelected
-                    ? _primary
-                    : Colors.grey.shade200,
+                ? _primary
+                : Colors.grey.shade200,
             width: (isConnected || isSelected) ? 2 : 1,
           ),
           color: isConnected
               ? Colors.green.shade50
               : isSelected
-                  ? _primary.withValues(alpha: 0.05)
-                  : Colors.white,
+              ? _primary.withValues(alpha: 0.05)
+              : Colors.white,
         ),
         child: ListTile(
           dense: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 2,
+          ),
           leading: Container(
             width: 34,
             height: 34,
@@ -333,8 +340,8 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
               color: isConnected
                   ? Colors.green.shade100
                   : isSelected
-                      ? _primary.withValues(alpha: 0.12)
-                      : Colors.grey.shade100,
+                  ? _primary.withValues(alpha: 0.12)
+                  : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -343,21 +350,20 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
               color: isConnected
                   ? Colors.green.shade700
                   : isSelected
-                      ? _primary
-                      : Colors.grey.shade500,
+                  ? _primary
+                  : Colors.grey.shade500,
             ),
           ),
           title: Text(
             name,
             style: TextStyle(
               fontSize: 13,
-              fontWeight:
-                  isSelected ? FontWeight.w600 : FontWeight.w400,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               color: isConnected
                   ? Colors.green.shade800
                   : isSelected
-                      ? _primary
-                      : _textDark,
+                  ? _primary
+                  : _textDark,
             ),
           ),
           subtitle: Text(
@@ -365,13 +371,22 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
             style: const TextStyle(fontSize: 11, color: _textMuted),
           ),
           trailing: isConnected
-              ? const Icon(Icons.check_circle_rounded,
-                  color: Colors.green, size: 20)
+              ? const Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.green,
+                  size: 20,
+                )
               : isSelected
-                  ? Icon(Icons.radio_button_checked_rounded,
-                      color: _primary, size: 20)
-                  : Icon(Icons.radio_button_unchecked_rounded,
-                      color: Colors.grey.shade400, size: 20),
+              ? Icon(
+                  Icons.radio_button_checked_rounded,
+                  color: _primary,
+                  size: 20,
+                )
+              : Icon(
+                  Icons.radio_button_unchecked_rounded,
+                  color: Colors.grey.shade400,
+                  size: 20,
+                ),
         ),
       ),
     );
@@ -387,16 +402,16 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
-              size: 16, color: _errorRed),
+          const Icon(Icons.error_outline_rounded, size: 16, color: _errorRed),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               _errorMessage!,
               style: const TextStyle(
-                  fontSize: 12,
-                  color: _errorRed,
-                  fontFamily: 'KhmerOS'),
+                fontSize: 12,
+                color: _errorRed,
+                fontFamily: 'KhmerOS',
+              ),
             ),
           ),
         ],
@@ -416,13 +431,14 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
             style: OutlinedButton.styleFrom(
               foregroundColor: _textMuted,
               side: BorderSide(color: Colors.grey.shade300),
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: EdgeInsets.symmetric(vertical: 14.scale),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12.scale),
+              ),
             ),
-            child: const Text(
-              'បោះបង់',
-              style: TextStyle(fontFamily: 'KhmerOS', fontSize: 14),
+            child: Text(
+              'Cancel',
+              style: TextStyle(fontFamily: 'KhmerOS', fontSize: 14.scale),
             ),
           ),
         ),
@@ -438,21 +454,26 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
               disabledBackgroundColor: Colors.grey.shade200,
               disabledForegroundColor: Colors.grey.shade400,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: EdgeInsets.symmetric(vertical: 14.scale),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12.scale),
+              ),
             ),
             child: _isConnecting
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
+                ? SizedBox(
+                    width: 18.scale,
+                    height: 18.scale,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
-                : const Text(
+                : Text(
                     'Connect & Save',
                     style: TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 14),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14.scale,
+                    ),
                   ),
           ),
         ),
@@ -462,8 +483,7 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
 
   Future<void> _handleConfirm() async {
     if (_selectedAddress == null) {
-      setState(() =>
-          _errorMessage = 'សូមជ្រើសរើសឧបករណ៍ Bluetooth មុនសិន');
+      setState(() => _errorMessage = 'សូមជ្រើសរើសឧបករណ៍ Bluetooth មុនសិន');
       return;
     }
 
@@ -520,13 +540,13 @@ class _BlueToothDialogState extends State<BluetoothListWidget> {
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
             child: Row(
               children: [
-                Icon(icon, size: 16, color: _textDark),
+                Icon(icon, size: 16.scale, color: _textDark),
                 const SizedBox(width: 6),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 13,
+                    fontSize: 13.scale,
                     fontFamily: 'KhmerOS',
                     color: _textDark,
                   ),

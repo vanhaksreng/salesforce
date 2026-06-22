@@ -175,9 +175,8 @@ class _LoginScreenState extends State<LoginScreen> with MessageMixin {
                 Center(
                   child: ImageNetWorkWidget(
                     imageUrl: state.company?.logo128 ?? '',
-                    // imageUrl: getCompany()?.logo128 ?? "",
-                    height: 200,
-                    width: 250,
+                    height: 200.scale,
+                    width: 250.scale,
                     isSide: true,
                     sideWidth: 2,
                   ),

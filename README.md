@@ -21,6 +21,7 @@ flutter build ios --release --build-name=13.0.9 --build-number=1
 ALTER TABLE distribution_setup 
     ADD COLUMN IF NOT EXISTS promotion_type_expanded VARCHAR(3) DEFAULT 'No' COMMENT 'checkbox',
     ADD COLUMN IF NOT EXISTS choose_sale_price VARCHAR(3) DEFAULT 'No' COMMENT 'checkbox',
+    ADD COLUMN IF NOT EXISTS show_payment_discount VARCHAR(3) DEFAULT 'No' COMMENT 'checkbox',
     ADD COLUMN IF NOT EXISTS check_in_area_mode VARCHAR(15) DEFAULT '' COMMENT 'option|"",By Customer';
 
 ALTER TABLE customer 

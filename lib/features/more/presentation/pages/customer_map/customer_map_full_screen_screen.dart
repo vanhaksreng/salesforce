@@ -66,7 +66,7 @@ class CustomerMapFullScreenScreenState extends State<CustomerMapFullScreenScreen
             child: CustomerMapScreen(
               latLng: LatLng(widget.latLng.latitude, widget.latLng.longitude),
               radius: 8,
-              scrollGesturesEnabled: true,
+              scrollGesturesEnabled: false,
               isShowPin: true,
               isGPS: true,
               onMapCreated: (GoogleMapController controller) {

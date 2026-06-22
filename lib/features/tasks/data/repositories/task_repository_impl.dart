@@ -624,6 +624,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         requestShipmentDate: arg.requestShipmentDate,
         comments: arg.comments,
         distributorCode: arg.distributor?.code,
+        paymentDisPercent: arg.paymentDisPercent,
       );
 
       int lineNo = 0;

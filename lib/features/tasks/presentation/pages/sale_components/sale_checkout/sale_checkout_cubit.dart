@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:salesforce/core/constants/app_setting.dart';
+import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
 import 'package:salesforce/core/mixins/permission_mixin.dart';
+import 'package:salesforce/core/utils/helpers.dart';
 import 'package:salesforce/features/tasks/domain/entities/checkout_arg.dart';
 import 'package:salesforce/features/tasks/domain/repositories/task_repository.dart';
 import 'package:salesforce/features/tasks/presentation/pages/sale_components/sale_checkout/sale_checkout_state.dart';
@@ -19,9 +22,17 @@ class SaleCheckoutCubit extends Cubit<SaleCheckoutState>
 
   CustomerAddress? _defaultShipment;
 
-  Future<void> loadInitialData(PosSalesHeader saleHeaser) async {
+  Future<void> loadInitialData(CheckoutArg arg) async {
     try {
-      _taskRepo.getCustomer(no: saleHeaser.customerNo ?? "").then((response) {
+      final PosSalesHeader header = arg.salesHeader;
+
+      final hidePayment = await getSetting(kHidePaymentInv);
+      final showPaymentDis = await getSetting(kShowPaymentDis);
+      final showPaymentInputOnSaleOrder = await getSetting(
+        kKabasPaymentDisPercent,
+      );
+
+      _taskRepo.getCustomer(no: header.customerNo ?? "").then((response) {
         response.fold((l) => throw GeneralException(l.message), (customer) {
           emit(state.copyWith(customer: customer));
         });
@@ -29,24 +40,34 @@ class SaleCheckoutCubit extends Cubit<SaleCheckoutState>
 
       _defaultShipment = CustomerAddress(
         "_init_",
-        code: saleHeaser.shipToCode,
-        name: saleHeaser.shipToName,
-        address: saleHeaser.shipToAddress,
-        address2: saleHeaser.shipToAddress2,
-        phoneNo: saleHeaser.shipToPhoneNo,
-        phoneNo2: saleHeaser.shipToPhoneNo2,
+        code: header.shipToCode,
+        name: header.shipToName,
+        address: header.shipToAddress,
+        address2: header.shipToAddress2,
+        phoneNo: header.shipToPhoneNo,
+        phoneNo2: header.shipToPhoneNo2,
       );
 
       emit(
         state.copyWith(
           isLoading: false,
-          saleHeaser: saleHeaser,
+          saleHeaser: header,
           shipmentAddress: _defaultShipment,
+          hidePayment: hidePayment == kStatusYes,
+          showPaymentDis: showPaymentDis == kStatusYes,
+          showPaymentInputOnSaleOrder:
+              showPaymentInputOnSaleOrder == kStatusYes,
+          amountToPay: arg.amountDue,
         ),
       );
     } catch (error) {
       emit(state.copyWith(isLoading: false));
     }
+  }
+
+  void calcPaymentDiscount(CheckoutArg arg, double disPercent) {
+    final disAmt = arg.amountDue * (disPercent / 100);
+    emit(state.copyWith(amountToPay: arg.amountDue - disAmt));
   }
 
   Future<void> getDefaultPaymentType() async {

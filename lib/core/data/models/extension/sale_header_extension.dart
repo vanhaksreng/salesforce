@@ -63,6 +63,7 @@ extension SalesHeaderExtension on SalesHeader {
       divisionCode: json["distributor_code"] ?? "",
       assignToUserId: json["assign_to_user_id"] ?? "",
       isSync: "Yes",
+      discountPercent: Helpers.toDouble(json['discount_percent'] ?? 0),
     );
   }
 
@@ -111,6 +112,7 @@ extension SalesHeaderExtension on SalesHeader {
       'rec_posting_group_code': arPostingGroupCode,
       'vat_posting_group_code': vatBusPostingGroupCode,
       'gen_bus_posting_group_code': genBusPostingGroupCode,
+      'discount_percent' : discountPercent,
     };
   }
 
@@ -159,6 +161,7 @@ extension SalesHeaderExtension on SalesHeader {
       'rec_posting_group_code': arPostingGroupCode,
       'vat_posting_group_code': vatBusPostingGroupCode,
       'gen_bus_posting_group_code': genBusPostingGroupCode,
+      'discount_percent' : discountPercent,
       'lines': lines.map((line) => line.toJson()).toList(),
     };
   }
@@ -171,9 +174,11 @@ extension SalesHeaderExtension on SalesHeader {
     required String paymentTermCode,
     required String paymentMethod,
     required double paymentAmount,
+    required double paymentDisPercent,
     required String? requestShipmentDate,
     required String? comments,
     required String? distributorCode,
+    
   }) {
     final now = DateTime.now();
 
@@ -226,6 +231,7 @@ extension SalesHeaderExtension on SalesHeader {
       sourceType: posHeader.sourceType,
       amount: Helpers.formatNumberDb(paymentAmount, option: FormatType.amount),
       orderDateTime: now.toDateTimeString(),
+      discountPercent: paymentDisPercent
     );
   }
 }

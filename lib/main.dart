@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/crash_report.dart';
 import 'package:salesforce/features/more/presentation/pages/administration/administration_cubit.dart';
 import 'package:salesforce/features/worker_manager/auto_upload_manager.dart';
@@ -135,6 +136,7 @@ class _TradeB2bState extends State<TradeB2b> {
       onGenerateRoute: appRouter,
       builder: (context, child) {
         Trans().init(context);
+        SizeConfig().init(context);
         return child ?? const SizedBox.shrink();
       },
       navigatorKey: kAppNavigatorKey,

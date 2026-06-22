@@ -14,6 +14,10 @@ class SaleCheckoutState {
   final String codeDis;
   final Customer? customer;
   final List<CustomerLedgerEntry> customerLedgerEntries;
+  final bool showPaymentDis;
+  final bool hidePayment;
+  final bool showPaymentInputOnSaleOrder;
+  final double amountToPay;
 
   const SaleCheckoutState({
     this.isLoading = false,
@@ -26,6 +30,10 @@ class SaleCheckoutState {
     this.codeDis = "",
     this.customer,
     this.customerLedgerEntries = const [],
+    this.showPaymentDis = false,
+    this.hidePayment = false,
+    this.showPaymentInputOnSaleOrder = false,
+    this.amountToPay = 0,
   });
 
   SaleCheckoutState copyWith({
@@ -39,6 +47,10 @@ class SaleCheckoutState {
     String? codeDis,
     Customer? customer,
     List<CustomerLedgerEntry>? customerLedgerEntries,
+    bool? showPaymentDis,
+    bool? hidePayment,
+    bool? showPaymentInputOnSaleOrder,
+    double? amountToPay,
   }) {
     return SaleCheckoutState(
       isLoading: isLoading ?? this.isLoading,
@@ -50,7 +62,13 @@ class SaleCheckoutState {
       distributCtr: distributCtr ?? this.distributCtr,
       codeDis: codeDis ?? this.codeDis,
       customer: customer ?? this.customer,
-      customerLedgerEntries: customerLedgerEntries ?? this.customerLedgerEntries,
+      customerLedgerEntries:
+          customerLedgerEntries ?? this.customerLedgerEntries,
+      showPaymentDis: showPaymentDis ?? this.showPaymentDis,
+      hidePayment: hidePayment ?? this.hidePayment,
+      showPaymentInputOnSaleOrder:
+          showPaymentInputOnSaleOrder ?? this.showPaymentInputOnSaleOrder,
+      amountToPay: amountToPay ?? this.amountToPay,
     );
   }
 }

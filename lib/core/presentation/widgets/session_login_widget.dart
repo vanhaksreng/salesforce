@@ -4,6 +4,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
+import 'package:salesforce/core/utils/size_config.dart';
 import 'package:salesforce/features/auth/domain/entities/login_arg.dart';
 import 'package:salesforce/features/auth/domain/repositories/auth_repository.dart';
 import 'package:salesforce/injection_container.dart';
@@ -174,11 +175,11 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
         const SizedBox(width: 14),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             Text(
               'Re-authenticate',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 18.scale,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1A1A2E),
                 letterSpacing: -0.3,
@@ -187,7 +188,7 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
             Text(
               'Token expired',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 13.scale,
                 color: Color(0xFF8E8E9A),
                 fontWeight: FontWeight.w400,
               ),
@@ -209,16 +210,20 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
         ),
       ),
       child: Row(
-        children: const [
-          Icon(Icons.access_time_rounded, size: 16, color: Color(0xFFF57F17)),
-          SizedBox(width: 10),
+        children: [
+          Icon(
+            Icons.access_time_rounded,
+            size: 16.scale,
+            color: Color(0xFFF57F17),
+          ),
+          SizedBox(width: 10.scale),
           Expanded(
             child: Text(
               'Your session has expired. Enter your password to continue.',
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: scaleFontSize(12.5),
                 color: Color(0xFF5D4037),
-                height: 1.4,
+                height: scaleFontSize(1.4),
               ),
             ),
           ),
@@ -231,10 +236,10 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Password',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 13.scale,
             fontWeight: FontWeight.w600,
             color: Color(0xFF4A4A5A),
           ),
@@ -246,17 +251,17 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
           obscureText: _obscure,
           autofocus: true,
           onSubmitted: (_) => _submit(),
-          style: const TextStyle(
-            fontSize: 12,
-            letterSpacing: 1.5,
+          style: TextStyle(
+            fontSize: 12.scale,
+            letterSpacing: scaleFontSize(1.5),
             color: Color(0xFF1A1A2E),
           ),
           decoration: InputDecoration(
             hintText: '',
             hintStyle: TextStyle(letterSpacing: 2, color: Colors.grey.shade400),
-            prefixIcon: const Icon(
+            prefixIcon: Icon(
               Icons.lock_rounded,
-              size: 14,
+              size: 14.scale,
               color: Color(0xFFAAAAAA),
             ),
             suffixIcon: GestureDetector(
@@ -265,7 +270,7 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
                 _obscure
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
-                size: 18,
+                size: 18.scale,
                 color: _obscure ? const Color(0xFFAAAAAA) : _accent,
               ),
             ),
@@ -273,9 +278,9 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
             fillColor: _hasError
                 ? _errorRed.withValues(alpha: 0.04)
                 : const Color(0xFFF7F7FA),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.scale,
+              vertical: 14.scale,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -285,7 +290,7 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
                 color: _accent.withValues(alpha: 0.6),
-                width: 1.5,
+                width: scaleFontSize(1.5),
               ),
             ),
             errorBorder: OutlineInputBorder(
@@ -301,12 +306,12 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
   Widget _buildErrorMessage() {
     return Row(
       children: [
-        const Icon(Icons.info_outline_rounded, size: 14, color: _errorRed),
+        Icon(Icons.info_outline_rounded, size: 14.scale, color: _errorRed),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             _errorMessage,
-            style: const TextStyle(fontSize: 12.5, color: _errorRed),
+            style: TextStyle(fontSize: scaleFontSize(12.5), color: _errorRed),
           ),
         ),
       ],
@@ -323,16 +328,16 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
                 ? null
                 : () => Navigator.of(context).pop(null),
             style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: EdgeInsets.symmetric(vertical: 14.scale),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.scale),
                 side: BorderSide(color: Colors.grey.shade300),
               ),
             ),
-            child: const Text(
+            child: Text(
               'Cancel',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.scale,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF8E8E9A),
               ),
@@ -349,31 +354,31 @@ class _SessionLoginDialogState extends State<SessionLoginWidget> {
             style: ElevatedButton.styleFrom(
               backgroundColor: _primary,
               disabledBackgroundColor: _primary.withValues(alpha: 0.5),
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: EdgeInsets.symmetric(vertical: 14.scale),
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.scale),
               ),
             ),
             child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
+                ? SizedBox(
+                    width: 20.scale,
+                    height: 20.scale,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
                       valueColor: AlwaysStoppedAnimation(Colors.white),
                     ),
                   )
-                : const Row(
+                : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         'Login',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 14.scale,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
-                          letterSpacing: 0.2,
+                          letterSpacing: scaleFontSize(0.2),
                         ),
                       ),
                     ],

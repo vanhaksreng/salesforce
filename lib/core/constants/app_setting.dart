@@ -22,10 +22,13 @@ const String kGpsRealTimeTrackingFriday = "gps_realtime_tracking_friday";
 const String kGpsRealTimeTrackingSaturDay = "gps_realtime_tracking_saturday";
 const String kGpsRealTimeTrackingSunday = "gps_realtime_tracking_sunday";
 const String kGpsRealTimeTrackingInterval = "gps_realtime_tracking_interval";
-const String kHidePaymentInv = "hide_payment_inv";
-const String kAllowDuplicateSchedule = "allow_duplicate_schedule";
 
+const String kHidePaymentInv = "hide_payment_inv";
+const String kShowPaymentDis = "show_payment_discount";
+
+const String kAllowDuplicateSchedule = "allow_duplicate_schedule";
 const String kPromotionTypeExpanded = "promotion_type_expanded";
 const String kChooseLinePrice = "choose_sale_price";
 
 const String kKabasSellingPrice = "kabas_selling_price";
+const String kKabasPaymentDisPercent = "kabas_payment_discount_percent";
