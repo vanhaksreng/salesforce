@@ -66,12 +66,14 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
   @override
   void initState() {
     super.initState();
-    _cubit.loadInitialData(widget.arg);
+
     _shipmentCodeCtr.text = widget.arg.salesHeader.shipToCode ?? "";
     _initLoad();
   }
 
   void _initLoad() async {
+    await _cubit.loadInitialData(widget.arg);
+
     await _cubit.getCustomerLedgerEntry(
       widget.arg.salesHeader.customerNo ?? "",
     );
@@ -85,6 +87,13 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
     _paymentAmoutCtr.text = "";
     if (widget.arg.salesHeader.documentType == kSaleCreditMemo) {
       _paymentAmoutCtr.text = "${widget.arg.amountDue}";
+    }
+
+    final haveDis = Helpers.toDouble(
+      _cubit.state.customer?.defaultDiscountPercent,
+    );
+    if (!_cubit.state.hidePayment && haveDis > 0) {
+      _paymentDisPercentCtr.text = haveDis.toString();
     }
   }
 

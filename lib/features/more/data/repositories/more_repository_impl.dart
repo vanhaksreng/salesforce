@@ -66,6 +66,16 @@ class MoreRepositoryImpl extends BaseAppRepositoryImpl
           }
 
           if (cloudRecords.isNotEmpty) {
+            final headerNumbers = cloudRecords
+                .map((h) => '"${h.appId}"')
+                .toList();
+
+            final cloudHeader = await _local.getSaleHeaders(
+              args: {'app_id': 'IN {${headerNumbers.join(",")}}'},
+            );
+
+            await _local.deletSaleHeader(saleHeader: cloudHeader);
+
             await _local.storeSaleHeaders(saleHeader: cloudRecords);
           }
         }

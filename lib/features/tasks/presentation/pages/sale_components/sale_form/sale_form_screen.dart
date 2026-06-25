@@ -110,12 +110,12 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
     _disPercentageCntr.text = Helpers.formatNumber(
       _cubit.state.discountPercentage,
-      option: FormatType.quantity,
+      option: FormatType.percentage,
     );
 
     _disAmountCntr.text = Helpers.formatNumber(
       _cubit.state.discountAmt,
-      option: FormatType.quantity,
+      option: FormatType.amount,
     );
 
     _manualPriceCntr.text = Helpers.formatNumber(

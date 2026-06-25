@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/constants.dart';
+import 'package:salesforce/core/enums/enums.dart';
 import 'package:salesforce/core/errors/exceptions.dart';
 import 'package:salesforce/core/mixins/app_mixin.dart';
 import 'package:salesforce/core/mixins/message_mixin.dart';
@@ -28,15 +29,15 @@ class SaleCheckoutCubit extends Cubit<SaleCheckoutState>
 
       final hidePayment = await getSetting(kHidePaymentInv);
       final showPaymentDis = await getSetting(kShowPaymentDis);
-      final showPaymentInputOnSaleOrder = await getSetting(
+      final showPaymentInputOnSaleOrder = await getAppSetting(
         kKabasPaymentDisPercent,
       );
 
-      _taskRepo.getCustomer(no: header.customerNo ?? "").then((response) {
-        response.fold((l) => throw GeneralException(l.message), (customer) {
-          emit(state.copyWith(customer: customer));
-        });
-      });
+      final result = await _taskRepo.getCustomer(no: header.customerNo ?? "");
+      final customer = result.fold(
+        (l) => throw GeneralException(l.message),
+        (customer) => customer,
+      );
 
       _defaultShipment = CustomerAddress(
         "_init_",
@@ -58,7 +59,13 @@ class SaleCheckoutCubit extends Cubit<SaleCheckoutState>
           showPaymentInputOnSaleOrder:
               showPaymentInputOnSaleOrder == kStatusYes,
           amountToPay: arg.amountDue,
+          customer: customer,
         ),
+      );
+
+      calcPaymentDiscount(
+        arg,
+        Helpers.toDouble(customer?.defaultDiscountPercent),
       );
     } catch (error) {
       emit(state.copyWith(isLoading: false));
@@ -67,7 +74,14 @@ class SaleCheckoutCubit extends Cubit<SaleCheckoutState>
 
   void calcPaymentDiscount(CheckoutArg arg, double disPercent) {
     final disAmt = arg.amountDue * (disPercent / 100);
-    emit(state.copyWith(amountToPay: arg.amountDue - disAmt));
+    emit(
+      state.copyWith(
+        amountToPay: Helpers.formatNumberDb(
+          arg.amountDue - disAmt,
+          option: FormatType.amount,
+        ),
+      ),
+    );
   }
 
   Future<void> getDefaultPaymentType() async {

@@ -152,13 +152,10 @@ class UploadCubit extends Cubit<UploadState> with MessageMixin, AppMixin {
 
   Future<void> _gpsTracking() async {
     await _moreRepo.processUploadGpsTracking();
-
-    // response.fold((failure) => handleErrorMessage(failure.message), (_) {});
   }
 
   Future<void> _gpsRouteTracking() async {
     await _moreRepo.syncOfflineLocationToBackend();
-    // response.fold((failure) => handleErrorMessage(failure.message), (_) {});
   }
 
   // Private Data Loading Methods
