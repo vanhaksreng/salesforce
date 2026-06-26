@@ -54,6 +54,7 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
   final _shipmentCodeCtr = TextEditingController();
   final _paymentAmoutCtr = TextEditingController();
   final _paymentDisPercentCtr = TextEditingController();
+  final _paymentDisAmtCtr = TextEditingController();
   final _paymentTypeCtr = TextEditingController();
   final _paymentTermCtr = TextEditingController();
   final _commentCtr = TextEditingController();
@@ -89,17 +90,49 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
       _paymentAmoutCtr.text = "${widget.arg.amountDue}";
     }
 
-    final haveDis = Helpers.toDouble(
-      _cubit.state.customer?.defaultDiscountPercent,
-    );
-    if (!_cubit.state.hidePayment && haveDis > 0) {
-      _paymentDisPercentCtr.text = haveDis.toString();
+    if (!_cubit.state.hidePayment) {
+      _updateDisValue();
     }
   }
 
-  // Future<void> checkHidePaymentInv() async {
-  //   kHidePayment = await _cubit.getSetting(kHidePaymentInv);
-  // }
+  String removeZero(value, FormatType option) {
+    final result = Helpers.formatNumberDb(value, option: FormatType.percentage);
+
+    if (result == 0) {
+      return "";
+    }
+
+    return result.toString();
+  }
+
+  void _updateDisValue() {
+    _paymentDisPercentCtr.text = removeZero(
+      _cubit.state.discountPercent,
+      FormatType.percentage,
+    );
+
+    _paymentDisAmtCtr.text = removeZero(
+      _cubit.state.discountAmt,
+      FormatType.amount,
+    );
+  }
+
+  void calcDiscount(String type, String value) async {
+    if (type == "usd") {
+      await _cubit.calcPaymentDiscountAmt(widget.arg, Helpers.toDouble(value));
+      _paymentDisPercentCtr.text = removeZero(
+        _cubit.state.discountPercent,
+        FormatType.percentage,
+      );
+    } else {
+      await _cubit.calcPaymentDiscount(widget.arg, Helpers.toDouble(value));
+
+      _paymentDisAmtCtr.text = removeZero(
+        _cubit.state.discountAmt,
+        FormatType.amount,
+      );
+    }
+  }
 
   void _onCheckoutHandler() async {
     try {
@@ -108,6 +141,10 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
         throw GeneralException(
           "Payment amount cannot exceed ${Helpers.formatNumber(_cubit.state.amountToPay, option: FormatType.amount)}",
         );
+      }
+
+      if (_cubit.state.amountToPay < 0) {
+        throw GeneralException("Amount to pay cannot smaller than zero");
       }
 
       if (widget.arg.salesHeader.documentType == kSaleInvoice) {
@@ -510,9 +547,9 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
             controller: _paymentTermCtr,
             isDense: true,
             label: greeting("Payment Term"),
-            suffixIcon: const Icon(
+            suffixIcon: Icon(
               Icons.arrow_forward_ios_sharp,
-              size: 10,
+              size: 10.scale,
               color: primary,
             ),
             isDefaultTextForm: true,
@@ -594,7 +631,10 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
                         state.amountToPay,
                         option: FormatType.amount,
                       ),
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: primary,
+                      ),
                     ),
                   ],
                 ),
@@ -602,58 +642,104 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
             ],
           ),
 
-          TextFormFieldWidget(
-            controller: _paymentDisPercentCtr,
-            isDense: true,
-            keyboardType: const TextInputType.numberWithOptions(
-              signed: true,
-              decimal: true,
-            ),
-            inputFormatters: const [QuantityInputFormatter(decimalRange: 8)],
-            textColor: textColor50,
-            label: greeting("Discount Percent"),
-            isDefaultTextForm: true,
-            floatingLabeColor: warning,
-            onChanged: (value) =>
-                _cubit.calcPaymentDiscount(widget.arg, Helpers.toDouble(value)),
+          Row(
+            spacing: 6.scale,
+            children: [
+              Expanded(
+                child: TextFormFieldWidget(
+                  controller: _paymentDisAmtCtr,
+                  isDense: true,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    signed: true,
+                    decimal: true,
+                  ),
+                  inputFormatters: const [
+                    QuantityInputFormatter(decimalRange: 8),
+                  ],
+                  textColor: textColor50,
+                  label: "${greeting("Discount")} (\$)",
+                  isDefaultTextForm: true,
+                  floatingLabeColor: warning,
+                  onChanged: (value) => calcDiscount('usd', value),
+                  validator: (value) {
+                    final number = Helpers.toDouble(value);
+
+                    if (number > state.amountToPay) {
+                      return 'Value cannot be greater than ${state.amountToPay}';
+                    }
+
+                    return null;
+                  },
+                ),
+              ),
+              TextWidget(text: "<>"),
+              Expanded(
+                child: TextFormFieldWidget(
+                  controller: _paymentDisPercentCtr,
+                  isDense: true,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    signed: true,
+                    decimal: true,
+                  ),
+                  inputFormatters: const [
+                    QuantityInputFormatter(decimalRange: 8),
+                  ],
+                  textColor: textColor50,
+                  label: "${greeting("Discount")} (%)",
+                  isDefaultTextForm: true,
+                  floatingLabeColor: warning,
+                  onChanged: (value) => calcDiscount("%", value),
+                  validator: (value) {
+                    final number = Helpers.toDouble(value);
+
+                    if (number > 100) {
+                      return 'Value cannot be greater than ${state.amountToPay}';
+                    }
+
+                    return null;
+                  },
+                ),
+              ),
+            ],
           ),
 
-          TextFormFieldWidget(
-            controller: _paymentAmoutCtr,
-            isDense: true,
-            keyboardType: const TextInputType.numberWithOptions(
-              signed: true,
-              decimal: true,
-            ),
-            inputFormatters: const [QuantityInputFormatter(decimalRange: 8)],
-            textColor: textColor50,
-            label: greeting("Payment Amount"),
-            isDefaultTextForm: true,
-            // autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: (value) {
-              final number = Helpers.toDouble(value);
+          if (!isSaleOrder) ...[
+            TextFormFieldWidget(
+              controller: _paymentAmoutCtr,
+              isDense: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                signed: true,
+                decimal: true,
+              ),
+              inputFormatters: const [QuantityInputFormatter(decimalRange: 8)],
+              textColor: textColor50,
+              label: greeting("Payment Amount"),
+              isDefaultTextForm: true,
+              validator: (value) {
+                final number = Helpers.toDouble(value);
 
-              if (number > state.amountToPay) {
-                return 'Value cannot be greater than ${state.amountToPay}';
-              }
+                if (number > state.amountToPay) {
+                  return 'Value cannot be greater than ${state.amountToPay}';
+                }
 
-              return null;
-            },
-          ),
-          TextFormFieldWidget(
-            onTap: () => _navigatorToPaymentScreen(),
-            readOnly: true,
-            textColor: textColor50,
-            controller: _paymentTypeCtr,
-            isDense: true,
-            label: greeting("payment_type"),
-            suffixIcon: const Icon(
-              Icons.arrow_forward_ios_sharp,
-              size: 10,
-              color: primary,
+                return null;
+              },
             ),
-            isDefaultTextForm: true,
-          ),
+            TextFormFieldWidget(
+              onTap: () => _navigatorToPaymentScreen(),
+              readOnly: true,
+              textColor: textColor50,
+              controller: _paymentTypeCtr,
+              isDense: true,
+              label: greeting("payment_type"),
+              suffixIcon: Icon(
+                Icons.arrow_forward_ios_sharp,
+                size: 10.scale,
+                color: primary,
+              ),
+              isDefaultTextForm: true,
+            ),
+          ],
         ],
       ),
     );
@@ -722,9 +808,9 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
             controller: _shipmentCodeCtr,
             isDense: true,
             label: greeting("Ship To Code"),
-            suffixIcon: const Icon(
+            suffixIcon: Icon(
               Icons.arrow_forward_ios_sharp,
-              size: 10,
+              size: 10.scale,
               color: primary,
             ),
             isDefaultTextForm: true,

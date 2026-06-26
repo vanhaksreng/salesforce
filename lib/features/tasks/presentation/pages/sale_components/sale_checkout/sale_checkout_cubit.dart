@@ -72,12 +72,41 @@ class SaleCheckoutCubit extends Cubit<SaleCheckoutState>
     }
   }
 
-  void calcPaymentDiscount(CheckoutArg arg, double disPercent) {
+  Future<void> calcPaymentDiscount(CheckoutArg arg, double disPercent) async {
     final disAmt = arg.amountDue * (disPercent / 100);
+
+    emit(
+      state.copyWith(
+        discountAmt: disAmt,
+        discountPercent: disPercent,
+        amountToPay: Helpers.formatNumberDb(
+          arg.amountDue - disAmt,
+          option: FormatType.amount,
+        ),
+      ),
+    );
+  }
+
+  Future<void> calcPaymentDiscountAmt(CheckoutArg arg, double disAmt) async {
+    final amountDue = Helpers.formatNumberDb(
+      arg.amountDue,
+      option: FormatType.amount,
+    );
+
+    final disPercent = (disAmt / amountDue) * 100;
+
+    if (amountDue < disAmt) {
+      showWarningMessage('Value cannot be greater than $amountDue');
+    }
+
     emit(
       state.copyWith(
         amountToPay: Helpers.formatNumberDb(
-          arg.amountDue - disAmt,
+          amountDue - disAmt,
+          option: FormatType.amount,
+        ),
+        discountPercent: Helpers.formatNumberDb(
+          disPercent,
           option: FormatType.amount,
         ),
       ),

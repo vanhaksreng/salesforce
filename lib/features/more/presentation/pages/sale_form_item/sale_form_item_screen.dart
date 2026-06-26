@@ -384,60 +384,6 @@ class SaleFormItemScreenState extends State<SaleFormItemScreen> {
           ),
         ),
         SizedBox(height: scaleFontSize(20)),
-
-        // BoxWidget(
-        //   padding: EdgeInsets.all(scaleFontSize(15)),
-        //   child: ListView.builder(
-        //     physics: const NeverScrollableScrollPhysics(),
-        //     shrinkWrap: true,
-        //     itemCount: inputs.length,
-        //     itemBuilder: (context, index) {
-        //       final input = inputs[index];
-        //       return Padding(
-        //         padding: const EdgeInsets.symmetric(vertical: 6),
-        //         child: Column(
-        //           crossAxisAlignment: CrossAxisAlignment.start,
-        //           children: [
-        //             Text(input.description),
-        //             const SizedBox(height: 8),
-        //             Row(
-        //               spacing: scaleFontSize(8),
-        //               children: [
-        //                 buildTextFormFieldWidget(
-        //                   controller: _quantityCntr[input.code]!,
-        //                   label: "Quantity",
-        //                   isNumber: true,
-        //                   onChanged: (value) {
-        //                     _cubit.updateQuantity(input.code, value);
-        //                   },
-        //                 ),
-        //                 buildTextFormFieldWidget(
-        //                   controller: _uomCntr[input.code]!,
-        //                   label: "",
-        //                   redOnly: true,
-        //                   isOption: true,
-        //                   onTap: () {
-        //                     _showModalBottomSheet(input);
-        //                   },
-        //                   suffix: SizedBox(
-        //                     width: 30.scale,
-        //                     child: const Align(
-        //                       alignment: Alignment.center,
-        //                       child: Icon(
-        //                         Icons.arrow_drop_down_outlined,
-        //                         color: primary,
-        //                       ),
-        //                     ),
-        //                   ),
-        //                 ),
-        //               ],
-        //             ),
-        //           ],
-        //         ),
-        //       );
-        //     },
-        //   ),
-        // ),
         BoxWidget(
           padding: EdgeInsets.all(scaleFontSize(15)),
           child: _buildInputsSection(inputs, state.isFocExpanded),
