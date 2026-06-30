@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salesforce/core/constants/app_assets.dart';
-import 'package:salesforce/core/constants/app_setting.dart';
 import 'package:salesforce/core/constants/app_styles.dart';
 import 'package:salesforce/core/constants/constants.dart';
 import 'package:salesforce/core/constants/permission.dart';
@@ -96,7 +95,7 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
   }
 
   String removeZero(value, FormatType option) {
-    final result = Helpers.formatNumberDb(value, option: FormatType.percentage);
+    final result = Helpers.formatNumberDb(value, option: option);
 
     if (result == 0) {
       return "";
@@ -107,12 +106,12 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
 
   void _updateDisValue() {
     _paymentDisPercentCtr.text = removeZero(
-      _cubit.state.discountPercent,
+      _cubit.state.paymentDiscountPercent,
       FormatType.percentage,
     );
 
     _paymentDisAmtCtr.text = removeZero(
-      _cubit.state.discountAmt,
+      _cubit.state.paymentDiscountAmt,
       FormatType.amount,
     );
   }
@@ -121,14 +120,13 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
     if (type == "usd") {
       await _cubit.calcPaymentDiscountAmt(widget.arg, Helpers.toDouble(value));
       _paymentDisPercentCtr.text = removeZero(
-        _cubit.state.discountPercent,
+        _cubit.state.paymentDiscountPercent,
         FormatType.percentage,
       );
     } else {
       await _cubit.calcPaymentDiscount(widget.arg, Helpers.toDouble(value));
-
       _paymentDisAmtCtr.text = removeZero(
-        _cubit.state.discountAmt,
+        _cubit.state.paymentDiscountAmt,
         FormatType.amount,
       );
     }
@@ -188,6 +186,7 @@ class _SaleCheckoutScreenState extends State<SaleCheckoutScreen>
           paymentTerm: _cubit.state.paymentTerm,
           requestShipmentDate: _shipmentDateCntr.text,
           paymentDisPercent: Helpers.toDouble(_paymentDisPercentCtr.text),
+          paymentDisAmount: Helpers.toDouble(_paymentDisAmtCtr.text),
         ),
       );
 

@@ -112,7 +112,9 @@ extension SalesHeaderExtension on SalesHeader {
       'rec_posting_group_code': arPostingGroupCode,
       'vat_posting_group_code': vatBusPostingGroupCode,
       'gen_bus_posting_group_code': genBusPostingGroupCode,
-      'discount_percent' : discountPercent,
+      'discount_percent': discountPercent,
+      'payment_discount_percent': paymentDiscountPercent,
+      'payment_discount_amount': paymentDiscountAmount,
     };
   }
 
@@ -161,7 +163,9 @@ extension SalesHeaderExtension on SalesHeader {
       'rec_posting_group_code': arPostingGroupCode,
       'vat_posting_group_code': vatBusPostingGroupCode,
       'gen_bus_posting_group_code': genBusPostingGroupCode,
-      'discount_percent' : discountPercent,
+      'discount_percent': discountPercent,
+      'payment_discount_percent': paymentDiscountPercent,
+      'payment_discount_amount': paymentDiscountAmount,
       'lines': lines.map((line) => line.toJson()).toList(),
     };
   }
@@ -175,10 +179,10 @@ extension SalesHeaderExtension on SalesHeader {
     required String paymentMethod,
     required double paymentAmount,
     required double paymentDisPercent,
+    required double paymentDisAmount,
     required String? requestShipmentDate,
     required String? comments,
     required String? distributorCode,
-    
   }) {
     final now = DateTime.now();
 
@@ -231,7 +235,8 @@ extension SalesHeaderExtension on SalesHeader {
       sourceType: posHeader.sourceType,
       amount: Helpers.formatNumberDb(paymentAmount, option: FormatType.amount),
       orderDateTime: now.toDateTimeString(),
-      discountPercent: paymentDisPercent
+      paymentDiscountPercent: paymentDisPercent,
+      paymentDiscountAmount: paymentDisAmount
     );
   }
 }

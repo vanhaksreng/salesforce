@@ -73,12 +73,15 @@ class SaleCheckoutCubit extends Cubit<SaleCheckoutState>
   }
 
   Future<void> calcPaymentDiscount(CheckoutArg arg, double disPercent) async {
-    final disAmt = arg.amountDue * (disPercent / 100);
+    final disAmt = Helpers.formatNumberDb(
+      arg.amountDue * (disPercent / 100),
+      option: FormatType.amount,
+    );
 
     emit(
       state.copyWith(
-        discountAmt: disAmt,
-        discountPercent: disPercent,
+        paymentDiscountAmt: disAmt,
+        paymentDiscountPercent: disPercent,
         amountToPay: Helpers.formatNumberDb(
           arg.amountDue - disAmt,
           option: FormatType.amount,
@@ -105,10 +108,11 @@ class SaleCheckoutCubit extends Cubit<SaleCheckoutState>
           amountDue - disAmt,
           option: FormatType.amount,
         ),
-        discountPercent: Helpers.formatNumberDb(
+        paymentDiscountPercent: Helpers.formatNumberDb(
           disPercent,
-          option: FormatType.amount,
+          option: FormatType.percentage,
         ),
+        paymentDiscountAmt: disAmt,
       ),
     );
   }
@@ -153,7 +157,6 @@ class SaleCheckoutCubit extends Cubit<SaleCheckoutState>
 
   Future<bool> processCheckout(CheckoutSubmitArg arg) async {
     final result = await _taskRepo.processCheckout(arg);
-
     return await result.fold((l) {
       showErrorMessage(l.message);
       return false;

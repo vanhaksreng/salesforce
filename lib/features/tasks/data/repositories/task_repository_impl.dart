@@ -121,6 +121,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
       if (await _networkInfo.isConnected) {
         statusInternet = kOnline;
       }
+
       XFile? validatedImage;
       if (args.imagePath != null) {
         final fileExists = await File(args.imagePath!.path).exists();
@@ -625,6 +626,7 @@ class TaskRepositoryImpl extends BaseAppRepositoryImpl
         comments: arg.comments,
         distributorCode: arg.distributor?.code,
         paymentDisPercent: arg.paymentDisPercent,
+        paymentDisAmount: arg.paymentDisAmount
       );
 
       int lineNo = 0;

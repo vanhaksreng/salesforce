@@ -367,6 +367,11 @@ class _SalesHeader {
   @MapTo('discount_percent')
   late double discountPercent = 0;
 
+  @MapTo('payment_discount_percent')
+  late double paymentDiscountPercent = 0;
+  @MapTo('payment_discount_amount')
+  late double paymentDiscountAmount = 0;
+
   @Ignored()
   String? totalAmtLine;
 }

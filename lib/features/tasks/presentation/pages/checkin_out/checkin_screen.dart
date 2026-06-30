@@ -112,7 +112,7 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
         );
       }
 
-      bool result = await _cubit.processCheckIn(
+      await _cubit.processCheckIn(
         schedule: widget.schedule,
         args: CheckInArg(
           latitude: location.latitude,
@@ -125,9 +125,10 @@ class _CheckinScreenState extends State<CheckinScreen> with MessageMixin {
       );
 
       l.hide();
-      if (mounted && result) {
+      if (mounted) {
         Navigator.pop(context, _cubit.state.schedule);
       }
+
     } on GeneralException catch (e) {
       l.hide();
       showWarningMessage(e.message);

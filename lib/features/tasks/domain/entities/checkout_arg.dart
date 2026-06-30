@@ -30,6 +30,7 @@ class CheckoutSubmitArg {
   final double vatAmount;
   final double amountDue;
   final double paymentAmount;
+  final double paymentDisAmount;
   final double paymentDisPercent;
   final CustomerAddress shipmentAddress;
   final String requestShipmentDate;
@@ -54,7 +55,47 @@ class CheckoutSubmitArg {
     this.paymentTerm,
     this.paymentAmount = 0,
     this.paymentDisPercent = 0,
+    this.paymentDisAmount = 0,
   });
+
+  @override
+  String toString() {
+    return {
+      "salesHeader": salesHeader,
+      "subtotalAmount": subtotalAmount,
+      "discountAmount": discountAmount,
+      "vatAmount": vatAmount,
+      "amountDue": amountDue,
+      "paymentAmount": paymentAmount,
+      "paymentDisPercent": paymentDisPercent,
+      "paymentDisAmount": paymentDisAmount,
+      "shipmentAddress": shipmentAddress,
+      "requestShipmentDate": requestShipmentDate,
+      "distributor": distributor,
+      "comments": comments,
+      "paymentMethod": paymentMethod,
+      "paymentTerm": paymentTerm,
+      "scheduleId": scheduleId,
+    }.toString();
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "subtotalAmount": subtotalAmount,
+      "discountAmount": discountAmount,
+      "vatAmount": vatAmount,
+      "amountDue": amountDue,
+      "paymentAmount": paymentAmount,
+      "paymentDisPercent": paymentDisPercent,
+      "paymentDisAmount": paymentDisAmount,
+      "requestShipmentDate": requestShipmentDate,
+      "distributor": distributor,
+      "comments": comments,
+      "paymentMethod": paymentMethod,
+      "paymentTerm": paymentTerm,
+      "scheduleId": scheduleId,
+    };
+  }
 }
 
 class ItemPromotionFormArg {

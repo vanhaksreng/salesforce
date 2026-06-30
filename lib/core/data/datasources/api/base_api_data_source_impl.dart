@@ -104,37 +104,36 @@ class BaseApiDataSourceImpl implements BaseApiDataSource {
     SalespersonSchedule schedule, {
     String type = kStatusCheckIn,
   }) async {
-    try {
-      final params = {'schedule': jsonEncode(schedule.toJson()), 'type': type};
+    List<XFile> files = [];
 
-      List<XFile> files = [];
-
-      if (type == kStatusCheckIn) {
-        if (schedule.checkInImage != null &&
-            schedule.checkInImage!.isNotEmpty) {
-          final file = File(schedule.checkInImage!);
-          if (await file.exists()) {
-            files.add(XFile(schedule.checkInImage!));
-          }
-        }
-      } else {
-        if (schedule.checkOutImage != null &&
-            schedule.checkOutImage!.isNotEmpty) {
-          final file = File(schedule.checkOutImage!);
-          if (await file.exists()) {
-            files.add(XFile(schedule.checkOutImage!));
-          }
+    if (type == kStatusCheckIn) {
+      if (schedule.checkInImage != null && schedule.checkInImage!.isNotEmpty) {
+        final file = File(schedule.checkInImage!);
+        if (await file.exists()) {
+          files.add(XFile(schedule.checkInImage!));
         }
       }
-
-      await apiClient.postUploadFiles(
-        'v2/update-schedule',
-        body: await getParams(params: params),
-        files: files,
-      );
-    } catch (e) {
-      rethrow;
+    } else {
+      if (schedule.checkOutImage != null &&
+          schedule.checkOutImage!.isNotEmpty) {
+        final file = File(schedule.checkOutImage!);
+        if (await file.exists()) {
+          files.add(XFile(schedule.checkOutImage!));
+        }
+      }
     }
+
+    final scheduleJson = schedule.toJson();
+    scheduleJson.remove('checkout_image');
+    scheduleJson.remove('checkin_image');
+
+    final params = {'schedule': jsonEncode(scheduleJson), 'type': type};
+
+    await apiClient.postUploadFiles(
+      'v2/update-schedule',
+      body: await getParams(params: params),
+      files: files,
+    );
   }
 
   @override

@@ -18,8 +18,8 @@ class SaleCheckoutState {
   final bool hidePayment;
   final bool showPaymentInputOnSaleOrder;
   final double amountToPay;
-  final double discountAmt;
-  final double discountPercent;
+  final double paymentDiscountAmt;
+  final double paymentDiscountPercent;
 
   const SaleCheckoutState({
     this.isLoading = false,
@@ -36,8 +36,8 @@ class SaleCheckoutState {
     this.hidePayment = false,
     this.showPaymentInputOnSaleOrder = false,
     this.amountToPay = 0,
-    this.discountAmt = 0,
-    this.discountPercent = 0,
+    this.paymentDiscountAmt = 0,
+    this.paymentDiscountPercent = 0,
   });
 
   SaleCheckoutState copyWith({
@@ -55,8 +55,8 @@ class SaleCheckoutState {
     bool? hidePayment,
     bool? showPaymentInputOnSaleOrder,
     double? amountToPay,
-    double? discountAmt,
-    double? discountPercent,
+    double? paymentDiscountAmt,
+    double? paymentDiscountPercent,
   }) {
     return SaleCheckoutState(
       isLoading: isLoading ?? this.isLoading,
@@ -75,8 +75,8 @@ class SaleCheckoutState {
       showPaymentInputOnSaleOrder:
           showPaymentInputOnSaleOrder ?? this.showPaymentInputOnSaleOrder,
       amountToPay: amountToPay ?? this.amountToPay,
-      discountAmt : discountAmt ?? this.discountAmt,
-      discountPercent : discountPercent ?? this.discountPercent,
+      paymentDiscountAmt : paymentDiscountAmt ?? this.paymentDiscountAmt,
+      paymentDiscountPercent : paymentDiscountPercent ?? this.paymentDiscountPercent,
     );
   }
 }

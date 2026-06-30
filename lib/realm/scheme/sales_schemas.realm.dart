@@ -2216,11 +2216,15 @@ class SalesHeader extends _SalesHeader
     String? orderDate,
     String? orderDateTime,
     double discountPercent = 0,
+    double paymentDiscountPercent = 0,
+    double paymentDiscountAmount = 0,
   }) {
     if (!_defaultsSet) {
       _defaultsSet = RealmObjectBase.setDefaults<SalesHeader>({
         'is_sync': "Yes",
         'discount_percent': 0,
+        'payment_discount_percent': 0,
+        'payment_discount_amount': 0,
       });
     }
     RealmObjectBase.set(this, 'id', id);
@@ -2284,6 +2288,12 @@ class SalesHeader extends _SalesHeader
     RealmObjectBase.set(this, 'order_date', orderDate);
     RealmObjectBase.set(this, 'order_datetime', orderDateTime);
     RealmObjectBase.set(this, 'discount_percent', discountPercent);
+    RealmObjectBase.set(
+      this,
+      'payment_discount_percent',
+      paymentDiscountPercent,
+    );
+    RealmObjectBase.set(this, 'payment_discount_amount', paymentDiscountAmount);
   }
 
   SalesHeader._();
@@ -2646,6 +2656,20 @@ class SalesHeader extends _SalesHeader
       RealmObjectBase.set(this, 'discount_percent', value);
 
   @override
+  double get paymentDiscountPercent =>
+      RealmObjectBase.get<double>(this, 'payment_discount_percent') as double;
+  @override
+  set paymentDiscountPercent(double value) =>
+      RealmObjectBase.set(this, 'payment_discount_percent', value);
+
+  @override
+  double get paymentDiscountAmount =>
+      RealmObjectBase.get<double>(this, 'payment_discount_amount') as double;
+  @override
+  set paymentDiscountAmount(double value) =>
+      RealmObjectBase.set(this, 'payment_discount_amount', value);
+
+  @override
   Stream<RealmObjectChanges<SalesHeader>> get changes =>
       RealmObjectBase.getChanges<SalesHeader>(this);
 
@@ -2712,6 +2736,8 @@ class SalesHeader extends _SalesHeader
       'order_date': orderDate.toEJson(),
       'order_datetime': orderDateTime.toEJson(),
       'discount_percent': discountPercent.toEJson(),
+      'payment_discount_percent': paymentDiscountPercent.toEJson(),
+      'payment_discount_amount': paymentDiscountAmount.toEJson(),
     };
   }
 
@@ -2773,6 +2799,14 @@ class SalesHeader extends _SalesHeader
         orderDate: fromEJson(ejson['order_date']),
         orderDateTime: fromEJson(ejson['order_datetime']),
         discountPercent: fromEJson(ejson['discount_percent'], defaultValue: 0),
+        paymentDiscountPercent: fromEJson(
+          ejson['payment_discount_percent'],
+          defaultValue: 0,
+        ),
+        paymentDiscountAmount: fromEJson(
+          ejson['payment_discount_amount'],
+          defaultValue: 0,
+        ),
       ),
       _ => raiseInvalidEJson(ejson),
     };
@@ -3072,6 +3106,16 @@ class SalesHeader extends _SalesHeader
           'discountPercent',
           RealmPropertyType.double,
           mapTo: 'discount_percent',
+        ),
+        SchemaProperty(
+          'paymentDiscountPercent',
+          RealmPropertyType.double,
+          mapTo: 'payment_discount_percent',
+        ),
+        SchemaProperty(
+          'paymentDiscountAmount',
+          RealmPropertyType.double,
+          mapTo: 'payment_discount_amount',
         ),
       ],
     );

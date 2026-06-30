@@ -159,10 +159,12 @@ class ApiClient {
   }) async {
     try {
       final Map<String, dynamic> params = json.decode(body.toString());
+
       http.MultipartRequest request = http.MultipartRequest(
         "POST",
         await _getBaseUrl(customUrl: customUrl, endpoint: endpoint),
       );
+
       params.forEach((k, v) {
         request.fields[k] = v.toString();
       });
@@ -177,11 +179,12 @@ class ApiClient {
 
       var r = await request.send();
       if (r.statusCode != 200) {
-        throw GeneralException('Request failed with status: ${r.statusCode}');
+        throw GeneralException(
+          'Request failed (${r.statusCode})',
+        );
       }
 
       final responseData = json.decode(await r.stream.bytesToString());
-
       if (responseData['status'] != 'success') {
         throw GeneralException(responseData['message'] ?? 'Unknown error');
       }

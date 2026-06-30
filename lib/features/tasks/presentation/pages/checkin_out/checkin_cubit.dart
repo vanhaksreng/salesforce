@@ -19,29 +19,14 @@ class CheckinCubit extends Cubit<CheckinState> with MessageMixin, AppMixin {
 
   final ILocationService _location = GeolocatorLocationService();
 
-  Future<bool> processCheckIn({
+  Future<void> processCheckIn({
     required SalespersonSchedule schedule,
     required CheckInArg args,
   }) async {
-    try {
-      final response = await _repos.checkIn(schedule: schedule, args: args);
-      response.fold(
-        (l) {
-          throw GeneralException(l.toString());
-        },
-        (result) {
-          emit(state.copyWith(schedule: result));
-        },
-      );
-
-      return true;
-    } on GeneralException catch (e) {
-      showWarningMessage(e.message);
-      return false;
-    } catch (error) {
-      showErrorMessage(error.toString());
-      return false;
-    }
+    final response = await _repos.checkIn(schedule: schedule, args: args);
+    response.fold((l) => throw GeneralException(l.toString()), (result) {
+      emit(state.copyWith(schedule: result));
+    });
   }
 
   Future<bool> processCheckout({
