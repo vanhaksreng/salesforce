@@ -123,7 +123,7 @@ class ModernReportCardBoxInventory extends StatelessWidget {
                 ),
                 Helpers.gapH(4.scale),
                 TextWidget(
-                  text: report.no ?? "N/A",
+                  text: "${report.description2}\n${report.no}",
                   color: textColor50,
                   fontWeight: FontWeight.w500,
                   fontSize: 13,
