@@ -14,6 +14,7 @@ extension ApplicationSetupExtension on ApplicationSetup {
       localCurrencyCode: json["local_currency_code"],
       decimalZero: json["decimal_zero"],
       ctrlItemTracking: json["ctrl_item_tracking"] ?? kStatusNo,
+      percentageDecimal: Helpers.toInt(json["percentage_decimal"]),
     );
   }
 }

@@ -73,8 +73,14 @@ class SaleCheckoutCubit extends Cubit<SaleCheckoutState>
   }
 
   Future<void> calcPaymentDiscount(CheckoutArg arg, double disPercent) async {
+    
+    final amountDue = Helpers.formatNumberDb(
+      arg.amountDue,
+      option: FormatType.amount,
+    );
+
     final disAmt = Helpers.formatNumberDb(
-      arg.amountDue * (disPercent / 100),
+      amountDue * (disPercent / 100),
       option: FormatType.amount,
     );
 
@@ -83,7 +89,7 @@ class SaleCheckoutCubit extends Cubit<SaleCheckoutState>
         paymentDiscountAmt: disAmt,
         paymentDiscountPercent: disPercent,
         amountToPay: Helpers.formatNumberDb(
-          arg.amountDue - disAmt,
+          amountDue - disAmt,
           option: FormatType.amount,
         ),
       ),

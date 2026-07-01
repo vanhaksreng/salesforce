@@ -102,7 +102,7 @@ class _StockBoxState extends State<StockBox> with MessageMixin {
                     text: "$inventory / ${widget.item.stockUomCode}",
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: success,
+                    color: Helpers.toDouble(inventory) > 0 ? success : red,
                   ),
                 const Hr(width: double.infinity, vertical: 6, color: grey20),
                 buildFooter(context),

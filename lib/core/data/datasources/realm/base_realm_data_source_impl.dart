@@ -197,7 +197,7 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
 
     if (tableName == "item") {
       await _storage.writeTransaction((realm) {
-        final objects = realm.query<ItemLedgerEntry>("quantity > 0").toList();
+        final objects = realm.all<ItemLedgerEntry>().toList();
         realm.deleteMany(objects);
       });
     }
@@ -214,34 +214,9 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
       for (var item in records) {
         if (tableName == "item") {
           final itemCollection = item as Item;
-
-          if (Helpers.toDouble(itemCollection.inventory) > 0) {
-            realm.add(
-              ItemLedgerEntry(
-                Helpers.toStrings(itemCollection.no),
-                "",
-                "",
-                Helpers.toDouble(itemCollection.inventory),
-                DateTime.now().toDateString(),
-              ),
-              update: true,
-            );
-          }
-
-          final entries = realm.query<ItemLedgerEntry>(
-            'item_no == \$0 AND quantity < 0',
-            [itemCollection.no],
-          );
-
-          final endingQty = entries.fold<double>(
-            0,
-            (sum, entry) => sum + entry.quantity,
-          );
-
-          item.inventory =
-              Helpers.toDouble(itemCollection.inventory) + endingQty;
-
+          item.inventory = Helpers.toDouble(itemCollection.inventory);
           realm.add(item, update: true);
+
         } else if (tableName == "cash_receipt_journals") {
           final journal = item as CashReceiptJournals;
           final status = (journal.status ?? "").toLowerCase();
@@ -756,11 +731,7 @@ class BaseRealmDataSourceImpl implements BaseRealmDataSource {
   }
 
   @override
-  Future<ItemSalesLinePrices?> getItemSaleLinePriceById(
-    String id,
-  ) async {
-    return await _storage.getFirst<ItemSalesLinePrices>(
-      args: {'id': id},
-    );
+  Future<ItemSalesLinePrices?> getItemSaleLinePriceById(String id) async {
+    return await _storage.getFirst<ItemSalesLinePrices>(args: {'id': id});
   }
 }

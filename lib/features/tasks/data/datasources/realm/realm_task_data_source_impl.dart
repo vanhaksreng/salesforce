@@ -825,15 +825,7 @@ class RealmTaskDataSourceImpl extends BaseRealmDataSourceImpl
 
           final item = realm.find<Item>(line.no);
           if (item != null) {
-            final entries = realm.query<ItemLedgerEntry>('item_no = \$0', [
-              line.no,
-            ]);
-            final endingQty = entries.fold<double>(
-              0,
-              (sum, entry) => sum + (entry.quantity),
-            );
-
-            item.inventory = endingQty;
+            item.inventory = Helpers.formatNumberDb(item.inventory) - qty;
             realm.add(item, update: true);
           }
         }

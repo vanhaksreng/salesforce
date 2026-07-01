@@ -365,6 +365,7 @@ class Helpers {
       if (appSetup == null) {
         return value.toString();
       }
+
       switch (option) {
         case FormatType.amount:
           decimal = appSetup.amountDecimal ?? 0;
